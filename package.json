@@ -1,6 +1,6 @@
 {
-  "name": "administrasi-sdn1-pasirpogor",
-  "version": "0.1.0",
+     "name": "administrasi_sdn1_pasirpogor",
+     "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.1",
