@@ -2,10 +2,110 @@
 import React, { useState, useEffect } from 'react';
 import { X, RefreshCw, Calendar } from 'lucide-react';
 
+// Helper untuk extract semua tanggal unik dari data
+const extractAllDatesFromData = (data) => {
+  if (!data || data.length === 0) return [];
+  
+  const allDates = new Set();
+  
+  // Loop melalui semua siswa
+  data.forEach(student => {
+    // Cek jika student punya dailyStatus (format baru)
+    if (student.dailyStatus && typeof student.dailyStatus === 'object') {
+      Object.keys(student.dailyStatus).forEach(date => {
+        allDates.add(date);
+      });
+    }
+  });
+  
+  // Convert ke array dan sort secara ascending
+  const sortedDates = Array.from(allDates).sort();
+  return sortedDates;
+};
+
+// Helper untuk get status berdasarkan date
+const getStudentStatusByDate = (student, date) => {
+  // Format 1: dailyStatus object { "2024-09-22": "hadir", ... }
+  if (student.dailyStatus && student.dailyStatus[date]) {
+    return student.dailyStatus[date];
+  }
+  
+  // Format 2: fallback ke data lama atau format alternatif
+  return null;
+};
+
+// Helper untuk normalize status (handle both uppercase and lowercase)
+const normalizeStatus = (status) => {
+  if (!status) return status;
+  // Convert to lowercase first, then capitalize first letter
+  const lower = status.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+};
+
+// Helper untuk status badge
+const getStatusBadge = (status) => {
+  if (!status) return <span className="text-gray-400">-</span>;
+  
+  // Normalize status to handle lowercase from database
+  const normalizedStatus = normalizeStatus(status);
+  
+  const statusMap = {
+    hadir: { text: "H", color: "bg-green-500 text-white" },
+    sakit: { text: "S", color: "bg-yellow-500 text-white" },
+    izin: { text: "I", color: "bg-blue-500 text-white" },
+    alpa: { text: "A", color: "bg-red-500 text-white" },
+    alfa: { text: "A", color: "bg-red-500 text-white" },
+    // Handle uppercase
+    Hadir: { text: "H", color: "bg-green-500 text-white" },
+    Sakit: { text: "S", color: "bg-yellow-500 text-white" },
+    Izin: { text: "I", color: "bg-blue-500 text-white" },
+    Alpa: { text: "A", color: "bg-red-500 text-white" },
+    Alfa: { text: "A", color: "bg-red-500 text-white" },
+    H: { text: "H", color: "bg-green-500 text-white" },
+    S: { text: "S", color: "bg-yellow-500 text-white" },
+    I: { text: "I", color: "bg-blue-500 text-white" },
+    A: { text: "A", color: "bg-red-500 text-white" },
+  };
+
+  const statusInfo = statusMap[status] || statusMap[normalizedStatus] || { 
+    text: "-", 
+    color: "bg-gray-200 text-gray-500" 
+  };
+  
+  return (
+    <span className={`inline-block w-6 h-6 flex items-center justify-center rounded text-xs font-bold ${statusInfo.color}`}>
+      {statusInfo.text}
+    </span>
+  );
+};
+
+// Helper function untuk format tanggal seperti "15-09"
+const formatDateHeader = (dateStr) => {
+  try {
+    const date = new Date(dateStr + "T00:00:00");
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${day}-${month}`;
+  } catch (error) {
+    // Fallback: coba extract dari string langsung
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length >= 2) {
+        const day = parts[2] ? parts[2].substring(0, 2) : parts[0];
+        const month = parts[1] ? parts[1].padStart(2, '0') : parts[0];
+        return `${day}-${month}`;
+      }
+    }
+    return dateStr;
+  }
+};
+
 // Komponen RecapModal untuk display data rekap saja
 const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshData, activeClass }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [attendanceDates, setAttendanceDates] = useState([]);
+  const [processedData, setProcessedData] = useState([]);
 
   // Array nama bulan dalam Bahasa Indonesia
   const monthNames = [
@@ -13,9 +113,37 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Generate year options (current year ± 2)
+  // Generate year options (from current year to 2030)
   const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({length: 5}, (_, i) => currentYear - 2 + i);
+  const yearOptions = Array.from(
+    { length: 2030 - currentYear + 1 }, 
+    (_, i) => currentYear + i
+  );
+
+  // Process data ketika data berubah
+  useEffect(() => {
+    if (data && data.length > 0) {
+      console.log("📊 Data diterima di RecapModal:", data);
+      console.log("📊 Sample dailyStatus:", data[0]?.dailyStatus);
+      
+      // Extract semua tanggal unik
+      const dates = extractAllDatesFromData(data);
+      setAttendanceDates(dates);
+      
+      // Process data untuk memastikan format konsisten
+      const processed = data.map(student => {
+        return student; // Gunakan data langsung karena sudah di-process di parent
+      });
+      
+      setProcessedData(processed);
+      console.log("📅 Tanggal yang ditemukan:", dates);
+      console.log("📊 Total tanggal:", dates.length);
+    } else {
+      console.log("⚠️ Data kosong atau tidak valid");
+      setAttendanceDates([]);
+      setProcessedData([]);
+    }
+  }, [data]);
 
   // Reset to current month/year when modal opens
   useEffect(() => {
@@ -47,136 +175,210 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-6xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-6 border-b border-gray-200 gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-blue-900">{title}</h3>
-            <p className="text-sm text-gray-600 mt-1">{getDynamicSubtitle()}</p>
-          </div>
-          
-          {/* Period Selector */}
-          <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
-            <Calendar size={16} className="text-blue-600" />
-            <select 
-              value={selectedMonth} 
-              onChange={(e) => handlePeriodChange(parseInt(e.target.value), selectedYear)}
-              className="bg-transparent text-blue-700 text-sm font-medium focus:outline-none cursor-pointer"
-              disabled={loading}
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl w-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+        {/* Header - Horizontal Layout */}
+        <div className="bg-gradient-to-r from-blue-400 to-blue-500 text-white p-3 sm:p-4 flex justify-between items-center flex-shrink-0 gap-3">
+          <h2 className="text-sm sm:text-lg font-bold">📊 Rekap Presensi</h2>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
+              <Calendar size={16} className="text-white" />
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => handlePeriodChange(parseInt(e.target.value), selectedYear)}
+                className="bg-transparent text-white text-sm font-medium focus:outline-none cursor-pointer"
+                disabled={loading}
+              >
+                {monthNames.map((month, index) => (
+                  <option key={index + 1} value={index + 1} className="text-gray-700">{month}</option>
+                ))}
+              </select>
+              <select 
+                value={selectedYear} 
+                onChange={(e) => handlePeriodChange(selectedMonth, parseInt(e.target.value))}
+                className="bg-transparent text-white text-sm font-medium focus:outline-none cursor-pointer"
+                disabled={loading}
+              >
+                {yearOptions.map(year => (
+                  <option key={year} value={year} className="text-gray-700">{year}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white text-lg sm:text-xl hover:bg-white/20 p-1 rounded-lg transition"
             >
-              {monthNames.map((month, index) => (
-                <option key={index + 1} value={index + 1}>{month}</option>
-              ))}
-            </select>
-            <select 
-              value={selectedYear} 
-              onChange={(e) => handlePeriodChange(selectedMonth, parseInt(e.target.value))}
-              className="bg-transparent text-blue-700 text-sm font-medium focus:outline-none cursor-pointer ml-2"
-              disabled={loading}
-            >
-              {yearOptions.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+              <X size={20} />
+            </button>
           </div>
-
-          {/* Close Button Only */}
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X size={20} className="text-gray-500" />
-          </button>
         </div>
         
-        <div className="max-h-[55vh] overflow-y-auto p-6">
+        {/* Body */}
+        <div className="p-3 sm:p-4 flex-1 flex flex-col overflow-hidden">
+          {/* Compact Header - STICKY */}
+          <div className="mb-2 text-center border border-gray-200 rounded-lg p-2 bg-white flex-shrink-0 sticky top-0 z-30 shadow-sm">
+            <h3 className="text-sm sm:text-base font-bold text-gray-800">
+              {title || "REKAP PRESENSI"} {activeClass && `- KELAS ${activeClass}`}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600">
+              {getDynamicSubtitle()}
+            </p>
+            {attendanceDates.length > 0 && (
+              <p className="text-xs text-blue-600 mt-1">
+                {attendanceDates.length} hari aktif • {formatDateHeader(attendanceDates[0])} - {formatDateHeader(attendanceDates[attendanceDates.length - 1])}
+              </p>
+            )}
+          </div>
+
+          {/* Loading State */}
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center p-8 text-gray-500 flex-1">
               <RefreshCw className="animate-spin mr-3" size={20} />
               <span className="text-gray-600">Memuat data rekap...</span>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">No.</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">NISN</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Nama Siswa</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Hadir</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Sakit</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Izin</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Alpa</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">Persentase</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {data.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="px-4 py-12 text-center text-gray-500">
-                        <div className="flex flex-col items-center gap-2">
-                          <Calendar size={48} className="text-gray-300" />
-                          <span>Tidak ada data rekap untuk periode ini</span>
-                          <span className="text-sm">
-                            {monthNames[selectedMonth - 1]} {selectedYear}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    data.map((student, index) => (
-                      <tr key={student.nisn || index} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{index + 1}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{student.nisn}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{student.name}</td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-900">
-                          <span className="text-green-600 font-medium">{student.hadir}</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-900">
-                          <span className="text-yellow-600 font-medium">{student.sakit}</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-900">
-                          <span className="text-blue-600 font-medium">{student.izin}</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-900">
-                          <span className="text-red-600 font-medium">{student.alpa}</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                            student.percentage >= 80 
-                              ? 'bg-green-100 text-green-700' 
-                              : student.percentage >= 60
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
+            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm flex-1 flex flex-col">
+              {/* Mobile: Swipe instruction */}
+              {attendanceDates.length > 0 && (
+                <div className="bg-blue-50 p-2 text-center text-xs text-blue-700 sm:hidden border-b border-blue-200 flex-shrink-0">
+                  👉 Geser tabel ke kanan untuk melihat {attendanceDates.length} hari aktif
+                </div>
+              )}
+              
+              <div className="overflow-auto flex-1">
+                <table className="w-full text-xs sm:text-sm border-collapse">
+                  <thead className="bg-gray-100 sticky top-0 z-20">
+                    <tr className="border-b-2 border-gray-400">
+                      {/* Fixed columns */}
+                      <th className="p-2 text-center font-bold text-gray-800 border-r-2 border-gray-300 sticky left-0 bg-gray-100 z-30 min-w-[40px] sm:min-w-[50px]">
+                        No.
+                      </th>
+                      <th className="p-2 text-left font-bold text-gray-800 border-r-2 border-gray-300 sticky left-[40px] sm:left-[50px] bg-gray-100 z-30 min-w-[140px] sm:min-w-[200px]">
+                        Nama Siswa
+                      </th>
+                      
+                      {/* Dynamic date columns */}
+                      {attendanceDates.map((date, index) => (
+                        <th
+                          key={date}
+                          className={`p-1 text-center font-bold text-gray-800 min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
+                            index < attendanceDates.length - 1 ? 'border-r border-gray-300' : 'border-r-2 border-gray-400'
                           }`}>
-                            {student.percentage}%
+                          {formatDateHeader(date)}
+                        </th>
+                      ))}
+                      
+                      {/* Summary columns - SESUAI CONTOH */}
+                      <th className="p-2 text-center font-bold text-green-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-green-50">
+                        Hadir
+                      </th>
+                      <th className="p-2 text-center font-bold text-blue-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-blue-50">
+                        Izin
+                      </th>
+                      <th className="p-2 text-center font-bold text-yellow-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-yellow-50">
+                        Sakit
+                      </th>
+                      <th className="p-2 text-center font-bold text-red-700 border-r-2 border-gray-400 min-w-[40px] sm:min-w-[45px] bg-red-50">
+                        Alfa
+                      </th>
+                      <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[40px] sm:min-w-[45px]">
+                        Total
+                      </th>
+                      <th className="p-2 text-center font-bold text-gray-800 min-w-[50px] sm:min-w-[60px]">
+                        Persentase
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {processedData && processedData.length > 0 ? (
+                      processedData.map((student, index) => (
+                        <tr
+                          key={student.nisn || student.id || index}
+                          className="border-b border-gray-200 hover:bg-blue-50 transition">
+                          {/* Fixed columns */}
+                          <td className="p-2 text-center border-r-2 border-gray-300 sticky left-0 bg-white z-10 font-medium">
+                            {index + 1}
+                          </td>
+                          <td className="p-2 font-medium text-gray-800 border-r-2 border-gray-300 sticky left-[40px] sm:left-[50px] bg-white z-10 whitespace-nowrap">
+                            {student.name || student.full_name || student.nama_siswa}
+                          </td>
+                          
+                          {/* Daily status */}
+                          {attendanceDates.map((date, index) => (
+                            <td
+                              key={date}
+                              className={`p-1 text-center ${
+                                index < attendanceDates.length - 1 ? 'border-r border-gray-200' : 'border-r-2 border-gray-400'
+                              }`}>
+                              {getStatusBadge(getStudentStatusByDate(student, date))}
+                            </td>
+                          ))}
+                          
+                          {/* Summary - SESUAI CONTOH */}
+                          <td className="p-2 text-center text-green-700 font-bold border-r border-gray-200 bg-green-50/50">
+                            {student.hadir || 0}
+                          </td>
+                          <td className="p-2 text-center text-blue-700 font-bold border-r border-gray-200 bg-blue-50/50">
+                            {student.izin || 0}
+                          </td>
+                          <td className="p-2 text-center text-yellow-700 font-bold border-r border-gray-200 bg-yellow-50/50">
+                            {student.sakit || 0}
+                          </td>
+                          <td className="p-2 text-center text-red-700 font-bold border-r-2 border-gray-400 bg-red-50/50">
+                            {student.alpa || student.alfa || 0}
+                          </td>
+                          <td className="p-2 text-center font-bold text-gray-800 border-r border-gray-200">
+                            {student.total || 0}
+                          </td>
+                          <td className="p-2 text-center font-bold text-gray-800">
+                            <span className={`inline-flex items-center justify-center w-12 px-2 py-1 rounded-full text-xs font-semibold ${
+                              student.percentage >= 80 
+                                ? 'bg-green-100 text-green-700' 
+                                : student.percentage >= 60
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {student.percentage || 0}%
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={attendanceDates.length + 8}
+                          className="p-8 text-center text-gray-500">
+                          <div className="text-3xl sm:text-4xl mb-3">📅</div>
+                          <h4 className="font-semibold mb-2 text-sm sm:text-base">Belum Ada Data</h4>
+                          <p className="text-xs sm:text-sm">Belum ada data presensi untuk bulan ini</p>
+                          <span className="text-xs text-gray-400 mt-1">
+                            {monthNames[selectedMonth - 1]} {selectedYear}
                           </span>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
-        
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {data.length > 0 && (
-                <span>
-                  Total {data.length} siswa • Periode {monthNames[selectedMonth - 1]} {selectedYear}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
-            >
-              Tutup
-            </button>
+
+        {/* Footer */}
+        <div className="bg-gray-50 p-3 sm:p-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
+          <div className="text-sm text-gray-600">
+            {processedData && processedData.length > 0 && (
+              <span>
+                Total {processedData.length} siswa • {attendanceDates.length} hari aktif • Periode {monthNames[selectedMonth - 1]} {selectedYear}
+              </span>
+            )}
           </div>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm sm:text-base font-medium"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>
