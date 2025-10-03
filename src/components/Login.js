@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import bcrypt from "bcryptjs";
+import Logo from "../components/Logo"; // IMPORT LOGO COMPONENT
 
 // Icon components (since we can't import external icons in this example)
 const EyeIcon = ({ className }) => (
@@ -27,6 +28,7 @@ const Login = ({ onLoginSuccess }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [rememberedUsername, setRememberedUsername] = useState("");
+  const [schoolName, setSchoolName] = useState("SDN 1 PASIRPOGOR"); // Default school name
 
   // Statistics state
   const [statistics, setStatistics] = useState({
@@ -53,7 +55,26 @@ const Login = ({ onLoginSuccess }) => {
   // Fetch statistics on component mount
   useEffect(() => {
     fetchStatistics();
+    fetchSchoolSettings();
   }, []);
+
+  const fetchSchoolSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('school_settings')
+        .select('school_name, school_logo')
+        .single();
+
+      if (!error && data) {
+        if (data.school_name) {
+          setSchoolName(data.school_name);
+        }
+        // Logo akan dihandle oleh Logo component
+      }
+    } catch (error) {
+      console.error('Error fetching school settings:', error);
+    }
+  };
 
   const fetchStatistics = async () => {
     try {
@@ -242,11 +263,10 @@ const Login = ({ onLoginSuccess }) => {
         <div className="bg-white rounded-2xl shadow-lg ring-1 ring-gray-200/50 w-full max-w-md overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-emerald-600 p-4 sm:p-6 text-center text-white">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <div className="bg-white/20 rounded-full w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-xl sm:text-2xl backdrop-blur-sm border-2 border-white/30">
-                🏫
-              </div>
+              {/* LOGO DI FORGOT PASSWORD - FIXED */}
+              <Logo size="medium" className="shadow-lg" />
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold">SDN 1 PASIRPOGOR</h1>
+                <h1 className="text-lg sm:text-2xl font-bold">{schoolName}</h1>
                 <p className="text-xs sm:text-sm opacity-90">
                   Sistem Informasi Administrasi Sekolah
                 </p>
@@ -297,16 +317,22 @@ const Login = ({ onLoginSuccess }) => {
 
         {/* Welcome Content */}
         <div className="text-center text-white z-10 max-w-2xl w-full">
-          {/* School Logo & Title */}
+          {/* School Logo & Title - FIXED: Logo lebih rapi */}
           <div className="mb-4 sm:mb-6 lg:mb-8">
-            <div className="bg-white/20 rounded-full w-12 h-12 sm:w-16 sm:h-16 lg:w-24 lg:h-24 flex items-center justify-center text-lg sm:text-2xl lg:text-4xl mx-auto mb-3 sm:mb-4 backdrop-blur-sm border-2 border-white/30">
-              🏫
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <Logo 
+                size="xlarge" 
+                className="drop-shadow-2xl"
+                onLogoLoad={(hasLogo) => {
+                  console.log('Logo loaded:', hasLogo);
+                }}
+              />
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-5xl font-bold mb-1 sm:mb-2 text-white/90 leading-tight">
               Selamat Datang
             </h1>
             <h2 className="text-lg sm:text-xl lg:text-4xl font-semibold text-white/90 leading-tight">
-              SDN 1 PASIRPOGOR
+              {schoolName}
             </h2>
           </div>
 
@@ -363,10 +389,13 @@ const Login = ({ onLoginSuccess }) => {
         <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
           {/* Login Card */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg ring-1 ring-gray-200/50 p-4 sm:p-6 lg:p-10 border border-gray-100">
-            {/* Login Header */}
+            {/* Login Header - FIXED: Logo lebih rapi */}
             <div className="text-center mb-4 sm:mb-6">
-              <div className="bg-blue-600 rounded-full w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 flex items-center justify-center text-lg sm:text-xl lg:text-2xl mx-auto mb-3 sm:mb-4 text-white shadow-md">
-                🔒
+              <div className="flex justify-center mb-3 sm:mb-4">
+                <Logo 
+                  size="medium" 
+                  className="drop-shadow-lg"
+                />
               </div>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
                 Masuk ke Sistem
@@ -479,7 +508,7 @@ const Login = ({ onLoginSuccess }) => {
 
             <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 text-center">
               <p className="text-xs sm:text-sm text-gray-600">
-                © 2025 SDN 1 PASIRPOGOR. Sistem Administrasi Sekolah.
+                © 2025 {schoolName}. Sistem Administrasi Sekolah.
               </p>
               <p className="text-xs sm:text-sm text-emerald-600 font-medium mt-1">v1.0.0</p>
             </div>

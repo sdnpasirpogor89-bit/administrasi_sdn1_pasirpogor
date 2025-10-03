@@ -18,7 +18,7 @@ import Teacher from "./pages/Teacher";
 import Grades from "./pages/Grades";
 import SPMB from './spmb/SPMB';
 import Report from "./pages/Report";
-import Setting from "./pages/Setting";
+import Setting from './setting/setting';
 
 function App() {
   const [user, setUser] = useState(null);

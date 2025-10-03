@@ -63,7 +63,13 @@ const Teacher = () => {
   // Fungsi untuk mengurutkan guru
   const sortTeachers = (teachersArray) => {
     return teachersArray.sort((a, b) => {
-      // Guru kelas di atas, guru mapel di bawah
+      // Kepala sekolah/admin di paling atas
+      if ((a.role === "admin" || a.role === "kepala_sekolah") && 
+          (b.role !== "admin" && b.role !== "kepala_sekolah")) return -1;
+      if ((b.role === "admin" || b.role === "kepala_sekolah") && 
+          (a.role !== "admin" && a.role !== "kepala_sekolah")) return 1;
+      
+      // Guru kelas di atas guru mapel
       if (a.role === "guru_kelas" && b.role === "guru_mapel") return -1;
       if (a.role === "guru_mapel" && b.role === "guru_kelas") return 1;
       
@@ -88,11 +94,11 @@ const Teacher = () => {
     try {
       setLoading(true);
 
-      // Query untuk mengambil data guru (bukan admin)
+      // Query untuk mengambil semua user (termasuk admin/kepala sekolah)
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("*")
-        .in("role", ["guru_kelas", "guru_mapel"]);
+        .in("role", ["admin", "kepala_sekolah", "guru_kelas", "guru_mapel"]);
 
       if (teachersError) throw teachersError;
 
@@ -120,6 +126,8 @@ const Teacher = () => {
           studentCount = studentsByClass[teacher.kelas] || 0;
         } else if (teacher.role === "guru_mapel") {
           studentCount = totalStudents; // Guru mapel mengajar semua siswa
+        } else if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
+          studentCount = totalStudents; // Kepala sekolah membawahi semua siswa
         }
 
         return {
@@ -128,13 +136,13 @@ const Teacher = () => {
         };
       });
 
-      // Urutkan guru: guru kelas berdasarkan nomor kelas, lalu guru mapel
+      // Urutkan: kepala sekolah, guru kelas, guru mapel
       const sortedTeachers = sortTeachers(teachersWithStudentCount);
       setTeachers(sortedTeachers);
 
-      // Hitung statistik
+      // Hitung statistik (tanpa admin/kepala sekolah)
       const activeTeachers = sortedTeachers.filter(
-        (t) => t.is_active
+        (t) => t.is_active && (t.role === "guru_kelas" || t.role === "guru_mapel")
       );
       const classTeachers = sortedTeachers.filter(
         (t) => t.role === "guru_kelas"
@@ -144,7 +152,7 @@ const Teacher = () => {
       );
 
       setStats({
-        totalGuru: sortedTeachers.length,
+        totalGuru: classTeachers.length + subjectTeachers.length,
         guruAktif: activeTeachers.length,
         guruKelas: classTeachers.length,
         guruMapel: subjectTeachers.length,
@@ -157,18 +165,21 @@ const Teacher = () => {
     }
   };
 
-  // Format tampilan kelas/mapel
+  // Format tampilan tugas/kelas
   const formatTeachingArea = (teacher) => {
-    if (teacher.role === "guru_kelas") {
+    if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
+      return "Kepala Sekolah";
+    } else if (teacher.role === "guru_kelas") {
       return `Kelas ${teacher.kelas}`;
-    } else {
+    } else if (teacher.role === "guru_mapel") {
       // Mapping username ke nama mata pelajaran
       const subjectMap = {
-        yosefedi: "PJOK",
-        acengmudrikah: "PAI",
+        yosefedi: "Mapel PJOK",
+        acengmudrikah: "Mapel PAI",
       };
-      return subjectMap[teacher.username] || "Mata Pelajaran";
+      return subjectMap[teacher.username] || "Mapel Lainnya";
     }
+    return "-";
   };
 
   useEffect(() => {
@@ -234,7 +245,7 @@ const Teacher = () => {
                   Nama Guru
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Guru Kelas/Mapel
+                  Tugas/Kelas
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Jumlah Siswa
