@@ -178,28 +178,28 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
   );
 };
 
-// Status Button Component - Enhanced for mobile
+// Status Button Component - FIXED with better mobile touch targets
 const StatusButton = React.memo(
   ({ status, active, onClick, icon: Icon, label, disabled = false }) => {
     const getStatusClass = () => {
       const baseClass =
-        "flex items-center justify-center gap-1 px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] sm:min-h-auto touch-manipulation";
+        "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 border-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-[40px] touch-manipulation";
 
       if (status === "Hadir") {
         return active
-          ? `${baseClass} bg-green-600 text-white border-green-600`
+          ? `${baseClass} bg-green-600 text-white border-green-600 shadow-sm`
           : `${baseClass} bg-green-50 text-green-700 border-green-200 hover:bg-green-100 active:bg-green-200`;
       } else if (status === "Sakit") {
         return active
-          ? `${baseClass} bg-yellow-600 text-white border-yellow-600`
+          ? `${baseClass} bg-yellow-600 text-white border-yellow-600 shadow-sm`
           : `${baseClass} bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 active:bg-yellow-200`;
       } else if (status === "Izin") {
         return active
-          ? `${baseClass} bg-blue-600 text-white border-blue-600`
+          ? `${baseClass} bg-blue-600 text-white border-blue-600 shadow-sm`
           : `${baseClass} bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 active:bg-blue-200`;
       } else if (status === "Alpa") {
         return active
-          ? `${baseClass} bg-red-600 text-white border-red-600`
+          ? `${baseClass} bg-red-600 text-white border-red-600 shadow-sm`
           : `${baseClass} bg-red-50 text-red-700 border-red-200 hover:bg-red-100 active:bg-red-200`;
       }
       return baseClass;
@@ -210,7 +210,7 @@ const StatusButton = React.memo(
         className={getStatusClass()}
         onClick={onClick}
         disabled={disabled}>
-        <Icon size={12} className="flex-shrink-0" />
+        <Icon size={14} className="flex-shrink-0" />
         <span className="hidden sm:inline">{label}</span>
         <span className="sm:hidden text-xs">{label.charAt(0)}</span>
       </button>
@@ -854,7 +854,7 @@ const Attendance = ({
           lastDayOfMonth
         ).padStart(2, "0")}`;
 
-        console.log("🔍 Fetching attendance for:", {
+        console.log("📅 Fetching attendance for:", {
           startDate,
           endDate,
           classNum,
@@ -1130,9 +1130,9 @@ const Attendance = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1 w-full">
             <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation"
+              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
               onClick={markAllPresent}
               disabled={
                 !studentsData[activeClass] ||
@@ -1148,7 +1148,7 @@ const Attendance = ({
               <span className="sm:hidden">Semua</span>
             </button>
             <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation"
+              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
               onClick={saveAttendance}
               disabled={
                 !studentsData[activeClass] ||
@@ -1164,7 +1164,7 @@ const Attendance = ({
               <span className="sm:hidden">Simpan</span>
             </button>
             <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation"
+              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
               onClick={showRekap}
               disabled={
                 !studentsData[activeClass] ||
@@ -1175,7 +1175,7 @@ const Attendance = ({
               <span className="sm:hidden">Rekap</span>
             </button>
             <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation"
+              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
               onClick={() => setShowExportModal(true)}
               disabled={
                 !studentsData[activeClass] ||
@@ -1234,28 +1234,28 @@ const Attendance = ({
           )}
         </div>
       ) : (
-        // Table View - Enhanced for responsiveness
+        // Table View - FIXED with better proportions
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100 border-b border-gray-200">
-                  <th className="px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-12 sm:w-14">
                     No
                   </th>
-                  <th className="px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24 sm:w-28">
                     NISN
                   </th>
-                  <th className="px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Nama Siswa
                   </th>
-                  <th className="px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                    Jenis Kelamin
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell w-20">
+                    L/P
                   </th>
-                  <th className="px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status Kehadiran
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Status
                   </th>
-                  <th className="px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell w-56">
                     Keterangan
                   </th>
                 </tr>
@@ -1293,18 +1293,18 @@ const Attendance = ({
                       <tr
                         key={originalIndex}
                         className="hover:bg-gray-50 transition-colors">
-                        <td className="px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-900">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-900">
                           {index + 1}
                         </td>
-                        <td className="px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
                           {student.nisn}
                         </td>
-                        <td className="px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
-                          <div className="max-w-[100px] sm:max-w-[150px] lg:max-w-none">
-                            <div className="truncate">{student.nama_siswa}</div>
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
+                          <div>
+                            <div className="line-clamp-2">{student.nama_siswa}</div>
                             <div className="lg:hidden mt-1">
                               <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                                   student.jenis_kelamin === "Laki-laki"
                                     ? "bg-blue-100 text-blue-700"
                                     : "bg-pink-100 text-pink-700"
@@ -1316,17 +1316,17 @@ const Attendance = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 hidden lg:table-cell">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm text-center hidden lg:table-cell">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                               student.jenis_kelamin === "Laki-laki"
                                 ? "bg-blue-100 text-blue-700"
                                 : "bg-pink-100 text-pink-700"
                             }`}>
-                            {student.jenis_kelamin}
+                            {student.jenis_kelamin === "Laki-laki" ? "L" : "P"}
                           </span>
                         </td>
-                        <td className="px-2 sm:px-4 py-3 sm:py-4">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4">
                           <div className="flex gap-1 flex-wrap">
                             <StatusButton
                               status="Hadir"
@@ -1391,11 +1391,11 @@ const Attendance = ({
                                 )
                               }
                               disabled={saving}
-                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                             />
                           </div>
                         </td>
-                        <td className="px-2 sm:px-4 py-3 sm:py-4 hidden xl:table-cell">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 hidden xl:table-cell">
                           <input
                             type="text"
                             placeholder="Keterangan..."
@@ -1408,7 +1408,7 @@ const Attendance = ({
                               )
                             }
                             disabled={saving}
-                            className="w-32 px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </td>
                       </tr>

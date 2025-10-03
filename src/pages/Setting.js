@@ -25,7 +25,10 @@ import {
   Building2,
   CheckSquare,
   X,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  Key,
+  GraduationCap
 } from 'lucide-react';
 
 const Setting = () => {
@@ -76,6 +79,42 @@ const Setting = () => {
   // Backup Restore
   const [restoreFile, setRestoreFile] = useState(null);
   const [restorePreview, setRestorePreview] = useState(null);
+
+  // MODAL STATES
+  const [teacherModal, setTeacherModal] = useState({
+    show: false,
+    mode: 'add', // 'add' or 'edit'
+    data: null
+  });
+
+  const [studentModal, setStudentModal] = useState({
+    show: false,
+    mode: 'add', // 'add' or 'edit' 
+    data: null
+  });
+
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    type: '', // 'teacher' or 'student'
+    data: null
+  });
+
+  // FORM STATES
+  const [teacherForm, setTeacherForm] = useState({
+    username: '',
+    full_name: '',
+    role: 'guru_mapel',
+    kelas: '',
+    password: ''
+  });
+
+  const [studentForm, setStudentForm] = useState({
+    nisn: '',
+    nama_siswa: '',
+    jenis_kelamin: 'L',
+    kelas: '',
+    is_active: true
+  });
 
   // Toast helper
   const showToast = (message, type = 'info') => {
@@ -138,47 +177,12 @@ const Setting = () => {
     }
   };
 
-  const updateSchoolSettings = async () => {
-    try {
-      setLoading(true);
-      
-      // Update each setting
-      const updatePromises = Object.entries(tempSchoolSettings).map(([key, value]) => 
-        supabase
-          .from('school_settings')
-          .upsert({ setting_key: key, setting_value: value }, { onConflict: 'setting_key' })
-      );
-      
-      const results = await Promise.all(updatePromises);
-      const hasError = results.some(result => result.error);
-      
-      if (hasError) {
-        throw new Error('Failed to update some settings');
-      }
-      
-      setSchoolSettings(prev => ({ ...prev, ...tempSchoolSettings }));
-      setEditingSchoolSettings(false);
-      setTempSchoolSettings({});
-      showToast('School settings updated successfully!', 'success');
-      
-      // Update academic year in stats if it was changed
-      if (tempSchoolSettings.academic_year) {
-        setSchoolStats(prev => ({ ...prev, academic_year: tempSchoolSettings.academic_year }));
-      }
-      
-    } catch (error) {
-      console.error('Error updating school settings:', error);
-      showToast('Error updating school settings', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // LOAD SCHOOL DATA - FIXED QUERIES
   const loadSchoolData = async () => {
     try {
       setLoading(true);
       
-      // Load teachers from users table
+      // Load teachers from users table - FIXED
       const { data: teachersData, error: teachersError } = await supabase
         .from('users')
         .select('id, username, full_name, role, kelas, is_active')
@@ -187,16 +191,16 @@ const Setting = () => {
       
       if (teachersError) throw teachersError;
       
-      // Load students
+      // Load students - FIXED (gunakan nisn dan nama_siswa)
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('id, nisn, nama_siswa, jenis_kelamin, kelas, is_active')
         .eq('is_active', true)
-        .order('kelas, nama_siswa');
+        .order('nama_siswa');
       
       if (studentsError) throw studentsError;
       
-      // Load siswa baru (pending applications)
+      // Load siswa baru (pending applications) - FIXED
       const { data: siswaBaru, error: siswaBaruError } = await supabase
         .from('siswa_baru')
         .select('id, nama_lengkap, academic_year, status')
@@ -205,7 +209,7 @@ const Setting = () => {
       
       if (siswaBaruError) throw siswaBaruError;
       
-      // Group students by class
+      // Group students by class - FIXED (gunakan 'kelas' bukan 'class_id')
       const studentsByClass = {};
       studentsData?.forEach(student => {
         const kelas = student.kelas || 'unassigned';
@@ -227,12 +231,13 @@ const Setting = () => {
       
     } catch (error) {
       console.error('Error loading school data:', error);
-      showToast('Error loading school data', 'error');
+      showToast('Error loading school data: ' + error.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  // TEACHER FUNCTIONS - FIXED
   const toggleTeacherStatus = async (teacherId, currentStatus) => {
     try {
       setLoading(true);
@@ -246,7 +251,7 @@ const Setting = () => {
       if (error) throw error;
       
       showToast(`Teacher ${newStatus ? 'activated' : 'deactivated'} successfully!`, 'success');
-      await loadSchoolData(); // Refresh data
+      await loadSchoolData();
       
     } catch (error) {
       console.error('Error updating teacher status:', error);
@@ -268,11 +273,288 @@ const Setting = () => {
       if (error) throw error;
       
       showToast('Teacher class assignment updated!', 'success');
-      await loadSchoolData(); // Refresh data
+      await loadSchoolData();
       
     } catch (error) {
       console.error('Error updating teacher class:', error);
       showToast('Error updating teacher class', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW FUNCTION: Update Student Class
+  const updateStudentClass = async (studentId, newKelas) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('students')
+        .update({ kelas: newKelas })
+        .eq('id', studentId);
+      
+      if (error) throw error;
+      
+      showToast('Student class updated successfully!', 'success');
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error updating student class:', error);
+      showToast('Error updating student class', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openTeacherModal = (mode = 'add', teacherData = null) => {
+    if (mode === 'edit' && teacherData) {
+      setTeacherForm({
+        username: teacherData.username,
+        full_name: teacherData.full_name,
+        role: teacherData.role,
+        kelas: teacherData.kelas || '',
+        password: '' // Don't show existing password
+      });
+    } else {
+      setTeacherForm({
+        username: '',
+        full_name: '',
+        role: 'guru_mapel',
+        kelas: '',
+        password: ''
+      });
+    }
+    
+    setTeacherModal({
+      show: true,
+      mode,
+      data: teacherData
+    });
+  };
+
+  const handleAddTeacher = async () => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('users')
+        .insert([{
+          username: teacherForm.username,
+          full_name: teacherForm.full_name,
+          role: teacherForm.role,
+          kelas: teacherForm.kelas || null,
+          password: teacherForm.password,
+          is_active: true
+        }]);
+      
+      if (error) throw error;
+      
+      showToast('Teacher added successfully!', 'success');
+      setTeacherModal({ show: false, mode: 'add', data: null });
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error adding teacher:', error);
+      showToast('Error adding teacher: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditTeacher = async () => {
+    try {
+      setLoading(true);
+      
+      const updateData = {
+        username: teacherForm.username,
+        full_name: teacherForm.full_name,
+        role: teacherForm.role,
+        kelas: teacherForm.kelas || null
+      };
+      
+      // Only update password if provided
+      if (teacherForm.password) {
+        updateData.password = teacherForm.password;
+      }
+      
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', teacherModal.data.id);
+      
+      if (error) throw error;
+      
+      showToast('Teacher updated successfully!', 'success');
+      setTeacherModal({ show: false, mode: 'add', data: null });
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error updating teacher:', error);
+      showToast('Error updating teacher: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTeacher = async (teacherId) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', teacherId);
+      
+      if (error) throw error;
+      
+      showToast('Teacher deleted successfully!', 'success');
+      setDeleteConfirm({ show: false, type: '', data: null });
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error deleting teacher:', error);
+      showToast('Error deleting teacher: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // STUDENT FUNCTIONS - FIXED (gunakan nisn dan nama_siswa)
+  const openStudentModal = (mode = 'add', studentData = null) => {
+    if (mode === 'edit' && studentData) {
+      setStudentForm({
+        nisn: studentData.nisn,
+        nama_siswa: studentData.nama_siswa,
+        jenis_kelamin: studentData.jenis_kelamin,
+        kelas: studentData.kelas || '',
+        is_active: studentData.is_active
+      });
+    } else {
+      setStudentForm({
+        nisn: '',
+        nama_siswa: '',
+        jenis_kelamin: 'L',
+        kelas: '',
+        is_active: true
+      });
+    }
+    
+    setStudentModal({
+      show: true,
+      mode,
+      data: studentData
+    });
+  };
+
+  const handleAddStudent = async () => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('students')
+        .insert([{
+          nisn: studentForm.nisn,
+          nama_siswa: studentForm.nama_siswa,
+          jenis_kelamin: studentForm.jenis_kelamin,
+          kelas: studentForm.kelas || null,
+          is_active: studentForm.is_active
+        }]);
+      
+      if (error) throw error;
+      
+      showToast('Student added successfully!', 'success');
+      setStudentModal({ show: false, mode: 'add', data: null });
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error adding student:', error);
+      showToast('Error adding student: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditStudent = async () => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('students')
+        .update({
+          nisn: studentForm.nisn,
+          nama_siswa: studentForm.nama_siswa,
+          jenis_kelamin: studentForm.jenis_kelamin,
+          kelas: studentForm.kelas || null,
+          is_active: studentForm.is_active
+        })
+        .eq('id', studentModal.data.id);
+      
+      if (error) throw error;
+      
+      showToast('Student updated successfully!', 'success');
+      setStudentModal({ show: false, mode: 'add', data: null });
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error updating student:', error);
+      showToast('Error updating student: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteStudent = async (studentId) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', studentId);
+      
+      if (error) throw error;
+      
+      showToast('Student deleted successfully!', 'success');
+      setDeleteConfirm({ show: false, type: '', data: null });
+      await loadSchoolData();
+      
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      showToast('Error deleting student: ' + error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSchoolSettings = async () => {
+    try {
+      setLoading(true);
+      
+      const updatePromises = Object.entries(tempSchoolSettings).map(([key, value]) => 
+        supabase
+          .from('school_settings')
+          .upsert({ setting_key: key, setting_value: value }, { onConflict: 'setting_key' })
+      );
+      
+      const results = await Promise.all(updatePromises);
+      const hasError = results.some(result => result.error);
+      
+      if (hasError) {
+        throw new Error('Failed to update some settings');
+      }
+      
+      setSchoolSettings(prev => ({ ...prev, ...tempSchoolSettings }));
+      setEditingSchoolSettings(false);
+      setTempSchoolSettings({});
+      showToast('School settings updated successfully!', 'success');
+      
+      if (tempSchoolSettings.academic_year) {
+        setSchoolStats(prev => ({ ...prev, academic_year: tempSchoolSettings.academic_year }));
+      }
+      
+    } catch (error) {
+      console.error('Error updating school settings:', error);
+      showToast('Error updating school settings', 'error');
     } finally {
       setLoading(false);
     }
@@ -286,15 +568,12 @@ const Setting = () => {
     const promotionPlan = {};
     const graduatingStudents = [];
     
-    // Group current students by grade
     Object.entries(studentsByClass).forEach(([kelas, students]) => {
       const grade = parseInt(kelas);
       
       if (grade === 6) {
-        // Grade 6 students will graduate
         graduatingStudents.push(...students);
       } else if (grade >= 1 && grade <= 5) {
-        // Grade 1-5 will be promoted
         const nextGrade = grade + 1;
         if (!promotionPlan[nextGrade]) {
           promotionPlan[nextGrade] = [];
@@ -332,7 +611,6 @@ const Setting = () => {
       
       const { preview } = yearTransition;
       
-      // Step 1: Graduate Grade 6 students
       if (preview.graduating.length > 0) {
         const graduatingIds = preview.graduating.map(s => s.id);
         
@@ -344,7 +622,6 @@ const Setting = () => {
         if (graduateError) throw graduateError;
       }
       
-      // Step 2: Promote Grade 1-5 students
       for (const [newGrade, students] of Object.entries(preview.promotions)) {
         const studentIds = students.map(s => s.id);
         
@@ -356,7 +633,6 @@ const Setting = () => {
         if (promoteError) throw promoteError;
       }
       
-      // Step 3: Reset teacher assignments (they need to be reassigned manually)
       const { error: teacherResetError } = await supabase
         .from('users')
         .update({ kelas: null })
@@ -364,7 +640,6 @@ const Setting = () => {
       
       if (teacherResetError) throw teacherResetError;
       
-      // Step 4: Update academic year in database
       const { error: settingError } = await supabase
         .from('school_settings')
         .update({ setting_value: yearTransition.newYear })
@@ -372,13 +647,11 @@ const Setting = () => {
       
       if (settingError) throw settingError;
       
-      // Step 5: Update local state
       setSchoolStats(prev => ({ ...prev, academic_year: yearTransition.newYear }));
       setSchoolSettings(prev => ({ ...prev, academic_year: yearTransition.newYear }));
       
       showToast(`Academic year ${yearTransition.newYear} started successfully! Please reassign teachers to classes.`, 'success');
       
-      // Refresh all data
       await loadSchoolData();
       setYearTransition({ preview: null, newYear: '', inProgress: false });
       
@@ -395,11 +668,11 @@ const Setting = () => {
     try {
       setLoading(true);
       
-      // Get all essential data
+      // FIXED: Gunakan table 'attendance' bukan 'attendances'
       const [usersRes, studentsRes, attendanceRes, nilaiRes, siswaBaruRes, schoolSettingsRes] = await Promise.all([
         supabase.from('users').select('*'),
         supabase.from('students').select('*'),
-        supabase.from('attendance').select('*').limit(1000), // Limit for performance
+        supabase.from('attendance').select('*').limit(1000),
         supabase.from('nilai').select('*').limit(1000),
         supabase.from('siswa_baru').select('*'),
         supabase.from('school_settings').select('*')
@@ -426,7 +699,6 @@ const Setting = () => {
         }
       };
       
-      // Create and download backup file
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -491,7 +763,7 @@ const Setting = () => {
         try {
           const backupData = JSON.parse(e.target.result);
           
-          // Clear existing data (be careful with this!)
+          // FIXED: Gunakan table 'attendance' bukan 'attendances'
           await supabase.from('attendance').delete().neq('id', 0);
           await supabase.from('nilai').delete().neq('id', 0);
           await supabase.from('siswa_baru').delete().neq('id', 0);
@@ -499,7 +771,6 @@ const Setting = () => {
           await supabase.from('users').delete().neq('id', 0);
           await supabase.from('school_settings').delete().neq('id', 0);
           
-          // Insert backup data
           if (backupData.data.school_settings?.length > 0) {
             await supabase.from('school_settings').insert(backupData.data.school_settings);
           }
@@ -528,7 +799,6 @@ const Setting = () => {
           setRestoreFile(null);
           setRestorePreview(null);
           
-          // Refresh all data
           await loadSchoolData();
           await loadSchoolSettings();
           
@@ -658,7 +928,25 @@ const Setting = () => {
           {/* SCHOOL MANAGEMENT TAB */}
           {activeTab === 'school' && user?.role === 'admin' && (
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">School Management</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-800">School Management</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openTeacherModal('add')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <Plus size={16} />
+                    Tambah Guru
+                  </button>
+                  <button
+                    onClick={() => openStudentModal('add')}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    <Plus size={16} />
+                    Tambah Siswa
+                  </button>
+                </div>
+              </div>
               
               {/* School Statistics */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -707,7 +995,7 @@ const Setting = () => {
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Username</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Role</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Kelas</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Action</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -735,9 +1023,6 @@ const Setting = () => {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-600">
-                            {teacher.kelas ? `Kelas ${teacher.kelas}` : 'Belum ditugaskan'}
-                          </td>
-                          <td className="px-4 py-3">
                             <select
                               value={teacher.kelas || ''}
                               onChange={(e) => updateTeacherClass(teacher.id, e.target.value || null)}
@@ -752,6 +1037,111 @@ const Setting = () => {
                               <option value="5">Kelas 5</option>
                               <option value="6">Kelas 6</option>
                             </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openTeacherModal('edit', teacher)}
+                                disabled={loading}
+                                className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                title="Edit Guru"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              
+                              <button
+                                onClick={() => setDeleteConfirm({ 
+                                  show: true, 
+                                  type: 'teacher', 
+                                  data: teacher 
+                                })}
+                                disabled={loading}
+                                className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                                title="Hapus Guru"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Student Management */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Management Siswa</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">NISN</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nama Siswa</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Jenis Kelamin</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Kelas</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {students.map(student => (
+                        <tr key={student.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-800">{student.nisn}</td>
+                          <td className="px-4 py-3 text-sm text-gray-800">{student.nama_siswa}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            <select
+                              value={student.kelas || ''}
+                              onChange={(e) => updateStudentClass(student.id, e.target.value || null)}
+                              disabled={loading}
+                              className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                            >
+                              <option value="">Pilih Kelas</option>
+                              <option value="1">Kelas 1</option>
+                              <option value="2">Kelas 2</option>
+                              <option value="3">Kelas 3</option>
+                              <option value="4">Kelas 4</option>
+                              <option value="5">Kelas 5</option>
+                              <option value="6">Kelas 6</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-block px-2 py-1 text-xs rounded ${
+                              student.is_active 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {student.is_active ? 'Aktif' : 'Tidak Aktif'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openStudentModal('edit', student)}
+                                disabled={loading}
+                                className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                title="Edit Siswa"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              
+                              <button
+                                onClick={() => setDeleteConfirm({ 
+                                  show: true, 
+                                  type: 'student', 
+                                  data: student 
+                                })}
+                                disabled={loading}
+                                className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                                title="Hapus Siswa"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1190,6 +1580,288 @@ const Setting = () => {
           )}
         </div>
       </div>
+
+      {/* TEACHER MODAL */}
+      {teacherModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <UserCheck size={24} />
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {teacherModal.mode === 'add' ? 'Tambah Guru' : 'Edit Guru'}
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    {teacherModal.mode === 'add' ? 'Tambahkan data guru baru' : 'Edit data guru'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTeacherModal({ show: false, mode: 'add', data: null })}
+                className="p-2 hover:bg-blue-600 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <User size={16} className="inline mr-1" />
+                  Nama Lengkap
+                </label>
+                <input
+                  type="text"
+                  value={teacherForm.full_name}
+                  onChange={(e) => setTeacherForm(prev => ({ ...prev, full_name: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Masukkan nama lengkap"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Mail size={16} className="inline mr-1" />
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={teacherForm.username}
+                  onChange={(e) => setTeacherForm(prev => ({ ...prev, username: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Masukkan username"
+                />
+              </div>
+
+              {teacherModal.mode === 'add' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Key size={16} className="inline mr-1" />
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={teacherForm.password}
+                    onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan password"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select
+                  value={teacherForm.role}
+                  onChange={(e) => setTeacherForm(prev => ({ ...prev, role: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="guru_mapel">Guru Mata Pelajaran</option>
+                  <option value="guru_kelas">Guru Kelas</option>
+                  <option value="admin">Administrator</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kelas Diampu</label>
+                <select
+                  value={teacherForm.kelas}
+                  onChange={(e) => setTeacherForm(prev => ({ ...prev, kelas: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Pilih Kelas (Opsional)</option>
+                  <option value="1">Kelas 1</option>
+                  <option value="2">Kelas 2</option>
+                  <option value="3">Kelas 3</option>
+                  <option value="4">Kelas 4</option>
+                  <option value="5">Kelas 5</option>
+                  <option value="6">Kelas 6</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={teacherModal.mode === 'add' ? handleAddTeacher : handleEditTeacher}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+                >
+                  {loading ? 'Menyimpan...' : (teacherModal.mode === 'add' ? 'Tambah Guru' : 'Update Guru')}
+                </button>
+                <button
+                  onClick={() => setTeacherModal({ show: false, mode: 'add', data: null })}
+                  disabled={loading}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STUDENT MODAL - DENGAN PILIHAN KELAS */}
+      {studentModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <GraduationCap size={24} />
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {studentModal.mode === 'add' ? 'Tambah Siswa' : 'Edit Siswa'}
+                  </h2>
+                  <p className="text-green-100 text-sm">
+                    {studentModal.mode === 'add' ? 'Tambahkan data siswa baru' : 'Edit data siswa'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setStudentModal({ show: false, mode: 'add', data: null })}
+                className="p-2 hover:bg-green-600 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">NISN</label>
+                <input
+                  type="text"
+                  value={studentForm.nisn}
+                  onChange={(e) => setStudentForm(prev => ({ ...prev, nisn: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  placeholder="Masukkan NISN siswa"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nama Siswa</label>
+                <input
+                  type="text"
+                  value={studentForm.nama_siswa}
+                  onChange={(e) => setStudentForm(prev => ({ ...prev, nama_siswa: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  placeholder="Masukkan nama lengkap siswa"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Kelamin</label>
+                <select
+                  value={studentForm.jenis_kelamin}
+                  onChange={(e) => setStudentForm(prev => ({ ...prev, jenis_kelamin: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </div>
+
+              {/* PILIHAN KELAS - INI YANG DITAMBAHIN */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
+                <select
+                  value={studentForm.kelas}
+                  onChange={(e) => setStudentForm(prev => ({ ...prev, kelas: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Pilih Kelas</option>
+                  <option value="1">Kelas 1</option>
+                  <option value="2">Kelas 2</option>
+                  <option value="3">Kelas 3</option>
+                  <option value="4">Kelas 4</option>
+                  <option value="5">Kelas 5</option>
+                  <option value="6">Kelas 6</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={studentForm.is_active}
+                    onChange={(e) => setStudentForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Siswa Aktif</span>
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={studentModal.mode === 'add' ? handleAddStudent : handleEditStudent}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+                >
+                  {loading ? 'Menyimpan...' : (studentModal.mode === 'add' ? 'Tambah Siswa' : 'Update Siswa')}
+                </button>
+                <button
+                  onClick={() => setStudentModal({ show: false, mode: 'add', data: null })}
+                  disabled={loading}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-red-50 border-b border-red-200 p-6 rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-red-600" size={24} />
+                <div>
+                  <h2 className="text-xl font-bold text-red-800">Konfirmasi Hapus</h2>
+                  <p className="text-red-600 text-sm">
+                    {deleteConfirm.type === 'teacher' ? 'Data guru' : 'Data siswa'} akan dihapus permanen
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                Apakah Anda yakin ingin menghapus {deleteConfirm.type === 'teacher' ? 'guru' : 'siswa'} {' '}
+                <strong>{deleteConfirm.data?.full_name || deleteConfirm.data?.nama_siswa}</strong>?
+              </p>
+              <p className="text-sm text-red-600 mb-6">
+                Tindakan ini tidak dapat dibatalkan!
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    if (deleteConfirm.type === 'teacher') {
+                      handleDeleteTeacher(deleteConfirm.data.id);
+                    } else {
+                      handleDeleteStudent(deleteConfirm.data.id);
+                    }
+                  }}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+                >
+                  {loading ? 'Menghapus...' : 'Ya, Hapus'}
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm({ show: false, type: '', data: null })}
+                  disabled={loading}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading Overlay */}
       {loading && (

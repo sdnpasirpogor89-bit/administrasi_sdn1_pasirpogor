@@ -60,6 +60,29 @@ const Teacher = () => {
     guruMapel: 0,
   });
 
+  // Fungsi untuk mengurutkan guru
+  const sortTeachers = (teachersArray) => {
+    return teachersArray.sort((a, b) => {
+      // Guru kelas di atas, guru mapel di bawah
+      if (a.role === "guru_kelas" && b.role === "guru_mapel") return -1;
+      if (a.role === "guru_mapel" && b.role === "guru_kelas") return 1;
+      
+      // Jika sama-sama guru kelas, urutkan berdasarkan nomor kelas
+      if (a.role === "guru_kelas" && b.role === "guru_kelas") {
+        const kelasA = parseInt(a.kelas) || 0;
+        const kelasB = parseInt(b.kelas) || 0;
+        return kelasA - kelasB;
+      }
+      
+      // Jika sama-sama guru mapel, urutkan berdasarkan nama
+      if (a.role === "guru_mapel" && b.role === "guru_mapel") {
+        return a.full_name.localeCompare(b.full_name);
+      }
+      
+      return 0;
+    });
+  };
+
   // Fetch data guru dari database
   const fetchTeachers = async () => {
     try {
@@ -69,8 +92,7 @@ const Teacher = () => {
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("*")
-        .in("role", ["guru_kelas", "guru_mapel"])
-        .order("full_name");
+        .in("role", ["guru_kelas", "guru_mapel"]);
 
       if (teachersError) throw teachersError;
 
@@ -106,21 +128,23 @@ const Teacher = () => {
         };
       });
 
-      setTeachers(teachersWithStudentCount);
+      // Urutkan guru: guru kelas berdasarkan nomor kelas, lalu guru mapel
+      const sortedTeachers = sortTeachers(teachersWithStudentCount);
+      setTeachers(sortedTeachers);
 
       // Hitung statistik
-      const activeTeachers = teachersWithStudentCount.filter(
+      const activeTeachers = sortedTeachers.filter(
         (t) => t.is_active
       );
-      const classTeachers = teachersWithStudentCount.filter(
+      const classTeachers = sortedTeachers.filter(
         (t) => t.role === "guru_kelas"
       );
-      const subjectTeachers = teachersWithStudentCount.filter(
+      const subjectTeachers = sortedTeachers.filter(
         (t) => t.role === "guru_mapel"
       );
 
       setStats({
-        totalGuru: teachersWithStudentCount.length,
+        totalGuru: sortedTeachers.length,
         guruAktif: activeTeachers.length,
         guruKelas: classTeachers.length,
         guruMapel: subjectTeachers.length,

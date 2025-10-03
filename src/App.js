@@ -24,7 +24,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Validate session with proper security
+  // Validate session with proper security and complete user data
   useEffect(() => {
     const validateSession = async () => {
       try {
@@ -42,13 +42,49 @@ function App() {
             localStorage.removeItem("userSession");
             setUser(null);
           } else {
-            // Session valid, check if userData still matches
-            if (userData.id === authData.user.id) {
+            // Session valid, fetch complete user data from database
+            try {
+              const { data: dbUserData, error: dbError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userData.id)
+                .single();
+
+              if (dbError) {
+                console.error('Error fetching user data from database:', dbError);
+                // Use cached data as fallback
+                setUser(userData);
+              } else if (dbUserData) {
+                // Merge complete data from database
+                const completeUserData = {
+                  id: dbUserData.id,
+                  username: dbUserData.username,
+                  name: dbUserData.full_name,
+                  full_name: dbUserData.full_name,
+                  role: dbUserData.role,
+                  kelas: dbUserData.kelas,
+                  mata_pelajaran: dbUserData.mata_pelajaran,
+                  tahun_ajaran: dbUserData.tahun_ajaran,
+                  is_active: dbUserData.is_active,
+                  loginTime: userData.loginTime || new Date().toISOString(),
+                  expiryTime: userData.expiryTime || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                };
+                
+                console.log('Complete user data loaded:', completeUserData);
+                setUser(completeUserData);
+                
+                // Update localStorage with complete data
+                localStorage.setItem("userSession", JSON.stringify(completeUserData));
+              } else {
+                // No user data found in database
+                console.warn('User not found in database');
+                localStorage.removeItem("userSession");
+                setUser(null);
+              }
+            } catch (fetchError) {
+              console.error('Error during user data fetch:', fetchError);
+              // Use cached data as fallback
               setUser(userData);
-            } else {
-              // User data mismatch, clear and re-authenticate
-              localStorage.removeItem("userSession");
-              setUser(null);
             }
           }
         } else {
@@ -80,16 +116,54 @@ function App() {
     };
   }, []);
 
-  const handleLoginSuccess = (userData) => {
-    setUser(userData);
-    // Store user session with timestamp for additional validation
-    const sessionData = {
-      ...userData,
-      loginTime: new Date().toISOString(),
-      // Optional: Add expiry time (e.g., 24 hours)
-      expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    };
-    localStorage.setItem("userSession", JSON.stringify(sessionData));
+  const handleLoginSuccess = async (userData) => {
+    // Fetch complete user data from database after login
+    try {
+      const { data: dbUserData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userData.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching complete user data:', error);
+        // Use login data as fallback
+        setUser(userData);
+        localStorage.setItem("userSession", JSON.stringify({
+          ...userData,
+          loginTime: new Date().toISOString(),
+          expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        }));
+      } else {
+        // Merge complete data
+        const completeUserData = {
+          id: dbUserData.id,
+          username: dbUserData.username,
+          name: dbUserData.full_name,
+          full_name: dbUserData.full_name,
+          role: dbUserData.role,
+          kelas: dbUserData.kelas,
+          mata_pelajaran: dbUserData.mata_pelajaran,
+          tahun_ajaran: dbUserData.tahun_ajaran,
+          is_active: dbUserData.is_active,
+          loginTime: new Date().toISOString(),
+          expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        };
+
+        console.log('Login success with complete data:', completeUserData);
+        setUser(completeUserData);
+        localStorage.setItem("userSession", JSON.stringify(completeUserData));
+      }
+    } catch (fetchError) {
+      console.error('Error during post-login data fetch:', fetchError);
+      // Use login data as fallback
+      setUser(userData);
+      localStorage.setItem("userSession", JSON.stringify({
+        ...userData,
+        loginTime: new Date().toISOString(),
+        expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      }));
+    }
   };
 
   const handleLogout = async () => {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-// import * as XLSX from 'xlsx'; // Hapus atau nonaktifkan SheetJS
-import ExcelJS from 'exceljs'; // <-- Import ExcelJS
+import ExcelJS from 'exceljs';
 import { 
   Search, 
   Save, 
@@ -12,7 +11,8 @@ import {
   Loader
 } from 'lucide-react';
 
-const Nilai = ({ userData }) => {
+const Nilai = ({ userData: initialUserData }) => {
+  const [userData, setUserData] = useState(initialUserData);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -25,6 +25,50 @@ const Nilai = ({ userData }) => {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Fetch complete user data if kelas is missing
+  useEffect(() => {
+    const fetchCompleteUserData = async () => {
+      console.log('=== INITIAL USER DATA ===');
+      console.log('userData:', userData);
+      console.log('userData.kelas:', userData?.kelas);
+      console.log('========================');
+
+      if (!userData?.kelas && userData?.username) {
+        console.log('Kelas missing, fetching complete user data for:', userData.username);
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', userData.username)
+            .single();
+
+          if (error) throw error;
+          
+          if (data) {
+            const completeUserData = {
+              ...userData,
+              ...data,
+              name: data.full_name || userData.name
+            };
+            setUserData(completeUserData);
+            console.log('Complete user data loaded:', completeUserData);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchCompleteUserData();
+  }, [userData?.username]);
+
+  // Auto-select class for guru_kelas
+  useEffect(() => {
+    if (userData?.role === 'guru_kelas' && userData?.kelas && !selectedClass) {
+      setSelectedClass(String(userData.kelas));
+    }
+  }, [userData?.role, userData?.kelas]);
 
   // Konfigurasi mata pelajaran berdasarkan role
   const mataPelajaran = {
@@ -54,8 +98,20 @@ const Nilai = ({ userData }) => {
     { value: 'UAS', label: 'UAS - Ulangan Akhir Semester' }
   ];
 
-  // Kelas options
-  const classes = ['1', '2', '3', '4', '5', '6'];
+  // Kelas options - Dynamic based on user role
+  const getAvailableClasses = () => {
+    if (userData.role === 'admin') {
+      // Admin can see all classes
+      return ['1', '2', '3', '4', '5', '6'];
+    } else if (userData.role === 'guru_kelas') {
+      // Guru kelas only see their own class
+      return [String(userData.kelas)];
+    } else if (userData.role === 'guru_mapel') {
+      // Guru mapel can see all classes
+      return ['1', '2', '3', '4', '5', '6'];
+    }
+    return [];
+  };
 
   // Get available subjects based on user role
   const getAvailableSubjects = () => {
@@ -75,17 +131,54 @@ const Nilai = ({ userData }) => {
 
   // Check if user has access to selected class and subject
   const checkAccess = (kelas, mapel) => {
+    console.log('=== CHECK ACCESS DEBUG ===');
+    console.log('Full userData:', userData);
+    console.log('userData.role:', userData.role);
+    console.log('userData.kelas:', userData.kelas);
+    console.log('userData.kelas type:', typeof userData.kelas);
+    console.log('Selected kelas:', kelas);
+    console.log('Selected kelas type:', typeof kelas);
+    console.log('Selected mapel:', mapel);
+    console.log('========================');
+
     if (userData.role === 'admin') return true;
     
     if (userData.role === 'guru_kelas') {
-      return userData.kelas === parseInt(kelas) && mataPelajaran.guru_kelas.includes(mapel);
+      // Convert both to string for comparison to avoid type issues
+      const userKelas = String(userData.kelas);
+      const selectedKelas = String(kelas);
+      const hasClassAccess = userKelas === selectedKelas;
+      const hasSubjectAccess = mataPelajaran.guru_kelas.includes(mapel);
+      
+      console.log('=== GURU KELAS ACCESS CHECK ===');
+      console.log('userKelas (string):', userKelas);
+      console.log('selectedKelas (string):', selectedKelas);
+      console.log('Are they equal?', userKelas === selectedKelas);
+      console.log('hasClassAccess:', hasClassAccess);
+      console.log('Available subjects:', mataPelajaran.guru_kelas);
+      console.log('Selected mapel:', mapel);
+      console.log('hasSubjectAccess:', hasSubjectAccess);
+      console.log('Final access:', hasClassAccess && hasSubjectAccess);
+      console.log('==============================');
+      
+      return hasClassAccess && hasSubjectAccess;
     }
     
     if (userData.role === 'guru_mapel') {
       const allowedMapel = mataPelajaran.guru_mapel[userData.username] || [];
-      return allowedMapel.includes(mapel);
+      const hasAccess = allowedMapel.includes(mapel);
+      
+      console.log('=== GURU MAPEL ACCESS CHECK ===');
+      console.log('username:', userData.username);
+      console.log('allowedMapel:', allowedMapel);
+      console.log('mapel:', mapel);
+      console.log('hasAccess:', hasAccess);
+      console.log('==============================');
+      
+      return hasAccess;
     }
     
+    console.log('=== ACCESS DENIED - No matching role ===');
     return false;
   };
 
@@ -184,7 +277,7 @@ const Nilai = ({ userData }) => {
 
       setRekapData(processedData);
       setShowRekap(true);
-      setStudents([]); // Clear individual input data
+      setStudents([]);
       showMessage(`Rekap nilai ${selectedSubject} kelas ${selectedClass} berhasil dimuat!`);
 
     } catch (error) {
@@ -272,7 +365,7 @@ const Nilai = ({ userData }) => {
   useEffect(() => {
     if (selectedClass && selectedSubject && selectedType) {
       loadStudents();
-      setShowRekap(false); // Hide rekap when switching to individual input
+      setShowRekap(false);
     } else {
       setStudents([]);
       setShowRekap(false);
@@ -286,9 +379,7 @@ const Nilai = ({ userData }) => {
       return;
     }
 
-    // Count how many grades will be saved
     const dataToSave = students.filter(student => {
-      // Mengambil nilai dari state saat ini, bukan dari DOM
       const nilai = student.nilai; 
       return nilai !== '' && !isNaN(nilai);
     });
@@ -298,7 +389,6 @@ const Nilai = ({ userData }) => {
       return;
     }
 
-    // Show confirmation dialog
     const isConfirmed = window.confirm(
       `Apakah Anda yakin ingin menyimpan ${dataToSave.length} nilai siswa?\n\n` +
       `Kelas: ${selectedClass}\n` +
@@ -307,12 +397,11 @@ const Nilai = ({ userData }) => {
     );
 
     if (!isConfirmed) {
-      return; // User cancelled
+      return;
     }
 
     setSaving(true);
     try {
-      // Prepare final data for upsert
       const finalData = dataToSave.map(student => {
         return {
           nisn: student.nisn,
@@ -320,13 +409,12 @@ const Nilai = ({ userData }) => {
           kelas: parseInt(selectedClass),
           mata_pelajaran: selectedSubject,
           jenis_nilai: selectedType,
-          nilai: parseFloat(student.nilai), // Ambil dari state
+          nilai: parseFloat(student.nilai),
           guru_input: userData.name || userData.username,
           tanggal: new Date().toISOString().split('T')[0]
         };
       });
 
-      // Upsert to database
       const { error } = await supabase
         .from('nilai')
         .upsert(finalData, {
@@ -337,7 +425,6 @@ const Nilai = ({ userData }) => {
 
       showMessage(`${finalData.length} nilai berhasil disimpan dan diperbarui!`);
       
-      // Reload data silently to update existing status
       await loadStudents(false);
 
     } catch (error) {
@@ -362,7 +449,6 @@ const Nilai = ({ userData }) => {
 
     setExporting(true);
     try {
-        // Load all students for selected class
         const { data: studentsData, error: studentsError } = await supabase
             .from('students')
             .select('nisn, nama_siswa, kelas')
@@ -377,7 +463,6 @@ const Nilai = ({ userData }) => {
             return;
         }
 
-        // Load all grades for selected class and subject
         const { data: allGrades, error: gradesError } = await supabase
             .from('nilai')
             .select('*')
@@ -386,10 +471,8 @@ const Nilai = ({ userData }) => {
 
         if (gradesError) throw gradesError;
 
-        // Grade types
         const gradeTypes = ['NH1', 'NH2', 'NH3', 'NH4', 'NH5', 'UTS', 'UAS'];
         
-        // Process data for Excel
         const excelData = studentsData.map((student, index) => {
             const studentGrades = {};
             const nhGrades = [];
@@ -430,22 +513,15 @@ const Nilai = ({ userData }) => {
             };
         });
 
-        // ----------------------------------------------------
-        // START: Implementasi ExcelJS untuk Layout Keren
-        // ----------------------------------------------------
-
-        // 1. Buat Workbook
         const workbook = new ExcelJS.Workbook();
         workbook.creator = userData.name || userData.username;
         workbook.lastModifiedBy = userData.name || userData.username;
         workbook.created = new Date();
         workbook.modified = new Date();
 
-        // 2. Tambahkan Worksheet
         const worksheet = workbook.addWorksheet('Nilai Siswa');
-        const numColumns = 11; // Total kolom: No s/d Nilai Akhir
+        const numColumns = 11;
 
-        // 3. Tentukan Kolom dan Lebar
         worksheet.columns = [
             { key: 'No', width: 5 },
             { key: 'NISN', width: 12 },
@@ -460,13 +536,12 @@ const Nilai = ({ userData }) => {
             { key: 'Nilai Akhir', width: 12 }
         ];
 
-        // 4. Tambahkan Header Sekolah/Judul (Styling Manual)
         const headerData = [
             ['SDN 1 PASIRPOGOR'], 
             [`REKAPITULASI NILAI MATA PELAJARAN - ${selectedSubject.toUpperCase()}`], 
             [`KELAS ${selectedClass}`], 
             ['Tahun Ajaran: 2025/2026'], 
-            [''] // Baris Kosong
+            ['']
         ];
 
         let currentRow = 1;
@@ -474,26 +549,22 @@ const Nilai = ({ userData }) => {
             const newRow = worksheet.getRow(currentRow++);
             newRow.getCell(1).value = row[0];
             
-            // Merge cells (A:K)
             worksheet.mergeCells(`A${currentRow - 1}:${String.fromCharCode(65 + numColumns - 1)}${currentRow - 1}`);
             
-            // Styling
             newRow.getCell(1).font = { bold: true, size: currentRow <= 3 ? 14 : 11, name: 'Calibri' };
             newRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
         });
 
-        // 5. Tambahkan Header Tabel (Row 6)
         const tableHeaders = ['No', 'NISN', 'Nama Siswa', 'NH-1', 'NH-2', 'NH-3', 'NH-4', 'NH-5', 'UTS', 'UAS', 'Nilai Akhir'];
         const headerRow = worksheet.getRow(currentRow);
         headerRow.values = tableHeaders;
         headerRow.height = 30; 
         
-        // Styling Header Tabel
         headerRow.eachCell((cell, colNumber) => {
             cell.fill = {
                 type: 'pattern',
                 pattern: 'solid',
-                fgColor: { argb: 'FFD9E1F2' } // Warna Biru Muda
+                fgColor: { argb: 'FFD9E1F2' }
             };
             cell.font = {
                 bold: true,
@@ -514,13 +585,10 @@ const Nilai = ({ userData }) => {
         
         currentRow++; 
 
-        // 6. Tambahkan Data Baris
         excelData.forEach((item, index) => {
-            const row = worksheet.addRow(Object.values(item)); // Tambahkan data sebagai array of values
+            const row = worksheet.addRow(Object.values(item));
             
-            // Styling Data Baris
             row.eachCell((cell, colNumber) => {
-                // Border
                 cell.border = {
                     top: { style: 'thin' },
                     left: { style: 'thin' },
@@ -528,34 +596,29 @@ const Nilai = ({ userData }) => {
                     right: { style: 'thin' }
                 };
                 
-                // Alignment dan Font untuk kolom Nilai (kolom ke-4 s/d ke-11)
                 if (colNumber >= 4) {
                     cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                    cell.numFmt = '0'; // Pastikan format angka
-                    // Nilai Akhir menjadi bold
+                    cell.numFmt = '0';
                     if (colNumber === numColumns) {
                          cell.font = { bold: true };
                     }
                 } else {
-                    // Nama Siswa (kolom ke-3)
                     cell.alignment = { vertical: 'middle', horizontal: 'left' };
                 }
 
-                // Warna latar belakang sel untuk baris ganjil/genap (zebra stripping)
                 if (index % 2 !== 0) {
                     cell.fill = {
                         type: 'pattern',
                         pattern: 'solid',
-                        fgColor: { argb: 'FFF2F2F2' } // Abu-abu sangat muda
+                        fgColor: { argb: 'FFF2F2F2' }
                     };
                 }
             });
             currentRow++;
         });
 
-        // 7. Tambahkan Tanda Tangan (Footer)
-        currentRow += 2; // Tambah dua baris kosong
-        const startCol = 8; // Mulai di kolom H (kolom ke-8)
+        currentRow += 2;
+        const startCol = 8;
         
         const signRow1 = worksheet.getRow(currentRow + 0);
         signRow1.getCell(startCol).value = 'Mengetahui,';
@@ -569,16 +632,12 @@ const Nilai = ({ userData }) => {
         signRow3.getCell(startCol).value = userData.name || userData.username;
         signRow3.getCell(startCol).font = { bold: true, underline: true };
         
-        // Alignment untuk Footer
         [signRow1, signRow2, signRow3].forEach(row => {
             row.getCell(startCol).alignment = { horizontal: 'center' };
         });
 
-
-        // 8. Simpan File
         const filename = `Nilai_${selectedSubject.replace(/\s+/g, '_')}_Kelas_${selectedClass}.xlsx`;
 
-        // Proses menyimpan file di browser (menggunakan Blob)
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         
@@ -590,10 +649,6 @@ const Nilai = ({ userData }) => {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
-        
-        // ----------------------------------------------------
-        // END: Implementasi ExcelJS
-        // ----------------------------------------------------
 
         showMessage(`Data nilai ${selectedSubject} kelas ${selectedClass} berhasil diekspor!`);
 
@@ -607,7 +662,6 @@ const Nilai = ({ userData }) => {
 
   // Handle input change
   const handleInputChange = (nisn, value) => {
-    // Validasi sederhana
     if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 100)) {
         setStudents(prev => prev.map(student => 
             student.nisn === nisn ? { ...student, nilai: value } : student
@@ -617,7 +671,6 @@ const Nilai = ({ userData }) => {
 
   return (
     <div className="space-y-6">
-      {/* Message Alert */}
       {message.text && (
         <div className={`p-4 rounded-lg ${
           message.type === 'error' 
@@ -635,21 +688,20 @@ const Nilai = ({ userData }) => {
         </div>
       )}
 
-      {/* Filters & Actions */}
       <div className="bg-white rounded-xl p-6 shadow-sm border">
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
-          {/* Class Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pilih Kelas
+              {userData?.role === 'guru_kelas' ? 'Kelas Anda' : 'Pilih Kelas'}
             </label>
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+              disabled={userData?.role === 'guru_kelas'}
             >
               <option value="">Pilih Kelas</option>
-              {classes.map(kelas => (
+              {getAvailableClasses().map(kelas => (
                 <option key={kelas} value={kelas}>
                   Kelas {kelas}
                 </option>
@@ -657,7 +709,6 @@ const Nilai = ({ userData }) => {
             </select>
           </div>
 
-          {/* Subject Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mata Pelajaran
@@ -676,7 +727,6 @@ const Nilai = ({ userData }) => {
             </select>
           </div>
 
-          {/* Grade Type Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Jenis Nilai
@@ -695,7 +745,6 @@ const Nilai = ({ userData }) => {
             </select>
           </div>
 
-          {/* Lihat Rekap Button */}
           <button
             onClick={loadRekapNilai}
             disabled={loadingRekap || !selectedClass || !selectedSubject}
@@ -705,7 +754,6 @@ const Nilai = ({ userData }) => {
             {loadingRekap ? 'Memuat...' : 'Lihat Rekap'}
           </button>
 
-          {/* Save Button */}
           <button
             onClick={saveGrades}
             disabled={saving || students.length === 0}
@@ -715,7 +763,6 @@ const Nilai = ({ userData }) => {
             {saving ? 'Menyimpan...' : 'Simpan Nilai'}
           </button>
 
-          {/* Export Button */}
           <button
             onClick={exportToExcel}
             disabled={exporting || !selectedClass || !selectedSubject}
@@ -727,7 +774,6 @@ const Nilai = ({ userData }) => {
         </div>
       </div>
 
-      {/* Grades Table or Rekap Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
         <div className="px-6 py-4 border-b bg-gray-50">
           <h3 className="text-lg font-semibold">
@@ -755,7 +801,6 @@ const Nilai = ({ userData }) => {
               <p className="text-gray-500">Memuat data siswa...</p>
             </div>
           ) : showRekap && rekapData.length > 0 ? (
-            /* Rekap Table */
             <table className="w-full">
               <thead className="bg-blue-50">
                 <tr>
@@ -793,7 +838,6 @@ const Nilai = ({ userData }) => {
               </tbody>
             </table>
           ) : students.length > 0 ? (
-            /* Individual Input Table */
             <table className="w-full">
               <thead className="bg-blue-50">
                 <tr>
