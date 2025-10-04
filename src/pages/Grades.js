@@ -2,16 +2,155 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import ExcelJS from 'exceljs';
 import { 
-  Search, 
   Save, 
   Download, 
   BookOpen,
   AlertCircle,
   CheckCircle,
-  Loader
+  Loader,
+  Users,
+  FileText,
+  Calculator,
+  Search
 } from 'lucide-react';
 
-const Nilai = ({ userData: initialUserData }) => {
+// Compact Stats Card Component
+const StatsCard = ({ icon: Icon, number, label, color }) => {
+  const colorClasses = {
+    blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
+    green: "border-l-green-500 bg-gradient-to-r from-green-50 to-white", 
+    purple: "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white",
+    orange: "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white"
+  };
+
+  const iconColorClasses = {
+    blue: "text-blue-600",
+    green: "text-green-600",
+    purple: "text-purple-600", 
+    orange: "text-orange-600"
+  };
+
+  return (
+    <div className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-2xl font-bold text-gray-900">{number}</p>
+          <p className="text-sm font-medium text-gray-600">{label}</p>
+        </div>
+        <Icon size={28} className={iconColorClasses[color]} />
+      </div>
+    </div>
+  );
+};
+
+// Mobile Student Card Component untuk Input Nilai
+const StudentGradeCard = ({ student, index, selectedType, value, onChange, disabled }) => {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 font-bold text-sm">
+                {index + 1}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-base">{student.nama_siswa}</h3>
+              <p className="text-sm text-gray-600">NISN: {student.nisn}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Nilai {selectedType}
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={value}
+            onChange={(e) => onChange(student.nisn, e.target.value)}
+            disabled={disabled}
+            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            placeholder="0-100"
+          />
+        </div>
+        
+        {student.isExisting && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+            <p className="text-green-700 text-xs font-medium text-center">
+              ✓ Nilai sudah tersimpan
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Mobile Rekap Card Component
+const RekapGradeCard = ({ student, index }) => {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <span className="text-purple-600 font-bold text-sm">
+                {index + 1}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-base">{student.nama_siswa}</h3>
+              <p className="text-sm text-gray-600">NISN: {student.nisn}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="text-center p-2 bg-blue-50 rounded-lg">
+          <p className="text-xs text-gray-600">NH-1</p>
+          <p className="font-bold text-gray-900">{student.nh1 || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-blue-50 rounded-lg">
+          <p className="text-xs text-gray-600">NH-2</p>
+          <p className="font-bold text-gray-900">{student.nh2 || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-blue-50 rounded-lg">
+          <p className="text-xs text-gray-600">NH-3</p>
+          <p className="font-bold text-gray-900">{student.nh3 || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-blue-50 rounded-lg">
+          <p className="text-xs text-gray-600">NH-4</p>
+          <p className="font-bold text-gray-900">{student.nh4 || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-blue-50 rounded-lg">
+          <p className="text-xs text-gray-600">NH-5</p>
+          <p className="font-bold text-gray-900">{student.nh5 || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-orange-50 rounded-lg">
+          <p className="text-xs text-gray-600">UTS</p>
+          <p className="font-bold text-gray-900">{student.uts || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-orange-50 rounded-lg">
+          <p className="text-xs text-gray-600">UAS</p>
+          <p className="font-bold text-gray-900">{student.uas || '-'}</p>
+        </div>
+        <div className="text-center p-2 bg-green-50 rounded-lg col-span-2">
+          <p className="text-xs text-gray-600">Nilai Akhir</p>
+          <p className="font-bold text-green-700 text-lg">{student.nilai_akhir || '-'}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGANTI JADI 'Grades'
   const [userData, setUserData] = useState(initialUserData);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -25,17 +164,24 @@ const Nilai = ({ userData: initialUserData }) => {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [isMobile, setIsMobile] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Device detection
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   // Fetch complete user data if kelas is missing
   useEffect(() => {
     const fetchCompleteUserData = async () => {
-      console.log('=== INITIAL USER DATA ===');
-      console.log('userData:', userData);
-      console.log('userData.kelas:', userData?.kelas);
-      console.log('========================');
-
       if (!userData?.kelas && userData?.username) {
-        console.log('Kelas missing, fetching complete user data for:', userData.username);
         try {
           const { data, error } = await supabase
             .from('users')
@@ -52,7 +198,6 @@ const Nilai = ({ userData: initialUserData }) => {
               name: data.full_name || userData.name
             };
             setUserData(completeUserData);
-            console.log('Complete user data loaded:', completeUserData);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -101,13 +246,10 @@ const Nilai = ({ userData: initialUserData }) => {
   // Kelas options - Dynamic based on user role
   const getAvailableClasses = () => {
     if (userData.role === 'admin') {
-      // Admin can see all classes
       return ['1', '2', '3', '4', '5', '6'];
     } else if (userData.role === 'guru_kelas') {
-      // Guru kelas only see their own class
       return [String(userData.kelas)];
     } else if (userData.role === 'guru_mapel') {
-      // Guru mapel can see all classes
       return ['1', '2', '3', '4', '5', '6'];
     }
     return [];
@@ -131,54 +273,22 @@ const Nilai = ({ userData: initialUserData }) => {
 
   // Check if user has access to selected class and subject
   const checkAccess = (kelas, mapel) => {
-    console.log('=== CHECK ACCESS DEBUG ===');
-    console.log('Full userData:', userData);
-    console.log('userData.role:', userData.role);
-    console.log('userData.kelas:', userData.kelas);
-    console.log('userData.kelas type:', typeof userData.kelas);
-    console.log('Selected kelas:', kelas);
-    console.log('Selected kelas type:', typeof kelas);
-    console.log('Selected mapel:', mapel);
-    console.log('========================');
-
     if (userData.role === 'admin') return true;
     
     if (userData.role === 'guru_kelas') {
-      // Convert both to string for comparison to avoid type issues
       const userKelas = String(userData.kelas);
       const selectedKelas = String(kelas);
       const hasClassAccess = userKelas === selectedKelas;
       const hasSubjectAccess = mataPelajaran.guru_kelas.includes(mapel);
-      
-      console.log('=== GURU KELAS ACCESS CHECK ===');
-      console.log('userKelas (string):', userKelas);
-      console.log('selectedKelas (string):', selectedKelas);
-      console.log('Are they equal?', userKelas === selectedKelas);
-      console.log('hasClassAccess:', hasClassAccess);
-      console.log('Available subjects:', mataPelajaran.guru_kelas);
-      console.log('Selected mapel:', mapel);
-      console.log('hasSubjectAccess:', hasSubjectAccess);
-      console.log('Final access:', hasClassAccess && hasSubjectAccess);
-      console.log('==============================');
       
       return hasClassAccess && hasSubjectAccess;
     }
     
     if (userData.role === 'guru_mapel') {
       const allowedMapel = mataPelajaran.guru_mapel[userData.username] || [];
-      const hasAccess = allowedMapel.includes(mapel);
-      
-      console.log('=== GURU MAPEL ACCESS CHECK ===');
-      console.log('username:', userData.username);
-      console.log('allowedMapel:', allowedMapel);
-      console.log('mapel:', mapel);
-      console.log('hasAccess:', hasAccess);
-      console.log('==============================');
-      
-      return hasAccess;
+      return allowedMapel.includes(mapel);
     }
     
-    console.log('=== ACCESS DENIED - No matching role ===');
     return false;
   };
 
@@ -187,6 +297,17 @@ const Nilai = ({ userData: initialUserData }) => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
+
+  // Filter students based on search term
+  const filteredStudents = students.filter(student =>
+    student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.nisn.includes(searchTerm)
+  );
+
+  const filteredRekapData = rekapData.filter(student =>
+    student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.nisn.includes(searchTerm)
+  );
 
   // Load rekap all grades for preview
   const loadRekapNilai = async () => {
@@ -435,7 +556,7 @@ const Nilai = ({ userData: initialUserData }) => {
     }
   };
 
-  // Export to Excel with all grade types - Menggunakan ExcelJS
+  // Export to Excel with all grade types
   const exportToExcel = async () => {
     if (!selectedClass || !selectedSubject) {
         showMessage('Pilih kelas dan mata pelajaran terlebih dahulu!', 'error');
@@ -670,7 +791,7 @@ const Nilai = ({ userData: initialUserData }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
       {message.text && (
         <div className={`p-4 rounded-lg ${
           message.type === 'error' 
@@ -688,8 +809,39 @@ const Nilai = ({ userData: initialUserData }) => {
         </div>
       )}
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border">
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
+      {/* Stats Cards - HANYA UNTUK REKAP MODE */}
+      {showRekap && rekapData.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            icon={Users}
+            number={rekapData.length}
+            label="Total Siswa"
+            color="blue"
+          />
+          <StatsCard
+            icon={FileText}
+            number={rekapData.filter(s => s.nilai_akhir && s.nilai_akhir > 0).length}
+            label="Nilai Terisi"
+            color="green"
+          />
+          <StatsCard
+            icon={Calculator}
+            number={rekapData.filter(s => s.nilai_akhir && s.nilai_akhir >= 70).length}
+            label="Tuntas"
+            color="purple"
+          />
+          <StatsCard
+            icon={BookOpen}
+            number={rekapData.filter(s => s.nilai_akhir && s.nilai_akhir < 70).length}
+            label="Remedial"
+            color="orange"
+          />
+        </div>
+      )}
+
+      {/* Filter Section - OPTIMIZED FOR MOBILE */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {userData?.role === 'guru_kelas' ? 'Kelas Anda' : 'Pilih Kelas'}
@@ -697,7 +849,7 @@ const Nilai = ({ userData: initialUserData }) => {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm sm:text-base"
               disabled={userData?.role === 'guru_kelas'}
             >
               <option value="">Pilih Kelas</option>
@@ -716,7 +868,7 @@ const Nilai = ({ userData: initialUserData }) => {
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
             >
               <option value="">Pilih Mata Pelajaran</option>
               {getAvailableSubjects().map(subject => (
@@ -734,7 +886,7 @@ const Nilai = ({ userData: initialUserData }) => {
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
             >
               <option value="">Pilih Jenis Nilai</option>
               {jenisNilai.map(jenis => (
@@ -744,11 +896,33 @@ const Nilai = ({ userData: initialUserData }) => {
               ))}
             </select>
           </div>
+        </div>
 
+        {/* Search Input */}
+        {(students.length > 0 || rekapData.length > 0) && (
+          <div className="mb-4">
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Cari nama siswa atau NISN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-medium text-sm sm:text-base"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons - MOBILE FRIENDLY */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           <button
             onClick={loadRekapNilai}
             disabled={loadingRekap || !selectedClass || !selectedSubject}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
           >
             {loadingRekap ? <Loader className="animate-spin" size={18} /> : <BookOpen size={18} />}
             {loadingRekap ? 'Memuat...' : 'Lihat Rekap'}
@@ -757,7 +931,7 @@ const Nilai = ({ userData: initialUserData }) => {
           <button
             onClick={saveGrades}
             disabled={saving || students.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
           >
             {saving ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
             {saving ? 'Menyimpan...' : 'Simpan Nilai'}
@@ -766,7 +940,7 @@ const Nilai = ({ userData: initialUserData }) => {
           <button
             onClick={exportToExcel}
             disabled={exporting || !selectedClass || !selectedSubject}
-            className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base col-span-2 lg:col-span-1"
           >
             {exporting ? <Loader className="animate-spin" size={18} /> : <Download size={18} />}
             {exporting ? 'Mengekspor...' : 'Export Excel'}
@@ -774,131 +948,199 @@ const Nilai = ({ userData: initialUserData }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="px-6 py-4 border-b bg-gray-50">
-          <h3 className="text-lg font-semibold">
+      {/* Students List - RESPONSIVE VIEW */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 sm:p-6 border-b border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-900">
             {showRekap 
               ? `Rekap Nilai - ${selectedSubject} - Kelas ${selectedClass}`
               : selectedSubject && selectedType && selectedClass
               ? `Nilai ${selectedType} - ${selectedSubject} - Kelas ${selectedClass}`
               : 'Daftar Nilai Siswa'
             }
-          </h3>
-          <p className="text-sm text-gray-600">
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
             {loading || loadingRekap 
               ? 'Memuat data...' 
               : showRekap 
-              ? `${rekapData.length} siswa ditemukan`
-              : `${students.length} siswa ditemukan`
+              ? `Menampilkan ${filteredRekapData.length} dari ${rekapData.length} siswa`
+              : `Menampilkan ${filteredStudents.length} dari ${students.length} siswa`
             }
           </p>
         </div>
 
-        <div className="overflow-x-auto">
-          {loading || loadingRekap ? (
-            <div className="text-center py-12">
-              <Loader className="animate-spin mx-auto mb-4" size={48} />
-              <p className="text-gray-500">Memuat data siswa...</p>
-            </div>
-          ) : showRekap && rekapData.length > 0 ? (
+        {loading || loadingRekap ? (
+          <div className="text-center py-12">
+            <Loader className="animate-spin mx-auto mb-4 text-blue-600" size={48} />
+            <p className="text-gray-500 font-medium">Memuat data nilai...</p>
+          </div>
+        ) : isMobile ? (
+          /* MOBILE CARD VIEW */
+          <div className="p-4 space-y-4">
+            {showRekap ? (
+              /* REKAP MOBILE CARDS */
+              filteredRekapData.length > 0 ? (
+                filteredRekapData.map((student, index) => (
+                  <RekapGradeCard 
+                    key={student.nisn} 
+                    student={student} 
+                    index={index} 
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen size={48} className="text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">
+                    {searchTerm ? 'Tidak ada siswa yang cocok dengan pencarian' : 'Tidak ada data rekap nilai'}
+                  </p>
+                </div>
+              )
+            ) : (
+              /* INPUT NILAI MOBILE CARDS */
+              filteredStudents.length > 0 ? (
+                filteredStudents.map((student, index) => (
+                  <StudentGradeCard
+                    key={student.nisn}
+                    student={student}
+                    index={index}
+                    selectedType={selectedType}
+                    value={student.nilai}
+                    onChange={handleInputChange}
+                    disabled={saving}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Users size={48} className="text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">
+                    {searchTerm 
+                      ? 'Tidak ada siswa yang cocok dengan pencarian'
+                      : selectedClass && selectedSubject && selectedType
+                      ? "Tidak ada siswa di kelas ini"
+                      : "Pilih kelas, mata pelajaran, dan jenis nilai"
+                    }
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          /* DESKTOP TABLE VIEW - WITH UPDATED HEADER STYLES */
+          <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-blue-50">
-                <tr>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-blue-800 uppercase">No</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-blue-800 uppercase">NISN</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase">Nama Siswa</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">NH-1</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">NH-2</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">NH-3</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">NH-4</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">NH-5</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">UTS</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">UAS</th>
-                  <th className="px-3 py-3 text-center text-xs font-medium text-blue-800 uppercase">Nilai Akhir</th>
-                </tr>
+              <thead className="bg-gray-50 border-b border-gray-200">
+                {showRekap ? (
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">No</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">NISN</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Siswa</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">NH-1</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">NH-2</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">NH-3</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">NH-4</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">NH-5</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">UTS</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">UAS</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Nilai Akhir</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">No</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">NISN</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Siswa</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">{selectedType || 'Nilai'}</th>
+                  </tr>
+                )}
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {rekapData.map((student) => (
-                  <tr key={student.nisn} className="hover:bg-gray-50">
-                    <td className="px-3 py-3 text-sm font-medium">{student.no}</td>
-                    <td className="px-3 py-3 text-sm text-gray-600">{student.nisn}</td>
-                    <td className="px-6 py-3 text-sm font-medium">{student.nama_siswa}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.nh1 || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.nh2 || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.nh3 || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.nh4 || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.nh5 || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.uts || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm">{student.uas || '-'}</td>
-                    <td className="px-3 py-3 text-center text-sm font-semibold text-blue-600">
-                      {student.nilai_akhir || '-'}
-                    </td>
-                  </tr>
-                ))}
+                {showRekap ? (
+                  /* REKAP TABLE BODY */
+                  filteredRekapData.length > 0 ? (
+                    filteredRekapData.map((student) => (
+                      <tr key={student.nisn} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">{student.no}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{student.nisn}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">{student.nama_siswa}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.nh1 || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.nh2 || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.nh3 || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.nh4 || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.nh5 || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.uts || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-medium">{student.uas || '-'}</td>
+                        <td className="px-6 py-4 text-center text-sm font-bold text-blue-600">{student.nilai_akhir || '-'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="11" className="px-6 py-16 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <BookOpen size={48} className="text-gray-300" />
+                          <div>
+                            <p className="text-gray-500 font-medium">
+                              {searchTerm ? 'Tidak ada siswa yang cocok dengan pencarian' : 'Tidak ada data rekap nilai'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                ) : (
+                  /* INPUT NILAI TABLE BODY */
+                  filteredStudents.length > 0 ? (
+                    filteredStudents.map((student, index) => (
+                      <tr key={student.nisn} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">{index + 1}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{student.nisn}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">{student.nama_siswa}</td>
+                        <td className="px-6 py-4 text-center">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={student.nilai}
+                            onChange={(e) => handleInputChange(student.nisn, e.target.value)}
+                            className="w-20 px-3 py-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                            placeholder="0-100"
+                            disabled={saving}
+                          />
+                          {student.isExisting && (
+                            <div className="mt-1">
+                              <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                tersimpan
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-6 py-16 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <Users size={48} className="text-gray-300" />
+                          <div>
+                            <p className="text-gray-500 font-medium">
+                              {searchTerm 
+                                ? 'Tidak ada siswa yang cocok dengan pencarian'
+                                : selectedClass && selectedSubject && selectedType
+                                ? "Tidak ada siswa di kelas ini"
+                                : "Pilih kelas, mata pelajaran, dan jenis nilai"
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
-          ) : students.length > 0 ? (
-            <table className="w-full">
-              <thead className="bg-blue-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-blue-800 uppercase">
-                    No
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-blue-800 uppercase">
-                    NISN
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-blue-800 uppercase">
-                    Nama Siswa
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-blue-800 uppercase">
-                    {selectedType || 'Nilai'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {students.map((student, index) => (
-                  <tr key={student.nisn} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {student.nisn}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {student.nama_siswa}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <input
-                        type="number"
-                        data-nisn={student.nisn}
-                        min="0"
-                        max="100"
-                        value={student.nilai}
-                        onChange={(e) => handleInputChange(student.nisn, e.target.value)}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0-100"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <BookOpen size={48} className="mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Belum Ada Data</h3>
-              <p>
-                {showRekap 
-                  ? 'Pilih kelas dan mata pelajaran untuk melihat rekap nilai'
-                  : 'Pilih kelas, mata pelajaran, dan jenis nilai untuk memulai input'
-                }
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Nilai;
+export default Grades; 

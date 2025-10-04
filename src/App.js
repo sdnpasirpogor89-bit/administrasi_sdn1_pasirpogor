@@ -5,6 +5,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useNavigate
 } from "react-router-dom";
 import "./index.css"; 
 import { supabase } from "./supabaseClient";
@@ -19,6 +20,37 @@ import Grades from "./pages/Grades";
 import SPMB from './spmb/SPMB';
 import Report from "./pages/Report";
 import Setting from './setting/setting';
+
+// Wrapper component untuk handle navigation
+const ReportWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return <Report userData={userData} onNavigate={navigate} />;
+};
+
+const StudentsWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return <Students userData={userData} onNavigate={navigate} />;
+};
+
+const AttendanceWithNavigation = ({ currentUser }) => {
+  const navigate = useNavigate();
+  return <Attendance currentUser={currentUser} onNavigate={navigate} />;
+};
+
+const GradesWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return <Grades userData={userData} onNavigate={navigate} />;
+};
+
+const SPMBWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return <SPMB userData={userData} onNavigate={navigate} />;
+};
+
+const SettingWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return <Setting userData={userData} onNavigate={navigate} />;
+};
 
 function App() {
   const [user, setUser] = useState(null);
@@ -238,7 +270,7 @@ function App() {
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <Students userData={user} />
+                  <StudentsWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
@@ -252,7 +284,7 @@ function App() {
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <Attendance currentUser={user} />
+                  <AttendanceWithNavigation currentUser={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
@@ -280,7 +312,7 @@ function App() {
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <Grades userData={user} />
+                  <GradesWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
@@ -294,7 +326,7 @@ function App() {
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <SPMB userData={user} />
+                  <SPMBWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
@@ -302,13 +334,13 @@ function App() {
             }
           />
           
-          {/* Reports Route */}
+          {/* Reports Route - ✅ FIXED IMPORT */}
           <Route
             path="/reports"
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <Report userData={user} />
+                  <ReportWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
@@ -322,7 +354,7 @@ function App() {
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <Setting userData={user} />
+                  <SettingWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />

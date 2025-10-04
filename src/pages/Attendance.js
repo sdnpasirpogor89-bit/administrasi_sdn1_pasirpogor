@@ -216,7 +216,7 @@ const StatusButton = React.memo(
   }
 );
 
-// Compact Stats Card Component - Enhanced for mobile
+// Compact Stats Card Component - FIXED: Added semicolon
 const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
   const getLeftBorderColor = () => {
     switch (color) {
@@ -267,7 +267,7 @@ const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
       </div>
     </div>
   );
-});
+}); // SEMICOLON DITAMBAHKAN DI SINI
 
 // Mobile Student Card Component - IMPROVED: No toggle, langsung show status
 const StudentCard = ({
@@ -1031,7 +1031,7 @@ const Attendance = ({
         />
       </div>
 
-      {/* Search and Controls - OPTIMIZED FOR MOBILE */}
+      {/* Search and Controls - PERBAIKAN LAYOUT UNTUK LAPTOP */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-4">
         {/* SEARCH INPUT - FULL WIDTH DI MOBILE */}
         <div className="relative w-full">
@@ -1048,9 +1048,10 @@ const Attendance = ({
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          {/* DATE PICKER - FULL WIDTH DI MOBILE */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+        {/* --- KODE INI DIUBAH UNTUK MERAPATKAN & MEMPERLEBAR DATE PICKER DAN KELAS --- */}
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center lg:justify-start">
+          {/* DATE PICKER - DIPERLEBAR DAN DIBUAT TIDAK MENYUSUT */}
+          <div className="flex items-center gap-3 w-full lg:w-auto flex-shrink-0">
             <label className="font-semibold text-gray-700 whitespace-nowrap text-sm sm:text-base">
               Tanggal:
             </label>
@@ -1058,27 +1059,49 @@ const Attendance = ({
               type="date"
               value={attendanceDate}
               onChange={(e) => setAttendanceDate(e.target.value)}
-              className="w-full sm:w-auto px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium bg-white text-sm sm:text-base"
+              // MENGUBAH w-64 menjadi w-72 untuk memperlebar tampilan di laptop
+              className="w-full lg:w-72 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium bg-white text-sm sm:text-base"
             />
           </div>
 
-          {/* CLASS TABS */}
-          <div className="flex gap-2 flex-wrap flex-1 justify-center sm:justify-start">
-            {availableClasses.map((classNum) => (
-              <button
-                key={classNum}
-                className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 border-2 ${
-                  activeClass === classNum
-                    ? "bg-gradient-to-r from-blue-600 to-green-600 text-white border-transparent shadow-md"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:-translate-y-0.5"
-                }`}
-                onClick={() => setActiveClass(classNum)}>
-                Kelas {classNum}
-              </button>
-            ))}
+          {/* CLASS TABS - Menggunakan lg:flex-1 untuk mengisi sisa ruang */}
+          <div className="flex flex-col lg:flex-row gap-2 w-full lg:flex-1">
+            {/* Baris Pertama: Kelas 1, 2, 3 */}
+            <div className="flex gap-2 justify-center lg:justify-start w-full">
+              {availableClasses.slice(0, 3).map((classNum) => (
+                <button
+                  key={classNum}
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 border-2 flex-1 text-center min-w-[80px] ${
+                    activeClass === classNum
+                      ? "bg-gradient-to-r from-blue-600 to-green-600 text-white border-transparent shadow-md"
+                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:-translate-y-0.5"
+                  }`}
+                  onClick={() => setActiveClass(classNum)}>
+                  Kelas {classNum}
+                </button>
+              ))}
+            </div>
+            
+            {/* Baris Kedua: Kelas 4, 5, 6 */}
+            {availableClasses.length > 3 && (
+              <div className="flex gap-2 justify-center lg:justify-start w-full">
+                {availableClasses.slice(3, 6).map((classNum) => (
+                  <button
+                    key={classNum}
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 border-2 flex-1 text-center min-w-[80px] ${
+                      activeClass === classNum
+                        ? "bg-gradient-to-r from-blue-600 to-green-600 text-white border-transparent shadow-md"
+                        : "bg-white text-gray-600 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:-translate-y-0.5"
+                    }`}
+                    onClick={() => setActiveClass(classNum)}>
+                    Kelas {classNum}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </div> {/* <-- PERBAIKAN: Menutup div utama Search and Controls */}
 
       {/* Attendance Controls */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -1206,7 +1229,7 @@ const Attendance = ({
                   <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden xl:table-cell w-56">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden xl:table-cell w-64">
                     Keterangan
                   </th>
                 </tr>
@@ -1358,7 +1381,7 @@ const Attendance = ({
                               )
                             }
                             disabled={saving}
-                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-4"
                           />
                         </td>
                       </tr>
