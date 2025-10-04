@@ -24,7 +24,9 @@ import {
   FileDown,
   Upload,
   BookOpen,
-  Settings
+  Settings,
+  Smartphone,
+  Monitor
 } from 'lucide-react';
 import {
   BarChart,
@@ -104,27 +106,27 @@ const StatsCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue', 
   };
 
   return (
-    <div className={`bg-white rounded-lg sm:rounded-xl p-4 sm:p-5 shadow-sm border-l-4 ${colorClasses[color]} hover:shadow-md transition-all duration-200 touch-manipulation`}>
+    <div className={`bg-white rounded-lg sm:rounded-xl p-3 sm:p-5 shadow-sm border-l-4 ${colorClasses[color]} hover:shadow-md transition-all duration-200 touch-manipulation`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 leading-none">
+          <div className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 leading-none">
             {isLoading ? (
-              <div className="bg-gray-200 animate-pulse h-8 sm:h-10 w-12 sm:w-16 rounded"></div>
+              <div className="bg-gray-200 animate-pulse h-6 sm:h-10 w-10 sm:w-16 rounded"></div>
             ) : (
               <span className="block">{value}</span>
             )}
           </div>
           <div>
-            <p className="text-sm sm:text-base font-semibold text-gray-700 truncate leading-tight">{title}</p>
+            <p className="text-xs sm:text-base font-semibold text-gray-700 truncate leading-tight">{title}</p>
             {subtitle && (
-              <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2 leading-tight">
+              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-tight">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
         <div className="flex-shrink-0">
-          <Icon size={24} className={`sm:size-6 lg:size-7 ${iconColorClasses[color]}`} />
+          <Icon size={20} className={`sm:size-6 lg:size-7 ${iconColorClasses[color]}`} />
         </div>
       </div>
     </div>
@@ -132,13 +134,10 @@ const StatsCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue', 
 };
 
 const AdminDashboard = ({ userData }) => {
-  
-  // =================================================================
-  // !!! SEMUA HOOKS HARUS DI ATAS INI (TINGKAT PALING ATAS) !!!
-  // =================================================================
-  const navigate = useNavigate(); // Hook 1
+  const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Dashboard states - Hooks 2, 3, 4
+  // Dashboard states
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
@@ -152,7 +151,17 @@ const AdminDashboard = ({ userData }) => {
     totalClasses: 0
   });
 
-  // useEffect - HARUS DI TINGKAT ATAS
+  // Cek device type
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
   useEffect(() => {
     if (userData) {
       fetchAdminDashboardData();
@@ -167,7 +176,6 @@ const AdminDashboard = ({ userData }) => {
 
     return () => clearInterval(interval);
   }, [userData]);
-  // ----------------------------------------------------
 
   // Check if userData is undefined - EARLY RETURN HARUS SETELAH SEMUA HOOKS
   if (!userData) {
@@ -195,7 +203,7 @@ const AdminDashboard = ({ userData }) => {
       date.setDate(today.getDate() - i);
       week.push({
         date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('id-ID', { weekday: 'short' })
+        day: date.toLocaleDateString('id-ID', { weekday: isMobile ? 'narrow' : 'short' })
       });
     }
     return week;
@@ -214,10 +222,7 @@ const AdminDashboard = ({ userData }) => {
       // Get recent attendance records with user info
       const { data: attendanceActivities, error: attendanceError } = await supabase
         .from('attendance')
-        .select(`
-          *,
-          users!attendance_created_by_fkey(nama_lengkap)
-        `)
+        .select(`*, users!attendance_created_by_fkey(nama_lengkap)`)
         .eq('tanggal', today)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -260,7 +265,7 @@ const AdminDashboard = ({ userData }) => {
             type: 'attendance_input',
             icon: '📊',
             color: 'green',
-            message: `Guru ${group.guru} input absen Kelas ${group.kelas} (${group.hadir} hadir, ${group.izin} izin, ${group.sakit} sakit, ${group.alpa} alpa)`,
+            message: `${group.guru} input absen Kelas ${group.kelas} (${group.hadir}✓ ${group.izin}i ${group.sakit}s ${group.alpa}a)`,
             time: group.created_at
           });
         });
@@ -295,15 +300,7 @@ const AdminDashboard = ({ userData }) => {
       if (type === 'attendance') {
         const { data: attendanceData } = await supabase
           .from('attendance')
-          .select(`
-            tanggal,
-            nisn,
-            nama_siswa,
-            kelas,
-            status,
-            keterangan,
-            created_at
-          `)
+          .select(`tanggal, nisn, nama_siswa, kelas, status, keterangan, created_at`)
           .eq('tanggal', today)
           .order('kelas', { ascending: true })
           .order('nama_siswa', { ascending: true });
@@ -486,13 +483,19 @@ const AdminDashboard = ({ userData }) => {
     <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
       {/* Header with Refresh Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-          Dashboard Admin
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+            Dashboard Admin
+          </h1>
+          <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
+            <Smartphone size={12} />
+            <span>Mobile</span>
+          </div>
+        </div>
         <button
           onClick={fetchAdminDashboardData}
           disabled={refreshing}
-          className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[48px] touch-manipulation w-full sm:w-auto justify-center ${
+          className={`flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[44px] touch-manipulation w-full sm:w-auto justify-center ${
             refreshing ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
@@ -504,7 +507,7 @@ const AdminDashboard = ({ userData }) => {
       </div>
 
       {/* Stats Cards - Enhanced Mobile Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         <StatsCard
           title="Total Siswa"
           value={dashboardData.totalStudents}
@@ -520,9 +523,9 @@ const AdminDashboard = ({ userData }) => {
           color="green"
         />
         <StatsCard
-          title="Kehadiran Hari Ini"
+          title="Hadir Hari Ini"
           value={dashboardData.todayAttendance}
-          subtitle={`${dashboardData.attendanceRate}% dari total siswa`}
+          subtitle={`${dashboardData.attendanceRate}% dari total`}
           icon={UserCheck}
           color="purple"
         />
@@ -538,65 +541,70 @@ const AdminDashboard = ({ userData }) => {
       {/* Charts - Enhanced Mobile Responsiveness */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Class Attendance Chart */}
-        <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-          <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Kehadiran Per Kelas Hari Ini
+        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+          <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+              Kehadiran Per Kelas
             </h3>
           </div>
-          <div className="h-64 sm:h-72 lg:h-80">
+          <div className={isMobile ? "h-72" : "h-80"}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dashboardData.classAttendance} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
+              <BarChart 
+                data={dashboardData.classAttendance} 
+                margin={isMobile ? { top: 10, right: 5, left: 5, bottom: 50 } : { top: 10, right: 10, left: 10, bottom: 40 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis 
                   dataKey="kelas" 
-                  fontSize={12} 
-                  angle={0} 
-                  textAnchor="middle"
-                  height={50}
+                  fontSize={isMobile ? 10 : 12} 
+                  angle={isMobile ? -45 : 0}
+                  textAnchor={isMobile ? "end" : "middle"}
+                  height={isMobile ? 60 : 50}
                   interval={0}
-                  tick={{ fontSize: 11 }}
                 />
-                <YAxis fontSize={12} tick={{ fontSize: 11 }} />
+                <YAxis fontSize={isMobile ? 10 : 12} />
                 <Tooltip 
                   contentStyle={{
-                    fontSize: '14px',
-                    borderRadius: '12px',
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
                     border: 'none',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     backgroundColor: 'white'
                   }}
                 />
-                <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Weekly Trend Chart */}
-        <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-          <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Trend Kehadiran 7 Hari
+        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+          <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+              Trend 7 Hari
             </h3>
           </div>
-          <div className="h-64 sm:h-72 lg:h-80">
+          <div className={isMobile ? "h-72" : "h-80"}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dashboardData.weeklyTrend} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <LineChart 
+                data={dashboardData.weeklyTrend} 
+                margin={isMobile ? { top: 10, right: 5, left: 5, bottom: 10 } : { top: 10, right: 10, left: 10, bottom: 10 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis dataKey="day" fontSize={12} tick={{ fontSize: 11 }} />
-                <YAxis fontSize={12} tick={{ fontSize: 11 }} />
+                <XAxis dataKey="day" fontSize={isMobile ? 10 : 12} />
+                <YAxis fontSize={isMobile ? 10 : 12} />
                 <Tooltip
-                  formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
+                  formatter={(value) => [`${value}%`, 'Kehadiran']}
                   labelFormatter={(label) => `Hari: ${label}`}
                   contentStyle={{
-                    fontSize: '14px',
-                    borderRadius: '12px',
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
                     border: 'none',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     backgroundColor: 'white'
                   }}
                 />
@@ -604,9 +612,9 @@ const AdminDashboard = ({ userData }) => {
                   type="monotone"
                   dataKey="attendance"
                   stroke="#2563eb"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: '#2563eb' }}
-                  activeDot={{ r: 6, fill: '#1d4ed8' }}
+                  strokeWidth={isMobile ? 2 : 3}
+                  dot={{ r: isMobile ? 3 : 4, fill: '#2563eb' }}
+                  activeDot={{ r: isMobile ? 5 : 6, fill: '#1d4ed8' }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -615,65 +623,64 @@ const AdminDashboard = ({ userData }) => {
       </div>
 
       {/* Quick Actions for Admin - Enhanced Mobile */}
-      <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-        <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
-          Aksi Cepat Admin
+      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+        <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+          Aksi Cepat
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <button 
             onClick={() => handleNavigation('/students')}
-            className="group flex items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-sm sm:text-base min-h-[56px] touch-manipulation"
+            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
           >
-            <Users size={20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold">Kelola Siswa</span>
+            <Users size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
+            <span className="font-semibold text-center">Kelola Siswa</span>
           </button>
           <button 
             onClick={() => handleNavigation('/teachers')}
-            className="group flex items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-sm sm:text-base min-h-[56px] touch-manipulation"
+            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
           >
-            <GraduationCap size={20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold">Kelola Guru</span>
+            <GraduationCap size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
+            <span className="font-semibold text-center">Kelola Guru</span>
           </button>
           <button 
             onClick={() => handleQuickExport('attendance')}
-            className="group flex items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-sm sm:text-base min-h-[56px] touch-manipulation"
+            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
           >
-            <Download size={20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold">Export Data</span>
+            <Download size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
+            <span className="font-semibold text-center">Export Data</span>
           </button>
           <button 
             onClick={() => handleNavigation('/settings')}
-            className="group flex items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-sm sm:text-base min-h-[56px] touch-manipulation"
+            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
           >
-            <Settings size={20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold">Pengaturan</span>
+            <Settings size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
+            <span className="font-semibold text-center">Pengaturan</span>
           </button>
         </div>
       </div>
 
       {/* Recent Activities Section - Mobile Optimized */}
       {recentActivities.length > 0 && (
-        <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
+        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
             Aktivitas Terbaru
           </h3>
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             {recentActivities.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors min-h-[60px] touch-manipulation">
-                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-lg sm:text-xl">{activity.icon}</span>
+              <div key={activity.id} className="flex items-start gap-2 sm:gap-4 p-2 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors min-h-[50px] touch-manipulation">
+                <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm sm:text-xl">{activity.icon}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base text-gray-900 line-clamp-3 sm:line-clamp-2 leading-relaxed">
+                  <p className="text-xs sm:text-base text-gray-900 line-clamp-2 leading-relaxed">
                     {activity.message}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2 font-medium">
+                  <p className="text-xs text-gray-500 mt-1 font-medium">
                     {new Date(activity.time).toLocaleString('id-ID', {
                       hour: '2-digit',
                       minute: '2-digit',
                       day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
+                      month: 'short'
                     })}
                   </p>
                 </div>
@@ -682,9 +689,9 @@ const AdminDashboard = ({ userData }) => {
           </div>
           
           {recentActivities.length > 5 && (
-            <div className="mt-4 text-center">
-              <button className="text-blue-600 hover:text-blue-700 font-medium text-sm sm:text-base py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors touch-manipulation">
-                Lihat Semua Aktivitas
+            <div className="mt-3 text-center">
+              <button className="text-blue-600 hover:text-blue-700 font-medium text-xs sm:text-base py-1.5 px-3 rounded-lg hover:bg-blue-50 transition-colors touch-manipulation">
+                Lihat Semua
               </button>
             </div>
           )}
@@ -696,11 +703,11 @@ const AdminDashboard = ({ userData }) => {
         <button
           onClick={fetchAdminDashboardData}
           disabled={refreshing}
-          className={`w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+          className={`w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
             refreshing ? 'opacity-50' : 'hover:bg-blue-700 active:scale-95'
           }`}
         >
-          <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </div>
     </div>

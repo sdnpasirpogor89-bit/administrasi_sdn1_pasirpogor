@@ -4,7 +4,10 @@ import {
   Users, 
   UserCheck, 
   School, 
-  BookOpen
+  BookOpen,
+  Search,
+  Filter,
+  MoreVertical
 } from "lucide-react";
 
 // Compact Stats Card Component
@@ -49,10 +52,70 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
+// Teacher Card Component untuk Mobile
+const TeacherCard = ({ teacher, index }) => {
+  const formatTeachingArea = (teacher) => {
+    if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
+      return "Kepala Sekolah";
+    } else if (teacher.role === "guru_kelas") {
+      return `Kelas ${teacher.kelas}`;
+    } else if (teacher.role === "guru_mapel") {
+      const subjectMap = {
+        yosefedi: "Mapel PJOK",
+        acengmudrikah: "Mapel PAI",
+      };
+      return subjectMap[teacher.username] || "Mapel Lainnya";
+    }
+    return "-";
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 font-bold text-sm">
+                {teacher.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-base">{teacher.full_name}</h3>
+              <p className="text-sm text-gray-600">#{index + 1}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Tugas/Kelas</p>
+              <p className="text-sm font-semibold text-gray-800">{formatTeachingArea(teacher)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Jumlah Siswa</p>
+              <p className="text-sm font-semibold text-gray-800">{teacher.studentCount} siswa</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <StatusBadge isActive={teacher.is_active} />
+            <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+              <MoreVertical size={18} className="text-gray-500" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Teacher Component
 const Teacher = () => {
   const [teachers, setTeachers] = useState([]);
+  const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState({
     totalGuru: 0,
     guruAktif: 0,
@@ -60,27 +123,34 @@ const Teacher = () => {
     guruMapel: 0,
   });
 
+  // Cek device type
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
   // Fungsi untuk mengurutkan guru
   const sortTeachers = (teachersArray) => {
     return teachersArray.sort((a, b) => {
-      // Kepala sekolah/admin di paling atas
       if ((a.role === "admin" || a.role === "kepala_sekolah") && 
           (b.role !== "admin" && b.role !== "kepala_sekolah")) return -1;
       if ((b.role === "admin" || b.role === "kepala_sekolah") && 
           (a.role !== "admin" && a.role !== "kepala_sekolah")) return 1;
       
-      // Guru kelas di atas guru mapel
       if (a.role === "guru_kelas" && b.role === "guru_mapel") return -1;
       if (a.role === "guru_mapel" && b.role === "guru_kelas") return 1;
       
-      // Jika sama-sama guru kelas, urutkan berdasarkan nomor kelas
       if (a.role === "guru_kelas" && b.role === "guru_kelas") {
         const kelasA = parseInt(a.kelas) || 0;
         const kelasB = parseInt(b.kelas) || 0;
         return kelasA - kelasB;
       }
       
-      // Jika sama-sama guru mapel, urutkan berdasarkan nama
       if (a.role === "guru_mapel" && b.role === "guru_mapel") {
         return a.full_name.localeCompare(b.full_name);
       }
@@ -89,12 +159,32 @@ const Teacher = () => {
     });
   };
 
+  // Filter teachers
+  useEffect(() => {
+    let result = teachers;
+    
+    // Filter by search term
+    if (searchTerm) {
+      result = result.filter(teacher =>
+        teacher.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filter by status
+    if (statusFilter !== "all") {
+      result = result.filter(teacher =>
+        statusFilter === "active" ? teacher.is_active : !teacher.is_active
+      );
+    }
+    
+    setFilteredTeachers(result);
+  }, [teachers, searchTerm, statusFilter]);
+
   // Fetch data guru dari database
   const fetchTeachers = async () => {
     try {
       setLoading(true);
 
-      // Query untuk mengambil semua user (termasuk admin/kepala sekolah)
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("*")
@@ -102,7 +192,6 @@ const Teacher = () => {
 
       if (teachersError) throw teachersError;
 
-      // Query untuk menghitung jumlah siswa per kelas
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
         .select("kelas, is_active")
@@ -110,7 +199,6 @@ const Teacher = () => {
 
       if (studentsError) throw studentsError;
 
-      // Hitung jumlah siswa per kelas
       const studentsByClass = studentsData.reduce((acc, student) => {
         acc[student.kelas] = (acc[student.kelas] || 0) + 1;
         return acc;
@@ -118,16 +206,15 @@ const Teacher = () => {
 
       const totalStudents = studentsData.length;
 
-      // Gabungkan data guru dengan jumlah siswa
       const teachersWithStudentCount = teachersData.map((teacher) => {
         let studentCount = 0;
 
         if (teacher.role === "guru_kelas") {
           studentCount = studentsByClass[teacher.kelas] || 0;
         } else if (teacher.role === "guru_mapel") {
-          studentCount = totalStudents; // Guru mapel mengajar semua siswa
+          studentCount = totalStudents;
         } else if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
-          studentCount = totalStudents; // Kepala sekolah membawahi semua siswa
+          studentCount = totalStudents;
         }
 
         return {
@@ -136,11 +223,10 @@ const Teacher = () => {
         };
       });
 
-      // Urutkan: kepala sekolah, guru kelas, guru mapel
       const sortedTeachers = sortTeachers(teachersWithStudentCount);
       setTeachers(sortedTeachers);
+      setFilteredTeachers(sortedTeachers);
 
-      // Hitung statistik (tanpa admin/kepala sekolah)
       const activeTeachers = sortedTeachers.filter(
         (t) => t.is_active && (t.role === "guru_kelas" || t.role === "guru_mapel")
       );
@@ -172,7 +258,6 @@ const Teacher = () => {
     } else if (teacher.role === "guru_kelas") {
       return `Kelas ${teacher.kelas}`;
     } else if (teacher.role === "guru_mapel") {
-      // Mapping username ke nama mata pelajaran
       const subjectMap = {
         yosefedi: "Mapel PJOK",
         acengmudrikah: "Mapel PAI",
@@ -227,76 +312,125 @@ const Teacher = () => {
         />
       </div>
 
-      {/* Tabel Data Guru */}
+      {/* Filter Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Cari nama guru..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+          </div>
+          
+          {/* Status Filter */}
+          <div className="flex gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            >
+              <option value="all">Semua Status</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Tidak Aktif</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabel Data Guru untuk Desktop & Cards untuk Mobile */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-900">Daftar Guru</h2>
-          <p className="text-sm text-gray-500 mt-1">Menampilkan {teachers.length} guru</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Menampilkan {filteredTeachers.length} dari {teachers.length} guru
+          </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  No.
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Nama Guru
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Tugas/Kelas
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Jumlah Siswa
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {teachers.length > 0 ? (
-                teachers.map((teacher, index) => (
-                  <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {teacher.full_name}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-700 font-medium">
-                        {formatTeachingArea(teacher)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                      {teacher.studentCount} siswa
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge isActive={teacher.is_active} />
+        {isMobile ? (
+          /* Mobile Card View */
+          <div className="p-4 space-y-4">
+            {filteredTeachers.length > 0 ? (
+              filteredTeachers.map((teacher, index) => (
+                <TeacherCard key={teacher.id} teacher={teacher} index={index} />
+              ))
+            ) : (
+              <div className="text-center py-16">
+                <Users size={48} className="text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium">Tidak ada data guru yang cocok</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Desktop Table View */
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                    No.
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                    Nama Guru
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                    Tugas/Kelas
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                    Jumlah Siswa
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredTeachers.length > 0 ? (
+                  filteredTeachers.map((teacher, index) => (
+                    <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {teacher.full_name}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-700 font-medium">
+                          {formatTeachingArea(teacher)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                        {teacher.studentCount} siswa
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge isActive={teacher.is_active} />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Users size={48} className="text-gray-300" />
+                        <div>
+                          <p className="text-gray-500 font-medium">
+                            Tidak ada data guru yang cocok
+                          </p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Users size={48} className="text-gray-300" />
-                      <div>
-                        <p className="text-gray-500 font-medium">
-                          Tidak ada data guru
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

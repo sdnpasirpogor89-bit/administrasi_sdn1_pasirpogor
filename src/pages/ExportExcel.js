@@ -1,5 +1,5 @@
+// Di ExportExcel.js - MODIFIED VERSION
 import ExcelJS from 'exceljs';
-
 /**
  * Export attendance data to Excel with professional formatting
  * @param {Object} params - Export parameters
@@ -10,6 +10,7 @@ import ExcelJS from 'exceljs';
  * @param {Array} params.attendanceRecords - Array of attendance records from database
  * @param {string} params.namaSekolah - School name
  * @param {Object} params.supabase - Supabase client instance
+ * @param {string} params.namaGuru - Teacher name for footer
  */
 export const exportAttendanceToExcel = async ({
   kelas,
@@ -18,7 +19,8 @@ export const exportAttendanceToExcel = async ({
   studentsData,
   attendanceRecords,
   namaSekolah = "SD NEGERI 1 PASIRPOGOR",
-  supabase
+  supabase,
+  namaGuru = "" // NEW PARAMETER: Teacher name
 }) => {
   try {
     // Create workbook and worksheet
@@ -217,14 +219,37 @@ export const exportAttendanceToExcel = async ({
     // Empty rows after table
     rowIndex += 2;
 
-    // Footer
-    worksheet.getCell(rowIndex, totalCols - 2).value = 'Mengetahui';
-    worksheet.getCell(rowIndex, totalCols - 2).font = { name: 'Arial', size: 10 };
-    worksheet.getCell(rowIndex, totalCols - 2).alignment = { horizontal: 'center' };
+    // FOOTER SECTION - MODIFIED
+    const footerCol = totalCols - 2;
+    
+    // "Mengetahui" text
+    worksheet.getCell(rowIndex, footerCol).value = 'Mengetahui';
+    worksheet.getCell(rowIndex, footerCol).font = { name: 'Arial', size: 11 };
+    worksheet.getCell(rowIndex, footerCol).alignment = { horizontal: 'left' };
 
-    worksheet.getCell(rowIndex + 1, totalCols - 2).value = `Walikelas ${kelas}`;
-    worksheet.getCell(rowIndex + 1, totalCols - 2).font = { name: 'Arial', size: 10 };
-    worksheet.getCell(rowIndex + 1, totalCols - 2).alignment = { horizontal: 'center' };
+    // "Walikelas X" text
+    worksheet.getCell(rowIndex + 1, footerCol).value = `Walikelas ${kelas}`;
+    worksheet.getCell(rowIndex + 1, footerCol).font = { name: 'Arial', size: 11 };
+    worksheet.getCell(rowIndex + 1, footerCol).alignment = { horizontal: 'left' };
+
+    // Empty row for spacing
+    worksheet.getRow(rowIndex + 2).height = 25;
+
+    // Teacher's name - NEW SECTION
+    if (namaGuru) {
+      worksheet.getCell(rowIndex + 3, footerCol).value = namaGuru;
+      worksheet.getCell(rowIndex + 3, footerCol).font = { 
+        name: 'Arial', 
+        size: 11, 
+        bold: true 
+      };
+      worksheet.getCell(rowIndex + 3, footerCol).alignment = { horizontal: 'left' };
+      
+      // Add underline for signature
+      worksheet.getCell(rowIndex + 4, footerCol).value = '___________________';
+      worksheet.getCell(rowIndex + 4, footerCol).font = { name: 'Arial', size: 9 };
+      worksheet.getCell(rowIndex + 4, footerCol).alignment = { horizontal: 'left' };
+    }
 
     // Set column widths
     worksheet.getColumn(1).width = 5;  // No
@@ -268,14 +293,15 @@ export const exportAttendanceToExcel = async ({
 };
 
 /**
- * Integration function to be called from Attendance.js
+ * Integration function to be called from Attendance.js - MODIFIED
  * @param {Object} supabase - Supabase client
  * @param {number} activeClass - Current active class
  * @param {string} month - Selected month (1-12)
  * @param {string} year - Selected year
  * @param {Object} studentsData - Students data object
+ * @param {Object} currentUser - Current user object (for teacher name)
  */
-export const exportAttendanceFromComponent = async (supabase, activeClass, month, year, studentsData) => {
+export const exportAttendanceFromComponent = async (supabase, activeClass, month, year, studentsData, currentUser = null) => {
   try {
     // Get students for the active class
     const students = studentsData[activeClass] || [];
@@ -305,6 +331,17 @@ export const exportAttendanceFromComponent = async (supabase, activeClass, month
       return { success: false, message: 'Tidak ada data kehadiran untuk periode yang dipilih' };
     }
 
+    // Extract teacher name from currentUser or from attendance records
+    let namaGuru = '';
+    if (currentUser && currentUser.full_name) {
+      namaGuru = currentUser.full_name;
+    } else if (currentUser && currentUser.username) {
+      namaGuru = currentUser.username;
+    } else if (attendanceRecords.length > 0) {
+      // Fallback: get from first record
+      namaGuru = attendanceRecords[0].guru_input || '';
+    }
+
     // Export to Excel
     const result = await exportAttendanceToExcel({
       kelas: activeClass,
@@ -312,7 +349,8 @@ export const exportAttendanceFromComponent = async (supabase, activeClass, month
       tahun: year,
       studentsData: students,
       attendanceRecords: attendanceRecords,
-      supabase: supabase
+      supabase: supabase,
+      namaGuru: namaGuru // PASS TEACHER NAME
     });
 
     return result;

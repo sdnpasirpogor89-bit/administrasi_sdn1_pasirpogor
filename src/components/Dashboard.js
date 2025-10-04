@@ -11,7 +11,9 @@ import {
   ClipboardList,
   FileText,
   Settings,
-  Calendar
+  Calendar,
+  Smartphone,
+  Monitor
 } from 'lucide-react';
 import {
   BarChart,
@@ -42,8 +44,20 @@ const Dashboard = ({ userData }) => {
     weeklyTrend: [],
     totalClasses: 0
   });
+  const [isMobile, setIsMobile] = useState(false);
 
   const navigate = useNavigate();
+
+  // Cek device type dan screen size
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -59,7 +73,7 @@ const Dashboard = ({ userData }) => {
       date.setDate(today.getDate() - i);
       week.push({
         date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('id-ID', { weekday: 'long' })
+        day: date.toLocaleDateString('id-ID', { weekday: 'short' }) // Short day for mobile
       });
     }
     return week;
@@ -184,12 +198,6 @@ const Dashboard = ({ userData }) => {
         totalClasses: allClasses.length
       });
 
-      console.log('Admin Dashboard Data:', {
-        totalStudents: totalStudentsCount,
-        todayAttendance: todayPresentCount,
-        attendanceRate: attendanceRate
-      });
-
     } catch (error) {
       console.error('Error fetching admin dashboard data:', error);
     }
@@ -202,8 +210,6 @@ const Dashboard = ({ userData }) => {
       const weekDates = getWeekDates();
       const userKelas = userData.kelas;
 
-      console.log('Fetching data for Guru Kelas:', userKelas);
-
       // 1. Students in this class ONLY
       const { data: classStudents, error: studentsError } = await supabase
         .from('students')
@@ -214,7 +220,6 @@ const Dashboard = ({ userData }) => {
       if (studentsError) throw studentsError;
 
       if (!classStudents || classStudents.length === 0) {
-        console.warn('Tidak ada siswa aktif di kelas:', userKelas);
         setDashboardData({
           totalStudents: 0,
           totalTeachers: 0,
@@ -297,7 +302,7 @@ const Dashboard = ({ userData }) => {
 
       const weeklyTrend = await Promise.all(weeklyTrendPromises);
 
-      // Calculate class attendance rate - PERBAIKAN DI SINI
+      // Calculate class attendance rate
       const todayPresentCount = todayAttendanceData.filter(
         r => r.status.toLowerCase() === 'hadir'
       ).length;
@@ -306,13 +311,6 @@ const Dashboard = ({ userData }) => {
       const attendanceRate = totalClassStudents > 0 
         ? Math.round((todayPresentCount / totalClassStudents) * 100)
         : 0;
-
-      console.log('Guru Kelas Data:', {
-        totalStudents: totalClassStudents,
-        todayAttendance: todayPresentCount,
-        attendanceRate: attendanceRate,
-        classAttendance: classAttendance
-      });
 
       // Update state
       setDashboardData({
@@ -435,12 +433,6 @@ const Dashboard = ({ userData }) => {
         totalClasses: allClasses.length
       });
 
-      console.log('Guru Mapel Data:', {
-        totalStudents: totalStudentsCount,
-        todayAttendance: todayPresentCount,
-        attendanceRate: attendanceRate
-      });
-
     } catch (error) {
       console.error('Error fetching guru mapel dashboard data:', error);
     }
@@ -450,8 +442,6 @@ const Dashboard = ({ userData }) => {
   const fetchDashboardData = async () => {
     setRefreshing(true);
     try {
-      console.log('Fetching dashboard data for role:', userData.role);
-
       if (userData.role === 'admin') {
         await fetchAdminDashboardData();
       } else if (userData.role === 'guru_kelas') {
@@ -478,7 +468,7 @@ const Dashboard = ({ userData }) => {
     return () => clearInterval(interval);
   }, [userData.role, userData.kelas]);
 
-  // Stats Card Component
+  // Responsive Stats Card Component
   const StatsCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue', isLoading = false }) => {
     const colorClasses = {
       blue: 'from-blue-500 to-blue-600',
@@ -489,31 +479,67 @@ const Dashboard = ({ userData }) => {
     };
 
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 relative overflow-hidden">
         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorClasses[color]}`}></div>
         
-        <div className="flex justify-between items-start mb-4">
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-xl">
-            <Icon size={24} className={`text-${color}-600`} />
+        <div className="flex justify-between items-start mb-3">
+          <div className={`bg-gradient-to-br from-gray-50 to-gray-100 p-2 rounded-lg`}>
+            <Icon size={isMobile ? 20 : 24} className={`text-${color}-600`} />
           </div>
           {trend && (
             <div className={`flex items-center gap-1 text-xs font-semibold ${trend > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              <TrendingUp size={14} className={trend > 0 ? '' : 'rotate-180'} />
+              <TrendingUp size={12} className={trend > 0 ? '' : 'rotate-180'} />
               <span>{trend > 0 ? '+' : ''}{trend}%</span>
             </div>
           )}
         </div>
         
         <div>
-          <h3 className="text-3xl font-bold text-gray-900 mb-2">
+          <h3 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900 mb-1`}>
             {isLoading ? (
-              <div className="bg-gray-200 animate-pulse h-8 w-16 rounded"></div>
+              <div className="bg-gray-200 animate-pulse h-6 w-12 rounded"></div>
             ) : (
               value
             )}
           </h3>
-          <p className="text-lg font-semibold text-gray-700 mb-1">{title}</p>
-          {subtitle && <p className="text-sm text-gray-500 font-medium">{subtitle}</p>}
+          <p className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold text-gray-700 mb-1`}>{title}</p>
+          {subtitle && <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 font-medium`}>{subtitle}</p>}
+        </div>
+      </div>
+    );
+  };
+
+  // Mobile Class Summary Card
+  const MobileClassCard = ({ kelas, hadir, izin, sakit, alpa }) => {
+    const total = hadir + izin + sakit + alpa;
+    const attendanceRate = total > 0 ? Math.round((hadir / total) * 100) : 0;
+
+    return (
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <h4 className="font-bold text-gray-900 mb-3 text-sm">{kelas}</h4>
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="bg-green-50 rounded p-2">
+            <span className="block font-bold text-green-700 text-sm">{hadir}</span>
+            <span className="text-xs text-green-600">Hadir</span>
+          </div>
+          <div className="bg-yellow-50 rounded p-2">
+            <span className="block font-bold text-yellow-700 text-sm">{izin}</span>
+            <span className="text-xs text-yellow-600">Izin</span>
+          </div>
+          <div className="bg-blue-50 rounded p-2">
+            <span className="block font-bold text-blue-700 text-sm">{sakit}</span>
+            <span className="text-xs text-blue-600">Sakit</span>
+          </div>
+          <div className="bg-red-50 rounded p-2">
+            <span className="block font-bold text-red-700 text-sm">{alpa}</span>
+            <span className="text-xs text-red-600">Alpa</span>
+          </div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-600">Kehadiran</span>
+            <span className="font-bold text-gray-900">{attendanceRate}%</span>
+          </div>
         </div>
       </div>
     );
@@ -524,7 +550,7 @@ const Dashboard = ({ userData }) => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Memuat data dashboard...</p>
         </div>
       </div>
@@ -535,19 +561,27 @@ const Dashboard = ({ userData }) => {
   const renderDashboardByRole = () => {
     if (userData.role === 'admin') {
       return (
-        <div className="space-y-8">
-          <div className="flex justify-end">
+        <div className="space-y-6">
+          {/* Header dengan Device Indicator */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
+              <span>Tampilan {isMobile ? 'Mobile' : 'Desktop'}</span>
+            </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
+                refreshing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Memperbarui...' : 'Refresh Data'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Stats Cards - Responsive Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
               title="Total Siswa"
               value={dashboardData.totalStudents}
@@ -565,7 +599,7 @@ const Dashboard = ({ userData }) => {
             <StatsCard
               title="Kehadiran Hari Ini"
               value={dashboardData.todayAttendance}
-              subtitle={`${dashboardData.attendanceRate}% dari total siswa`}
+              subtitle={`${dashboardData.attendanceRate}% dari total`}
               icon={UserCheck}
               color="purple"
             />
@@ -578,82 +612,108 @@ const Dashboard = ({ userData }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900">Kehadiran Per Kelas Hari Ini</h3>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200">
+          {/* Charts Section */}
+          <div className="space-y-6">
+            {/* Class Attendance Chart */}
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Kehadiran Per Kelas Hari Ini
+                </h3>
+                <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
                   <Download size={16} />
                   Export
                 </button>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dashboardData.classAttendance}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="kelas" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="hadir" fill="#10b981" name="Hadir" />
-                  <Bar dataKey="izin" fill="#f59e0b" name="Izin" />
-                  <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" />
-                  <Bar dataKey="alpa" fill="#ef4444" name="Alpa" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className={isMobile ? "h-64" : "h-80"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={dashboardData.classAttendance}
+                    margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 20 } : { top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis 
+                      dataKey="kelas" 
+                      angle={isMobile ? -45 : 0}
+                      textAnchor={isMobile ? "end" : "middle"}
+                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900">Trend Kehadiran 7 Hari Terakhir</h3>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200">
+            {/* Weekly Trend Chart */}
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Trend Kehadiran 7 Hari Terakhir
+                </h3>
+                <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
                   <Download size={16} />
                   Export
                 </button>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={dashboardData.weeklyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
-                    labelFormatter={(label) => `Hari: ${label}`}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="attendance"
-                    stroke="#2563eb"
-                    strokeWidth={3}
-                    dot={{ r: 6 }}
-                    activeDot={{ r: 8 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className={isMobile ? "h-64" : "h-80"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={dashboardData.weeklyTrend}
+                    margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 20 } : { top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis 
+                      dataKey="day" 
+                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <Tooltip
+                      formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
+                      labelFormatter={(label) => `Hari: ${label}`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="attendance"
+                      stroke="#2563eb"
+                      strokeWidth={isMobile ? 2 : 3}
+                      dot={{ r: isMobile ? 4 : 6 }}
+                      activeDot={{ r: isMobile ? 6 : 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button 
                 onClick={() => handleNavigation('/attendance')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <ClipboardList size={20} />
-                <span>Input Kehadiran</span>
+                <ClipboardList size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Input Kehadiran</span>
               </button>
               <button 
                 onClick={() => handleNavigation('/grades')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <BarChart3 size={20} />
-                <span>Input Nilai</span>
+                <BarChart3 size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Input Nilai</span>
               </button>
               <button 
                 onClick={() => handleNavigation('/students')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <Users size={20} />
-                <span>Lihat Data Siswa</span>
+                <Users size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Lihat Data Siswa</span>
               </button>
             </div>
           </div>
@@ -665,23 +725,31 @@ const Dashboard = ({ userData }) => {
       const kelasData = dashboardData.classAttendance[0] || { hadir: 0, izin: 0, sakit: 0, alpa: 0 };
 
       return (
-        <div className="space-y-8">
-          <div className="flex justify-end">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
+              <span>Tampilan {isMobile ? 'Mobile' : 'Desktop'} - Kelas {userData.kelas}</span>
+            </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
+                refreshing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Memperbarui...' : 'Refresh Data'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
-              title={`Total Siswa Kelas ${userData.kelas}`}
+              title={`Siswa Kelas ${userData.kelas}`}
               value={dashboardData.totalStudents}
-              subtitle="Siswa aktif di kelas ini"
+              subtitle="Siswa aktif"
               icon={Users}
               color="blue"
             />
@@ -708,83 +776,103 @@ const Dashboard = ({ userData }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900">Status Kehadiran Hari Ini - Kelas {userData.kelas}</h3>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200">
+          {/* Charts Section */}
+          <div className="space-y-6">
+            {/* Pie Chart for Class Attendance */}
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                  Status Kehadiran - Kelas {userData.kelas}
+                </h3>
+                <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
                   <Download size={16} />
                   Export
                 </button>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Hadir', value: kelasData.hadir, fill: '#10b981' },
-                      { name: 'Izin', value: kelasData.izin, fill: '#f59e0b' },
-                      { name: 'Sakit', value: kelasData.sakit, fill: '#3b82f6' },
-                      { name: 'Alpa', value: kelasData.alpa, fill: '#ef4444' }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  />
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className={isMobile ? "h-64" : "h-80"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'Hadir', value: kelasData.hadir, fill: '#10b981' },
+                        { name: 'Izin', value: kelasData.izin, fill: '#f59e0b' },
+                        { name: 'Sakit', value: kelasData.sakit, fill: '#3b82f6' },
+                        { name: 'Alpa', value: kelasData.alpa, fill: '#ef4444' }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={isMobile ? 80 : 100}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {[kelasData.hadir, kelasData.izin, kelasData.sakit, kelasData.alpa].map((entry, index) => (
+                        <Cell key={`cell-${index}`} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900">Trend Kehadiran Kelas {userData.kelas}</h3>
+            {/* Weekly Trend */}
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">
+                Trend Kehadiran Kelas {userData.kelas}
+              </h3>
+              <div className={isMobile ? "h-64" : "h-80"}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={dashboardData.weeklyTrend}
+                    margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 20 } : { top: 20, right: 30, left: 20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis 
+                      dataKey="day" 
+                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <Tooltip
+                      formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
+                      labelFormatter={(label) => `Hari: ${label}`}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="attendance"
+                      stroke="#2563eb"
+                      strokeWidth={isMobile ? 2 : 3}
+                      dot={{ r: isMobile ? 4 : 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={dashboardData.weeklyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
-                    labelFormatter={(label) => `Hari: ${label}`}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="attendance"
-                    stroke="#2563eb"
-                    strokeWidth={3}
-                    dot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button 
                 onClick={() => handleNavigation('/attendance')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <ClipboardList size={20} />
-                <span>Input Kehadiran</span>
+                <ClipboardList size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Input Kehadiran</span>
               </button>
               <button 
                 onClick={() => handleNavigation('/grades')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <BarChart3 size={20} />
-                <span>Input Nilai</span>
+                <BarChart3 size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Input Nilai</span>
               </button>
               <button 
                 onClick={() => handleNavigation('/students')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <Users size={20} />
-                <span>Lihat Data Siswa</span>
+                <Users size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Data Siswa</span>
               </button>
             </div>
           </div>
@@ -793,7 +881,6 @@ const Dashboard = ({ userData }) => {
     }
 
     if (userData.role === 'guru_mapel') {
-      // Find the best class and store it in a variable before rendering
       const bestClass = dashboardData.classAttendance.length > 0
         ? dashboardData.classAttendance.reduce((best, current) => {
             const currentTotal = current.hadir + current.izin + current.sakit + current.alpa;
@@ -805,124 +892,149 @@ const Dashboard = ({ userData }) => {
         : null;
 
       return (
-        <div className="space-y-8">
-          <div className="flex justify-end">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
+              <span>Tampilan {isMobile ? 'Mobile' : 'Desktop'} - Guru Mapel</span>
+            </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
+                refreshing ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
-              <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Memperbarui...' : 'Refresh Data'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
-              title="Total Kelas Diampu"
+              title="Total Kelas"
               value={dashboardData.totalClasses}
               subtitle={`Kelas 1 - ${dashboardData.totalClasses}`}
               icon={GraduationCap}
               color="blue"
             />
             <StatsCard
-              title="Siswa Keseluruhan"
+              title="Total Siswa"
               value={dashboardData.totalStudents}
-              subtitle="Semua kelas yang diampu"
+              subtitle="Semua kelas"
               icon={Users}
               color="green"
             />
             <StatsCard
-              title="Rata-rata Kehadiran"
+              title="Rata-rata Hadir"
               value={`${dashboardData.attendanceRate}%`}
-              subtitle="Semua kelas hari ini"
+              subtitle="Hari ini"
               icon={BarChart3}
               color="purple"
             />
             <StatsCard
               title="Kelas Terbaik"
-              value={bestClass ? bestClass.kelas : 'N/A'}
+              value={bestClass ? bestClass.kelas.replace('Kelas ', '') : 'N/A'}
               subtitle="Kehadiran tertinggi"
               icon={TrendingUp}
               color="orange"
             />
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900">Perbandingan Kehadiran Antar Kelas - Hari Ini</h3>
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200">
+          {/* Class Comparison Chart */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                Perbandingan Kehadiran Antar Kelas
+              </h3>
+              <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
                 <Download size={16} />
                 Export
               </button>
             </div>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={dashboardData.classAttendance}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis dataKey="kelas" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="hadir" fill="#10b981" name="Hadir" />
-                <Bar dataKey="izin" fill="#f59e0b" name="Izin" />
-                <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" />
-                <Bar dataKey="alpa" fill="#ef4444" name="Alpa" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Ringkasan Per Kelas - Hari Ini</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {dashboardData.classAttendance.map((kelas, index) => {
-                const total = kelas.hadir + kelas.izin + kelas.sakit + kelas.alpa;
-                const attendanceRate = total > 0 ? Math.round((kelas.hadir / total) * 100) : 0;
-                
-                return (
-                  <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-5 hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 group">
-                    <h4 className="text-lg font-bold mb-4 text-gray-900 group-hover:text-white">{kelas.kelas}</h4>
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div>
-                        <span className="block text-xl font-bold text-gray-900 group-hover:text-white">{total}</span>
-                        <span className="text-xs opacity-80 font-medium">Total Siswa</span>
-                      </div>
-                      <div>
-                        <span className="block text-xl font-bold text-gray-900 group-hover:text-white">{attendanceRate}%</span>
-                        <span className="text-xs opacity-80 font-medium">Kehadiran</span>
-                      </div>
-                      <div>
-                        <span className="block text-xl font-bold text-gray-900 group-hover:text-white">{kelas.alpa}</span>
-                        <span className="text-xs opacity-80 font-medium">Alpa</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className={isMobile ? "h-96" : "h-80"}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={dashboardData.classAttendance}
+                  margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 40 } : { top: 20, right: 30, left: 20, bottom: 20 }}
+                  layout={isMobile ? "vertical" : "horizontal"}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  {isMobile ? (
+                    <>
+                      <XAxis type="number" tick={{ fontSize: 10 }} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="kelas" 
+                        tick={{ fontSize: 10 }}
+                        width={80}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <XAxis 
+                        dataKey="kelas" 
+                        angle={-45}
+                        textAnchor="end"
+                        tick={{ fontSize: 10 }}
+                        height={80}
+                      />
+                      <YAxis tick={{ fontSize: 10 }} />
+                    </>
+                  )}
+                  <Tooltip />
+                  <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Class Summary */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Ringkasan Per Kelas</h3>
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} gap-4`}>
+              {dashboardData.classAttendance.map((kelas, index) => (
+                <MobileClassCard
+                  key={index}
+                  kelas={kelas.kelas}
+                  hadir={kelas.hadir}
+                  izin={kelas.izin}
+                  sakit={kelas.sakit}
+                  alpa={kelas.alpa}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button 
                 onClick={() => handleNavigation('/attendance')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <ClipboardList size={20} />
-                <span>Input Kehadiran</span>
+                <ClipboardList size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Input Kehadiran</span>
               </button>
               <button 
                 onClick={() => handleNavigation('/grades')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <BarChart3 size={20} />
-                <span>Input Nilai</span>
+                <BarChart3 size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Input Nilai</span>
               </button>
               <button 
                 onClick={() => handleNavigation('/students')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
               >
-                <Users size={20} />
-                <span>Lihat Data Siswa</span>
+                <Users size={isMobile ? 18 : 20} />
+                <span className="text-sm sm:text-base">Data Siswa</span>
               </button>
             </div>
           </div>
@@ -938,7 +1050,7 @@ const Dashboard = ({ userData }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {renderDashboardByRole()}
     </div>
   );

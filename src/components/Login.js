@@ -321,7 +321,7 @@ const Login = ({ onLoginSuccess }) => {
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex justify-center mb-3 sm:mb-4">
               <Logo 
-                size="xlarge" 
+                size="large" 
                 className="drop-shadow-2xl"
                 onLogoLoad={(hasLogo) => {
                   console.log('Logo loaded:', hasLogo);

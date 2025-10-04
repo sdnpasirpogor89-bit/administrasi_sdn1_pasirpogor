@@ -15,7 +15,6 @@ import {
   FileX,
   Clock,
   RefreshCw,
-  Menu,
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
@@ -211,8 +210,7 @@ const StatusButton = React.memo(
         onClick={onClick}
         disabled={disabled}>
         <Icon size={14} className="flex-shrink-0" />
-        <span className="hidden sm:inline">{label}</span>
-        <span className="sm:hidden text-xs">{label.charAt(0)}</span>
+        <span className="text-xs sm:text-sm">{label}</span>
       </button>
     );
   }
@@ -271,7 +269,7 @@ const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
   );
 });
 
-// Mobile Student Card Component - NEW
+// Mobile Student Card Component - IMPROVED: No toggle, langsung show status
 const StudentCard = ({
   student,
   originalIndex,
@@ -281,10 +279,9 @@ const StudentCard = ({
   updateNote,
   saving,
 }) => {
-  const [showActions, setShowActions] = useState(false);
-
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm">
+      {/* Student Info */}
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-sm truncate">
@@ -300,74 +297,66 @@ const StudentCard = ({
             {student.jenis_kelamin}
           </span>
         </div>
-        <button
-          onClick={() => setShowActions(!showActions)}
-          className="p-2 text-gray-400 hover:text-gray-600 touch-manipulation">
-          <Menu size={18} />
-        </button>
       </div>
 
-      {showActions && (
-        <div className="space-y-3 pt-3 border-t border-gray-100">
-          <div className="grid grid-cols-2 gap-2">
-            <StatusButton
-              status="Hadir"
-              active={attendance.status === "Hadir"}
-              onClick={() => updateStatus(activeClass, originalIndex, "Hadir")}
-              icon={Check}
-              label="Hadir"
-              disabled={saving}
-            />
-            <StatusButton
-              status="Sakit"
-              active={attendance.status === "Sakit"}
-              onClick={() => updateStatus(activeClass, originalIndex, "Sakit")}
-              icon={Hospital}
-              label="Sakit"
-              disabled={saving}
-            />
-            <StatusButton
-              status="Izin"
-              active={attendance.status === "Izin"}
-              onClick={() => updateStatus(activeClass, originalIndex, "Izin")}
-              icon={FileText}
-              label="Izin"
-              disabled={saving}
-            />
-            <StatusButton
-              status="Alpa"
-              active={attendance.status === "Alpa"}
-              onClick={() => updateStatus(activeClass, originalIndex, "Alpa")}
-              icon={FileX}
-              label="Alpa"
-              disabled={saving}
-            />
-          </div>
+      {/* Status Buttons - LANGSUNG TAMPIL, ga perlu toggle */}
+      <div className="grid grid-cols-2 gap-2">
+        <StatusButton
+          status="Hadir"
+          active={attendance.status === "Hadir"}
+          onClick={() => updateStatus(activeClass, originalIndex, "Hadir")}
+          icon={Check}
+          label="Hadir"
+          disabled={saving}
+        />
+        <StatusButton
+          status="Sakit"
+          active={attendance.status === "Sakit"}
+          onClick={() => updateStatus(activeClass, originalIndex, "Sakit")}
+          icon={Hospital}
+          label="Sakit"
+          disabled={saving}
+        />
+        <StatusButton
+          status="Izin"
+          active={attendance.status === "Izin"}
+          onClick={() => updateStatus(activeClass, originalIndex, "Izin")}
+          icon={FileText}
+          label="Izin"
+          disabled={saving}
+        />
+        <StatusButton
+          status="Alpa"
+          active={attendance.status === "Alpa"}
+          onClick={() => updateStatus(activeClass, originalIndex, "Alpa")}
+          icon={FileX}
+          label="Alpa"
+          disabled={saving}
+        />
+      </div>
 
-          <input
-            type="text"
-            placeholder="Keterangan..."
-            value={attendance.note || ""}
-            onChange={(e) =>
-              updateNote(activeClass, originalIndex, e.target.value)
-            }
-            disabled={saving}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-      )}
+      {/* Keterangan Input */}
+      <input
+        type="text"
+        placeholder="Keterangan..."
+        value={attendance.note || ""}
+        onChange={(e) =>
+          updateNote(activeClass, originalIndex, e.target.value)
+        }
+        disabled={saving}
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      />
     </div>
   );
 };
 
-// Custom hook for attendance logic - ORIGINAL COMPLETE
+// Custom hook for attendance logic
 const useAttendance = (currentUser) => {
   const [studentsData, setStudentsData] = useState({});
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Memoized function to load students data
   const loadStudentsData = useCallback(async () => {
     try {
       setLoading(true);
@@ -387,7 +376,6 @@ const useAttendance = (currentUser) => {
 
       if (error) throw error;
 
-      // Group students by class
       const groupedStudents = {};
       for (let i = 1; i <= 6; i++) {
         groupedStudents[i] = [];
@@ -430,20 +418,18 @@ const useAttendance = (currentUser) => {
   const loadAttendanceForDate = useCallback(
     async (date, classNum) => {
       try {
-        // Modified query to include guru_input filter based on current user
         const { data, error } = await supabase
           .from("attendance")
           .select("*")
           .eq("tanggal", date)
           .eq("kelas", classNum)
-          .eq("guru_input", currentUser.username); // Filter by current user
+          .eq("guru_input", currentUser.username);
 
         if (error) throw error;
 
         setAttendanceData((prev) => {
           const newAttendanceData = { ...prev };
 
-          // Reset attendance for this class to default 'Hadir'
           if (newAttendanceData[classNum]) {
             Object.keys(newAttendanceData[classNum]).forEach((index) => {
               newAttendanceData[classNum][index] = {
@@ -453,10 +439,8 @@ const useAttendance = (currentUser) => {
               };
             });
 
-            // Apply saved attendance data if exists
             if (data && data.length > 0) {
               data.forEach((record) => {
-                // Find student index by NISN in the current students data
                 const studentIndex = studentsData[classNum]?.findIndex(
                   (s) => s.nisn === record.nisn
                 );
@@ -464,7 +448,6 @@ const useAttendance = (currentUser) => {
                   studentIndex !== -1 &&
                   newAttendanceData[classNum][studentIndex]
                 ) {
-                  // Handle both "Alfa" and "Alpa" for backward compatibility
                   let status = record.status;
                   if (status === "Alfa") status = "Alpa";
 
@@ -500,7 +483,7 @@ const useAttendance = (currentUser) => {
   };
 };
 
-// Main Attendance Component - ENHANCED FOR RESPONSIVENESS
+// Main Attendance Component - OPTIMIZED FOR MOBILE
 const Attendance = ({
   currentUser = { role: "admin", kelas: null, username: "admin" },
 }) => {
@@ -529,11 +512,28 @@ const Attendance = ({
   const [rekapSubtitle, setRekapSubtitle] = useState("");
   const [rekapLoading, setRekapLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
-  const [viewMode, setViewMode] = useState("table"); // NEW: Mobile view toggle
+  
+  // Device detection state
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
-  // Helper function to determine jenis_presensi based on user role
+  // Device detection
+  useEffect(() => {
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    checkDeviceType();
+    window.addEventListener('resize', checkDeviceType);
+    return () => window.removeEventListener('resize', checkDeviceType);
+  }, []);
+
+  // Determine view mode - Mobile pake cards, Tablet & Desktop pake table
+  const showCardView = isMobile;
+
   const getJenisPresensi = useCallback(() => {
-    // Guru kelas return 'kelas', guru mapel return 'mapel'
     return currentUser.role === "guru_kelas" ? "kelas" : "mapel";
   }, [currentUser.role]);
 
@@ -668,7 +668,7 @@ const Attendance = ({
     [checkClassAccess]
   );
 
-  // Check existing attendance - Modified to include guru_input check
+  // Check existing attendance
   const checkExistingAttendance = useCallback(
     async (classNum, date) => {
       try {
@@ -677,7 +677,7 @@ const Attendance = ({
           .select("*")
           .eq("tanggal", date)
           .eq("kelas", classNum)
-          .eq("guru_input", currentUser.username) // Check for current user's data
+          .eq("guru_input", currentUser.username)
           .limit(1);
 
         if (error) {
@@ -693,7 +693,7 @@ const Attendance = ({
     [currentUser.username]
   );
 
-  // Save attendance data to database - Modified to include guru_input and jenis_presensi
+  // Save attendance data to database
   const saveAttendanceData = useCallback(
     async (classNum, date) => {
       try {
@@ -704,7 +704,6 @@ const Attendance = ({
           throw new Error("Tidak ada data attendance untuk disimpan");
         }
 
-        // Prepare data for insertion with new fields
         const attendanceRecords = Object.values(attendanceData[classNum]).map(
           (student) => ({
             tanggal: date,
@@ -713,27 +712,25 @@ const Attendance = ({
             kelas: classNum,
             status: student.status,
             keterangan: student.note || "",
-            guru_input: currentUser.username, // Add guru_input field
-            jenis_presensi: getJenisPresensi(), // Add jenis_presensi field
+            guru_input: currentUser.username,
+            jenis_presensi: getJenisPresensi(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
         );
 
-        // Delete existing records for this date, class, and guru_input (modified delete condition)
         const { error: deleteError } = await supabase
           .from("attendance")
           .delete()
           .eq("tanggal", date)
           .eq("kelas", classNum)
-          .eq("guru_input", currentUser.username); // Only delete current user's records
+          .eq("guru_input", currentUser.username);
 
         if (deleteError) {
           console.error("Delete error:", deleteError);
           throw deleteError;
         }
 
-        // Insert new records
         const { error: insertError } = await supabase
           .from("attendance")
           .insert(attendanceRecords);
@@ -749,7 +746,6 @@ const Attendance = ({
           `Presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
         );
 
-        // Reload data from database to show saved state
         await loadAttendanceForDate(date, classNum);
       } catch (error) {
         console.error("Error saving attendance:", error);
@@ -802,7 +798,6 @@ const Attendance = ({
 
     setSaving(true);
     try {
-      // Check if data already exists for current user
       const exists = await checkExistingAttendance(activeClass, attendanceDate);
 
       if (exists) {
@@ -834,39 +829,29 @@ const Attendance = ({
     getJenisPresensi,
   ]);
 
-  // Generate rekap data from database - FIXED VERSION
+  // Generate rekap data from database
   const generateRekapData = useCallback(
     async (classNum, month, year) => {
       try {
         setRekapLoading(true);
 
-        // Get all students for the class
         const students = studentsData[classNum] || [];
 
         if (students.length === 0) {
           return [];
         }
 
-        // Get the last day of the month properly
         const lastDayOfMonth = new Date(year, month, 0).getDate();
         const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
         const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
           lastDayOfMonth
         ).padStart(2, "0")}`;
 
-        console.log("📅 Fetching attendance for:", {
-          startDate,
-          endDate,
-          classNum,
-          username: currentUser.username,
-        });
-
-        // Modified query to filter by guru_input and order by date
         const { data: attendanceRecords, error } = await supabase
           .from("attendance")
           .select("*")
           .eq("kelas", classNum)
-          .eq("guru_input", currentUser.username) // Filter by current user
+          .eq("guru_input", currentUser.username)
           .gte("tanggal", startDate)
           .lte("tanggal", endDate)
           .order("tanggal", { ascending: true });
@@ -875,22 +860,13 @@ const Attendance = ({
           throw error;
         }
 
-        console.log(
-          "📊 Attendance Records fetched:",
-          attendanceRecords?.length || 0,
-          "records"
-        );
-
-        // Calculate summary for each student
         const rekapData = students.map((student) => {
           const studentRecords = attendanceRecords.filter(
             (record) => record.nisn === student.nisn
           );
 
-          // ✅ KEY FIX: BUILD dailyStatus object
           const dailyStatus = {};
           studentRecords.forEach((record) => {
-            // Normalize status to lowercase for consistency with RecapModal
             dailyStatus[record.tanggal] = record.status.toLowerCase();
           });
 
@@ -898,7 +874,6 @@ const Attendance = ({
             hadir: studentRecords.filter((r) => r.status === "Hadir").length,
             sakit: studentRecords.filter((r) => r.status === "Sakit").length,
             izin: studentRecords.filter((r) => r.status === "Izin").length,
-            // Handle both old "Alfa" and new "Alpa" format
             alpa: studentRecords.filter(
               (r) => r.status === "Alpa" || r.status === "Alfa"
             ).length,
@@ -911,18 +886,16 @@ const Attendance = ({
           return {
             nisn: student.nisn,
             name: student.nama_siswa,
-            nama_siswa: student.nama_siswa, // Add alias for compatibility
-            dailyStatus: dailyStatus, // ✅ KEY FIX - Add daily status object
+            nama_siswa: student.nama_siswa,
+            dailyStatus: dailyStatus,
             hadir: counts.hadir,
             sakit: counts.sakit,
             izin: counts.izin,
             alpa: counts.alpa,
-            total: totalDays, // ✅ KEY FIX - Add total days
+            total: totalDays,
             percentage: percentage,
           };
         });
-
-        console.log("📈 Generated Rekap Data sample:", rekapData[0]);
 
         return rekapData;
       } catch (error) {
@@ -944,7 +917,6 @@ const Attendance = ({
     setRekapSubtitle("Laporan Kehadiran Siswa");
     setShowRekapModal(true);
 
-    // Load data untuk bulan sekarang sebagai default
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
@@ -970,7 +942,7 @@ const Attendance = ({
     [activeClass, generateRekapData]
   );
 
-  // Export attendance function dengan ExcelJS
+  // Export attendance function
   const exportAttendance = useCallback(
     async (month, year) => {
       try {
@@ -1059,24 +1031,39 @@ const Attendance = ({
         />
       </div>
 
-      {/* Search and Class Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            />
+      {/* Search and Controls - OPTIMIZED FOR MOBILE */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-4">
+        {/* SEARCH INPUT - FULL WIDTH DI MOBILE */}
+        <div className="relative w-full">
+          <Search
+            size={18}
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="Cari nama siswa atau NISN..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-medium text-sm sm:text-base"
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          {/* DATE PICKER - FULL WIDTH DI MOBILE */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <label className="font-semibold text-gray-700 whitespace-nowrap text-sm sm:text-base">
+              Tanggal:
+            </label>
             <input
-              type="text"
-              placeholder="Cari nama siswa atau NISN..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-medium text-sm sm:text-base"
+              type="date"
+              value={attendanceDate}
+              onChange={(e) => setAttendanceDate(e.target.value)}
+              className="w-full sm:w-auto px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium bg-white text-sm sm:text-base"
             />
           </div>
 
-          <div className="flex gap-2 flex-wrap">
+          {/* CLASS TABS */}
+          <div className="flex gap-2 flex-wrap flex-1 justify-center sm:justify-start">
             {availableClasses.map((classNum) => (
               <button
                 key={classNum}
@@ -1091,108 +1078,72 @@ const Attendance = ({
             ))}
           </div>
         </div>
-
-        {/* Mobile View Toggle */}
-        <div className="flex sm:hidden gap-2 mt-4">
-          <button
-            onClick={() => setViewMode("table")}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === "table"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}>
-            Tabel
-          </button>
-          <button
-            onClick={() => setViewMode("cards")}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === "cards"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}>
-            Kartu
-          </button>
-        </div>
       </div>
 
       {/* Attendance Controls */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-          <div className="flex items-center gap-3 lg:flex-shrink-0">
-            <label className="font-semibold text-gray-700 whitespace-nowrap text-sm sm:text-base">
-              Tanggal:
-            </label>
-            <input
-              type="date"
-              value={attendanceDate}
-              onChange={(e) => setAttendanceDate(e.target.value)}
-              className="px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium bg-white text-sm sm:text-base"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1 w-full">
-            <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-              onClick={markAllPresent}
-              disabled={
-                !studentsData[activeClass] ||
-                studentsData[activeClass].length === 0 ||
-                saving
-              }>
-              {saving ? (
-                <RefreshCw size={14} className="animate-spin" />
-              ) : (
-                <Check size={14} />
-              )}
-              <span className="hidden sm:inline">Hadir Semua</span>
-              <span className="sm:hidden">Semua</span>
-            </button>
-            <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-              onClick={saveAttendance}
-              disabled={
-                !studentsData[activeClass] ||
-                studentsData[activeClass].length === 0 ||
-                saving
-              }>
-              {saving ? (
-                <RefreshCw size={14} className="animate-spin" />
-              ) : (
-                <Save size={14} />
-              )}
-              <span className="hidden sm:inline">Simpan Presensi</span>
-              <span className="sm:hidden">Simpan</span>
-            </button>
-            <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-              onClick={showRekap}
-              disabled={
-                !studentsData[activeClass] ||
-                studentsData[activeClass].length === 0
-              }>
-              <Calendar size={14} />
-              <span className="hidden sm:inline">Lihat Rekap</span>
-              <span className="sm:hidden">Rekap</span>
-            </button>
-            <button
-              className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-              onClick={() => setShowExportModal(true)}
-              disabled={
-                !studentsData[activeClass] ||
-                studentsData[activeClass].length === 0
-              }>
-              <Download size={14} />
-              <span className="hidden sm:inline">Export Excel</span>
-              <span className="sm:hidden">Export</span>
-            </button>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
+          <button
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            onClick={markAllPresent}
+            disabled={
+              !studentsData[activeClass] ||
+              studentsData[activeClass].length === 0 ||
+              saving
+            }>
+            {saving ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <Check size={14} />
+            )}
+            <span className="hidden sm:inline">Hadir Semua</span>
+            <span className="sm:hidden">Hadir Semua</span>
+          </button>
+          <button
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            onClick={saveAttendance}
+            disabled={
+              !studentsData[activeClass] ||
+              studentsData[activeClass].length === 0 ||
+              saving
+            }>
+            {saving ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <Save size={14} />
+            )}
+            <span className="hidden sm:inline">Simpan Presensi</span>
+            <span className="sm:hidden">Simpan Presensi</span>
+          </button>
+          <button
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            onClick={showRekap}
+            disabled={
+              !studentsData[activeClass] ||
+              studentsData[activeClass].length === 0
+            }>
+            <Calendar size={14} />
+            <span className="hidden sm:inline">Lihat Rekap</span>
+            <span className="sm:hidden">Lihat Rekap</span>
+          </button>
+          <button
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            onClick={() => setShowExportModal(true)}
+            disabled={
+              !studentsData[activeClass] ||
+              studentsData[activeClass].length === 0
+            }>
+            <Download size={14} />
+            <span className="hidden sm:inline">Export Excel</span>
+            <span className="sm:hidden">Export Excel</span>
+          </button>
         </div>
       </div>
 
-      {/* Students List - Responsive */}
-      {viewMode === "cards" ? (
-        // Mobile Card View
-        <div className="sm:hidden space-y-3">
+      {/* Students List - RESPONSIVE VIEW */}
+      {showCardView ? (
+        // MOBILE CARD VIEW
+        <div className="space-y-3">
           {filteredStudents.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
               <div className="flex flex-col items-center gap-3 text-center">
@@ -1234,28 +1185,28 @@ const Attendance = ({
           )}
         </div>
       ) : (
-        // Table View - FIXED with better proportions
+        // DESKTOP/TABLET TABLE VIEW
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-100 border-b border-gray-200">
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-12 sm:w-14">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-12 sm:w-14">
                     No
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24 sm:w-28">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-24 sm:w-28">
                     NISN
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
                     Nama Siswa
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell w-20">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell w-20">
                     L/P
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell w-56">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden xl:table-cell w-56">
                     Keterangan
                   </th>
                 </tr>
@@ -1377,7 +1328,6 @@ const Attendance = ({
                               disabled={saving}
                             />
                           </div>
-                          {/* Mobile Keterangan - show under buttons on small screens */}
                           <div className="xl:hidden mt-2">
                             <input
                               type="text"
