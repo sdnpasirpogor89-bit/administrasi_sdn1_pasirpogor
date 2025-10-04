@@ -1,61 +1,75 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import ExcelJS from "exceljs";
 
 const StudentList = ({
   students,
   totalStudents,
-  currentPageNum,
-  totalPages,
+  currentPageNum = 1,
+  totalPages = 1,
   searchTerm,
   onSearch,
   onEditStudent,
   onDeleteStudent,
   onLoadStudents,
   onPageChange,
-  onSetCurrentPage,
   isLoading,
-  startIndex,
   rowsPerPage = 20,
   showToast,
-  allStudents, // Tambahan props untuk semua data siswa (tidak terpaginasi)
+  allStudents,
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [viewMode, setViewMode] = useState("table"); // 'table' or 'cards'
+  const [viewMode, setViewMode] = useState("table");
   const [isExporting, setIsExporting] = useState(false);
 
-  // Helper function untuk academic year (sama seperti di SPMB.js)
-  const getCurrentAcademicYear = () => {
+  // ✅ FIXED: Fallback calculation untuk totalPages
+  const effectiveTotalPages = totalPages > 0 ? totalPages : Math.ceil(totalStudents / rowsPerPage);
+  const shouldShowPagination = effectiveTotalPages > 1;
+
+  console.log('🎯 PAGINATION DEBUG StudentList:', {
+    totalStudents,
+    currentPageNum, 
+    totalPages,
+    effectiveTotalPages,
+    shouldShowPagination,
+    rowsPerPage,
+    studentsCount: students.length
+  });
+
+  // Helper function untuk academic year
+  const getCurrentAcademicYear = useCallback(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-11
+    const currentMonth = now.getMonth();
     
-    // Pendaftaran siswa baru: Januari-Juli untuk TA tahun depan
-    // Agustus-Desember: pendaftaran untuk TA tahun depan juga
-    if (currentMonth >= 7) { // Agustus-Desember (bulan 7-11)
+    if (currentMonth >= 7) {
       return `${currentYear + 1}/${currentYear + 2}`;
-    } else { // Januari-Juli (bulan 0-6)
+    } else {
       return `${currentYear}/${currentYear + 1}`;
     }
-  };
+  }, []);
 
-  // ✅ ADDED: Helper function untuk format tanggal DD-MM-YYYY
-  const formatDateToDDMMYYYY = (dateString) => {
+  // Helper function untuk format tanggal DD-MM-YYYY
+  const formatDateToDDMMYYYY = useCallback((dateString) => {
     if (!dateString || dateString === "-") return "-";
     
     try {
-      // Jika format YYYY-MM-DD
       if (dateString.includes("-")) {
         const [year, month, day] = dateString.split("-");
         return `${day.padStart(2, '0')}-${month.padStart(2, '0')}-${year}`;
       }
-      
-      // Jika sudah format DD-MM-YYYY atau format lain
       return dateString;
     } catch (error) {
       console.error("Error formatting date:", error);
-      return dateString; // Return original jika error
+      return dateString;
     }
-  };
+  }, []);
+
+  // ✅ FIXED: Helper untuk get display number yang reliable
+  const getDisplayNumber = useCallback((index) => {
+    const page = currentPageNum || 1;
+    const perPage = rowsPerPage || 20;
+    return (page - 1) * perPage + index + 1;
+  }, [currentPageNum, rowsPerPage]);
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -69,7 +83,6 @@ const StudentList = ({
     if (!sortConfig.key) return students;
 
     return [...students].sort((a, b) => {
-      // Mapping field names untuk sorting
       let aValue, bValue;
       
       if (sortConfig.key === "nama") {
@@ -102,32 +115,23 @@ const StudentList = ({
 
   const handleEdit = (student) => {
     onEditStudent(student);
-    onSetCurrentPage("form");
   };
 
   const handleDelete = async (id) => {
-    await onDeleteStudent(id);
-    onLoadStudents();
+    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+      await onDeleteStudent(id);
+    }
   };
 
   // Export to Excel function
   const handleExportData = async () => {
-    console.log("📊 DEBUG EXPORT:", {
-      allStudents: allStudents,
-      allStudentsLength: allStudents?.length,
-      isExporting: isExporting,
-      totalStudents: totalStudents,
-    });
-
     if (!allStudents || allStudents.length === 0) {
-      console.log("⚠ Export gagal: Tidak ada data");
       if (showToast) {
         showToast("Tidak ada data untuk di-export", "error");
       }
       return;
     }
 
-    console.log("✅ Export dimulai...");
     setIsExporting(true);
 
     try {
@@ -136,21 +140,21 @@ const StudentList = ({
 
       // Set column widths
       worksheet.columns = [
-        { width: 5 }, // No
-        { width: 30 }, // Nama Lengkap
-        { width: 15 }, // Jenis Kelamin
-        { width: 25 }, // Tempat Lahir
-        { width: 15 }, // Tanggal Lahir
-        { width: 25 }, // Asal TK/PAUD
-        { width: 15 }, // NISN
-        { width: 25 }, // Nama Ayah
-        { width: 20 }, // Pekerjaan Ayah
-        { width: 20 }, // Pendidikan Ayah
-        { width: 25 }, // Nama Ibu
-        { width: 20 }, // Pekerjaan Ibu
-        { width: 20 }, // Pendidikan Ibu
-        { width: 18 }, // No HP
-        { width: 100 }, // Alamat
+        { width: 5 },
+        { width: 30 },
+        { width: 15 },
+        { width: 25 },
+        { width: 15 },
+        { width: 25 },
+        { width: 15 },
+        { width: 25 },
+        { width: 20 },
+        { width: 20 },
+        { width: 25 },
+        { width: 20 },
+        { width: 20 },
+        { width: 18 },
+        { width: 100 },
       ];
 
       // Get statistics
@@ -160,26 +164,31 @@ const StudentList = ({
       const totalPerempuan = allStudents.filter(
         (s) => s.jenis_kelamin === "Perempuan"
       ).length;
-      const academicYear = getCurrentAcademicYear(); // Dinamis sesuai tahun
+      const academicYear = getCurrentAcademicYear();
       const currentDate = new Date().toLocaleDateString("id-ID", {
         year: "numeric",
         month: "long",
         day: "numeric",
       });
 
-      // Header Sekolah - ✅ CHANGED: Left align
+      // Header Sekolah
       worksheet.mergeCells("A1:O1");
       const schoolHeader = worksheet.getCell("A1");
       schoolHeader.value = "SDN 1 PASIR POGOR";
       schoolHeader.font = { bold: true, size: 16 };
       schoolHeader.alignment = { horizontal: "left", vertical: "middle" };
 
-      // Header Data - ✅ CHANGED: Left align
+      // Header Data
       worksheet.mergeCells("A2:O2");
       const dataHeader = worksheet.getCell("A2");
       dataHeader.value = `DATA CALON SISWA BARU TAHUN AJARAN ${academicYear}`;
       dataHeader.font = { bold: true, size: 14 };
       dataHeader.alignment = { horizontal: "left", vertical: "middle" };
+
+      // Tanggal Export
+      const dateCell = worksheet.getCell("A4");
+      dateCell.value = `Tanggal Export: ${currentDate}`;
+      dateCell.font = { italic: true, size: 11 };
 
       // Total Data
       const totalCell = worksheet.getCell("A5");
@@ -196,12 +205,7 @@ const StudentList = ({
       perempuanCell.value = `Siswa Perempuan: ${totalPerempuan} siswa`;
       perempuanCell.font = { size: 11 };
 
-      // Tanggal Export
-      const dateCell = worksheet.getCell("A4");
-      dateCell.value = `Tanggal Export: ${currentDate}`;
-      dateCell.font = { italic: true, size: 11 };
-
-      // Header tabel (row 10)
+      // Header tabel
       const headers = [
         "No.",
         "Nama Lengkap",
@@ -223,13 +227,13 @@ const StudentList = ({
       const headerRow = worksheet.getRow(10);
       headerRow.values = headers;
 
-      // Style header - Updated to blue theme
+      // Style header
       headerRow.eachCell((cell) => {
         cell.font = { bold: true, color: { argb: "FFFFFF" } };
         cell.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: "1e3a8a" }, // Blue-800 for consistent theme
+          fgColor: { argb: "1e3a8a" },
         };
         cell.alignment = { horizontal: "center", vertical: "middle" };
         cell.border = {
@@ -240,19 +244,17 @@ const StudentList = ({
         };
       });
 
-      // Data rows - Updated mapping sesuai database
+      // Data rows
       allStudents.forEach((student, index) => {
         const row = worksheet.getRow(11 + index);
 
-        // Mapping field yang benar sesuai database
         const namaLengkap = student.nama_lengkap || student.nama || "-";
         const jenisKelamin = student.jenis_kelamin || "-";
         const tempatLahir = student.tempat_lahir || "-";
-        const tanggalLahir = formatDateToDDMMYYYY(student.tanggal_lahir); // ✅ FORMAT DD-MM-YYYY
+        const tanggalLahir = formatDateToDDMMYYYY(student.tanggal_lahir);
         const asalTK = student.asal_tk || student.asal_sekolah || "-";
         const nisn = student.nisn && student.nisn !== "-" ? student.nisn : "-";
         
-        // Data orang tua
         const namaAyah = student.nama_ayah || "-";
         const pekerjaanAyah = student.pekerjaan_ayah || "-";
         const pendidikanAyah = student.pendidikan_ayah || "-";
@@ -262,21 +264,12 @@ const StudentList = ({
         const noHP = student.no_hp || "-";
         const alamat = student.alamat || "-";
 
-        console.log(`📝 Student ${index + 1}:`, {
-          namaLengkap,
-          tanggalLahir, // Debug: cek format tanggal
-          namaAyah,
-          namaIbu,
-          noHP,
-          alamat,
-        });
-
         row.values = [
           index + 1,
           namaLengkap,
           jenisKelamin,
           tempatLahir,
-          tanggalLahir, // ✅ Sudah dalam format DD-MM-YYYY
+          tanggalLahir,
           asalTK,
           nisn,
           namaAyah,
@@ -299,7 +292,6 @@ const StudentList = ({
           };
           cell.alignment = { vertical: "middle" };
 
-          // Alternating row colors
           if (index % 2 === 0) {
             cell.fill = {
               type: "pattern",
@@ -309,7 +301,6 @@ const StudentList = ({
           }
         });
 
-        // Center align No and Jenis Kelamin
         row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
         row.getCell(3).alignment = { horizontal: "center", vertical: "middle" };
       });
@@ -398,8 +389,9 @@ const StudentList = ({
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
+          {/* ✅ FIXED: Gunakan getDisplayNumber */}
           <div className="w-10 h-10 bg-gradient-to-r from-blue-800 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-            {startIndex + index + 1}
+            {getDisplayNumber(index)}
           </div>
           <div>
             <h3 className="font-bold text-gray-800 text-lg">
@@ -519,10 +511,7 @@ const StudentList = ({
 
           {/* Export Data Button */}
           <button
-            onClick={() => {
-              console.log("🖱️ Tombol Export diklik!");
-              handleExportData();
-            }}
+            onClick={handleExportData}
             disabled={isExporting || !allStudents || allStudents.length === 0}
             className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-3">
             <i className="fas fa-file-export"></i>
@@ -543,7 +532,7 @@ const StudentList = ({
         </div>
       </div>
 
-      {/* Statistics - ✅ FIXED: Gunakan allStudents bukan students */}
+      {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-blue-800">
@@ -585,7 +574,7 @@ const StudentList = ({
           )}
         </div>
       ) : (
-        // Table View (Updated database mapping)
+        // Table View
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
@@ -642,8 +631,9 @@ const StudentList = ({
                     <tr
                       key={student.id}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      {/* ✅ FIXED: Gunakan getDisplayNumber */}
                       <td className="p-3 text-gray-600 font-semibold">
-                        {startIndex + index + 1}
+                        {getDisplayNumber(index)}
                       </td>
                       <td className="p-3">
                         <div className="font-semibold text-gray-800">
@@ -716,58 +706,66 @@ const StudentList = ({
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
+      {/* ✅ FIXED: Pagination dengan effectiveTotalPages */}
+      {shouldShowPagination && (
         <div className="flex flex-col sm:flex-row justify-between items-center p-4 mt-6 bg-white rounded-xl shadow-lg border border-gray-200 gap-4">
-          <div className="text-sm text-gray-600">
-            Menampilkan {startIndex + 1}-
-            {Math.min(startIndex + rowsPerPage, totalStudents)} dari{" "}
-            {totalStudents} data
+          <div className="text-sm text-gray-600 text-center sm:text-left">
+            Menampilkan{" "}
+            <span className="font-semibold">
+              {getDisplayNumber(0)}-{getDisplayNumber(sortedStudents.length - 1)}
+            </span>{" "}
+            dari <span className="font-semibold">{totalStudents}</span> data
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onPageChange(currentPageNum - 1)}
-              disabled={currentPageNum === 1}
-              className="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300">
-              <i className="fas fa-chevron-left"></i>{" "}
-              <span className="hidden sm:inline">Sebelumnya</span>
-            </button>
-
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <div className="flex gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPageNum <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPageNum >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPageNum - 2 + i;
-                }
+              <button
+                onClick={() => onPageChange(currentPageNum - 1)}
+                disabled={currentPageNum === 1}
+                className="bg-white border border-gray-300 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 min-w-[120px] justify-center">
+                <i className="fas fa-chevron-left"></i>
+                <span>Sebelumnya</span>
+              </button>
 
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => onPageChange(pageNum)}
-                    className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                      currentPageNum === pageNum
-                        ? "bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg"
-                        : "bg-white border border-gray-300 hover:bg-gray-50"
-                    }`}>
-                    {pageNum}
-                  </button>
-                );
-              })}
+              <div className="flex gap-1 mx-2">
+                {Array.from({ length: Math.min(5, effectiveTotalPages) }, (_, i) => {
+                  let pageNum;
+                  if (effectiveTotalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPageNum <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPageNum >= effectiveTotalPages - 2) {
+                    pageNum = effectiveTotalPages - 4 + i;
+                  } else {
+                    pageNum = currentPageNum - 2 + i;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => onPageChange(pageNum)}
+                      className={`min-w-[44px] h-12 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center ${
+                        currentPageNum === pageNum
+                          ? "bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg"
+                          : "bg-white border border-gray-300 hover:bg-gray-50"
+                      }`}>
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => onPageChange(currentPageNum + 1)}
+                disabled={currentPageNum === effectiveTotalPages}
+                className="bg-white border border-gray-300 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 min-w-[120px] justify-center">
+                <span>Berikutnya</span>
+                <i className="fas fa-chevron-right"></i>
+              </button>
             </div>
-
-            <button
-              onClick={() => onPageChange(currentPageNum + 1)}
-              disabled={currentPageNum === totalPages}
-              className="bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300">
-              <span className="hidden sm:inline">Berikutnya</span>{" "}
-              <i className="fas fa-chevron-right"></i>
-            </button>
+            
+            <div className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
+              Halaman {currentPageNum} dari {effectiveTotalPages}
+            </div>
           </div>
         </div>
       )}

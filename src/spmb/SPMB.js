@@ -1,127 +1,152 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import StudentForm from './StudentForm';
 import StudentList from './StudentList';
 import Statistics from './Statistics';
 
-const SPMB = ({ userData }) => {
-  // State untuk tab navigation
-  const [activeTab, setActiveTab] = useState('form');
-  
-  // State untuk data siswa
+// Custom hook untuk toast notifications
+const useToast = () => {
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = useCallback((message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'info' });
+    }, 3000);
+  }, []);
+
+  return { toast, showToast };
+};
+
+// Custom hook untuk academic year
+const useAcademicYear = () => {
+  const getCurrentAcademicYear = useCallback(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    if (currentMonth >= 7) {
+      return `${currentYear + 1}/${currentYear + 2}`;
+    } else {
+      return `${currentYear}/${currentYear + 1}`;
+    }
+  }, []);
+
+  return { getCurrentAcademicYear };
+};
+
+// Custom hook untuk date conversion
+const useDateFormatter = () => {
+  const convertDateFormat = useCallback((dateString) => {
+    if (!dateString) return null;
+    
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    
+    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(dateString)) {
+      const parts = dateString.split(/[-/]/);
+      const day = parts[0];
+      const month = parts[1];
+      const year = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return null;
+      return date.toISOString().split('T')[0];
+    } catch (e) {
+      console.warn('Cannot parse date:', dateString);
+      return null;
+    }
+  }, []);
+
+  return { convertDateFormat };
+};
+
+// Custom hook untuk students data management - FIXED PAGINATION
+const useStudentsData = (userData, showToast) => {
   const [students, setStudents] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
   const [totalStudents, setTotalStudents] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State untuk pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const rowsPerPage = 20;
-  
-  // State untuk editing
-  const [editingStudent, setEditingStudent] = useState(null);
-  
-  // State untuk toast/notification
-  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
 
-  // Helper function untuk academic year
-  const getCurrentAcademicYear = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-11
-    
-    if (currentMonth >= 5) { // Juni-Desember (bulan 5-11)
-      return `${currentYear + 1}/${currentYear + 2}`;
-    } else { // Januari-Mei (bulan 0-4)  
-      return `${currentYear}/${currentYear + 1}`;
-    }
-  };
+  const { getCurrentAcademicYear } = useAcademicYear();
+  const { convertDateFormat } = useDateFormatter();
 
-  // Load students data
-  const loadStudents = async (page = 1, search = '') => {
+  // ✅ FIXED: Load students data dengan PAGINATION yang benar
+  const loadStudents = useCallback(async (page = 1, search = '') => {
     setIsLoading(true);
     try {
+      const rowsPerPage = 20;
+      const from = (page - 1) * rowsPerPage;
+      const to = from + rowsPerPage - 1;
+
+      console.log('🔍 Loading students:', { page, from, to, search });
+
       let query = supabase
         .from('siswa_baru')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to); // ✅ FIX: Tambah range untuk pagination
 
-      // Apply search filter
       if (search.trim()) {
         query = query.or(`nama_lengkap.ilike.%${search}%,asal_tk.ilike.%${search}%,nama_ayah.ilike.%${search}%,nama_ibu.ilike.%${search}%`);
       }
 
-      // Get total count first
-      const { count } = await query;
+      const { data, count, error } = await query;
+      
+      if (error) {
+        console.error('Query error:', error);
+        throw error;
+      }
+
+      const calculatedTotalPages = Math.ceil((count || 0) / rowsPerPage);
+      
+      console.log('📊 DEBUG PAGINATION SPMB:', {
+        dataLength: data?.length,
+        count: count,
+        from: from,
+        to: to,
+        rowsPerPage: rowsPerPage,
+        calculatedTotalPages: calculatedTotalPages,
+        currentPage: page
+      });
+
       setTotalStudents(count || 0);
-      setTotalPages(Math.ceil((count || 0) / rowsPerPage));
-
-      // Get paginated data
-      const startIndex = (page - 1) * rowsPerPage;
-      const { data, error } = await query
-        .range(startIndex, startIndex + rowsPerPage - 1);
-
-      if (error) throw error;
-
       setStudents(data || []);
-      setCurrentPage(page);
 
-      // Load all students for export and statistics (without pagination)
-      if (!search.trim()) {
+      // Load all students hanya jika tidak ada search dan data belum ada
+      if (!search.trim() && allStudents.length === 0) {
+        console.log('📥 Loading all students for statistics...');
         const { data: allData } = await supabase
           .from('siswa_baru')
           .select('*')
           .order('created_at', { ascending: false });
-        
         setAllStudents(allData || []);
-      } else {
+      } else if (search.trim()) {
         setAllStudents(data || []);
       }
 
+      return { 
+        data: data || [], 
+        totalPages: calculatedTotalPages,
+        totalStudents: count || 0
+      };
     } catch (error) {
       console.error('Error loading students:', error);
       showToast('Gagal memuat data siswa', 'error');
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [allStudents.length, showToast]);
 
-  // Save student (create or update)
-  const saveStudent = async ({ studentData, parentData, isEdit }) => {
+  // Save student dengan optimasi
+  const saveStudent = useCallback(async ({ studentData, parentData, isEdit, editingStudent }) => {
     setIsLoading(true);
     try {
-      // Helper function untuk convert date format
-      const convertDateFormat = (dateString) => {
-        if (!dateString) return null;
-        
-        // Jika sudah format YYYY-MM-DD, return as is
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-          return dateString;
-        }
-        
-        // Jika format DD-MM-YYYY atau DD/MM/YYYY, convert ke YYYY-MM-DD
-        if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(dateString)) {
-          const parts = dateString.split(/[-/]/);
-          const day = parts[0];
-          const month = parts[1]; 
-          const year = parts[2];
-          return `${year}-${month}-${day}`;
-        }
-        
-        // Fallback: coba parse dengan Date object
-        try {
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) return null;
-          return date.toISOString().split('T')[0]; // YYYY-MM-DD
-        } catch (e) {
-          console.warn('Cannot parse date:', dateString);
-          return null;
-        }
-      };
-
-      // Combine student and parent data
       const combinedData = {
         nama_lengkap: studentData.nama,
         jenis_kelamin: studentData.jenis_kelamin,
@@ -145,39 +170,26 @@ const SPMB = ({ userData }) => {
 
       let result;
       if (isEdit && editingStudent) {
-        // Update existing student
         result = await supabase
           .from('siswa_baru')
           .update(combinedData)
           .eq('id', editingStudent.id);
       } else {
-        // Create new student
         result = await supabase
           .from('siswa_baru')
           .insert([combinedData]);
       }
 
-      if (result.error) {
-        console.error('Detailed Supabase error:', result.error);
-        throw result.error;
-      }
+      if (result.error) throw result.error;
 
       showToast(
         `Data siswa berhasil ${isEdit ? 'diupdate' : 'didaftarkan dan diterima'}!`,
         'success'
       );
       
-      // Reload data
-      await loadStudents(currentPage, searchTerm);
-      
       return true;
     } catch (error) {
-      console.error('Error saving student:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('Error saving student:', error);
       showToast(
         `Gagal ${isEdit ? 'mengupdate' : 'menyimpan'} data: ${error.message}`,
         'error'
@@ -186,12 +198,12 @@ const SPMB = ({ userData }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [convertDateFormat, getCurrentAcademicYear, showToast, userData]);
 
   // Delete student
-  const deleteStudent = async (id) => {
+  const deleteStudent = useCallback(async (id) => {
     if (!window.confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-      return;
+      return false;
     }
 
     setIsLoading(true);
@@ -204,177 +216,259 @@ const SPMB = ({ userData }) => {
       if (error) throw error;
 
       showToast('Data siswa berhasil dihapus!', 'success');
-      await loadStudents(currentPage, searchTerm);
+      return true;
     } catch (error) {
       console.error('Error deleting student:', error);
       showToast('Gagal menghapus data: ' + error.message, 'error');
+      return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast]);
 
-  // Toast notification
-  const showToast = (message, type = 'info') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'info' });
-    }, 3000);
+  return {
+    students,
+    allStudents,
+    totalStudents,
+    isLoading,
+    loadStudents,
+    saveStudent,
+    deleteStudent,
+    setIsLoading
   };
+};
 
-  // Search handler
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    setCurrentPage(1);
-    loadStudents(1, value);
-  };
+// Main SPMB Component - FIXED PAGINATION
+const SPMB = ({ userData }) => {
+  const [activeTab, setActiveTab] = useState('form');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingStudent, setEditingStudent] = useState(null);
 
-  // Page change handler
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      loadStudents(page, searchTerm);
+  const { toast, showToast } = useToast();
+  const { getCurrentAcademicYear } = useAcademicYear();
+  const {
+    students,
+    allStudents,
+    totalStudents,
+    isLoading,
+    loadStudents,
+    saveStudent,
+    deleteStudent
+  } = useStudentsData(userData, showToast);
+
+  // ✅ FIXED: Initial load students
+  useEffect(() => {
+    const initializeData = async () => {
+      const result = await loadStudents(1, '');
+      if (result && result.totalPages) {
+        setTotalPages(result.totalPages);
+      }
+    };
+    
+    initializeData();
+  }, [loadStudents]);
+
+  // Handle search dengan debounce effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      console.log('🔍 Searching:', searchTerm);
+      loadStudents(1, searchTerm).then(result => {
+        if (result && result.totalPages) {
+          setTotalPages(result.totalPages);
+          setCurrentPage(1); // Reset ke page 1 saat search
+        }
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, loadStudents]);
+
+  // ✅ FIXED: Handle page change
+  const handlePageChange = useCallback(async (page) => {
+    console.log('🔄 Changing to page:', page);
+    setCurrentPage(page);
+    const result = await loadStudents(page, searchTerm);
+    if (result && result.totalPages) {
+      setTotalPages(result.totalPages);
     }
-  };
+  }, [searchTerm, loadStudents]);
 
-  // Edit student handler
-  const handleEditStudent = (student) => {
+  // Handle edit student
+  const handleEditStudent = useCallback((student) => {
     setEditingStudent(student);
     setActiveTab('form');
-  };
-
-  // Load initial data
-  useEffect(() => {
-    loadStudents();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Handle form submission
+  const handleSaveStudent = useCallback(async (formData) => {
+    const success = await saveStudent({
+      ...formData,
+      editingStudent
+    });
+    
+    if (success) {
+      setEditingStudent(null);
+      const result = await loadStudents(currentPage, searchTerm);
+      if (result && result.totalPages) {
+        setTotalPages(result.totalPages);
+      }
+    }
+    
+    return success;
+  }, [saveStudent, editingStudent, loadStudents, currentPage, searchTerm]);
+
+  // Handle delete student
+  const handleDeleteStudent = useCallback(async (id) => {
+    const success = await deleteStudent(id);
+    if (success) {
+      const result = await loadStudents(currentPage, searchTerm);
+      if (result && result.totalPages) {
+        setTotalPages(result.totalPages);
+      }
+    }
+  }, [deleteStudent, loadStudents, currentPage, searchTerm]);
+
+  // Handle refresh data
+  const handleRefreshData = useCallback(async () => {
+    console.log('🔄 Refreshing data...');
+    const result = await loadStudents(currentPage, searchTerm);
+    if (result && result.totalPages) {
+      setTotalPages(result.totalPages);
+    }
+  }, [loadStudents, currentPage, searchTerm]);
 
   // Calculate statistics
   const maleStudents = allStudents.filter(s => s.jenis_kelamin === 'Laki-laki').length;
   const femaleStudents = allStudents.filter(s => s.jenis_kelamin === 'Perempuan').length;
-  const startIndex = (currentPage - 1) * rowsPerPage;
+
+  // Mobile bottom navigation items
+  const navItems = [
+    { key: 'form', icon: 'fa-file-alt', label: 'Form', fullLabel: 'Form Pendaftaran' },
+    { key: 'list', icon: 'fa-list', label: 'Data', fullLabel: 'Data Siswa' },
+    { key: 'stats', icon: 'fa-chart-bar', label: 'Stats', fullLabel: 'Statistik' }
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
       <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Toast Notification */}
-      {toast.show && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 animate-slide-down ${
-          toast.type === 'success' ? 'bg-green-50 border-green-400 text-green-800' :
-          toast.type === 'error' ? 'bg-red-50 border-red-400 text-red-800' :
-          'bg-blue-50 border-blue-400 text-blue-800'
-        }`}>
-          <div className="flex items-center gap-2">
-            <i className={`fas ${
-              toast.type === 'success' ? 'fa-check-circle' :
-              toast.type === 'error' ? 'fa-exclamation-circle' :
-              'fa-info-circle'
-            }`}></i>
-            {toast.message}
+        {/* Toast Notification */}
+        {toast.show && (
+          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 animate-slide-down max-w-sm ${
+            toast.type === 'success' ? 'bg-green-50 border-green-400 text-green-800' :
+            toast.type === 'error' ? 'bg-red-50 border-red-400 text-red-800' :
+            'bg-blue-50 border-blue-400 text-blue-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              <i className={`fas ${
+                toast.type === 'success' ? 'fa-check-circle' :
+                toast.type === 'error' ? 'fa-exclamation-circle' :
+                'fa-info-circle'
+              }`}></i>
+              <span className="text-sm">{toast.message}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Page Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 shadow-sm border border-blue-100">
+          <div className="text-center space-y-3">
+            <h1 className="text-2xl sm:text-3xl font-light text-gray-800 tracking-wide">
+              Sistem Penerimaan Murid Baru (SPMB)
+            </h1>
+            <div className="w-20 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500 mx-auto"></div>
+            <p className="text-gray-700 text-base sm:text-lg">SDN 1 PASIR POGOR</p>
+            <p className="text-blue-600 font-medium bg-white/60 px-4 py-2 rounded-full inline-block text-sm sm:text-base">
+              Pendaftaran TA {getCurrentAcademicYear()}
+            </p>
           </div>
         </div>
-      )}
 
-      {/* Page Header - Subtle Color Background */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-8 shadow-sm border border-blue-100">
-        <div className="text-center space-y-3">
-          <h1 className="text-3xl font-light text-gray-800 tracking-wide">
-            Sistem Penerimaan Murid Baru (SPMB)
-          </h1>
-          <div className="w-20 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500 mx-auto"></div>
-          <p className="text-gray-700 text-lg">SDN 1 PASIR POGOR</p>
-          <p className="text-blue-600 font-medium bg-white/60 px-4 py-2 rounded-full inline-block">
-            Pendaftaran TA {getCurrentAcademicYear()}
-          </p>
+        {/* Desktop Navigation Tabs */}
+        <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="flex">
+            {navItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+                  activeTab === item.key
+                    ? 'bg-blue-500 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <i className={`fas ${item.icon}`}></i>
+                <span>{item.fullLabel}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          {activeTab === 'form' && (
+            <StudentForm
+              editingStudent={editingStudent}
+              setEditingStudent={setEditingStudent}
+              students={allStudents}
+              onSaveStudent={handleSaveStudent}
+              isLoading={isLoading}
+            />
+          )}
+
+          {activeTab === 'list' && (
+            <StudentList
+              students={students}
+              allStudents={allStudents}
+              totalStudents={totalStudents}
+              currentPageNum={currentPage} // ✅ FIX: Ganti jadi currentPageNum
+              totalPages={totalPages}
+              searchTerm={searchTerm}
+              onSearch={setSearchTerm}
+              onEditStudent={handleEditStudent}
+              onDeleteStudent={handleDeleteStudent}
+              onLoadStudents={handleRefreshData} // ✅ FIX: Ganti jadi handleRefreshData
+              onPageChange={handlePageChange}
+              isLoading={isLoading}
+              rowsPerPage={20}
+              showToast={showToast}
+            />
+          )}
+
+          {activeTab === 'stats' && (
+            <Statistics
+              students={allStudents}
+              totalStudents={totalStudents}
+              maleStudents={maleStudents}
+              femaleStudents={femaleStudents}
+              getCurrentAcademicYear={getCurrentAcademicYear}
+            />
+          )}
         </div>
       </div>
 
-      {/* Navigation Tabs - Clean White */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-40">
         <div className="flex">
-          <button
-            onClick={() => setActiveTab('form')}
-            className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
-              activeTab === 'form'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <i className="fas fa-file-alt"></i>
-            <span className="hidden sm:inline">Form Pendaftaran</span>
-            <span className="sm:hidden">Form</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('list')}
-            className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
-              activeTab === 'list'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <i className="fas fa-list"></i>
-            <span className="hidden sm:inline">Data Siswa</span>
-            <span className="sm:hidden">Data</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('stats')}
-            className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
-              activeTab === 'stats'
-                ? 'bg-blue-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <i className="fas fa-chart-bar"></i>
-            <span className="hidden sm:inline">Statistik</span>
-            <span className="sm:hidden">Stats</span>
-          </button>
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setActiveTab(item.key)}
+              className={`flex-1 p-3 font-medium transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
+                activeTab === item.key
+                  ? 'text-blue-500 bg-blue-50'
+                  : 'text-gray-600'
+              }`}
+            >
+              <i className={`fas ${item.icon} text-lg`}></i>
+              <span className="text-xs">{item.label}</span>
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Tab Content - Clean White */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        {activeTab === 'form' && (
-          <StudentForm
-            editingStudent={editingStudent}
-            setEditingStudent={setEditingStudent}
-            students={allStudents}
-            onSaveStudent={saveStudent}
-            onLoadStudents={() => loadStudents(currentPage, searchTerm)}
-            isLoading={isLoading}
-          />
-        )}
-
-        {activeTab === 'list' && (
-          <StudentList
-            students={students}
-            allStudents={allStudents}
-            totalStudents={totalStudents}
-            currentPageNum={currentPage}
-            totalPages={totalPages}
-            searchTerm={searchTerm}
-            onSearch={handleSearch}
-            onEditStudent={handleEditStudent}
-            onDeleteStudent={deleteStudent}
-            onLoadStudents={() => loadStudents(currentPage, searchTerm)}
-            onPageChange={handlePageChange}
-            onSetCurrentPage={setActiveTab}
-            isLoading={isLoading}
-            startIndex={startIndex}
-            rowsPerPage={rowsPerPage}
-            showToast={showToast}
-          />
-        )}
-
-        {activeTab === 'stats' && (
-          <Statistics
-            students={allStudents}
-            totalStudents={totalStudents}
-            maleStudents={maleStudents}
-            femaleStudents={femaleStudents}
-            getCurrentAcademicYear={getCurrentAcademicYear}
-          />
-        )}
       </div>
     </div>
-  </div>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Users, UserCheck, BookOpen, Edit3, Trash2, CheckSquare, X } from 'lucide-react';
+import { Plus, Users, UserCheck, BookOpen, Edit3, Trash2, CheckSquare, X, Search, Filter } from 'lucide-react';
 
 const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   const [teachers, setTeachers] = useState([]);
@@ -10,6 +10,12 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     total_students: 0,
     total_teachers: 0,
     active_siswa_baru: 0
+  });
+
+  // FILTER STATES
+  const [studentFilters, setStudentFilters] = useState({
+    kelas: '',
+    search: ''
   });
 
   // MODAL STATES
@@ -30,6 +36,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     type: '',
     data: null
   });
+
+  // MOBILE MENU STATE
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // FORM STATES
   const [teacherForm, setTeacherForm] = useState({
@@ -108,6 +117,23 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // FILTER FUNCTIONS
+  const filteredStudents = students.filter(student => {
+    const matchesKelas = !studentFilters.kelas || student.kelas === studentFilters.kelas;
+    const matchesSearch = !studentFilters.search || 
+      student.nama_siswa.toLowerCase().includes(studentFilters.search.toLowerCase()) ||
+      student.nisn.toLowerCase().includes(studentFilters.search.toLowerCase());
+    
+    return matchesKelas && matchesSearch;
+  });
+
+  const resetFilters = () => {
+    setStudentFilters({
+      kelas: '',
+      search: ''
+    });
   };
 
   // TEACHER FUNCTIONS
@@ -664,20 +690,30 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   );
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">School Management</h2>
-        <div className="flex gap-2">
+    <div className="p-4 lg:p-6">
+      {/* Header dengan Mobile Menu */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-800">School Management</h2>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="sm:hidden p-2 rounded-lg bg-gray-100"
+          >
+            <Plus size={20} className={`transform transition-transform ${mobileMenuOpen ? 'rotate-45' : ''}`} />
+          </button>
+        </div>
+        
+        <div className={`flex flex-col sm:flex-row gap-2 ${mobileMenuOpen ? 'flex' : 'hidden'} sm:flex`}>
           <button
             onClick={() => openTeacherModal('add')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
           >
             <Plus size={16} />
             Tambah Guru
           </button>
           <button
             onClick={() => openStudentModal('add')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
           >
             <Plus size={16} />
             Tambah Siswa
@@ -685,60 +721,60 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         </div>
       </div>
       
-      {/* School Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-blue-50 p-4 rounded-lg">
+      {/* School Statistics - Responsive Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+        <div className="bg-blue-50 p-3 lg:p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="text-blue-600" size={20} />
-            <span className="text-blue-900 font-medium">Total Siswa</span>
+            <Users className="text-blue-600" size={18} />
+            <span className="text-blue-900 font-medium text-sm lg:text-base">Total Siswa</span>
           </div>
-          <p className="text-2xl font-bold text-blue-600">{schoolStats.total_students}</p>
+          <p className="text-xl lg:text-2xl font-bold text-blue-600">{schoolStats.total_students}</p>
         </div>
         
-        <div className="bg-green-50 p-4 rounded-lg">
+        <div className="bg-green-50 p-3 lg:p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <UserCheck className="text-green-600" size={20} />
-            <span className="text-green-900 font-medium">Total Guru</span>
+            <UserCheck className="text-green-600" size={18} />
+            <span className="text-green-900 font-medium text-sm lg:text-base">Total Guru</span>
           </div>
-          <p className="text-2xl font-bold text-green-600">{schoolStats.total_teachers}</p>
+          <p className="text-xl lg:text-2xl font-bold text-green-600">{schoolStats.total_teachers}</p>
         </div>
         
-        <div className="bg-purple-50 p-4 rounded-lg">
+        <div className="bg-purple-50 p-3 lg:p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <BookOpen className="text-purple-600" size={20} />
-            <span className="text-purple-900 font-medium">Kelas</span>
+            <BookOpen className="text-purple-600" size={18} />
+            <span className="text-purple-900 font-medium text-sm lg:text-base">Kelas</span>
           </div>
-          <p className="text-2xl font-bold text-purple-600">{Object.keys(studentsByClass).length}</p>
+          <p className="text-xl lg:text-2xl font-bold text-purple-600">{Object.keys(studentsByClass).length}</p>
         </div>
         
-        <div className="bg-orange-50 p-4 rounded-lg">
+        <div className="bg-orange-50 p-3 lg:p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Plus className="text-orange-600" size={20} />
-            <span className="text-orange-900 font-medium">Siswa Baru</span>
+            <Plus className="text-orange-600" size={18} />
+            <span className="text-orange-900 font-medium text-sm lg:text-base">Siswa Baru</span>
           </div>
-          <p className="text-2xl font-bold text-orange-600">{schoolStats.active_siswa_baru}</p>
+          <p className="text-xl lg:text-2xl font-bold text-orange-600">{schoolStats.active_siswa_baru}</p>
         </div>
       </div>
 
       {/* Teacher Management */}
-      <div className="mb-8">
+      <div className="mb-6 lg:mb-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Management Guru</h3>
         <div className="overflow-x-auto">
-          <table className="w-full border border-gray-200 rounded-lg">
+          <table className="w-full border border-gray-200 rounded-lg min-w-[600px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nama Guru</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Username</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Role</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Kelas</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Status</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Nama Guru</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Username</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Role</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Kelas</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {teachers.map(teacher => (
                 <tr key={teacher.id} className={`hover:bg-gray-50 ${!teacher.is_active ? 'opacity-50 bg-gray-100' : ''}`}>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2 lg:px-4 lg:py-3">
                     <button
                       onClick={() => toggleTeacherStatus(teacher.id, teacher.is_active)}
                       disabled={loading}
@@ -749,17 +785,17 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                       }`}
                     >
                       {teacher.is_active ? <CheckSquare size={12} /> : <X size={12} />}
-                      {teacher.is_active ? 'Active' : 'Inactive'}
+                      <span className="hidden sm:inline">{teacher.is_active ? 'Active' : 'Inactive'}</span>
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{teacher.full_name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">@{teacher.username}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-gray-800">{teacher.full_name}</td>
+                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">@{teacher.username}</td>
+                  <td className="px-3 py-2 lg:px-4 lg:py-3">
                     <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded capitalize">
                       {teacher.role.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
                     <select
                       value={teacher.kelas || ''}
                       onChange={(e) => updateTeacherClass(teacher.id, e.target.value || null)}
@@ -775,8 +811,8 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                       <option value="6">Kelas 6</option>
                     </select>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                  <td className="px-3 py-2 lg:px-4 lg:py-3">
+                    <div className="flex gap-1 lg:gap-2">
                       <button
                         onClick={() => openTeacherModal('edit', teacher)}
                         disabled={loading}
@@ -807,95 +843,162 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         </div>
       </div>
 
-      {/* Student Management */}
-      <div className="mb-8">
+      {/* Student Management dengan Filter */}
+      <div className="mb-6 lg:mb-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Management Siswa</h3>
+        
+        {/* Filter Section */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cari Siswa</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={studentFilters.search}
+                  onChange={(e) => setStudentFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Cari berdasarkan nama atau NISN..."
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="w-full lg:w-48">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter Kelas</label>
+              <select
+                value={studentFilters.kelas}
+                onChange={(e) => setStudentFilters(prev => ({ ...prev, kelas: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">Semua Kelas</option>
+                <option value="1">Kelas 1</option>
+                <option value="2">Kelas 2</option>
+                <option value="3">Kelas 3</option>
+                <option value="4">Kelas 4</option>
+                <option value="5">Kelas 5</option>
+                <option value="6">Kelas 6</option>
+              </select>
+            </div>
+            
+            <div className="w-full lg:w-auto">
+              <button
+                onClick={resetFilters}
+                className="w-full lg:w-auto px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+              >
+                Reset Filter
+              </button>
+            </div>
+          </div>
+          
+          {/* Info hasil filter */}
+          {(studentFilters.kelas || studentFilters.search) && (
+            <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                Menampilkan {filteredStudents.length} siswa
+                {studentFilters.kelas && ` dari Kelas ${studentFilters.kelas}`}
+                {studentFilters.search && ` dengan pencarian "${studentFilters.search}"`}
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full border border-gray-200 rounded-lg">
+          <table className="w-full border border-gray-200 rounded-lg min-w-[600px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">NISN</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nama Siswa</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Jenis Kelamin</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Kelas</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">NISN</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Nama Siswa</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Jenis Kelamin</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Kelas</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Status</th>
+                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {students.map(student => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{student.nisn}</td>
-                  <td className="px-4 py-3 text-sm text-gray-800">{student.nama_siswa}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    <select
-                      value={student.kelas || ''}
-                      onChange={(e) => updateStudentClass(student.id, e.target.value || null)}
-                      disabled={loading}
-                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-                    >
-                      <option value="">Pilih Kelas</option>
-                      <option value="1">Kelas 1</option>
-                      <option value="2">Kelas 2</option>
-                      <option value="3">Kelas 3</option>
-                      <option value="4">Kelas 4</option>
-                      <option value="5">Kelas 5</option>
-                      <option value="6">Kelas 6</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-1 text-xs rounded ${
-                      student.is_active 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {student.is_active ? 'Aktif' : 'Tidak Aktif'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openStudentModal('edit', student)}
+              {filteredStudents.length > 0 ? (
+                filteredStudents.map(student => (
+                  <tr key={student.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-gray-800">{student.nisn}</td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-800">{student.nama_siswa}</td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
+                      {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
+                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
+                      <select
+                        value={student.kelas || ''}
+                        onChange={(e) => updateStudentClass(student.id, e.target.value || null)}
                         disabled={loading}
-                        className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                        title="Edit Siswa"
+                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 disabled:opacity-50"
                       >
-                        <Edit3 size={14} />
-                      </button>
-                      
-                      <button
-                        onClick={() => setDeleteConfirm({ 
-                          show: true, 
-                          type: 'student', 
-                          data: student 
-                        })}
-                        disabled={loading}
-                        className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
-                        title="Hapus Siswa"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                        <option value="">Pilih Kelas</option>
+                        <option value="1">Kelas 1</option>
+                        <option value="2">Kelas 2</option>
+                        <option value="3">Kelas 3</option>
+                        <option value="4">Kelas 4</option>
+                        <option value="5">Kelas 5</option>
+                        <option value="6">Kelas 6</option>
+                      </select>
+                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3">
+                      <span className={`inline-block px-2 py-1 text-xs rounded ${
+                        student.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {student.is_active ? 'Aktif' : 'Tidak Aktif'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 lg:px-4 lg:py-3">
+                      <div className="flex gap-1 lg:gap-2">
+                        <button
+                          onClick={() => openStudentModal('edit', student)}
+                          disabled={loading}
+                          className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                          title="Edit Siswa"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        
+                        <button
+                          onClick={() => setDeleteConfirm({ 
+                            show: true, 
+                            type: 'student', 
+                            data: student 
+                          })}
+                          disabled={loading}
+                          className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                          title="Hapus Siswa"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                    {students.length === 0 ? 'Tidak ada data siswa' : 'Tidak ditemukan siswa yang sesuai dengan filter'}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Student Distribution by Class */}
+      {/* Student Distribution by Class - Responsive Grid */}
       <div>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribusi Siswa per Kelas</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
           {Object.entries(studentsByClass).map(([kelas, students]) => (
-            <div key={kelas} className="border border-gray-200 rounded-lg p-4">
+            <div key={kelas} className="border border-gray-200 rounded-lg p-3 lg:p-4">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-800">Kelas {kelas}</h4>
-                <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                <h4 className="font-semibold text-gray-800 text-sm lg:text-base">Kelas {kelas}</h4>
+                <span className="text-xs lg:text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   {students.length} siswa
                 </span>
               </div>

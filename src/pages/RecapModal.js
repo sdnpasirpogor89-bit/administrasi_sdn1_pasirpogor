@@ -1,5 +1,5 @@
 // src/pages/RecapModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, RefreshCw, Calendar } from 'lucide-react';
 
 // Helper untuk extract semua tanggal unik dari data
@@ -172,6 +172,19 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
     return `Laporan Kehadiran Siswa Bulan ${monthName} ${selectedYear}`;
   };
 
+  // Optimasi performance dengan useMemo
+  const filteredDates = useMemo(() => {
+    return attendanceDates.filter(date => {
+      try {
+        const dateObj = new Date(date + "T00:00:00");
+        return dateObj.getMonth() + 1 === selectedMonth && 
+               dateObj.getFullYear() === selectedYear;
+      } catch (error) {
+        return true;
+      }
+    });
+  }, [attendanceDates, selectedMonth, selectedYear]);
+
   if (!show) return null;
 
   return (
@@ -181,32 +194,44 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
         <div className="bg-gradient-to-r from-blue-400 to-blue-500 text-white p-3 sm:p-4 flex justify-between items-center flex-shrink-0 gap-3">
           <h2 className="text-sm sm:text-lg font-bold">📊 Rekap Presensi</h2>
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
-              <Calendar size={16} className="text-white" />
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => handlePeriodChange(parseInt(e.target.value), selectedYear)}
-                className="bg-transparent text-white text-sm font-medium focus:outline-none cursor-pointer"
-                disabled={loading}
-              >
-                {monthNames.map((month, index) => (
-                  <option key={index + 1} value={index + 1} className="text-gray-700">{month}</option>
-                ))}
-              </select>
+            {/* Period Selector - FIXED: Background putih, text hitam, dropdown terpisah */}
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg p-1 shadow-sm">
+              {/* Bulan */}
+              <div className="flex items-center gap-1">
+                <Calendar size={16} className="text-blue-500" />
+                <select 
+                  value={selectedMonth} 
+                  onChange={(e) => handlePeriodChange(parseInt(e.target.value), selectedYear)}
+                  className="bg-transparent text-gray-700 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 min-w-[80px]"
+                  disabled={loading}
+                >
+                  {monthNames.map((month, index) => (
+                    <option key={index + 1} value={index + 1} className="text-gray-700">
+                      {month}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Tahun */}
               <select 
                 value={selectedYear} 
                 onChange={(e) => handlePeriodChange(selectedMonth, parseInt(e.target.value))}
-                className="bg-transparent text-white text-sm font-medium focus:outline-none cursor-pointer"
+                className="bg-transparent text-gray-700 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px]"
                 disabled={loading}
               >
                 {yearOptions.map(year => (
-                  <option key={year} value={year} className="text-gray-700">{year}</option>
+                  <option key={year} value={year} className="text-gray-700">
+                    {year}
+                  </option>
                 ))}
               </select>
             </div>
+
+            {/* Close Button */}
             <button
               onClick={onClose}
-              className="text-white text-lg sm:text-xl hover:bg-white/20 p-1 rounded-lg transition"
+              className="text-white hover:bg-white/20 p-2 rounded-lg transition min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <X size={20} />
             </button>
@@ -223,9 +248,9 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
             <p className="text-xs sm:text-sm text-gray-600">
               {getDynamicSubtitle()}
             </p>
-            {attendanceDates.length > 0 && (
+            {filteredDates.length > 0 && (
               <p className="text-xs text-blue-600 mt-1">
-                {attendanceDates.length} hari aktif • {formatDateHeader(attendanceDates[0])} - {formatDateHeader(attendanceDates[attendanceDates.length - 1])}
+                {filteredDates.length} hari aktif • {formatDateHeader(filteredDates[0])} - {formatDateHeader(filteredDates[filteredDates.length - 1])}
               </p>
             )}
           </div>
@@ -238,14 +263,20 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
             </div>
           ) : (
             <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm flex-1 flex flex-col">
-              {/* Mobile: Swipe instruction */}
-              {attendanceDates.length > 0 && (
-                <div className="bg-blue-50 p-2 text-center text-xs text-blue-700 sm:hidden border-b border-blue-200 flex-shrink-0">
-                  👉 Geser tabel ke kanan untuk melihat {attendanceDates.length} hari aktif
+              {/* Mobile: Swipe instruction dengan visual indicator */}
+              {filteredDates.length > 0 && (
+                <div className="bg-blue-50 p-2 text-center text-xs text-blue-700 sm:hidden border-b border-blue-200 flex-shrink-0 flex items-center justify-center gap-2">
+                  <span>👉 Geser untuk melihat semua hari</span>
+                  <span className="bg-blue-200 px-2 py-1 rounded text-blue-800 font-bold">
+                    {filteredDates.length} hari
+                  </span>
                 </div>
               )}
               
-              <div className="overflow-auto flex-1">
+              <div className="overflow-auto flex-1 relative">
+                {/* Scroll indicator untuk mobile */}
+                <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-blue-50 to-transparent pointer-events-none sm:hidden z-10"></div>
+                
                 <table className="w-full text-xs sm:text-sm border-collapse">
                   <thead className="bg-gray-100 sticky top-0 z-20">
                     <tr className="border-b-2 border-gray-400">
@@ -258,11 +289,11 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                       </th>
                       
                       {/* Dynamic date columns */}
-                      {attendanceDates.map((date, index) => (
+                      {filteredDates.map((date, index) => (
                         <th
                           key={date}
                           className={`p-1 text-center font-bold text-gray-800 min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
-                            index < attendanceDates.length - 1 ? 'border-r border-gray-300' : 'border-r-2 border-gray-400'
+                            index < filteredDates.length - 1 ? 'border-r border-gray-300' : 'border-r-2 border-gray-400'
                           }`}>
                           {formatDateHeader(date)}
                         </th>
@@ -295,20 +326,20 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                         <tr
                           key={student.nisn || student.id || index}
                           className="border-b border-gray-200 hover:bg-blue-50 transition">
-                          {/* Fixed columns */}
-                          <td className="p-2 text-center border-r-2 border-gray-300 sticky left-0 bg-white z-10 font-medium">
+                          {/* Fixed columns dengan shadow untuk mobile */}
+                          <td className="p-2 text-center border-r-2 border-gray-300 sticky left-0 bg-white z-10 font-medium shadow-right sm:shadow-none">
                             {index + 1}
                           </td>
-                          <td className="p-2 font-medium text-gray-800 border-r-2 border-gray-300 sticky left-[40px] sm:left-[50px] bg-white z-10 whitespace-nowrap">
+                          <td className="p-2 font-medium text-gray-800 border-r-2 border-gray-300 sticky left-[40px] sm:left-[50px] bg-white z-10 whitespace-nowrap shadow-right sm:shadow-none">
                             {student.name || student.full_name || student.nama_siswa}
                           </td>
                           
                           {/* Daily status */}
-                          {attendanceDates.map((date, index) => (
+                          {filteredDates.map((date, index) => (
                             <td
                               key={date}
                               className={`p-1 text-center ${
-                                index < attendanceDates.length - 1 ? 'border-r border-gray-200' : 'border-r-2 border-gray-400'
+                                index < filteredDates.length - 1 ? 'border-r border-gray-200' : 'border-r-2 border-gray-400'
                               }`}>
                               {getStatusBadge(getStudentStatusByDate(student, date))}
                             </td>
@@ -346,7 +377,7 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                     ) : (
                       <tr>
                         <td
-                          colSpan={attendanceDates.length + 8}
+                          colSpan={filteredDates.length + 8}
                           className="p-8 text-center text-gray-500">
                           <div className="text-3xl sm:text-4xl mb-3">📅</div>
                           <h4 className="font-semibold mb-2 text-sm sm:text-base">Belum Ada Data</h4>
@@ -369,7 +400,7 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
           <div className="text-sm text-gray-600">
             {processedData && processedData.length > 0 && (
               <span>
-                Total {processedData.length} siswa • {attendanceDates.length} hari aktif • Periode {monthNames[selectedMonth - 1]} {selectedYear}
+                Total {processedData.length} siswa • {filteredDates.length} hari aktif • Periode {monthNames[selectedMonth - 1]} {selectedYear}
               </span>
             )}
           </div>

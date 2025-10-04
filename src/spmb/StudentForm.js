@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStudent, onLoadStudents, isLoading }) => {
+const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStudent, isLoading }) => {
   const [formSuccess, setFormSuccess] = useState(false);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState(null);
   const [pendingDuplicateCallback, setPendingDuplicateCallback] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Data siswa
     nama: "", jenis_kelamin: "", tempat_lahir: "", tanggal_lahir: "",
@@ -24,7 +25,7 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
   };
 
   // Helper function untuk convert date format - FIXED
-  const convertDateToISO = (dateString) => {
+  const convertDateToISO = useCallback((dateString) => {
     if (!dateString) return null;
     
     // Jika sudah format YYYY-MM-DD, return as is
@@ -42,10 +43,10 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
     }
     
     return null;
-  };
+  }, []);
 
   // Helper function untuk convert date dari ISO ke display format
-  const convertDateToDisplay = (isoDateString) => {
+  const convertDateToDisplay = useCallback((isoDateString) => {
     if (!isoDateString) return '';
     
     // Jika sudah format DD-MM-YYYY, return as is
@@ -63,7 +64,7 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
     }
     
     return isoDateString;
-  };
+  }, []);
 
   // Sync form dengan editing student
   useEffect(() => {
@@ -86,6 +87,7 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
         no_hp: editingStudent.no_hp || "",
         alamat: editingStudent.alamat || ""
       });
+      setCurrentStep(1);
     } else {
       setFormData({
         nama: "", jenis_kelamin: "", tempat_lahir: "", tanggal_lahir: "",
@@ -94,13 +96,14 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
         nama_ibu: "", pekerjaan_ibu: "", pendidikan_ibu: "",
         no_hp: "", alamat: ""
       });
+      setCurrentStep(1);
     }
-  }, [editingStudent]);
+  }, [editingStudent, convertDateToDisplay]);
 
   // Validation functions
-  const validateDateFormat = (dateString) => /^\d{2}-\d{2}-\d{4}$/.test(dateString);
+  const validateDateFormat = useCallback((dateString) => /^\d{2}-\d{2}-\d{4}$/.test(dateString), []);
 
-  const validateStudentInput = (student) => {
+  const validateStudentInput = useCallback((student) => {
     const errors = [];
     
     // Name validation
@@ -119,9 +122,9 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
     }
 
     return errors;
-  };
+  }, []);
 
-  const formatDateInput = (input) => {
+  const formatDateInput = useCallback((input) => {
     let value = input.value.replace(/\D/g, "");
     if (value.length > 2 && value.length <= 4) {
       value = value.substring(0, 2) + "-" + value.substring(2);
@@ -130,9 +133,9 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
     }
     input.value = value;
     setFormData(prev => ({ ...prev, tanggal_lahir: value }));
-  };
+  }, []);
 
-  const checkForDuplicates = (newName, existingStudents, excludeId = null) => {
+  const checkForDuplicates = useCallback((newName, existingStudents, excludeId = null) => {
     const calculateSimilarity = (str1, str2) => {
       const s1 = str1.toLowerCase().trim();
       const s2 = str2.toLowerCase().trim();
@@ -158,7 +161,7 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
       }))
       .filter(item => item.similarity >= 0.8)
       .sort((a, b) => b.similarity - a.similarity);
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -237,7 +240,7 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
     setPendingDuplicateCallback(null);
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       nama: "", jenis_kelamin: "", tempat_lahir: "", tanggal_lahir: "",
       asal_sekolah: "", nisn: "",
@@ -248,24 +251,58 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
     setEditingStudent(null);
     setShowDuplicateWarning(false);
     setPendingDuplicateCallback(null);
-  };
+    setCurrentStep(1);
+  }, [setEditingStudent]);
 
-  const updateFormData = (field, value) => {
+  const updateFormData = useCallback((field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const viewDuplicate = () => {
+  const viewDuplicate = useCallback(() => {
     if (duplicateInfo) {
       const studentName = duplicateInfo.student.nama_lengkap || duplicateInfo.student.nama || "Tidak diketahui";
       const studentSchool = duplicateInfo.student.asal_tk || duplicateInfo.student.asal_sekolah || "Tidak diketahui";
       alert(`Data ditemukan: ${studentName} dari ${studentSchool}`);
       setShowDuplicateWarning(false);
     }
-  };
+  }, [duplicateInfo]);
 
-  const continueAnyway = () => {
+  const continueAnyway = useCallback(() => {
     if (pendingDuplicateCallback) pendingDuplicateCallback();
-  };
+  }, [pendingDuplicateCallback]);
+
+  const nextStep = useCallback(() => {
+    // Validasi step 1 sebelum lanjut
+    if (currentStep === 1) {
+      if (!formData.nama.trim()) {
+        alert("Nama lengkap harus diisi!");
+        return;
+      }
+      if (!formData.jenis_kelamin) {
+        alert("Jenis kelamin harus dipilih!");
+        return;
+      }
+      if (!formData.tempat_lahir.trim()) {
+        alert("Tempat lahir harus diisi!");
+        return;
+      }
+      if (!validateDateFormat(formData.tanggal_lahir)) {
+        alert("Format tanggal lahir harus DD-MM-YYYY!");
+        return;
+      }
+    }
+    setCurrentStep(prev => prev + 1);
+  }, [currentStep, formData, validateDateFormat]);
+
+  const prevStep = useCallback(() => {
+    setCurrentStep(prev => prev - 1);
+  }, []);
+
+  // Steps untuk mobile
+  const steps = [
+    { number: 1, title: "Data Siswa", icon: "fa-user" },
+    { number: 2, title: "Data Orang Tua", icon: "fa-users" }
+  ];
 
   return (
     <div>
@@ -316,277 +353,335 @@ const StudentForm = ({ editingStudent, setEditingStudent, students, onSaveStuden
         Mode: {editingStudent ? `Edit Data - ${editingStudent.nama_lengkap || editingStudent.nama}` : "Tambah Data Baru"}
       </div>
 
+      {/* Mobile Step Indicator */}
+      <div className="sm:hidden bg-white rounded-lg p-4 mb-6 border border-gray-200">
+        <div className="flex justify-between items-center mb-4">
+          {steps.map((step, index) => (
+            <div key={step.number} className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                currentStep >= step.number 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 text-gray-500'
+              }`}>
+                {currentStep > step.number ? <i className="fas fa-check text-xs"></i> : step.number}
+              </div>
+              <span className="text-xs mt-1 text-gray-600">{step.title}</span>
+            </div>
+          ))}
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${(currentStep / steps.length) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* SECTION: Data Siswa */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-          <h3 className="font-semibold text-blue-800 mb-4 flex items-center gap-2">
-            <i className="fas fa-user"></i>
-            Data Siswa
-          </h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Nama Lengkap <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.nama}
-                onChange={(e) => updateFormData('nama', e.target.value)}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                placeholder="Masukkan nama lengkap sesuai akta kelahiran"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* STEP 1: Data Siswa */}
+        {(currentStep === 1 || window.innerWidth >= 640) && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+            <h3 className="font-semibold text-blue-800 mb-4 flex items-center gap-2">
+              <i className="fas fa-user"></i>
+              Data Siswa
+            </h3>
+            
+            <div className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Jenis Kelamin <span className="text-red-500">*</span>
+                  Nama Lengkap <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.nama}
+                  onChange={(e) => updateFormData('nama', e.target.value)}
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                  placeholder="Masukkan nama lengkap sesuai akta kelahiran"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Jenis Kelamin <span className="text-red-500">*</span>
+                    <small className="block text-gray-500 font-normal">
+                      Pilih jenis kelamin siswa
+                    </small>
+                  </label>
+                  <select
+                    value={formData.jenis_kelamin}
+                    onChange={(e) => updateFormData('jenis_kelamin', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    required
+                  >
+                    <option value="">Pilih Jenis Kelamin</option>
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    NISN (Opsional)
+                    <small className="block text-gray-500 font-normal">
+                      Kosongkan jika belum memiliki NISN
+                    </small>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nisn}
+                    onChange={(e) => updateFormData('nisn', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="10 digit NISN"
+                    maxLength="10"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Tempat Lahir <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tempat_lahir}
+                    onChange={(e) => updateFormData('tempat_lahir', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Kota kelahiran"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Tanggal Lahir <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tanggal_lahir}
+                    onChange={(e) => updateFormData('tanggal_lahir', e.target.value)}
+                    onInput={(e) => formatDateInput(e.target)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="DD-MM-YYYY"
+                    maxLength="10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Asal TK/PAUD (Opsional)
                   <small className="block text-gray-500 font-normal">
-                    Pilih jenis kelamin siswa
+                    Kosongkan jika tidak pernah bersekolah TK/PAUD
                   </small>
                 </label>
-                <select
-                  value={formData.jenis_kelamin}
-                  onChange={(e) => updateFormData('jenis_kelamin', e.target.value)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  required
-                >
-                  <option value="">Pilih Jenis Kelamin</option>
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  NISN (Opsional)
-                  <small className="block text-gray-500 font-normal">
-                    Kosongkan jika belum memiliki NISN
-                  </small>
-                </label>
                 <input
                   type="text"
-                  value={formData.nisn}
-                  onChange={(e) => updateFormData('nisn', e.target.value)}
+                  value={formData.asal_sekolah}
+                  onChange={(e) => updateFormData('asal_sekolah', e.target.value)}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="10 digit NISN"
-                  maxLength="10"
+                  placeholder="Nama TK/PAUD asal (kosongkan jika tidak ada)"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Tempat Lahir <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.tempat_lahir}
-                  onChange={(e) => updateFormData('tempat_lahir', e.target.value)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="Kota kelahiran"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Tanggal Lahir <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.tanggal_lahir}
-                  onChange={(e) => updateFormData('tanggal_lahir', e.target.value)}
-                  onInput={(e) => formatDateInput(e.target)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="DD-MM-YYYY"
-                  maxLength="10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Asal TK/PAUD (Opsional)
-                <small className="block text-gray-500 font-normal">
-                  Kosongkan jika tidak pernah bersekolah TK/PAUD
-                </small>
-              </label>
-              <input
-                type="text"
-                value={formData.asal_sekolah}
-                onChange={(e) => updateFormData('asal_sekolah', e.target.value)}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                placeholder="Nama TK/PAUD asal (kosongkan jika tidak ada)"
-              />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* SECTION: Data Orang Tua */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-          <h3 className="font-semibold text-blue-800 mb-4 flex items-center gap-2">
-            <i className="fas fa-users"></i>
-            Data Orang Tua/Wali
-          </h3>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* STEP 2: Data Orang Tua */}
+        {(currentStep === 2 || window.innerWidth >= 640) && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+            <h3 className="font-semibold text-blue-800 mb-4 flex items-center gap-2">
+              <i className="fas fa-users"></i>
+              Data Orang Tua/Wali
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Nama Ayah
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nama_ayah}
+                    onChange={(e) => updateFormData('nama_ayah', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Nama lengkap ayah"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Nama Ibu
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nama_ibu}
+                    onChange={(e) => updateFormData('nama_ibu', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Nama lengkap ibu"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Pekerjaan Ayah
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pekerjaan_ayah}
+                    onChange={(e) => updateFormData('pekerjaan_ayah', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Pekerjaan ayah"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Pekerjaan Ibu
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pekerjaan_ibu}
+                    onChange={(e) => updateFormData('pekerjaan_ibu', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Pekerjaan ibu"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Pendidikan Ayah
+                  </label>
+                  <select
+                    value={formData.pendidikan_ayah}
+                    onChange={(e) => updateFormData('pendidikan_ayah', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                  >
+                    <option value="">Pilih Pendidikan</option>
+                    <option value="SD/Sederajat">SD/Sederajat</option>
+                    <option value="SMP/Sederajat">SMP/Sederajat</option>
+                    <option value="SMA/Sederajat">SMA/Sederajat</option>
+                    <option value="D3">D3</option>
+                    <option value="S1">S1</option>
+                    <option value="S2">S2</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Pendidikan Ibu
+                  </label>
+                  <select
+                    value={formData.pendidikan_ibu}
+                    onChange={(e) => updateFormData('pendidikan_ibu', e.target.value)}
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                  >
+                    <option value="">Pilih Pendidikan</option>
+                    <option value="SD/Sederajat">SD/Sederajat</option>
+                    <option value="SMP/Sederajat">SMP/Sederajat</option>
+                    <option value="SMA/Sederajat">SMA/Sederajat</option>
+                    <option value="D3">D3</option>
+                    <option value="S1">S1</option>
+                    <option value="S2">S2</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Nama Ayah
+                  No. HP Orang Tua <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  value={formData.nama_ayah}
-                  onChange={(e) => updateFormData('nama_ayah', e.target.value)}
+                  value={formData.no_hp}
+                  onChange={(e) => updateFormData('no_hp', e.target.value)}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="Nama lengkap ayah"
+                  placeholder="Contoh: 081234567890"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Nama Ibu
+                  Alamat Lengkap <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.nama_ibu}
-                  onChange={(e) => updateFormData('nama_ibu', e.target.value)}
+                <textarea
+                  value={formData.alamat}
+                  onChange={(e) => updateFormData('alamat', e.target.value)}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="Nama lengkap ibu"
+                  rows="3"
+                  placeholder="Alamat lengkap tempat tinggal"
+                  required
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Pekerjaan Ayah
-                </label>
-                <input
-                  type="text"
-                  value={formData.pekerjaan_ayah}
-                  onChange={(e) => updateFormData('pekerjaan_ayah', e.target.value)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="Pekerjaan ayah"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Pekerjaan Ibu
-                </label>
-                <input
-                  type="text"
-                  value={formData.pekerjaan_ibu}
-                  onChange={(e) => updateFormData('pekerjaan_ibu', e.target.value)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                  placeholder="Pekerjaan ibu"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Pendidikan Ayah
-                </label>
-                <select
-                  value={formData.pendidikan_ayah}
-                  onChange={(e) => updateFormData('pendidikan_ayah', e.target.value)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                >
-                  <option value="">Pilih Pendidikan</option>
-                  <option value="SD/Sederajat">SD/Sederajat</option>
-                  <option value="SMP/Sederajat">SMP/Sederajat</option>
-                  <option value="SMA/Sederajat">SMA/Sederajat</option>
-                  <option value="D3">D3</option>
-                  <option value="S1">S1</option>
-                  <option value="S2">S2</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Pendidikan Ibu
-                </label>
-                <select
-                  value={formData.pendidikan_ibu}
-                  onChange={(e) => updateFormData('pendidikan_ibu', e.target.value)}
-                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                >
-                  <option value="">Pilih Pendidikan</option>
-                  <option value="SD/Sederajat">SD/Sederajat</option>
-                  <option value="SMP/Sederajat">SMP/Sederajat</option>
-                  <option value="SMA/Sederajat">SMA/Sederajat</option>
-                  <option value="D3">D3</option>
-                  <option value="S1">S1</option>
-                  <option value="S2">S2</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                No. HP Orang Tua <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.no_hp}
-                onChange={(e) => updateFormData('no_hp', e.target.value)}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                placeholder="Contoh: 081234567890"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Alamat Lengkap <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={formData.alamat}
-                onChange={(e) => updateFormData('alamat', e.target.value)}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
-                rows="3"
-                placeholder="Alamat lengkap tempat tinggal"
-                required
-              />
             </div>
           </div>
-        </div>
+        )}
 
+        {/* Navigation Buttons */}
         <div className="flex gap-4 pt-4">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex-1 bg-gradient-to-r from-blue-900 to-blue-600 text-white p-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
-          >
-            {isLoading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Menyimpan...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save"></i>
-                {editingStudent ? "Update Data" : "Simpan Data"}
-              </>
-            )}
-          </button>
+          {/* Mobile Step Navigation */}
+          {window.innerWidth < 640 && currentStep > 1 && (
+            <button
+              type="button"
+              onClick={prevStep}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-400 text-white p-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-3"
+            >
+              <i className="fas fa-arrow-left"></i>
+              Kembali
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={resetForm}
-            className="bg-gradient-to-r from-gray-600 to-gray-400 text-white p-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-3 px-6"
-          >
-            <i className="fas fa-undo"></i> Reset
-          </button>
+          {window.innerWidth < 640 && currentStep < 2 && (
+            <button
+              type="button"
+              onClick={nextStep}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-400 text-white p-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-3"
+            >
+              Lanjut
+              <i className="fas fa-arrow-right"></i>
+            </button>
+          )}
+
+          {/* Desktop/Submit Buttons */}
+          {(window.innerWidth >= 640 || currentStep === 2) && (
+            <>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-400 text-white p-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-save"></i>
+                    {editingStudent ? "Update Data" : "Simpan Data"}
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForm}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-300 text-white p-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl flex items-center justify-center gap-3"
+              >
+                <i className="fas fa-undo"></i>
+                Reset Form
+              </button>
+            </>
+          )}
         </div>
       </form>
     </div>

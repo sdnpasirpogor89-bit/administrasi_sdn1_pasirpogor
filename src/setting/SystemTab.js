@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Download, Upload, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Download, Upload, AlertTriangle, RefreshCw, Table, FileText } from 'lucide-react';
 
 const SystemTab = ({ user, loading, setLoading, showToast }) => {
   const [schoolSettings, setSchoolSettings] = useState({
@@ -54,6 +54,143 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
     } catch (error) {
       console.error('Error loading school data:', error);
       showToast('Error loading school data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fungsi konversi JSON ke CSV - FIXED NULL HANDLING
+  const convertToCSV = (data) => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return '';
+    }
+    
+    // Pastikan data tidak null dan ada properti
+    const validData = data.filter(item => item !== null && typeof item === 'object');
+    if (validData.length === 0) return '';
+    
+    const headers = Object.keys(validData[0]);
+    const csvHeaders = headers.join(',');
+    
+    const csvRows = validData.map(row => {
+      return headers.map(header => {
+        // Handle nilai yang null, undefined, atau mengandung koma/quote
+        let value = row[header];
+        if (value === null || value === undefined) {
+          value = '';
+        }
+        value = String(value);
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          value = `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }).join(',');
+    });
+    
+    return [csvHeaders, ...csvRows].join('\n');
+  };
+
+  // Export tabel individual ke CSV
+  const exportTableToCSV = async (tableName, displayName) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*');
+      
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        showToast(`Tidak ada data di tabel ${displayName}`, 'warning');
+        return;
+      }
+      
+      const csvContent = convertToCSV(data);
+      if (!csvContent) {
+        showToast(`Data ${displayName} tidak valid untuk di-export`, 'error');
+        return;
+      }
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${schoolSettings.school_name?.replace(/\s+/g, '_')}_${tableName}_${schoolSettings.academic_year.replace('/', '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast(`${displayName} berhasil di-export ke CSV!`, 'success');
+      
+    } catch (error) {
+      console.error(`Error exporting ${tableName}:`, error);
+      showToast(`Error exporting ${displayName}: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Export semua tabel ke CSV
+  const exportAllTablesToCSV = async () => {
+    try {
+      setLoading(true);
+      
+      const tables = [
+        { name: 'users', display: 'Pengguna' },
+        { name: 'students', display: 'Siswa' },
+        { name: 'attendance', display: 'Kehadiran' },
+        { name: 'nilai', display: 'Nilai' },
+        { name: 'siswa_baru', display: 'Siswa Baru' },
+        { name: 'school_settings', display: 'Pengaturan Sekolah' }
+      ];
+      
+      let exportedCount = 0;
+      
+      for (const table of tables) {
+        try {
+          const { data, error } = await supabase
+            .from(table.name)
+            .select('*');
+          
+          if (error) {
+            console.error(`Error fetching ${table.name}:`, error);
+            continue;
+          }
+          
+          if (data && data.length > 0) {
+            const csvContent = convertToCSV(data);
+            if (csvContent) {
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${schoolSettings.school_name?.replace(/\s+/g, '_')}_${table.name}_${schoolSettings.academic_year.replace('/', '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              exportedCount++;
+              
+              // Tunggu sebentar antara setiap export
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+        } catch (tableError) {
+          console.error(`Error exporting ${table.name}:`, tableError);
+        }
+      }
+      
+      if (exportedCount > 0) {
+        showToast(`${exportedCount} tabel berhasil di-export ke CSV!`, 'success');
+      } else {
+        showToast('Tidak ada data untuk di-export', 'warning');
+      }
+      
+    } catch (error) {
+      console.error('Error exporting all tables:', error);
+      showToast('Error exporting data', 'error');
     } finally {
       setLoading(false);
     }
@@ -215,9 +352,82 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
     <div className="p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">System Management</h2>
       
+      {/* Export Individual Tables to CSV */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Export Data ke CSV</h3>
+        <p className="text-gray-600 mb-4">
+          Export data per tabel ke format CSV untuk analisis atau backup selektif.
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <button
+            onClick={() => exportTableToCSV('users', 'Data Pengguna')}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50 font-medium"
+          >
+            <Table size={16} />
+            Export Users
+          </button>
+          
+          <button
+            onClick={() => exportTableToCSV('students', 'Data Siswa')}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 disabled:opacity-50 font-medium"
+          >
+            <Table size={16} />
+            Export Students
+          </button>
+          
+          <button
+            onClick={() => exportTableToCSV('attendance', 'Data Kehadiran')}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 disabled:opacity-50 font-medium"
+          >
+            <Table size={16} />
+            Export Attendance
+          </button>
+          
+          <button
+            onClick={() => exportTableToCSV('nilai', 'Data Nilai')}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 disabled:opacity-50 font-medium"
+          >
+            <Table size={16} />
+            Export Nilai
+          </button>
+          
+          <button
+            onClick={() => exportTableToCSV('siswa_baru', 'Data Siswa Baru')}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50 font-medium"
+          >
+            <Table size={16} />
+            Export Siswa Baru
+          </button>
+          
+          <button
+            onClick={() => exportTableToCSV('school_settings', 'Pengaturan Sekolah')}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 font-medium"
+          >
+            <Table size={16} />
+            Export Settings
+          </button>
+        </div>
+        
+        <button
+          onClick={exportAllTablesToCSV}
+          disabled={loading}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium"
+        >
+          <FileText size={18} />
+          {loading ? 'Exporting...' : 'Export Semua Tabel ke CSV'}
+        </button>
+      </div>
+      
       {/* Database Backup */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Database Backup</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Database Backup (JSON)</h3>
         <p className="text-gray-600 mb-4">
           Download backup lengkap database untuk keperluan keamanan dan migrasi data.
         </p>
@@ -228,7 +438,7 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
         >
           <Download size={18} />
-          {loading ? 'Membuat Backup...' : 'Download Backup Database'}
+          {loading ? 'Membuat Backup...' : 'Download Backup Database (JSON)'}
         </button>
         
         <div className="mt-4 text-xs text-gray-500">
