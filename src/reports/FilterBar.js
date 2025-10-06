@@ -1,114 +1,179 @@
 // src/reports/FilterBar.js
-import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Search, RefreshCw, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
+/**
+ * FilterBar Component - Improved
+ * ✅ Fixed: Prevent infinite re-render
+ * ✅ Optimized: Parallel fetching, debouncing
+ * ✅ Better UX: Loading states, error handling
+ */
 const FilterBar = ({ 
   onFilterChange, 
   userRole = 'admin',
   userKelas = null,
   userMapel = null,
-  currentFilters = {}
+  currentFilters = {},
+  reportType = 'students' // ✅ ADDED: Pass reportType as prop instead of from currentFilters
 }) => {
-  const [filters, setFilters] = useState({
-    kelas: currentFilters.kelas || (userRole === 'guru_kelas' ? userKelas : ''),
-    mapel: currentFilters.mapel || (userRole === 'guru_mapel' ? userMapel : ''),
-    periode: currentFilters.periode || 'semua',
-    jenisNilai: currentFilters.jenisNilai || 'all',
-    status: currentFilters.status || 'all',
-    jenisPresensi: currentFilters.jenisPresensi || 'all',
-    jenisKelamin: currentFilters.jenisKelamin || 'all',
-  });
+  // ✅ Initialize with default values
+  const getDefaultFilters = useCallback(() => ({
+    kelas: userRole === 'guru_kelas' ? userKelas : '',
+    mapel: userRole === 'guru_mapel' ? userMapel : '',
+    periode: 'semua',
+    jenisNilai: 'all',
+    status: 'all',
+    jenisPresensi: 'all',
+    jenisKelamin: 'all',
+  }), [userRole, userKelas, userMapel]);
 
+  // ✅ Merge currentFilters with defaults
+  const initialFilters = useMemo(() => ({
+    ...getDefaultFilters(),
+    ...currentFilters
+  }), []); // Only run once on mount
+
+  const [filters, setFilters] = useState(initialFilters);
   const [kelasOptions, setKelasOptions] = useState([]);
   const [mapelOptions, setMapelOptions] = useState([]);
   const [jenisNilaiOptions, setJenisNilaiOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fetch kelas dari database
+  // ✅ Ref untuk track apakah ini first mount
+  const isFirstMount = useRef(true);
+  
+  // ✅ Debounce timer
+  const debounceTimer = useRef(null);
+
+  // ✅ Fetch all options in parallel (single useEffect)
   useEffect(() => {
-    const fetchKelas = async () => {
+    const fetchAllOptions = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        const { data, error } = await supabase
-          .from('students')
-          .select('kelas')
-          .eq('is_active', true);
+        // Parallel fetch dengan Promise.all
+        const [kelasResult, mapelResult, jenisNilaiResult] = await Promise.all([
+          // Fetch kelas
+          supabase
+            .from('students')
+            .select('kelas')
+            .eq('is_active', true),
+          
+          // Fetch mapel
+          supabase
+            .from('nilai')
+            .select('mata_pelajaran'),
+          
+          // Fetch jenis nilai
+          supabase
+            .from('nilai')
+            .select('jenis_nilai')
+        ]);
 
-        if (error) throw error;
-
-        const uniqueKelas = [...new Set(data.map(s => s.kelas))].sort();
+        // Process kelas
+        if (kelasResult.error) throw kelasResult.error;
+        const uniqueKelas = [...new Set(
+          kelasResult.data.map(s => s.kelas).filter(Boolean)
+        )].sort();
         setKelasOptions(uniqueKelas);
-      } catch (error) {
-        console.error('Error fetching kelas:', error);
-        setKelasOptions(['1', '2', '3', '4', '5', '6']);
-      }
-    };
 
-    fetchKelas();
-  }, []);
-
-  // Fetch mapel dari database
-  useEffect(() => {
-    const fetchMapel = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('nilai')
-          .select('mata_pelajaran');
-
-        if (error) throw error;
-
-        const uniqueMapel = [...new Set(data.map(n => n.mata_pelajaran))].filter(Boolean).sort();
+        // Process mapel
+        if (mapelResult.error) throw mapelResult.error;
+        const uniqueMapel = [...new Set(
+          mapelResult.data.map(n => n.mata_pelajaran).filter(Boolean)
+        )].sort();
         setMapelOptions(uniqueMapel);
-      } catch (error) {
-        console.error('Error fetching mapel:', error);
-        setMapelOptions(['Matematika', 'Bahasa Indonesia', 'IPA', 'IPS', 'PKn', 'PAI', 'PJOK']);
-      }
-    };
 
-    fetchMapel();
-  }, []);
-
-  // Fetch jenis nilai dari database
-  useEffect(() => {
-    const fetchJenisNilai = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('nilai')
-          .select('jenis_nilai');
-
-        if (error) throw error;
-
-        const uniqueJenisNilai = [...new Set(data.map(n => n.jenis_nilai))].filter(Boolean).sort();
+        // Process jenis nilai
+        if (jenisNilaiResult.error) throw jenisNilaiResult.error;
+        const uniqueJenisNilai = [...new Set(
+          jenisNilaiResult.data.map(n => n.jenis_nilai).filter(Boolean)
+        )].sort();
         setJenisNilaiOptions(uniqueJenisNilai);
-      } catch (error) {
-        console.error('Error fetching jenis nilai:', error);
-        setJenisNilaiOptions(['NH-1', 'NH-2', 'NH-3', 'NH-4', 'NH-5', 'UTS', 'UAS', 'Nilai Akhir']);
+
+      } catch (err) {
+        console.error('Error fetching filter options:', err);
+        setError('Gagal memuat opsi filter');
+        
+        // Fallback values (minimal, bisa dikustomisasi)
+        setKelasOptions([]);
+        setMapelOptions([]);
+        setJenisNilaiOptions([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchJenisNilai();
+    fetchAllOptions();
+  }, []); // Only run once on mount
+
+  // ✅ Debounced filter change handler
+  const handleChange = useCallback((key, value) => {
+    // Update local state immediately (for responsive UI)
+    setFilters(prev => {
+      const newFilters = { ...prev, [key]: value };
+      
+      // Debounce the callback to parent
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+
+      debounceTimer.current = setTimeout(() => {
+        onFilterChange(newFilters);
+      }, 300); // 300ms debounce
+
+      return newFilters;
+    });
+  }, [onFilterChange]);
+
+  // ✅ Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
   }, []);
 
-  const handleChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
-  };
-
-  const handleReset = () => {
-    const resetFilters = {
-      kelas: userRole === 'guru_kelas' ? userKelas : '',
-      mapel: userRole === 'guru_mapel' ? userMapel : '',
-      periode: 'semua',
-      jenisNilai: 'all',
-      status: 'all',
-      jenisPresensi: 'all',
-      jenisKelamin: 'all',
-    };
+  // ✅ Reset handler
+  const handleReset = useCallback(() => {
+    const resetFilters = getDefaultFilters();
     setFilters(resetFilters);
+    
+    // Clear debounce dan trigger immediately
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
     onFilterChange(resetFilters);
-  };
+  }, [getDefaultFilters, onFilterChange]);
 
-  const reportType = currentFilters.type || 'students';
+  // ✅ Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8 space-x-2">
+        <Loader2 size={20} className="animate-spin text-blue-500" />
+        <span className="text-gray-600">Memuat filter...</span>
+      </div>
+    );
+  }
+
+  // ✅ Show error state
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600 text-sm">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 text-sm text-red-700 underline hover:text-red-800"
+        >
+          Muat Ulang
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -135,15 +200,21 @@ const FilterBar = ({
           <select
             value={filters.kelas}
             onChange={(e) => handleChange('kelas', e.target.value)}
-            disabled={userRole === 'guru_kelas'}
+            disabled={userRole === 'guru_kelas' || kelasOptions.length === 0}
             className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              userRole === 'guru_kelas' ? 'bg-gray-100 cursor-not-allowed' : ''
+              userRole === 'guru_kelas' || kelasOptions.length === 0
+                ? 'bg-gray-100 cursor-not-allowed' 
+                : ''
             }`}
           >
             {userRole !== 'guru_kelas' && <option value="">Semua Kelas</option>}
-            {kelasOptions.map(k => (
-              <option key={k} value={k}>Kelas {k}</option>
-            ))}
+            {kelasOptions.length > 0 ? (
+              kelasOptions.map(k => (
+                <option key={k} value={k}>Kelas {k}</option>
+              ))
+            ) : (
+              <option value="">Tidak ada data</option>
+            )}
           </select>
         </div>
 
@@ -156,15 +227,21 @@ const FilterBar = ({
             <select
               value={filters.mapel}
               onChange={(e) => handleChange('mapel', e.target.value)}
-              disabled={userRole === 'guru_mapel'}
+              disabled={userRole === 'guru_mapel' || mapelOptions.length === 0}
               className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                userRole === 'guru_mapel' ? 'bg-gray-100 cursor-not-allowed' : ''
+                userRole === 'guru_mapel' || mapelOptions.length === 0
+                  ? 'bg-gray-100 cursor-not-allowed' 
+                  : ''
               }`}
             >
               {userRole !== 'guru_mapel' && <option value="">Semua Mapel</option>}
-              {mapelOptions.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
+              {mapelOptions.length > 0 ? (
+                mapelOptions.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))
+              ) : (
+                <option value="">Tidak ada data</option>
+              )}
             </select>
           </div>
         )}
@@ -215,8 +292,9 @@ const FilterBar = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Semua</option>
-                <option value="L">Laki-laki</option>
-                <option value="P">Perempuan</option>
+                {/* ✅ FIXED: Match database values */}
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
               </select>
             </div>
           </>
@@ -238,7 +316,7 @@ const FilterBar = ({
                 <option value="Hadir">Hadir</option>
                 <option value="Sakit">Sakit</option>
                 <option value="Izin">Izin</option>
-                <option value="Alpha">Alpha</option>
+                <option value="Alpa">Alpa</option>
               </select>
             </div>
             <div>
@@ -251,8 +329,8 @@ const FilterBar = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Semua</option>
-                <option value="Pagi">Pagi</option>
-                <option value="Siang">Siang</option>
+                <option value="mapel">Mapel</option>
+                <option value="kelas">Kelas</option>
               </select>
             </div>
           </>

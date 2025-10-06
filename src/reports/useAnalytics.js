@@ -1,39 +1,96 @@
 // src/reports/useAnalytics.js
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 /**
  * Custom Hook untuk kalkulasi statistik dari data laporan
- * 
+ * ✅ FIXED: Added data flattening for JOIN queries
+ * ✅ Optimized: Single-pass iterations, better null handling, consistent naming
+ *
  * @param {array} data - Array data dari useReportData
  * @param {string} reportType - Jenis laporan: 'students' | 'grades' | 'attendance' | 'teachers'
- * 
+ *
  * @returns {object} Statistics object (berbeda per reportType)
  */
-export const useAnalytics = (data, reportType) => {
+const useAnalytics = (data, reportType) => {
   return useMemo(() => {
+    console.log('🧮 useAnalytics INPUT:', { 
+      reportType, 
+      hasData: !!data, 
+      dataLength: data?.length || 0,
+      firstItem: data?.[0]
+    });
+
+    // FLATTEN DATA DULU SEBELUM PROCESS - FIX untuk JOIN queries
+    const flattenedData = flattenData(data, reportType);
+    console.log('📊 Flattened data first item:', flattenedData?.[0]);
+    console.log('📊 Flattened data keys:', flattenedData?.[0] ? Object.keys(flattenedData[0]) : 'No data');
+
     // Return empty jika tidak ada data
-    if (!data || data.length === 0) {
-      return getEmptyStats(reportType);
+    if (!flattenedData || flattenedData.length === 0) {
+      const emptyStats = getEmptyStats(reportType);
+      console.log('⚠️ useAnalytics: Returning empty stats', emptyStats);
+      return emptyStats;
     }
 
     // Kalkulasi berdasarkan jenis laporan
+    let result;
     switch (reportType) {
-      case 'students':
-        return calculateStudentStats(data);
+      case "students":
+        result = calculateStudentStats(flattenedData);
+        break;
 
-      case 'grades':
-        return calculateGradeStats(data);
+      case "grades":
+        result = calculateGradeStats(flattenedData);
+        break;
 
-      case 'attendance':
-        return calculateAttendanceStats(data);
+      case "attendance":
+        result = calculateAttendanceStats(flattenedData);
+        break;
 
-      case 'teachers':
-        return calculateTeacherStats(data);
+      case "teachers":
+        result = calculateTeacherStats(flattenedData);
+        break;
 
       default:
-        return {};
+        result = getEmptyStats(reportType);
     }
+
+    console.log('✅ useAnalytics OUTPUT:', { reportType, result });
+    return result;
   }, [data, reportType]);
+};
+
+// ========================================
+// DATA FLATTENING UTILITY
+// ========================================
+
+/**
+ * Flatten data structure dari JOIN queries
+ * ✅ FIXED: Handle nested students object dari Supabase JOIN
+ */
+const flattenData = (data, reportType) => {
+  if (!data || !Array.isArray(data)) return data;
+  
+  return data.map(item => {
+    // Jika ada nested students object, flatten it
+    if (item.students && typeof item.students === 'object') {
+      const flattened = {
+        ...item,
+        ...item.students,
+        // Prioritize data dari nested students object
+        nama_siswa: item.students.nama_siswa || item.nama_siswa,
+        is_active: item.students.is_active !== undefined ? item.students.is_active : item.is_active,
+        jenis_kelamin: item.students.jenis_kelamin || item.jenis_kelamin,
+        kelas: item.students.kelas || item.kelas
+      };
+      
+      // Remove the nested students object to avoid duplication
+      delete flattened.students;
+      return flattened;
+    }
+    
+    return item;
+  });
 };
 
 // ========================================
@@ -42,47 +99,50 @@ export const useAnalytics = (data, reportType) => {
 
 /**
  * Kalkulasi statistik siswa
- * 
- * Returns:
- * - total: Total siswa
- * - aktif: Jumlah siswa aktif
- * - tidakAktif: Jumlah siswa tidak aktif
- * - lakiLaki: Jumlah siswa laki-laki
- * - perempuan: Jumlah siswa perempuan
- * - perKelas: Breakdown per kelas
- * - persentaseAktif: Persentase siswa aktif
+ * ✅ Optimized: Single-pass iteration
  */
 const calculateStudentStats = (data) => {
   const total = data.length;
-  const aktif = data.filter(s => s.is_active === true).length;
-  const tidakAktif = total - aktif;
-  const lakiLaki = data.filter(s => s.jenis_kelamin === 'L').length;
-  const perempuan = data.filter(s => s.jenis_kelamin === 'P').length;
+  
+  // Single-pass iteration untuk semua counting
+  let aktif = 0;
+  let lakiLaki = 0;
+  let perempuan = 0;
+  const perKelas = {};
 
-  // Breakdown per kelas
-  const perKelas = data.reduce((acc, student) => {
-    const kelas = student.kelas;
-    if (!acc[kelas]) {
-      acc[kelas] = {
+  data.forEach((student) => {
+    // Count aktif - handle various boolean representations
+    const isActive = student.is_active === true || student.is_active === 'true' || student.is_active === 1;
+    if (isActive) aktif++;
+
+    // Count gender
+    if (student.jenis_kelamin === "Laki-laki") lakiLaki++;
+    if (student.jenis_kelamin === "Perempuan") perempuan++;
+
+    // Breakdown per kelas
+    const kelas = student.kelas || 'Tidak Diketahui';
+    if (!perKelas[kelas]) {
+      perKelas[kelas] = {
         total: 0,
         aktif: 0,
         lakiLaki: 0,
         perempuan: 0,
       };
     }
-    acc[kelas].total++;
-    if (student.is_active) acc[kelas].aktif++;
-    if (student.jenis_kelamin === 'L') acc[kelas].lakiLaki++;
-    if (student.jenis_kelamin === 'P') acc[kelas].perempuan++;
-    return acc;
-  }, {});
+    perKelas[kelas].total++;
+    if (isActive) perKelas[kelas].aktif++;
+    if (student.jenis_kelamin === "Laki-laki") perKelas[kelas].lakiLaki++;
+    if (student.jenis_kelamin === "Perempuan") perKelas[kelas].perempuan++;
+  });
 
-  // Persentase
-  const persentaseAktif = total > 0 ? ((aktif / total) * 100).toFixed(1) : 0;
-  const persentaseLakiLaki = total > 0 ? ((lakiLaki / total) * 100).toFixed(1) : 0;
-  const persentasePerempuan = total > 0 ? ((perempuan / total) * 100).toFixed(1) : 0;
+  const tidakAktif = total - aktif;
 
-  return {
+  // Persentase dengan safe division
+  const persentaseAktif = total > 0 ? ((aktif / total) * 100).toFixed(1) : "0.0";
+  const persentaseLakiLaki = total > 0 ? ((lakiLaki / total) * 100).toFixed(1) : "0.0";
+  const persentasePerempuan = total > 0 ? ((perempuan / total) * 100).toFixed(1) : "0.0";
+
+  const result = {
     total,
     aktif,
     tidakAktif,
@@ -93,6 +153,9 @@ const calculateStudentStats = (data) => {
     persentaseLakiLaki: parseFloat(persentaseLakiLaki),
     persentasePerempuan: parseFloat(persentasePerempuan),
   };
+
+  console.log('✅ calculateStudentStats RESULT:', result);
+  return result;
 };
 
 // ========================================
@@ -101,26 +164,19 @@ const calculateStudentStats = (data) => {
 
 /**
  * Kalkulasi statistik nilai
- * 
- * Returns:
- * - total: Total data nilai
- * - rataRata: Rata-rata nilai keseluruhan
- * - tertinggi: Nilai tertinggi
- * - terendah: Nilai terendah
- * - median: Nilai median
- * - diAtas75: Jumlah nilai di atas 75 (KKM)
- * - diBawah75: Jumlah nilai di bawah 75
- * - persentaseLulus: Persentase yang lulus (≥75)
- * - perMapel: Breakdown per mata pelajaran
- * - perKelas: Breakdown per kelas
- * - perJenisNilai: Breakdown per jenis nilai (UTS, UAS, dll)
+ * ✅ Fixed: Better null handling, safe division
  */
 const calculateGradeStats = (data) => {
   const total = data.length;
-  const nilaiArray = data.map(d => d.nilai).filter(n => n !== null && n !== undefined);
+  
+  // Filter valid nilai dulu
+  const nilaiArray = data
+    .map((d) => d.nilai)
+    .filter((n) => n !== null && n !== undefined && typeof n === 'number' && !isNaN(n));
 
   if (nilaiArray.length === 0) {
-    return getEmptyStats('grades');
+    console.log('⚠️ calculateGradeStats: No valid nilai data');
+    return getEmptyStats("grades");
   }
 
   // Basic stats
@@ -132,94 +188,116 @@ const calculateGradeStats = (data) => {
   // Median
   const sorted = [...nilaiArray].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 === 0
-    ? ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2)
-    : sorted[mid].toFixed(2);
+  const median =
+    sorted.length % 2 === 0
+      ? ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2)
+      : sorted[mid].toFixed(2);
 
   // KKM analysis (75 sebagai standar)
-  const diAtas75 = nilaiArray.filter(n => n >= 75).length;
-  const diBawah75 = nilaiArray.filter(n => n < 75).length;
-  const persentaseLulus = total > 0 ? ((diAtas75 / total) * 100).toFixed(1) : 0;
+  let diAtas75 = 0;
+  let diBawah75 = 0;
+  const gradeDistribution = { A: 0, B: 0, C: 0, D: 0, E: 0 };
 
-  // Breakdown per mata pelajaran
-  const perMapel = data.reduce((acc, item) => {
-    const mapel = item.mata_pelajaran;
-    if (!acc[mapel]) {
-      acc[mapel] = {
-        total: 0,
-        rataRata: 0,
-        nilaiArray: [],
-      };
-    }
-    acc[mapel].total++;
-    acc[mapel].nilaiArray.push(item.nilai);
-    return acc;
-  }, {});
+  nilaiArray.forEach((n) => {
+    if (n >= 75) diAtas75++;
+    else diBawah75++;
 
-  // Calculate rata-rata per mapel
-  Object.keys(perMapel).forEach(mapel => {
-    const values = perMapel[mapel].nilaiArray;
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    perMapel[mapel].rataRata = parseFloat(avg.toFixed(2));
-    delete perMapel[mapel].nilaiArray; // Remove array setelah kalkulasi
+    // Grade distribution
+    if (n >= 90) gradeDistribution.A++;
+    else if (n >= 80) gradeDistribution.B++;
+    else if (n >= 70) gradeDistribution.C++;
+    else if (n >= 60) gradeDistribution.D++;
+    else gradeDistribution.E++;
   });
 
-  // Breakdown per kelas
-  const perKelas = data.reduce((acc, item) => {
-    const kelas = item.kelas;
-    if (!acc[kelas]) {
-      acc[kelas] = {
+  const persentaseLulus = total > 0 ? ((diAtas75 / total) * 100).toFixed(1) : "0.0";
+
+  // Breakdown per mata pelajaran (with null filtering)
+  const perMapel = {};
+  data.forEach((item) => {
+    // Skip kalau nilai null/undefined
+    if (item.nilai === null || item.nilai === undefined || typeof item.nilai !== 'number' || isNaN(item.nilai)) {
+      return;
+    }
+
+    const mapel = item.mata_pelajaran || 'Tidak Diketahui';
+    if (!perMapel[mapel]) {
+      perMapel[mapel] = {
         total: 0,
+        sum: 0,
         rataRata: 0,
-        nilaiArray: [],
       };
     }
-    acc[kelas].total++;
-    acc[kelas].nilaiArray.push(item.nilai);
-    return acc;
-  }, {});
+    perMapel[mapel].total++;
+    perMapel[mapel].sum += item.nilai;
+  });
+
+  // Calculate rata-rata per mapel dengan safe division
+  Object.keys(perMapel).forEach((mapel) => {
+    const mapelData = perMapel[mapel];
+    mapelData.rataRata = mapelData.total > 0 
+      ? parseFloat((mapelData.sum / mapelData.total).toFixed(2))
+      : 0;
+    delete mapelData.sum; // Remove sum setelah kalkulasi
+  });
+
+  // Breakdown per kelas (with null filtering)
+  const perKelas = {};
+  data.forEach((item) => {
+    if (item.nilai === null || item.nilai === undefined || typeof item.nilai !== 'number' || isNaN(item.nilai)) {
+      return;
+    }
+
+    const kelas = item.kelas || 'Tidak Diketahui';
+    if (!perKelas[kelas]) {
+      perKelas[kelas] = {
+        total: 0,
+        sum: 0,
+        rataRata: 0,
+      };
+    }
+    perKelas[kelas].total++;
+    perKelas[kelas].sum += item.nilai;
+  });
 
   // Calculate rata-rata per kelas
-  Object.keys(perKelas).forEach(kelas => {
-    const values = perKelas[kelas].nilaiArray;
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    perKelas[kelas].rataRata = parseFloat(avg.toFixed(2));
-    delete perKelas[kelas].nilaiArray;
+  Object.keys(perKelas).forEach((kelas) => {
+    const kelasData = perKelas[kelas];
+    kelasData.rataRata = kelasData.total > 0
+      ? parseFloat((kelasData.sum / kelasData.total).toFixed(2))
+      : 0;
+    delete kelasData.sum;
   });
 
-  // Breakdown per jenis nilai (UTS, UAS, Quiz, Tugas)
-  const perJenisNilai = data.reduce((acc, item) => {
-    const jenis = item.jenis_nilai;
-    if (!acc[jenis]) {
-      acc[jenis] = {
+  // Breakdown per jenis nilai (with null filtering)
+  const perJenisNilai = {};
+  data.forEach((item) => {
+    if (item.nilai === null || item.nilai === undefined || typeof item.nilai !== 'number' || isNaN(item.nilai)) {
+      return;
+    }
+
+    const jenis = item.jenis_nilai || 'Tidak Diketahui';
+    if (!perJenisNilai[jenis]) {
+      perJenisNilai[jenis] = {
         total: 0,
+        sum: 0,
         rataRata: 0,
-        nilaiArray: [],
       };
     }
-    acc[jenis].total++;
-    acc[jenis].nilaiArray.push(item.nilai);
-    return acc;
-  }, {});
-
-  // Calculate rata-rata per jenis nilai
-  Object.keys(perJenisNilai).forEach(jenis => {
-    const values = perJenisNilai[jenis].nilaiArray;
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
-    perJenisNilai[jenis].rataRata = parseFloat(avg.toFixed(2));
-    delete perJenisNilai[jenis].nilaiArray;
+    perJenisNilai[jenis].total++;
+    perJenisNilai[jenis].sum += item.nilai;
   });
 
-  // Grade distribution (A, B, C, D, E)
-  const gradeDistribution = {
-    A: nilaiArray.filter(n => n >= 90).length,  // 90-100
-    B: nilaiArray.filter(n => n >= 80 && n < 90).length,  // 80-89
-    C: nilaiArray.filter(n => n >= 70 && n < 80).length,  // 70-79
-    D: nilaiArray.filter(n => n >= 60 && n < 70).length,  // 60-69
-    E: nilaiArray.filter(n => n < 60).length,   // <60
-  };
+  // Calculate rata-rata per jenis nilai
+  Object.keys(perJenisNilai).forEach((jenis) => {
+    const jenisData = perJenisNilai[jenis];
+    jenisData.rataRata = jenisData.total > 0
+      ? parseFloat((jenisData.sum / jenisData.total).toFixed(2))
+      : 0;
+    delete jenisData.sum;
+  });
 
-  return {
+  const result = {
     total,
     rataRata: parseFloat(rataRata),
     tertinggi,
@@ -233,6 +311,9 @@ const calculateGradeStats = (data) => {
     perJenisNilai,
     gradeDistribution,
   };
+
+  console.log('✅ calculateGradeStats RESULT:', result);
+  return result;
 };
 
 // ========================================
@@ -241,120 +322,122 @@ const calculateGradeStats = (data) => {
 
 /**
  * Kalkulasi statistik presensi
- * 
- * Returns:
- * - total: Total data presensi
- * - hadir: Jumlah hadir
- * - sakit: Jumlah sakit
- * - izin: Jumlah izin
- * - alpha: Jumlah alpha
- * - persentaseKehadiran: Persentase kehadiran
- * - perKelas: Breakdown per kelas
- * - perJenisPresensi: Breakdown per jenis presensi (Pagi/Siang)
- * - trendHarian: Trend kehadiran per hari (7 hari terakhir)
+ * ✅ Fixed: Consistent naming (lowercase), single-pass iteration
  */
 const calculateAttendanceStats = (data) => {
   const total = data.length;
-  const hadir = data.filter(a => a.status === 'Hadir').length;
-  const sakit = data.filter(a => a.status === 'Sakit').length;
-  const izin = data.filter(a => a.status === 'Izin').length;
-  const alpha = data.filter(a => a.status === 'Alpha').length;
 
-  // Persentase kehadiran
-  const persentaseKehadiran = total > 0 ? ((hadir / total) * 100).toFixed(1) : 0;
-  const persentaseSakit = total > 0 ? ((sakit / total) * 100).toFixed(1) : 0;
-  const persentaseIzin = total > 0 ? ((izin / total) * 100).toFixed(1) : 0;
-  const persentaseAlpha = total > 0 ? ((alpha / total) * 100).toFixed(1) : 0;
+  // Single-pass iteration untuk semua counting
+  let hadir = 0;
+  let sakit = 0;
+  let izin = 0;
+  let alpa = 0;
+  const perKelas = {};
+  const perJenisPresensi = {};
+  const trendHarian = {};
 
-  // Breakdown per kelas
-  const perKelas = data.reduce((acc, item) => {
-    const kelas = item.kelas;
-    if (!acc[kelas]) {
-      acc[kelas] = {
+  data.forEach((item) => {
+    const status = item.status || 'Tidak Diketahui';
+
+    // Count status
+    if (status === "Hadir") hadir++;
+    else if (status === "Sakit") sakit++;
+    else if (status === "Izin") izin++;
+    else if (status === "Alpa") alpa++;
+
+    // Breakdown per kelas
+    const kelas = item.kelas || 'Tidak Diketahui';
+    if (!perKelas[kelas]) {
+      perKelas[kelas] = {
         total: 0,
         hadir: 0,
         sakit: 0,
         izin: 0,
-        alpha: 0,
+        alpa: 0,
         persentaseKehadiran: 0,
       };
     }
-    acc[kelas].total++;
-    if (item.status === 'Hadir') acc[kelas].hadir++;
-    if (item.status === 'Sakit') acc[kelas].sakit++;
-    if (item.status === 'Izin') acc[kelas].izin++;
-    if (item.status === 'Alpha') acc[kelas].alpha++;
-    return acc;
-  }, {});
+    perKelas[kelas].total++;
+    if (status === "Hadir") perKelas[kelas].hadir++;
+    else if (status === "Sakit") perKelas[kelas].sakit++;
+    else if (status === "Izin") perKelas[kelas].izin++;
+    else if (status === "Alpa") perKelas[kelas].alpa++;
 
-  // Calculate persentase per kelas
-  Object.keys(perKelas).forEach(kelas => {
-    const kelasData = perKelas[kelas];
-    kelasData.persentaseKehadiran = kelasData.total > 0
-      ? parseFloat(((kelasData.hadir / kelasData.total) * 100).toFixed(1))
-      : 0;
+    // Breakdown per jenis presensi
+    const jenis = item.jenis_presensi || "Tidak Ditentukan";
+    if (!perJenisPresensi[jenis]) {
+      perJenisPresensi[jenis] = {
+        total: 0,
+        hadir: 0,
+        sakit: 0,
+        izin: 0,
+        alpa: 0,
+      };
+    }
+    perJenisPresensi[jenis].total++;
+    if (status === "Hadir") perJenisPresensi[jenis].hadir++;
+    else if (status === "Sakit") perJenisPresensi[jenis].sakit++;
+    else if (status === "Izin") perJenisPresensi[jenis].izin++;
+    else if (status === "Alpa") perJenisPresensi[jenis].alpa++;
+
+    // Trend harian
+    const tanggal = item.tanggal;
+    if (tanggal) {
+      if (!trendHarian[tanggal]) {
+        trendHarian[tanggal] = {
+          tanggal,
+          total: 0,
+          hadir: 0,
+          sakit: 0,
+          izin: 0,
+          alpa: 0,
+        };
+      }
+      trendHarian[tanggal].total++;
+      if (status === "Hadir") trendHarian[tanggal].hadir++;
+      else if (status === "Sakit") trendHarian[tanggal].sakit++;
+      else if (status === "Izin") trendHarian[tanggal].izin++;
+      else if (status === "Alpa") trendHarian[tanggal].alpa++;
+    }
   });
 
-  // Breakdown per jenis presensi (Pagi/Siang)
-  const perJenisPresensi = data.reduce((acc, item) => {
-    const jenis = item.jenis_presensi || 'Tidak Ditentukan';
-    if (!acc[jenis]) {
-      acc[jenis] = {
-        total: 0,
-        hadir: 0,
-        sakit: 0,
-        izin: 0,
-        alpha: 0,
-      };
-    }
-    acc[jenis].total++;
-    if (item.status === 'Hadir') acc[jenis].hadir++;
-    if (item.status === 'Sakit') acc[jenis].sakit++;
-    if (item.status === 'Izin') acc[jenis].izin++;
-    if (item.status === 'Alpha') acc[jenis].alpha++;
-    return acc;
-  }, {});
+  // Persentase kehadiran dengan safe division
+  const persentaseKehadiran = total > 0 ? ((hadir / total) * 100).toFixed(1) : "0.0";
+  const persentaseSakit = total > 0 ? ((sakit / total) * 100).toFixed(1) : "0.0";
+  const persentaseIzin = total > 0 ? ((izin / total) * 100).toFixed(1) : "0.0";
+  const persentaseAlpa = total > 0 ? ((alpa / total) * 100).toFixed(1) : "0.0";
 
-  // Trend harian (7 hari terakhir)
-  const trendHarian = data.reduce((acc, item) => {
-    const tanggal = item.tanggal;
-    if (!acc[tanggal]) {
-      acc[tanggal] = {
-        tanggal,
-        total: 0,
-        hadir: 0,
-        sakit: 0,
-        izin: 0,
-        alpha: 0,
-      };
-    }
-    acc[tanggal].total++;
-    if (item.status === 'Hadir') acc[tanggal].hadir++;
-    if (item.status === 'Sakit') acc[tanggal].sakit++;
-    if (item.status === 'Izin') acc[tanggal].izin++;
-    if (item.status === 'Alpha') acc[tanggal].alpha++;
-    return acc;
-  }, {});
+  // Calculate persentase per kelas
+  Object.keys(perKelas).forEach((kelas) => {
+    const kelasData = perKelas[kelas];
+    kelasData.persentaseKehadiran =
+      kelasData.total > 0
+        ? parseFloat(((kelasData.hadir / kelasData.total) * 100).toFixed(1))
+        : 0;
+  });
 
-  // Convert to array dan sort by date
+  // Convert trend to array dan sort by date
   const trendArray = Object.values(trendHarian)
     .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))
     .slice(0, 7); // Ambil 7 hari terakhir
 
-  return {
+  const result = {
     total,
     hadir,
     sakit,
     izin,
-    alpha,
+    alpa,
     persentaseKehadiran: parseFloat(persentaseKehadiran),
     persentaseSakit: parseFloat(persentaseSakit),
     persentaseIzin: parseFloat(persentaseIzin),
-    persentaseAlpha: parseFloat(persentaseAlpha),
+    persentaseAlpa: parseFloat(persentaseAlpa),
     perKelas,
     perJenisPresensi,
     trendHarian: trendArray,
   };
+
+  console.log('✅ calculateAttendanceStats RESULT:', result);
+  return result;
 };
 
 // ========================================
@@ -363,62 +446,66 @@ const calculateAttendanceStats = (data) => {
 
 /**
  * Kalkulasi statistik guru (aktivitas input)
- * 
- * Returns:
- * - totalGuru: Total guru
- * - totalInputNilai: Total input nilai (semua guru)
- * - totalInputPresensi: Total input presensi (semua guru)
- * - totalInput: Total input keseluruhan
- * - rataRataInputPerGuru: Rata-rata input per guru
- * - guruTerbanyak: Guru dengan input terbanyak
- * - guruTersedikit: Guru dengan input tersedikit
- * - perRole: Breakdown per role (Guru Kelas vs Guru Mapel)
+ * ✅ Improved: Better null handling, safe division
  */
 const calculateTeacherStats = (data) => {
   const totalGuru = data.length;
-  const totalInputNilai = data.reduce((sum, guru) => sum + (guru.totalInputNilai || 0), 0);
-  const totalInputPresensi = data.reduce((sum, guru) => sum + (guru.totalInputPresensi || 0), 0);
-  const totalInput = totalInputNilai + totalInputPresensi;
 
-  // Rata-rata input per guru
-  const rataRataInputPerGuru = totalGuru > 0
-    ? (totalInput / totalGuru).toFixed(1)
-    : 0;
+  // Single-pass untuk total counts
+  let totalInputNilai = 0;
+  let totalInputPresensi = 0;
+  const perRole = {};
 
-  // Guru dengan input terbanyak & tersedikit
-  const sortedByInput = [...data].sort((a, b) => b.totalInput - a.totalInput);
-  const guruTerbanyak = sortedByInput[0] || null;
-  const guruTersedikit = sortedByInput[sortedByInput.length - 1] || null;
+  data.forEach((guru) => {
+    totalInputNilai += guru.totalInputNilai || 0;
+    totalInputPresensi += guru.totalInputPresensi || 0;
 
-  // Breakdown per role
-  const perRole = data.reduce((acc, guru) => {
-    const role = guru.role;
-    if (!acc[role]) {
-      acc[role] = {
+    // Breakdown per role
+    const role = guru.role || 'Tidak Diketahui';
+    if (!perRole[role]) {
+      perRole[role] = {
         total: 0,
         totalInputNilai: 0,
         totalInputPresensi: 0,
         totalInput: 0,
       };
     }
-    acc[role].total++;
-    acc[role].totalInputNilai += guru.totalInputNilai || 0;
-    acc[role].totalInputPresensi += guru.totalInputPresensi || 0;
-    acc[role].totalInput += guru.totalInput || 0;
-    return acc;
-  }, {});
+    perRole[role].total++;
+    perRole[role].totalInputNilai += guru.totalInputNilai || 0;
+    perRole[role].totalInputPresensi += guru.totalInputPresensi || 0;
+    perRole[role].totalInput += guru.total_input || 0;
+  });
+
+  const totalInput = totalInputNilai + totalInputPresensi;
+
+  // Rata-rata input per guru dengan safe division
+  const rataRataInputPerGuru =
+    totalGuru > 0 ? (totalInput / totalGuru).toFixed(1) : "0.0";
+
+  // Guru dengan input terbanyak & tersedikit
+  const sortedByInput = [...data].sort(
+    (a, b) => (b.total_input || 0) - (a.total_input || 0)
+  );
+  const guruTerbanyak = sortedByInput[0] || null;
+  const guruTersedikit = sortedByInput[sortedByInput.length - 1] || null;
 
   // Guru yang belum input (dalam 7 hari terakhir)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const guruBelumInput = data.filter(guru => {
+  const guruBelumInput = data.filter((guru) => {
     if (!guru.terakhirInput) return true;
-    const lastInputDate = new Date(guru.terakhirInput);
-    return lastInputDate < sevenDaysAgo;
+    try {
+      const lastInputDate = new Date(guru.terakhirInput);
+      // Check if date is valid
+      if (isNaN(lastInputDate.getTime())) return true;
+      return lastInputDate < sevenDaysAgo;
+    } catch (e) {
+      return true; // If error parsing date, consider as not input
+    }
   }).length;
 
-  return {
+  const result = {
     totalGuru,
     totalInputNilai,
     totalInputPresensi,
@@ -429,6 +516,9 @@ const calculateTeacherStats = (data) => {
     perRole,
     guruBelumInput,
   };
+
+  console.log('✅ calculateTeacherStats RESULT:', result);
+  return result;
 };
 
 // ========================================
@@ -437,10 +527,11 @@ const calculateTeacherStats = (data) => {
 
 /**
  * Return empty stats structure berdasarkan reportType
+ * ✅ Fixed: Consistent naming
  */
 const getEmptyStats = (reportType) => {
   switch (reportType) {
-    case 'students':
+    case "students":
       return {
         total: 0,
         aktif: 0,
@@ -453,7 +544,7 @@ const getEmptyStats = (reportType) => {
         persentasePerempuan: 0,
       };
 
-    case 'grades':
+    case "grades":
       return {
         total: 0,
         rataRata: 0,
@@ -469,23 +560,23 @@ const getEmptyStats = (reportType) => {
         gradeDistribution: { A: 0, B: 0, C: 0, D: 0, E: 0 },
       };
 
-    case 'attendance':
+    case "attendance":
       return {
         total: 0,
         hadir: 0,
         sakit: 0,
         izin: 0,
-        alpha: 0,
+        alpa: 0,
         persentaseKehadiran: 0,
         persentaseSakit: 0,
         persentaseIzin: 0,
-        persentaseAlpha: 0,
+        persentaseAlpa: 0,
         perKelas: {},
         perJenisPresensi: {},
         trendHarian: [],
       };
 
-    case 'teachers':
+    case "teachers":
       return {
         totalGuru: 0,
         totalInputNilai: 0,

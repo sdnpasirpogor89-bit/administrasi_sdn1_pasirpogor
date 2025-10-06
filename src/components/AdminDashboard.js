@@ -214,33 +214,38 @@ const AdminDashboard = ({ userData }) => {
     navigate(path);
   };
 
-  // Fetch recent activities
+  // ✅ FIXED: Fetch recent activities - Simplified without join
   const fetchRecentActivities = async () => {
     try {
       const today = getTodayDate();
       
-      // Get recent attendance records with user info
+      // Get recent attendance records (simplified - no join)
       const { data: attendanceActivities, error: attendanceError } = await supabase
         .from('attendance')
-        .select(`*, users!attendance_created_by_fkey(nama_lengkap)`)
+        .select('*')
         .eq('tanggal', today)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
-      if (attendanceError) throw attendanceError;
+      if (attendanceError) {
+        console.error('Error fetching recent activities:', attendanceError);
+        setRecentActivities([]);
+        return;
+      }
 
       const activities = [];
 
       // Process attendance activities
-      if (attendanceActivities) {
+      if (attendanceActivities && attendanceActivities.length > 0) {
         const groupedByClass = {};
         
         attendanceActivities.forEach(record => {
-          const key = `${record.kelas}-${record.created_by}-${record.tanggal}`;
+          // Group by kelas + guru_input + tanggal
+          const key = `${record.kelas}-${record.guru_input || 'unknown'}-${record.tanggal}`;
           if (!groupedByClass[key]) {
             groupedByClass[key] = {
               kelas: record.kelas,
-              guru: record.users?.nama_lengkap || 'Unknown',
+              guru: record.guru_input || 'Unknown',
               created_at: record.created_at,
               count: 0,
               hadir: 0,
@@ -277,6 +282,7 @@ const AdminDashboard = ({ userData }) => {
 
     } catch (error) {
       console.error('Error fetching recent activities:', error);
+      setRecentActivities([]);
     }
   };
 

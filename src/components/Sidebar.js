@@ -52,15 +52,12 @@ const Sidebar = ({
         category: "AKADEMIK",
         items: [
           { name: "Kehadiran", icon: UserCheck },
-          { name: "Nilai Akademik", icon: BarChart3 }
-        ]
-      },
-      {
-        category: "LAPORAN",
-        items: [
+          { name: "Nilai Akademik", icon: BarChart3 },
+          // Menu "Laporan" dipindahkan ke sini
           { name: "Laporan", icon: FileText }
         ]
       },
+      // Kategori "LAPORAN" dihapus
       {
         category: "SISTEM",
         items: [
@@ -87,15 +84,12 @@ const Sidebar = ({
         category: "AKADEMIK",
         items: [
           { name: "Kehadiran", icon: UserCheck },
-          { name: "Nilai Akademik", icon: BarChart3 }
-        ]
-      },
-      {
-        category: "LAPORAN",
-        items: [
+          { name: "Nilai Akademik", icon: BarChart3 },
+          // Menu "Laporan" dipindahkan ke sini
           { name: "Laporan", icon: FileText }
         ]
       }
+      // Kategori "LAPORAN" dihapus
     ],
     guru_mapel: [
       {
@@ -115,15 +109,12 @@ const Sidebar = ({
         category: "AKADEMIK",
         items: [
           { name: "Kehadiran", icon: UserCheck },
-          { name: "Nilai Akademik", icon: BarChart3 }
-        ]
-      },
-      {
-        category: "LAPORAN",
-        items: [
+          { name: "Nilai Akademik", icon: BarChart3 },
+          // Menu "Laporan" dipindahkan ke sini
           { name: "Laporan", icon: FileText }
         ]
       }
+      // Kategori "LAPORAN" dihapus
     ]
   };
 
