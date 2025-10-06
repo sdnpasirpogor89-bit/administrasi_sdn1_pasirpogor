@@ -162,9 +162,9 @@ const renderAttendanceCards = (stats) => {
       />
       <StatCard
         icon={<XCircle className="text-red-600" size={24} />}
-        label="Izin & Alpha"
-        value={stats.izin + stats.alpha}
-        subtitle={`Izin: ${stats.izin} | Alpha: ${stats.alpha}`}
+        label="Izin & Alpa"
+        value={stats.izin + stats.alpa}
+        subtitle={`Izin: ${stats.izin} | Alpa: ${stats.alpa}`}
         color="red"
       />
     </>
