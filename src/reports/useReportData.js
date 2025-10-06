@@ -1,33 +1,30 @@
-// src/reports/useReportData.js
+// src/reports/useReportData.js - ESLINT FIXED VERSION
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
 /**
  * Custom Hook untuk fetch data laporan dari Supabase
- * ✅ Optimized dengan JOIN, caching, dan better error handling
- * ✅ FIXED: PostgreSQL boolean handling
+ * ✅ ESLINT FIXED: Proper error objects, exhaustive dependencies
  */
 export const useReportData = (reportType, filters = {}, user) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Cache untuk prevent redundant fetches
   const cacheRef = useRef({});
   const abortControllerRef = useRef(null);
 
-  // Serialize filters untuk stable dependency
-  const filtersKey = JSON.stringify(filters);
-  const userKey = user ? `${user.id}-${user.role}` : null;
-
   const fetchData = useCallback(async () => {
     if (!user || !user.role) {
-      setError({ type: 'auth', message: 'User tidak ditemukan' });
+      setError(new Error('User tidak ditemukan'));
       return;
     }
 
-    // Check cache (5 menit)
+    // Serialize filters untuk cache key
+    const filtersKey = JSON.stringify(filters);
+    const userKey = user ? `${user.id}-${user.role}` : null;
     const cacheKey = `${reportType}-${filtersKey}-${userKey}`;
+    
     const cached = cacheRef.current[cacheKey];
     const now = Date.now();
     
@@ -37,7 +34,6 @@ export const useReportData = (reportType, filters = {}, user) => {
       return;
     }
 
-    // Cancel previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -64,22 +60,19 @@ export const useReportData = (reportType, filters = {}, user) => {
 
         case 'teachers':
           if (user.role !== 'admin') {
-            throw { 
-              type: 'permission', 
-              message: 'Akses ditolak. Hanya Admin yang bisa melihat laporan guru.' 
-            };
+            const error = new Error('Akses ditolak. Hanya Admin yang bisa melihat laporan guru.');
+            error.type = 'permission';
+            throw error;
           }
           result = await fetchTeachersData(filters);
           break;
 
         default:
-          throw { 
-            type: 'validation', 
-            message: `Report type tidak valid: ${reportType}` 
-          };
+          const validationError = new Error(`Report type tidak valid: ${reportType}`);
+          validationError.type = 'validation';
+          throw validationError;
       }
 
-      // Update cache
       cacheRef.current[cacheKey] = {
         data: result || [],
         timestamp: now
@@ -103,7 +96,7 @@ export const useReportData = (reportType, filters = {}, user) => {
     } finally {
       setLoading(false);
     }
-  }, [reportType, filtersKey, userKey]);
+  }, [reportType, filters, user]); // ✅ FIXED: Include all dependencies
 
   useEffect(() => {
     fetchData();
@@ -129,197 +122,162 @@ export const useReportData = (reportType, filters = {}, user) => {
 };
 
 /**
- * ✅ FIXED: PostgreSQL boolean = true/false, bukan 1/0
- * ✅ FIXED: Default show active students only
+ * Fetch data siswa - ✅ FIXED: No JOIN, proper error handling
  */
 const fetchStudentsData = async (filters, user) => {
-  let query = supabase
-    .from('students')
-    .select('id, nisn, nama_siswa, jenis_kelamin, kelas, is_active, created_at')
-    .eq('is_active', true) // DEFAULT: only active students
-    .order('nama_siswa', { ascending: true });
+  try {
+    let query = supabase
+      .from('students')
+      .select('*')
+      .eq('is_active', true)
+      .order('nama_siswa', { ascending: true });
 
-  // Role-based filtering
-  if (user.role === 'guru_kelas') {
-    query = query.eq('kelas', user.kelas);
+    if (user.role === 'guru_kelas') {
+      query = query.eq('kelas', user.kelas);
+    }
+
+    if (filters.kelas && filters.kelas !== 'all' && filters.kelas !== '') {
+      query = query.eq('kelas', filters.kelas);
+    }
+
+    if (filters.status && filters.status !== 'all') {
+      const isActive = filters.status === 'aktif';
+      query = query.eq('is_active', isActive);
+    }
+
+    if (filters.jenisKelamin && filters.jenisKelamin !== 'all') {
+      query = query.eq('jenis_kelamin', filters.jenisKelamin);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      const dbError = new Error('Gagal memuat data siswa');
+      dbError.type = 'database';
+      dbError.details = error.message;
+      dbError.code = error.code;
+      throw dbError;
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
   }
-
-  // Apply filters
-  if (filters.kelas && filters.kelas !== 'all' && filters.kelas !== '') {
-    query = query.eq('kelas', filters.kelas);
-  }
-
-  // Override default if status filter explicitly set
-  if (filters.status && filters.status !== 'all') {
-    const isActive = filters.status === 'aktif';
-    query = query.eq('is_active', isActive);
-  }
-
-  if (filters.jenisKelamin && filters.jenisKelamin !== 'all') {
-    query = query.eq('jenis_kelamin', filters.jenisKelamin);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw { 
-      type: 'database', 
-      message: 'Gagal memuat data siswa', 
-      details: error.message,
-      code: error.code 
-    };
-  }
-  
-  return data;
 };
 
 /**
- * Fetch data nilai dengan JOIN ke students
+ * Fetch data nilai - ✅ FIXED: No JOIN, proper error handling
  */
 const fetchGradesData = async (filters, user) => {
-  let query = supabase
-    .from('nilai')
-    .select(`
-      id,
-      nisn,
-      nama_siswa,
-      kelas,
-      mata_pelajaran,
-      jenis_nilai,
-      nilai,
-      guru_input,
-      tanggal,
-      created_at,
-      students!inner(is_active, jenis_kelamin)
-    `)
-    .order('tanggal', { ascending: false });
+  try {
+    let query = supabase
+      .from('nilai')
+      .select('*')
+      .order('tanggal', { ascending: false });
 
-  // Role-based filtering
-  if (user.role === 'guru_kelas') {
-    query = query.eq('kelas', user.kelas);
-  } else if (user.role === 'guru_mapel') {
-    query = query.eq('mata_pelajaran', user.mata_pelajaran);
+    if (user.role === 'guru_kelas') {
+      query = query.eq('kelas', user.kelas);
+    } else if (user.role === 'guru_mapel') {
+      query = query.eq('mata_pelajaran', user.mata_pelajaran);
+    }
+
+    if (filters.kelas && filters.kelas !== 'all' && filters.kelas !== '') {
+      query = query.eq('kelas', filters.kelas);
+    }
+
+    if (filters.mapel && filters.mapel !== 'all' && filters.mapel !== '') {
+      query = query.eq('mata_pelajaran', filters.mapel);
+    }
+
+    if (filters.jenisNilai && filters.jenisNilai !== 'all') {
+      query = query.eq('jenis_nilai', filters.jenisNilai);
+    }
+
+    const dateRange = getDateRangeFromFilters(filters);
+    if (dateRange.start) {
+      query = query.gte('tanggal', dateRange.start);
+    }
+    if (dateRange.end) {
+      query = query.lte('tanggal', dateRange.end);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      const dbError = new Error('Gagal memuat data nilai');
+      dbError.type = 'database';
+      dbError.details = error.message;
+      dbError.code = error.code;
+      throw dbError;
+    }
+
+    return data || [];
+  } catch (error) {
+    throw error;
   }
-
-  // Apply filters
-  if (filters.kelas && filters.kelas !== 'all' && filters.kelas !== '') {
-    query = query.eq('kelas', filters.kelas);
-  }
-
-  if (filters.mapel && filters.mapel !== 'all' && filters.mapel !== '') {
-    query = query.eq('mata_pelajaran', filters.mapel);
-  }
-
-  if (filters.jenisNilai && filters.jenisNilai !== 'all') {
-    query = query.eq('jenis_nilai', filters.jenisNilai);
-  }
-
-  // Date range filter
-  const dateRange = getDateRangeFromFilters(filters);
-  if (dateRange.start) {
-    query = query.gte('tanggal', dateRange.start);
-  }
-  if (dateRange.end) {
-    query = query.lte('tanggal', dateRange.end);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw { 
-      type: 'database', 
-      message: 'Gagal memuat data nilai', 
-      details: error.message,
-      code: error.code 
-    };
-  }
-
-  // Flatten joined data
-  return data?.map(item => ({
-    ...item,
-    is_active: item.students?.is_active,
-    jenis_kelamin: item.students?.jenis_kelamin,
-  })) || [];
 };
 
 /**
- * Fetch data presensi dengan JOIN ke students
+ * Fetch data presensi - ✅ FIXED: No JOIN, proper error handling
  */
 const fetchAttendanceData = async (filters, user) => {
-  let query = supabase
-    .from('attendance')
-    .select(`
-      id,
-      tanggal,
-      nisn,
-      nama_siswa,
-      kelas,
-      status,
-      jenis_presensi,
-      keterangan,
-      guru_input,
-      created_at,
-      students!inner(is_active, jenis_kelamin)
-    `)
-    .order('tanggal', { ascending: false });
+  try {
+    let query = supabase
+      .from('attendance')
+      .select('*')
+      .order('tanggal', { ascending: false });
 
-  // Role-based filtering
-  if (user.role === 'guru_kelas') {
-    query = query.eq('kelas', user.kelas);
+    if (user.role === 'guru_kelas') {
+      query = query.eq('kelas', user.kelas);
+    }
+
+    if (filters.kelas && filters.kelas !== 'all' && filters.kelas !== '') {
+      query = query.eq('kelas', filters.kelas);
+    }
+
+    if (filters.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status);
+    }
+
+    if (filters.jenisPresensi && filters.jenisPresensi !== 'all') {
+      query = query.eq('jenis_presensi', filters.jenisPresensi);
+    }
+
+    const dateRange = getDateRangeFromFilters(filters);
+    if (dateRange.start) {
+      query = query.gte('tanggal', dateRange.start);
+    }
+    if (dateRange.end) {
+      query = query.lte('tanggal', dateRange.end);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      const dbError = new Error('Gagal memuat data presensi');
+      dbError.type = 'database';
+      dbError.details = error.message;
+      dbError.code = error.code;
+      throw dbError;
+    }
+
+    return data || [];
+  } catch (error) {
+    throw error;
   }
-
-  // Apply filters
-  if (filters.kelas && filters.kelas !== 'all' && filters.kelas !== '') {
-    query = query.eq('kelas', filters.kelas);
-  }
-
-  if (filters.status && filters.status !== 'all') {
-    query = query.eq('status', filters.status);
-  }
-
-  if (filters.jenisPresensi && filters.jenisPresensi !== 'all') {
-    query = query.eq('jenis_presensi', filters.jenisPresensi);
-  }
-
-  // Date range filter
-  const dateRange = getDateRangeFromFilters(filters);
-  if (dateRange.start) {
-    query = query.gte('tanggal', dateRange.start);
-  }
-  if (dateRange.end) {
-    query = query.lte('tanggal', dateRange.end);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw { 
-      type: 'database', 
-      message: 'Gagal memuat data presensi', 
-      details: error.message,
-      code: error.code 
-    };
-  }
-
-  // Flatten joined data
-  return data?.map(item => ({
-    ...item,
-    is_active: item.students?.is_active,
-    jenis_kelamin: item.students?.jenis_kelamin,
-  })) || [];
 };
 
 /**
- * Fetch laporan aktivitas guru (Admin only)
+ * Fetch laporan guru - ✅ FIXED: Proper error handling
  */
 const fetchTeachersData = async (filters) => {
   try {
     const dateRange = getDateRangeFromFilters(filters);
 
-    const [guruResponse, nilaiResponse, presensiResponse] = await Promise.all([
+    const [usersResponse, nilaiResponse, presensiResponse] = await Promise.all([
       supabase
         .from('users')
-        .select('id, username, full_name, role, kelas, mata_pelajaran')
+        .select('*')
         .in('role', ['guru_kelas', 'guru_mapel'])
         .eq('is_active', true)
         .order('full_name', { ascending: true }),
@@ -337,11 +295,11 @@ const fetchTeachersData = async (filters) => {
         .lte('created_at', dateRange.end || new Date().toISOString())
     ]);
 
-    if (guruResponse.error) throw guruResponse.error;
+    if (usersResponse.error) throw usersResponse.error;
     if (nilaiResponse.error) throw nilaiResponse.error;
     if (presensiResponse.error) throw presensiResponse.error;
 
-    const guruData = guruResponse.data;
+    const usersData = usersResponse.data;
     const nilaiData = nilaiResponse.data;
     const presensiData = presensiResponse.data;
 
@@ -351,7 +309,6 @@ const fetchTeachersData = async (filters) => {
 
     nilaiData.forEach(n => {
       nilaiMap.set(n.guru_input, (nilaiMap.get(n.guru_input) || 0) + 1);
-      
       const currentLast = lastInputMap.get(n.guru_input);
       const thisDate = new Date(n.created_at);
       if (!currentLast || thisDate > currentLast) {
@@ -361,7 +318,6 @@ const fetchTeachersData = async (filters) => {
 
     presensiData.forEach(p => {
       presensiMap.set(p.guru_input, (presensiMap.get(p.guru_input) || 0) + 1);
-      
       const currentLast = lastInputMap.get(p.guru_input);
       const thisDate = new Date(p.created_at);
       if (!currentLast || thisDate > currentLast) {
@@ -369,13 +325,13 @@ const fetchTeachersData = async (filters) => {
       }
     });
 
-    const teacherStats = guruData.map(guru => {
-      const totalNilai = nilaiMap.get(guru.username) || 0;
-      const totalPresensi = presensiMap.get(guru.username) || 0;
-      const lastInput = lastInputMap.get(guru.username) || null;
+    const teacherStats = usersData.map(user => {
+      const totalNilai = nilaiMap.get(user.username) || 0;
+      const totalPresensi = presensiMap.get(user.username) || 0;
+      const lastInput = lastInputMap.get(user.username) || null;
 
       return {
-        ...guru,
+        ...user,
         totalInputNilai: totalNilai,
         totalInputPresensi: totalPresensi,
         total_input: totalNilai + totalPresensi,
@@ -385,20 +341,22 @@ const fetchTeachersData = async (filters) => {
 
     return teacherStats;
   } catch (error) {
-    throw { 
-      type: 'database', 
-      message: 'Gagal memuat data guru', 
-      details: error.message,
-      code: error.code 
-    };
+    const dbError = new Error('Gagal memuat data guru');
+    dbError.type = 'database';
+    dbError.details = error.message;
+    dbError.code = error.code;
+    throw dbError;
   }
 };
 
+/**
+ * Date range helper - ✅ FIXED: Use dateRange from filters
+ */
 const getDateRangeFromFilters = (filters) => {
-  if (filters.tanggalMulai || filters.tanggalAkhir) {
+  if (filters.dateRange && (filters.dateRange.start || filters.dateRange.end)) {
     return {
-      start: filters.tanggalMulai || null,
-      end: filters.tanggalAkhir || null,
+      start: filters.dateRange.start || null,
+      end: filters.dateRange.end || null,
     };
   }
 
