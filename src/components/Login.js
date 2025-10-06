@@ -259,9 +259,9 @@ const Login = ({ onLoginSuccess }) => {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-emerald-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg ring-1 ring-gray-200/50 w-full max-w-md overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-emerald-600 p-4 sm:p-6 text-center text-white">
+          <div className="bg-gradient-to-r from-blue-600 to-emerald-500 p-4 sm:p-6 text-center text-white">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               {/* LOGO DI FORGOT PASSWORD - FIXED */}
               <Logo size="medium" className="shadow-lg" />
@@ -303,7 +303,7 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
       {/* LEFT SIDE - Welcome Section (Desktop: 60%, Mobile: full height but compact) */}
-      <div className="flex-1 lg:w-3/5 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 flex items-center justify-center p-3 sm:p-4 lg:p-8 relative overflow-hidden min-h-[50vh] lg:min-h-screen">
+      <div className="flex-1 lg:w-3/5 bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 flex items-center justify-center p-3 sm:p-4 lg:p-8 relative overflow-hidden min-h-[50vh] lg:min-h-screen">
         {/* Background pattern */}
         <div
           className="absolute inset-0 opacity-20"
@@ -377,10 +377,7 @@ const Login = ({ onLoginSuccess }) => {
             </div>
           </div>
 
-          {/* Tagline */}
-          <p className="text-sm sm:text-base lg:text-xl text-white/70 font-light tracking-wide">
-            Sistem Administrasi Digital Sekolah
-          </p>
+
         </div>
       </div>
 
@@ -478,7 +475,7 @@ const Login = ({ onLoginSuccess }) => {
                   type="button"
                   onClick={handleForgotPassword}
                   disabled={loading}
-                  className="text-sm sm:text-base text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors min-h-[44px] px-2 touch-manipulation text-left sm:text-right">
+                  className="text-sm sm:text-base text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors min-h-[44px] px-2 touch-manipulation text-left sm:text-right">
                   Lupa password?
                 </button>
               </div>
@@ -494,7 +491,7 @@ const Login = ({ onLoginSuccess }) => {
                 type="submit"
                 disabled={loading}
                 onClick={handleSubmit}
-                className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:transform-none flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl min-h-[48px] text-base touch-manipulation">
+                className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:transform-none flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl min-h-[48px] text-base touch-manipulation">
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

@@ -18,7 +18,7 @@ import Attendance from "./pages/Attendance";
 import Teacher from "./pages/Teacher";
 import Grades from "./pages/Grades";
 import SPMB from './spmb/SPMB';
-import Report from "./reports/Report";
+import Report from "./reports/Reports";
 import Setting from './setting/setting';
 
 // Wrapper component untuk handle navigation
