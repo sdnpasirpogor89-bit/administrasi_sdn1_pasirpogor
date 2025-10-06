@@ -340,9 +340,7 @@ const StudentCard = ({
         type="text"
         placeholder="Keterangan..."
         value={attendance.note || ""}
-        onChange={(e) =>
-          updateNote(activeClass, originalIndex, e.target.value)
-        }
+        onChange={(e) => updateNote(activeClass, originalIndex, e.target.value)}
         disabled={saving}
         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       />
@@ -448,12 +446,10 @@ const useAttendance = (currentUser) => {
                   studentIndex !== -1 &&
                   newAttendanceData[classNum][studentIndex]
                 ) {
-                  let status = record.status;
-                  if (status === "Alfa") status = "Alpa";
-
+                  // PERBAIKAN: Langsung pakai status dari database, tanpa konversi
                   newAttendanceData[classNum][studentIndex] = {
                     ...newAttendanceData[classNum][studentIndex],
-                    status: status,
+                    status: record.status, // Langsung record.status
                     note: record.keterangan || "",
                   };
                 }
@@ -512,7 +508,7 @@ const Attendance = ({
   const [rekapSubtitle, setRekapSubtitle] = useState("");
   const [rekapLoading, setRekapLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
-  
+
   // Device detection state
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -526,8 +522,8 @@ const Attendance = ({
     };
 
     checkDeviceType();
-    window.addEventListener('resize', checkDeviceType);
-    return () => window.removeEventListener('resize', checkDeviceType);
+    window.addEventListener("resize", checkDeviceType);
+    return () => window.removeEventListener("resize", checkDeviceType);
   }, []);
 
   // Determine view mode - Mobile pake cards, Tablet & Desktop pake table
@@ -874,9 +870,7 @@ const Attendance = ({
             hadir: studentRecords.filter((r) => r.status === "Hadir").length,
             sakit: studentRecords.filter((r) => r.status === "Sakit").length,
             izin: studentRecords.filter((r) => r.status === "Izin").length,
-            alpa: studentRecords.filter(
-              (r) => r.status === "Alpa" || r.status === "Alfa"
-            ).length,
+            alpa: studentRecords.filter((r) => r.status === "Alpa").length,
           };
 
           const totalDays = studentRecords.length;
@@ -1002,7 +996,6 @@ const Attendance = ({
         type={toast.type}
         onClose={hideToast}
       />
-
       {/* Compact Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard
@@ -1030,7 +1023,6 @@ const Attendance = ({
           color="purple"
         />
       </div>
-
       {/* Search and Controls - PERBAIKAN LAYOUT UNTUK LAPTOP */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-4">
         {/* SEARCH INPUT - FULL WIDTH DI MOBILE */}
@@ -1081,7 +1073,7 @@ const Attendance = ({
                 </button>
               ))}
             </div>
-            
+
             {/* Baris Kedua: Kelas 4, 5, 6 */}
             {availableClasses.length > 3 && (
               <div className="flex gap-2 justify-center lg:justify-start w-full">
@@ -1101,8 +1093,8 @@ const Attendance = ({
             )}
           </div>
         </div>
-      </div> {/* <-- PERBAIKAN: Menutup div utama Search and Controls */}
-
+      </div>{" "}
+      {/* <-- PERBAIKAN: Menutup div utama Search and Controls */}
       {/* Attendance Controls */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
@@ -1162,7 +1154,6 @@ const Attendance = ({
           </button>
         </div>
       </div>
-
       {/* Students List - RESPONSIVE VIEW */}
       {showCardView ? (
         // MOBILE CARD VIEW
@@ -1275,7 +1266,9 @@ const Attendance = ({
                         </td>
                         <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
                           <div>
-                            <div className="line-clamp-2">{student.nama_siswa}</div>
+                            <div className="line-clamp-2">
+                              {student.nama_siswa}
+                            </div>
                             <div className="lg:hidden mt-1">
                               <span
                                 className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -1393,7 +1386,6 @@ const Attendance = ({
           </div>
         </div>
       )}
-
       {/* Modals */}
       <ConfirmationModal
         show={showModal}
@@ -1415,14 +1407,12 @@ const Attendance = ({
         title="Konfirmasi Penyimpanan"
         message={modalMessage}
       />
-
       <ExportModal
         show={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={exportAttendance}
         loading={exportLoading}
       />
-
       <RecapModal
         show={showRekapModal}
         onClose={() => setShowRekapModal(false)}

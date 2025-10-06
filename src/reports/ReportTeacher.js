@@ -44,12 +44,23 @@ const ReportTeacher = ({ user }) => {
     }));
   };
 
+  // Reset filters ketika type berubah
+  const handleTypeChange = (newType) => {
+    setFilters({
+      type: newType,
+      kelas: user.role === "guru_kelas" ? user.kelas : "",
+      mapel: user.role === "guru_mapel" && newType === "grades" ? user.mata_pelajaran : "",
+      periode: "semua",
+      dateRange: { start: null, end: null },
+    });
+  };
+
   // Refetch saat filters berubah
   useEffect(() => {
     refetch();
   }, [filters]);
 
-  // Menu cards untuk quick access (NO TEACHERS REPORT)
+  // Menu cards untuk quick access
   const reportMenus = [
     {
       type: "students",
@@ -93,6 +104,64 @@ const ReportTeacher = ({ user }) => {
       borderColor: "border-orange-200",
     },
   ];
+
+  // Filter options berdasarkan tipe laporan
+  const getFilterOptions = () => {
+    switch (filters.type) {
+      case "students":
+        return {
+          showKelas: user.role !== "guru_kelas",
+          showMapel: false,
+          showPeriode: false,
+          showDateRange: false,
+          showStatus: false, // HAPUS STATUS FILTER
+          kelasOptions: [1, 2, 3, 4, 5, 6],
+        };
+      case "grades":
+        return {
+          showKelas: true,
+          showMapel: user.role !== "guru_mapel",
+          showPeriode: true,
+          showDateRange: false,
+          showStatus: false,
+          kelasOptions: [1, 2, 3, 4, 5, 6],
+          periodeOptions: [
+            { value: "semua", label: "Semua Periode" },
+            { value: "harian", label: "Harian" },
+            { value: "mingguan", label: "Mingguan" },
+            { value: "bulanan", label: "Bulanan" },
+            { value: "semester", label: "Semester" },
+          ],
+        };
+      case "attendance":
+        return {
+          showKelas: user.role !== "guru_kelas",
+          showMapel: false,
+          showPeriode: true,
+          showDateRange: true,
+          showStatus: false,
+          kelasOptions: [1, 2, 3, 4, 5, 6],
+          periodeOptions: [
+            { value: "semua", label: "Semua Periode" },
+            { value: "harian", label: "Hari Ini" },
+            { value: "mingguan", label: "Minggu Ini" },
+            { value: "bulanan", label: "Bulan Ini" },
+            { value: "custom", label: "Rentang Tanggal" },
+          ],
+        };
+      default:
+        return {
+          showKelas: true,
+          showMapel: true,
+          showPeriode: true,
+          showDateRange: true,
+          showStatus: false,
+          kelasOptions: [1, 2, 3, 4, 5, 6],
+        };
+    }
+  };
+
+  const filterOptions = getFilterOptions();
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -147,7 +216,7 @@ const ReportTeacher = ({ user }) => {
             return (
               <button
                 key={menu.type}
-                onClick={() => handleFilterChange({ type: menu.type })}
+                onClick={() => handleTypeChange(menu.type)}
                 className={`
                   p-6 rounded-xl border-2 text-left transition-all duration-200
                   ${
@@ -179,7 +248,7 @@ const ReportTeacher = ({ user }) => {
         {/* Filter Bar */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Filter Laporan
+            Filter Laporan {reportMenus.find((m) => m.type === filters.type)?.title}
           </h2>
           <FilterBar
             onFilterChange={handleFilterChange}
@@ -187,6 +256,7 @@ const ReportTeacher = ({ user }) => {
             userKelas={user.kelas}
             userMapel={user.mata_pelajaran}
             currentFilters={filters}
+            filterOptions={filterOptions}
           />
         </div>
 
@@ -287,16 +357,7 @@ const ReportTeacher = ({ user }) => {
                 Tidak ada data yang sesuai dengan filter yang dipilih.
               </p>
               <button
-                onClick={() =>
-                  setFilters({
-                    type: filters.type,
-                    kelas: user.role === "Guru Kelas" ? user.kelas : "",
-                    mapel:
-                      user.role === "Guru Mapel" ? user.mata_pelajaran : "",
-                    periode: "semua",
-                    dateRange: { start: null, end: null },
-                  })
-                }
+                onClick={() => handleTypeChange(filters.type)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 Reset Filter
               </button>

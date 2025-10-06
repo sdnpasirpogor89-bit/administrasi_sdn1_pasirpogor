@@ -1,4 +1,4 @@
-// Di ExportExcel.js - MODIFIED VERSION
+// Di ExportExcel.js
 import ExcelJS from 'exceljs';
 /**
  * Export attendance data to Excel with professional formatting
@@ -61,7 +61,7 @@ export const exportAttendanceToExcel = async ({
         let statusCode = 'H';
         if (record.status === 'Sakit') statusCode = 'S';
         else if (record.status === 'Izin') statusCode = 'I';
-        else if (record.status === 'Alpa' || record.status === 'Alfa') statusCode = 'A';
+        else if (record.status === 'Alpa') statusCode = 'A'; // PERBAIKAN: Hapus "Alfa"
         
         studentMatrix[record.nisn].dates[dateKey] = statusCode;
         
@@ -69,14 +69,14 @@ export const exportAttendanceToExcel = async ({
         if (record.status === 'Hadir') studentMatrix[record.nisn].summary.hadir++;
         else if (record.status === 'Sakit') studentMatrix[record.nisn].summary.sakit++;
         else if (record.status === 'Izin') studentMatrix[record.nisn].summary.izin++;
-        else if (record.status === 'Alpa' || record.status === 'Alfa') studentMatrix[record.nisn].summary.alpa++;
+        else if (record.status === 'Alpa') studentMatrix[record.nisn].summary.alpa++; // PERBAIKAN: Hapus "Alfa"
       }
     });
 
     // Calculate total columns needed
     const baseCols = 2; // No, Nama Siswa
     const dateCols = uniqueDates.length;
-    const summaryCols = 6; // Hadir, Izin, Sakit, Alfa, Total, Persentase
+    const summaryCols = 6; // Hadir, Izin, Sakit, Alpa, Total, Persentase
     const totalCols = baseCols + dateCols + summaryCols;
 
     // Row 1: School name (merged)
@@ -121,11 +121,11 @@ export const exportAttendanceToExcel = async ({
       worksheet.getCell(headerRow, colIndex++).value = date;
     });
 
-    // Summary headers
+    // Summary headers - PERBAIKAN: "Alpa" bukan "Alfa"
     worksheet.getCell(headerRow, colIndex++).value = 'Hadir';
     worksheet.getCell(headerRow, colIndex++).value = 'Izin';
     worksheet.getCell(headerRow, colIndex++).value = 'Sakit';
-    worksheet.getCell(headerRow, colIndex++).value = 'Alfa';
+    worksheet.getCell(headerRow, colIndex++).value = 'Alpa';
     worksheet.getCell(headerRow, colIndex++).value = 'Total';
     worksheet.getCell(headerRow, colIndex++).value = 'Persentase';
 
@@ -165,7 +165,7 @@ export const exportAttendanceToExcel = async ({
         worksheet.getCell(rowIndex, colIndex++).value = status;
       });
 
-      // Summary data
+      // Summary data - PERBAIKAN: "Alpa" bukan "Alfa"
       const summary = studentData.summary;
       worksheet.getCell(rowIndex, colIndex++).value = summary.hadir;
       worksheet.getCell(rowIndex, colIndex++).value = summary.izin;
@@ -265,7 +265,7 @@ export const exportAttendanceToExcel = async ({
     worksheet.getColumn(summaryStartCol).width = 8;     // Hadir
     worksheet.getColumn(summaryStartCol + 1).width = 8; // Izin
     worksheet.getColumn(summaryStartCol + 2).width = 8; // Sakit
-    worksheet.getColumn(summaryStartCol + 3).width = 8; // Alfa
+    worksheet.getColumn(summaryStartCol + 3).width = 8; // Alpa
     worksheet.getColumn(summaryStartCol + 4).width = 8; // Total
     worksheet.getColumn(summaryStartCol + 5).width = 12; // Persentase
 

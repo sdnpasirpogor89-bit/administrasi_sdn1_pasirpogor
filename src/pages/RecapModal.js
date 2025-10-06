@@ -42,7 +42,7 @@ const normalizeStatus = (status) => {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 };
 
-// Helper untuk status badge
+// Helper untuk status badge - DIPERBAIKI: center alignment
 const getStatusBadge = (status) => {
   if (!status) return <span className="text-gray-400">-</span>;
   
@@ -54,13 +54,11 @@ const getStatusBadge = (status) => {
     sakit: { text: "S", color: "bg-yellow-500 text-white" },
     izin: { text: "I", color: "bg-blue-500 text-white" },
     alpa: { text: "A", color: "bg-red-500 text-white" },
-    alfa: { text: "A", color: "bg-red-500 text-white" },
     // Handle uppercase
     Hadir: { text: "H", color: "bg-green-500 text-white" },
     Sakit: { text: "S", color: "bg-yellow-500 text-white" },
     Izin: { text: "I", color: "bg-blue-500 text-white" },
     Alpa: { text: "A", color: "bg-red-500 text-white" },
-    Alfa: { text: "A", color: "bg-red-500 text-white" },
     H: { text: "H", color: "bg-green-500 text-white" },
     S: { text: "S", color: "bg-yellow-500 text-white" },
     I: { text: "I", color: "bg-blue-500 text-white" },
@@ -73,7 +71,7 @@ const getStatusBadge = (status) => {
   };
   
   return (
-    <span className={`inline-block w-6 h-6 flex items-center justify-center rounded text-xs font-bold ${statusInfo.color}`}>
+    <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${statusInfo.color} mx-auto`}>
       {statusInfo.text}
     </span>
   );
@@ -299,7 +297,7 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                         </th>
                       ))}
                       
-                      {/* Summary columns - SESUAI CONTOH */}
+                      {/* Summary columns - DIPERBAIKI: "Alpa" bukan "Alfa" */}
                       <th className="p-2 text-center font-bold text-green-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-green-50">
                         Hadir
                       </th>
@@ -310,7 +308,7 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                         Sakit
                       </th>
                       <th className="p-2 text-center font-bold text-red-700 border-r-2 border-gray-400 min-w-[40px] sm:min-w-[45px] bg-red-50">
-                        Alfa
+                        Alpa
                       </th>
                       <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[40px] sm:min-w-[45px]">
                         Total
@@ -334,18 +332,20 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                             {student.name || student.full_name || student.nama_siswa}
                           </td>
                           
-                          {/* Daily status */}
+                          {/* Daily status - DIPERBAIKI: Center alignment */}
                           {filteredDates.map((date, index) => (
                             <td
                               key={date}
                               className={`p-1 text-center ${
                                 index < filteredDates.length - 1 ? 'border-r border-gray-200' : 'border-r-2 border-gray-400'
                               }`}>
-                              {getStatusBadge(getStudentStatusByDate(student, date))}
+                              <div className="flex justify-center">
+                                {getStatusBadge(getStudentStatusByDate(student, date))}
+                              </div>
                             </td>
                           ))}
                           
-                          {/* Summary - SESUAI CONTOH */}
+                          {/* Summary - DIPERBAIKI: "Alpa" bukan "Alfa" */}
                           <td className="p-2 text-center text-green-700 font-bold border-r border-gray-200 bg-green-50/50">
                             {student.hadir || 0}
                           </td>
@@ -356,7 +356,7 @@ const RecapModal = ({ show, onClose, data, title, subtitle, loading, onRefreshDa
                             {student.sakit || 0}
                           </td>
                           <td className="p-2 text-center text-red-700 font-bold border-r-2 border-gray-400 bg-red-50/50">
-                            {student.alpa || student.alfa || 0}
+                            {student.alpa || 0}
                           </td>
                           <td className="p-2 text-center font-bold text-gray-800 border-r border-gray-200">
                             {student.total || 0}

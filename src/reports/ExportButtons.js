@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { FileDown, FileSpreadsheet, Printer } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+
+// Import autoTable separately untuk menghindari issue
+let autoTable;
+try {
+  autoTable = require('jspdf-autotable');
+} catch (error) {
+  console.warn('jspdf-autotable not available, using fallback');
+}
 
 const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = false }) => {
   const [exporting, setExporting] = useState(null);
@@ -10,11 +17,15 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
   // Helper: Format tanggal
   const formatDate = (date) => {
     if (!date) return '';
-    return new Date(date).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
+    try {
+      return new Date(date).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return date || '';
+    }
   };
 
   // Helper: Get report title
@@ -45,41 +56,41 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
     switch (type) {
       case 'students':
         return [
-          { header: 'No', key: 'no' },
-          { header: 'NISN', key: 'nisn' },
-          { header: 'Nama Siswa', key: 'nama_siswa' },
-          { header: 'Jenis Kelamin', key: 'jenis_kelamin' },
-          { header: 'Kelas', key: 'kelas' },
-          { header: 'Status', key: 'is_active' }
+          { header: 'No', key: 'no', width: 6 },
+          { header: 'NISN', key: 'nisn', width: 12 },
+          { header: 'Nama Siswa', key: 'nama_siswa', width: 25 },
+          { header: 'Jenis Kelamin', key: 'jenis_kelamin', width: 12 },
+          { header: 'Kelas', key: 'kelas', width: 8 },
+          { header: 'Status', key: 'is_active', width: 10 }
         ];
       case 'grades':
         return [
-          { header: 'No', key: 'no' },
-          { header: 'NISN', key: 'nisn' },
-          { header: 'Nama Siswa', key: 'nama_siswa' },
-          { header: 'Kelas', key: 'kelas' },
-          { header: 'Mata Pelajaran', key: 'mata_pelajaran' },
-          { header: 'Jenis Nilai', key: 'jenis_nilai' },
-          { header: 'Nilai', key: 'nilai' }
+          { header: 'No', key: 'no', width: 6 },
+          { header: 'NISN', key: 'nisn', width: 12 },
+          { header: 'Nama Siswa', key: 'nama_siswa', width: 20 },
+          { header: 'Kelas', key: 'kelas', width: 8 },
+          { header: 'Mata Pelajaran', key: 'mata_pelajaran', width: 20 },
+          { header: 'Jenis Nilai', key: 'jenis_nilai', width: 15 },
+          { header: 'Nilai', key: 'nilai', width: 8 }
         ];
       case 'attendance':
         return [
-          { header: 'No', key: 'no' },
-          { header: 'Tanggal', key: 'tanggal' },
-          { header: 'NISN', key: 'nisn' },
-          { header: 'Nama Siswa', key: 'nama_siswa' },
-          { header: 'Kelas', key: 'kelas' },
-          { header: 'Status', key: 'status' },
-          { header: 'Keterangan', key: 'keterangan' }
+          { header: 'No', key: 'no', width: 6 },
+          { header: 'Tanggal', key: 'tanggal', width: 12 },
+          { header: 'NISN', key: 'nisn', width: 12 },
+          { header: 'Nama Siswa', key: 'nama_siswa', width: 20 },
+          { header: 'Kelas', key: 'kelas', width: 8 },
+          { header: 'Status', key: 'status', width: 10 },
+          { header: 'Keterangan', key: 'keterangan', width: 20 }
         ];
       case 'teachers':
         return [
-          { header: 'No', key: 'no' },
-          { header: 'Nama Guru', key: 'full_name' },
-          { header: 'Role', key: 'role' },
-          { header: 'Kelas', key: 'kelas' },
-          { header: 'Mata Pelajaran', key: 'mata_pelajaran' },
-          { header: 'Total Input', key: 'total_input' }
+          { header: 'No', key: 'no', width: 6 },
+          { header: 'Nama Guru', key: 'full_name', width: 20 },
+          { header: 'Role', key: 'role', width: 15 },
+          { header: 'Kelas', key: 'kelas', width: 8 },
+          { header: 'Mata Pelajaran', key: 'mata_pelajaran', width: 20 },
+          { header: 'Total Input', key: 'total_input', width: 12 }
         ];
       default:
         return [];
@@ -89,6 +100,12 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
   // Helper: Format data for export
   const formatDataForExport = () => {
     const columns = getColumns();
+    
+    // Validasi data
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return [];
+    }
+    
     return data.map((row, index) => {
       const formatted = { no: index + 1 };
       columns.forEach(col => {
@@ -103,6 +120,8 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
           value = formatDate(value);
         } else if (col.key === 'jenis_kelamin') {
           value = value === 'L' ? 'Laki-laki' : 'Perempuan';
+        } else if (col.key === 'status') {
+          value = value === 'Alfa' ? 'Alpa' : value;
         }
         
         formatted[col.key] = value || '-';
@@ -111,74 +130,148 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
     });
   };
 
-  // Export to PDF
+  // **FIXED: Export to PDF dengan fallback**
   const exportToPDF = () => {
     setExporting('pdf');
+    
     try {
+      // Validasi data dulu
+      const formattedData = formatDataForExport();
+      if (!formattedData || formattedData.length === 0) {
+        alert('Tidak ada data untuk di-export');
+        setExporting(null);
+        return;
+      }
+
+      const columns = getColumns();
+      
+      // Create PDF document
       const doc = new jsPDF('l', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
       
-      // Header
-      doc.setFontSize(16);
-      doc.setFont(undefined, 'bold');
-      doc.text('SISTEM INFORMASI SEKOLAH', pageWidth / 2, 15, { align: 'center' });
-      
-      doc.setFontSize(14);
-      doc.text(getReportTitle(), pageWidth / 2, 22, { align: 'center' });
-      
-      // Filter info
-      doc.setFontSize(9);
-      doc.setFont(undefined, 'normal');
-      const filterInfo = getFilterInfo();
-      if (filterInfo) {
-        doc.text(filterInfo, pageWidth / 2, 28, { align: 'center' });
-      }
-      
-      // Tanggal cetak
-      doc.text(`Dicetak: ${formatDate(new Date())}`, pageWidth / 2, 33, { align: 'center' });
-      
-      // Statistics (jika ada)
-      let startY = 40;
-      if (stats && Object.keys(stats).length > 0) {
-        doc.setFontSize(10);
+      // **SOLUSI 1: Coba pakai autoTable jika available**
+      if (autoTable && typeof autoTable === 'function') {
+        // Header
+        doc.setFontSize(16);
         doc.setFont(undefined, 'bold');
-        doc.text('Statistik:', 14, startY);
+        doc.text('SISTEM INFORMASI SEKOLAH', pageWidth / 2, 15, { align: 'center' });
         
-        doc.setFont(undefined, 'normal');
+        doc.setFontSize(14);
+        doc.text(getReportTitle(), pageWidth / 2, 22, { align: 'center' });
+        
+        // Filter info
         doc.setFontSize(9);
-        let statsY = startY + 5;
+        doc.setFont(undefined, 'normal');
+        const filterInfo = getFilterInfo();
+        if (filterInfo) {
+          doc.text(filterInfo, pageWidth / 2, 28, { align: 'center' });
+        }
         
-        Object.entries(stats).slice(0, 4).forEach(([key, value]) => {
-          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          doc.text(`${label}: ${value}`, 14, statsY);
-          statsY += 5;
+        // Tanggal cetak
+        doc.text(`Dicetak: ${formatDate(new Date())}`, pageWidth / 2, 33, { align: 'center' });
+        
+        let startY = 40;
+        
+        // Statistics (jika ada)
+        if (stats && Object.keys(stats).length > 0) {
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'bold');
+          doc.text('Statistik:', 14, startY);
+          
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(9);
+          let statsY = startY + 5;
+          
+          Object.entries(stats).slice(0, 4).forEach(([key, value]) => {
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            doc.text(`${label}: ${value}`, 14, statsY);
+            statsY += 5;
+          });
+          
+          startY = statsY + 5;
+        }
+        
+        // Table dengan autoTable
+        autoTable(doc, {
+          startY: startY,
+          head: [columns.map(col => col.header)],
+          body: formattedData.map(row => columns.map(col => row[col.key] || '')),
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [59, 130, 246],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [245, 247, 250]
+          },
+          margin: { left: 14, right: 14 }
         });
         
-        startY = statsY + 5;
+      } else {
+        // **SOLUSI 2: FALLBACK - Manual table tanpa autoTable**
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('SISTEM INFORMASI SEKOLAH', pageWidth / 2, 20, { align: 'center' });
+        
+        doc.setFontSize(14);
+        doc.text(getReportTitle(), pageWidth / 2, 30, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Dicetak: ${formatDate(new Date())}`, pageWidth / 2, 40, { align: 'center' });
+        
+        const filterInfo = getFilterInfo();
+        if (filterInfo) {
+          doc.text(filterInfo, pageWidth / 2, 47, { align: 'center' });
+        }
+        
+        // Simple manual table
+        let yPosition = 60;
+        const rowHeight = 8;
+        const colWidth = pageWidth / columns.length;
+        
+        // Table header
+        doc.setFillColor(59, 130, 246);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont(undefined, 'bold');
+        
+        columns.forEach((col, index) => {
+          doc.rect(index * colWidth, yPosition, colWidth, rowHeight, 'F');
+          doc.text(col.header, index * colWidth + 2, yPosition + 5);
+        });
+        
+        yPosition += rowHeight;
+        
+        // Table data
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'normal');
+        
+        formattedData.forEach((row, rowIndex) => {
+          // Alternate row color
+          if (rowIndex % 2 === 0) {
+            doc.setFillColor(245, 247, 250);
+            doc.rect(0, yPosition, pageWidth, rowHeight, 'F');
+          }
+          
+          columns.forEach((col, colIndex) => {
+            const value = String(row[col.key] || '');
+            doc.text(value, colIndex * colWidth + 2, yPosition + 5);
+          });
+          
+          yPosition += rowHeight;
+          
+          // Page break jika diperlukan
+          if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
+          }
+        });
       }
-      
-      // Table
-      const columns = getColumns();
-      const formattedData = formatDataForExport();
-      
-      doc.autoTable({
-        startY: startY,
-        head: [columns.map(col => col.header)],
-        body: formattedData.map(row => columns.map(col => row[col.key])),
-        styles: {
-          fontSize: 8,
-          cellPadding: 2
-        },
-        headStyles: {
-          fillColor: [59, 130, 246],
-          textColor: 255,
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [245, 247, 250]
-        },
-        margin: { left: 14, right: 14 }
-      });
       
       // Footer
       const pageCount = doc.internal.getNumberOfPages();
@@ -188,28 +281,41 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
         doc.text(
           `Halaman ${i} dari ${pageCount}`,
           pageWidth / 2,
-          doc.internal.pageSize.height - 10,
+          pageHeight - 10,
           { align: 'center' }
         );
       }
       
-      // Save
+      // Save PDF
       const fileName = `laporan-${type}-${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      alert('Gagal export PDF. Silakan coba lagi.');
+      
+      // **SOLUSI 3: Fallback ke Print jika PDF gagal**
+      console.log('PDF export failed, falling back to print...');
+      alert('Export PDF gagal. Membuka versi print sebagai alternatif...');
+      handlePrint();
+      
     } finally {
       setExporting(null);
     }
   };
 
-  // Export to Excel
+  // Export to Excel - Tetap sama seperti sebelumnya
   const exportToExcel = () => {
     setExporting('excel');
     try {
       const formattedData = formatDataForExport();
+      
+      if (!formattedData || formattedData.length === 0) {
+        alert('Tidak ada data untuk di-export');
+        setExporting(null);
+        return;
+      }
+
+      const columns = getColumns();
       
       // Create workbook
       const wb = XLSX.utils.book_new();
@@ -219,7 +325,8 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
         ['SISTEM INFORMASI SEKOLAH'],
         [getReportTitle()],
         [''],
-        [`Dicetak: ${formatDate(new Date())}`]
+        [`Dicetak: ${formatDate(new Date())}`],
+        ['']
       ];
       
       const filterInfo = getFilterInfo();
@@ -229,37 +336,31 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
       
       // Statistics
       if (stats && Object.keys(stats).length > 0) {
-        headerData.push(['']);
         headerData.push(['STATISTIK']);
-        Object.entries(stats).slice(0, 4).forEach(([key, value]) => {
+        Object.entries(stats).forEach(([key, value]) => {
           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
           headerData.push([`${label}:`, value]);
         });
+        headerData.push(['']);
       }
       
-      headerData.push(['']);
+      // Add table headers
+      const tableHeaders = [columns.map(col => col.header)];
+      
+      // Combine all data
+      const allData = [
+        ...headerData,
+        tableHeaders,
+        ...formattedData.map(row => columns.map(col => row[col.key]))
+      ];
       
       // Create worksheet
-      const ws = XLSX.utils.aoa_to_sheet(headerData);
+      const ws = XLSX.utils.aoa_to_sheet(allData);
       
-      // Add table data
-      const columns = getColumns();
-      XLSX.utils.sheet_add_json(ws, formattedData, {
-        origin: -1,
-        header: columns.map(col => col.key)
-      });
-      
-      // Set column headers
-      const headerRow = headerData.length;
-      columns.forEach((col, idx) => {
-        const cellRef = XLSX.utils.encode_cell({ r: headerRow, c: idx });
-        if (ws[cellRef]) {
-          ws[cellRef].v = col.header;
-        }
-      });
-      
-      // Column widths
-      const colWidths = columns.map(col => ({ wch: 15 }));
+      // Set column widths
+      const colWidths = columns.map(col => ({ 
+        wch: col.width || 15
+      }));
       ws['!cols'] = colWidths;
       
       // Add worksheet to workbook
@@ -277,7 +378,7 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
     }
   };
 
-  // Print
+  // Print - Tetap sama
   const handlePrint = () => {
     setExporting('print');
     try {
@@ -285,6 +386,12 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
       const columns = getColumns();
       const formattedData = formatDataForExport();
       
+      if (!formattedData || formattedData.length === 0) {
+        alert('Tidak ada data untuk di-print');
+        setExporting(null);
+        return;
+      }
+
       const filterInfo = getFilterInfo();
       
       const html = `
@@ -296,33 +403,43 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
             body {
               font-family: Arial, sans-serif;
               padding: 20px;
+              margin: 0;
             }
             .header {
               text-align: center;
               margin-bottom: 20px;
+              border-bottom: 2px solid #3b82f6;
+              padding-bottom: 10px;
             }
             .header h2 {
               margin: 5px 0;
+              color: #1f2937;
+            }
+            .header h3 {
+              margin: 5px 0;
+              color: #374151;
             }
             .filter-info {
               text-align: center;
               font-size: 12px;
-              color: #666;
+              color: #6b7280;
               margin-bottom: 10px;
             }
             .stats {
               margin: 20px 0;
-              padding: 10px;
-              background: #f5f5f5;
-              border-radius: 4px;
+              padding: 15px;
+              background: #f8fafc;
+              border-radius: 6px;
+              border-left: 4px solid #3b82f6;
             }
             .stats h3 {
               margin: 0 0 10px 0;
               font-size: 14px;
+              color: #1f2937;
             }
             .stats-grid {
               display: grid;
-              grid-template-columns: repeat(2, 1fr);
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
               gap: 10px;
               font-size: 12px;
             }
@@ -330,29 +447,47 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
               width: 100%;
               border-collapse: collapse;
               margin-top: 20px;
+              font-size: 11px;
             }
             th, td {
-              border: 1px solid #ddd;
-              padding: 8px;
+              border: 1px solid #d1d5db;
+              padding: 8px 6px;
               text-align: left;
-              font-size: 11px;
             }
             th {
               background-color: #3b82f6;
               color: white;
+              font-weight: bold;
+              text-align: center;
             }
             tr:nth-child(even) {
-              background-color: #f9f9f9;
+              background-color: #f9fafb;
+            }
+            td:first-child {
+              text-align: center;
+              font-weight: bold;
             }
             .footer {
               text-align: center;
-              margin-top: 20px;
+              margin-top: 30px;
               font-size: 10px;
-              color: #666;
+              color: #9ca3af;
+              border-top: 1px solid #e5e7eb;
+              padding-top: 10px;
             }
             @media print {
+              body {
+                padding: 15px;
+              }
               .no-print {
                 display: none;
+              }
+              table {
+                page-break-inside: auto;
+              }
+              tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
               }
             }
           </style>
@@ -372,7 +507,7 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
             <div class="stats">
               <h3>Statistik</h3>
               <div class="stats-grid">
-                ${Object.entries(stats).slice(0, 4).map(([key, value]) => {
+                ${Object.entries(stats).map(([key, value]) => {
                   const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                   return `<div><strong>${label}:</strong> ${value}</div>`;
                 }).join('')}
@@ -396,7 +531,7 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
           </table>
           
           <div class="footer">
-            Generated by Sistem Informasi Sekolah
+            Generated by Sistem Informasi Sekolah • ${formatDate(new Date())}
           </div>
         </body>
         </html>
@@ -409,7 +544,7 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
-      }, 250);
+      }, 500);
       
     } catch (error) {
       console.error('Error printing:', error);
