@@ -25,6 +25,7 @@ const useAcademicYear = () => {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     
+    // ✅ Generate tahun ajaran untuk siswa baru (tahun depan)
     if (currentMonth >= 7) {
       return `${currentYear + 1}/${currentYear + 2}`;
     } else {
@@ -65,7 +66,7 @@ const useDateFormatter = () => {
   return { convertDateFormat };
 };
 
-// Custom hook untuk students data management - FIXED PAGINATION
+// Custom hook untuk students data management
 const useStudentsData = (userData, showToast) => {
   const [students, setStudents] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
@@ -75,7 +76,7 @@ const useStudentsData = (userData, showToast) => {
   const { getCurrentAcademicYear } = useAcademicYear();
   const { convertDateFormat } = useDateFormatter();
 
-  // ✅ FIXED: Load students data dengan PAGINATION yang benar
+  // Load students data dengan PAGINATION
   const loadStudents = useCallback(async (page = 1, search = '') => {
     setIsLoading(true);
     try {
@@ -83,13 +84,13 @@ const useStudentsData = (userData, showToast) => {
       const from = (page - 1) * rowsPerPage;
       const to = from + rowsPerPage - 1;
 
-      console.log('🔍 Loading students:', { page, from, to, search });
+      console.log('📂 Loading students:', { page, from, to, search });
 
       let query = supabase
         .from('siswa_baru')
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false })
-        .range(from, to); // ✅ FIX: Tambah range untuk pagination
+        .range(from, to);
 
       if (search.trim()) {
         query = query.or(`nama_lengkap.ilike.%${search}%,asal_tk.ilike.%${search}%,nama_ayah.ilike.%${search}%,nama_ibu.ilike.%${search}%`);
@@ -119,7 +120,7 @@ const useStudentsData = (userData, showToast) => {
 
       // Load all students hanya jika tidak ada search dan data belum ada
       if (!search.trim() && allStudents.length === 0) {
-        console.log('📥 Loading all students for statistics...');
+        console.log('🔥 Loading all students for statistics...');
         const { data: allData } = await supabase
           .from('siswa_baru')
           .select('*')
@@ -143,7 +144,7 @@ const useStudentsData = (userData, showToast) => {
     }
   }, [allStudents.length, showToast]);
 
-  // Save student dengan optimasi
+  // ✅ SAVE STUDENT WITH AUTO-ACCEPT
   const saveStudent = useCallback(async ({ studentData, parentData, isEdit, editingStudent }) => {
     setIsLoading(true);
     try {
@@ -166,6 +167,10 @@ const useStudentsData = (userData, showToast) => {
         no_hp: parentData.no_hp,
         alamat: parentData.alamat,
         user_id: userData?.id || null,
+        // 🆕 AUTO-ACCEPT!
+        is_accepted: true,
+        sudah_masuk: false,
+        keterangan: isEdit ? editingStudent?.keterangan : 'Diterima otomatis saat pendaftaran'
       };
 
       let result;
@@ -183,7 +188,7 @@ const useStudentsData = (userData, showToast) => {
       if (result.error) throw result.error;
 
       showToast(
-        `Data siswa berhasil ${isEdit ? 'diupdate' : 'didaftarkan dan diterima'}!`,
+        `✅ Data siswa berhasil ${isEdit ? 'diupdate' : 'didaftarkan dan diterima'}!`,
         'success'
       );
       
@@ -238,7 +243,7 @@ const useStudentsData = (userData, showToast) => {
   };
 };
 
-// Main SPMB Component - FIXED PAGINATION
+// Main SPMB Component
 const SPMB = ({ userData }) => {
   const [activeTab, setActiveTab] = useState('form');
   const [currentPage, setCurrentPage] = useState(1);
@@ -258,7 +263,7 @@ const SPMB = ({ userData }) => {
     deleteStudent
   } = useStudentsData(userData, showToast);
 
-  // ✅ FIXED: Initial load students
+  // Initial load students
   useEffect(() => {
     const initializeData = async () => {
       const result = await loadStudents(1, '');
@@ -277,7 +282,7 @@ const SPMB = ({ userData }) => {
       loadStudents(1, searchTerm).then(result => {
         if (result && result.totalPages) {
           setTotalPages(result.totalPages);
-          setCurrentPage(1); // Reset ke page 1 saat search
+          setCurrentPage(1);
         }
       });
     }, 500);
@@ -285,9 +290,9 @@ const SPMB = ({ userData }) => {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, loadStudents]);
 
-  // ✅ FIXED: Handle page change
+  // Handle page change
   const handlePageChange = useCallback(async (page) => {
-    console.log('🔄 Changing to page:', page);
+    console.log('📄 Changing to page:', page);
     setCurrentPage(page);
     const result = await loadStudents(page, searchTerm);
     if (result && result.totalPages) {
@@ -343,6 +348,8 @@ const SPMB = ({ userData }) => {
   // Calculate statistics
   const maleStudents = allStudents.filter(s => s.jenis_kelamin === 'Laki-laki').length;
   const femaleStudents = allStudents.filter(s => s.jenis_kelamin === 'Perempuan').length;
+  // ✅ Count accepted students
+  const acceptedStudents = allStudents.filter(s => s.is_accepted === true).length;
 
   // Mobile bottom navigation items
   const navItems = [
@@ -423,13 +430,13 @@ const SPMB = ({ userData }) => {
               students={students}
               allStudents={allStudents}
               totalStudents={totalStudents}
-              currentPageNum={currentPage} // ✅ FIX: Ganti jadi currentPageNum
+              currentPageNum={currentPage}
               totalPages={totalPages}
               searchTerm={searchTerm}
               onSearch={setSearchTerm}
               onEditStudent={handleEditStudent}
               onDeleteStudent={handleDeleteStudent}
-              onLoadStudents={handleRefreshData} // ✅ FIX: Ganti jadi handleRefreshData
+              onLoadStudents={handleRefreshData}
               onPageChange={handlePageChange}
               isLoading={isLoading}
               rowsPerPage={20}
@@ -443,6 +450,7 @@ const SPMB = ({ userData }) => {
               totalStudents={totalStudents}
               maleStudents={maleStudents}
               femaleStudents={femaleStudents}
+              acceptedStudents={acceptedStudents}
               getCurrentAcademicYear={getCurrentAcademicYear}
             />
           )}

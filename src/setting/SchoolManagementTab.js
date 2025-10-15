@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Users, UserCheck, BookOpen, Edit3, Trash2, CheckSquare, X, Search, Filter, Key } from 'lucide-react';
+import { Plus, Users, UserCheck, BookOpen, Edit3, Trash2, CheckSquare, X, Search, Filter, Key, Eye, EyeOff } from 'lucide-react';
 
 const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   const [teachers, setTeachers] = useState([]);
@@ -37,8 +37,10 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     data: null
   });
 
-  // PASSWORD CHANGE STATE - NEW!
+  // PASSWORD STATES - NEW!
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordEdit, setShowPasswordEdit] = useState(false);
 
   // MOBILE MENU STATE
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -72,7 +74,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       const { data: teachersData, error: teachersError } = await supabase
         .from('users')
         .select('id, username, full_name, role, kelas, is_active')
-        .in('role', ['guru_kelas', 'guru_mapel'])
+        .in('role', ['admin', 'guru_kelas', 'guru_mapel'])
         .order('full_name');
       
       if (teachersError) throw teachersError;
@@ -208,8 +210,10 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   };
 
   const openTeacherModal = (mode = 'add', teacherData = null) => {
-    // Reset password change state
+    // Reset all password states
     setShowPasswordChange(false);
+    setShowPassword(false);
+    setShowPasswordEdit(false);
     
     if (mode === 'edit' && teacherData) {
       setTeacherForm({
@@ -217,7 +221,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         full_name: teacherData.full_name,
         role: teacherData.role,
         kelas: teacherData.kelas || '',
-        password: '' // Always empty when opening edit modal
+        password: ''
       });
     } else {
       setTeacherForm({
@@ -268,6 +272,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       
       showToast('Teacher added successfully!', 'success');
       setTeacherModal({ show: false, mode: 'add', data: null });
+      setShowPassword(false);
       await loadSchoolData();
       
     } catch (error) {
@@ -322,6 +327,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       showToast(successMessage, 'success');
       setTeacherModal({ show: false, mode: 'add', data: null });
       setShowPasswordChange(false);
+      setShowPasswordEdit(false);
       await loadSchoolData();
       
     } catch (error) {
@@ -462,7 +468,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     }
   };
 
-  // TEACHER MODAL COMPONENT - UPDATED WITH PASSWORD CHANGE FEATURE!
+  // TEACHER MODAL COMPONENT - WITH PASSWORD VISIBILITY TOGGLE!
   const TeacherModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -479,8 +485,10 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             onClick={() => {
               setTeacherModal({ show: false, mode: 'add', data: null });
               setShowPasswordChange(false);
+              setShowPassword(false);
+              setShowPasswordEdit(false);
             }}
-            className="p-2 hover:bg-blue-600 rounded-lg"
+            className="p-2 hover:bg-blue-600 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
@@ -495,7 +503,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               type="text"
               value={teacherForm.full_name}
               onChange={(e) => setTeacherForm(prev => ({ ...prev, full_name: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               placeholder="Masukkan nama lengkap"
             />
           </div>
@@ -508,34 +516,44 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               type="text"
               value={teacherForm.username}
               onChange={(e) => setTeacherForm(prev => ({ ...prev, username: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               placeholder="Masukkan username"
             />
           </div>
 
-          {/* PASSWORD SECTION - ADD MODE */}
+          {/* PASSWORD SECTION - ADD MODE WITH TOGGLE */}
           {teacherModal.mode === 'add' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
-                value={teacherForm.password}
-                onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Masukkan password (min. 6 karakter)"
-                minLength={6}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={teacherForm.password}
+                  onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  placeholder="Masukkan password (min. 6 karakter)"
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
+                  title={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {teacherForm.password && teacherForm.password.length < 6 && (
-                <p className="text-xs text-red-500 mt-1">
-                  ⚠️ Password minimal 6 karakter
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <span>⚠️</span> Password minimal 6 karakter
                 </p>
               )}
             </div>
           )}
 
-          {/* PASSWORD CHANGE SECTION - EDIT MODE */}
+          {/* PASSWORD CHANGE SECTION - EDIT MODE WITH TOGGLE */}
           {teacherModal.mode === 'edit' && (
             <div className="border-t border-gray-200 pt-4">
               <label className="flex items-center gap-2 mb-3 cursor-pointer group">
@@ -544,11 +562,12 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                   checked={showPasswordChange}
                   onChange={(e) => {
                     setShowPasswordChange(e.target.checked);
+                    setShowPasswordEdit(false);
                     if (!e.target.checked) {
                       setTeacherForm(prev => ({ ...prev, password: '' }));
                     }
                   }}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
                 />
                 <span className="text-sm font-medium text-gray-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
                   <Key size={16} className="text-blue-600" />
@@ -557,25 +576,35 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               </label>
               
               {showPasswordChange && (
-                <div className="space-y-2 pl-6 animate-fadeIn">
+                <div className="space-y-2 pl-6">
                   <label className="block text-sm font-medium text-gray-700">
                     Password Baru <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="password"
-                    value={teacherForm.password}
-                    onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="Masukkan password baru (min. 6 karakter)"
-                    minLength={6}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswordEdit ? "text" : "password"}
+                      value={teacherForm.password}
+                      onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
+                      className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      placeholder="Masukkan password baru (min. 6 karakter)"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordEdit(!showPasswordEdit)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
+                      title={showPasswordEdit ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                      {showPasswordEdit ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                   {teacherForm.password && teacherForm.password.length < 6 && (
-                    <p className="text-xs text-red-500">
-                      ⚠️ Password minimal 6 karakter
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <span>⚠️</span> Password minimal 6 karakter
                     </p>
                   )}
-                  <p className="text-xs text-gray-500">
-                    💡 Password baru akan langsung aktif setelah disimpan
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <span>💡</span> Password baru akan langsung aktif setelah disimpan
                   </p>
                 </div>
               )}
@@ -587,7 +616,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <select
               value={teacherForm.role}
               onChange={(e) => setTeacherForm(prev => ({ ...prev, role: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             >
               <option value="guru_mapel">Guru Mata Pelajaran</option>
               <option value="guru_kelas">Guru Kelas</option>
@@ -600,7 +629,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <select
               value={teacherForm.kelas}
               onChange={(e) => setTeacherForm(prev => ({ ...prev, kelas: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             >
               <option value="">Pilih Kelas (Opsional)</option>
               <option value="1">Kelas 1</option>
@@ -616,7 +645,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <button
               onClick={teacherModal.mode === 'add' ? handleAddTeacher : handleEditTeacher}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {loading ? 'Menyimpan...' : (teacherModal.mode === 'add' ? 'Tambah Guru' : 'Update Guru')}
             </button>
@@ -624,9 +653,11 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               onClick={() => {
                 setTeacherModal({ show: false, mode: 'add', data: null });
                 setShowPasswordChange(false);
+                setShowPassword(false);
+                setShowPasswordEdit(false);
               }}
               disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 transition-colors"
+              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Batal
             </button>
@@ -651,7 +682,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
           </div>
           <button
             onClick={() => setStudentModal({ show: false, mode: 'add', data: null })}
-            className="p-2 hover:bg-green-600 rounded-lg"
+            className="p-2 hover:bg-green-600 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
@@ -664,7 +695,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               type="text"
               value={studentForm.nisn}
               onChange={(e) => setStudentForm(prev => ({ ...prev, nisn: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
               placeholder="Masukkan NISN siswa"
             />
           </div>
@@ -675,7 +706,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               type="text"
               value={studentForm.nama_siswa}
               onChange={(e) => setStudentForm(prev => ({ ...prev, nama_siswa: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
               placeholder="Masukkan nama lengkap siswa"
             />
           </div>
@@ -685,7 +716,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <select
               value={studentForm.jenis_kelamin}
               onChange={(e) => setStudentForm(prev => ({ ...prev, jenis_kelamin: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
             >
               <option value="L">Laki-laki</option>
               <option value="P">Perempuan</option>
@@ -697,7 +728,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <select
               value={studentForm.kelas}
               onChange={(e) => setStudentForm(prev => ({ ...prev, kelas: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
             >
               <option value="">Pilih Kelas</option>
               <option value="1">Kelas 1</option>
@@ -715,7 +746,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 type="checkbox"
                 checked={studentForm.is_active}
                 onChange={(e) => setStudentForm(prev => ({ ...prev, is_active: e.target.checked }))}
-                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4"
               />
               <span className="text-sm font-medium text-gray-700">Siswa Aktif</span>
             </label>
@@ -725,14 +756,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <button
               onClick={studentModal.mode === 'add' ? handleAddStudent : handleEditStudent}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {loading ? 'Menyimpan...' : (studentModal.mode === 'add' ? 'Tambah Siswa' : 'Update Siswa')}
             </button>
             <button
               onClick={() => setStudentModal({ show: false, mode: 'add', data: null })}
               disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Batal
             </button>
@@ -777,14 +808,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 }
               }}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
+              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
             >
               {loading ? 'Menghapus...' : 'Ya, Hapus'}
             </button>
             <button
               onClick={() => setDeleteConfirm({ show: false, type: '', data: null })}
               disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Batal
             </button>
@@ -811,14 +842,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         <div className={`flex flex-col sm:flex-row gap-2 ${mobileMenuOpen ? 'flex' : 'hidden'} sm:flex`}>
           <button
             onClick={() => openTeacherModal('add')}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-colors"
           >
             <Plus size={16} />
             Tambah Guru
           </button>
           <button
             onClick={() => openStudentModal('add')}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm transition-colors"
           >
             <Plus size={16} />
             Tambah Siswa
@@ -878,7 +909,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {teachers.map(teacher => (
-                <tr key={teacher.id} className={`hover:bg-gray-50 ${!teacher.is_active ? 'opacity-50 bg-gray-100' : ''}`}>
+                <tr key={teacher.id} className={`hover:bg-gray-50 transition-colors ${!teacher.is_active ? 'opacity-50 bg-gray-100' : ''}`}>
                   <td className="px-3 py-2 lg:px-4 lg:py-3">
                     <button
                       onClick={() => toggleTeacherStatus(teacher.id, teacher.is_active)}
@@ -905,7 +936,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                       value={teacher.kelas || ''}
                       onChange={(e) => updateTeacherClass(teacher.id, e.target.value || null)}
                       disabled={loading || !teacher.is_active}
-                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
                     >
                       <option value="">Pilih Kelas</option>
                       <option value="1">Kelas 1</option>
@@ -921,7 +952,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                       <button
                         onClick={() => openTeacherModal('edit', teacher)}
                         disabled={loading}
-                        className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                        className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors"
                         title="Edit Guru"
                       >
                         <Edit3 size={14} />
@@ -934,7 +965,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                           data: teacher 
                         })}
                         disabled={loading}
-                        className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                        className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
                         title="Hapus Guru"
                       >
                         <Trash2 size={14} />
@@ -962,7 +993,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                   type="text"
                   value={studentFilters.search}
                   onChange={(e) => setStudentFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                   placeholder="Cari berdasarkan nama atau NISN..."
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -976,7 +1007,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               <select
                 value={studentFilters.kelas}
                 onChange={(e) => setStudentFilters(prev => ({ ...prev, kelas: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
               >
                 <option value="">Semua Kelas</option>
                 <option value="1">Kelas 1</option>
@@ -1025,7 +1056,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <tbody className="divide-y divide-gray-200">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map(student => (
-                  <tr key={student.id} className="hover:bg-gray-50">
+                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-gray-800">{student.nisn}</td>
                     <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-800">{student.nama_siswa}</td>
                     <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
@@ -1036,7 +1067,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                         value={student.kelas || ''}
                         onChange={(e) => updateStudentClass(student.id, e.target.value || null)}
                         disabled={loading}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition-all"
                       >
                         <option value="">Pilih Kelas</option>
                         <option value="1">Kelas 1</option>
@@ -1061,7 +1092,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                         <button
                           onClick={() => openStudentModal('edit', student)}
                           disabled={loading}
-                          className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                          className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors"
                           title="Edit Siswa"
                         >
                           <Edit3 size={14} />
@@ -1074,7 +1105,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                             data: student 
                           })}
                           disabled={loading}
-                          className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                          className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
                           title="Hapus Siswa"
                         >
                           <Trash2 size={14} />
@@ -1100,7 +1131,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribusi Siswa per Kelas</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
           {Object.entries(studentsByClass).map(([kelas, students]) => (
-            <div key={kelas} className="border border-gray-200 rounded-lg p-3 lg:p-4">
+            <div key={kelas} className="border border-gray-200 rounded-lg p-3 lg:p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-gray-800 text-sm lg:text-base">Kelas {kelas}</h4>
                 <span className="text-xs lg:text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
