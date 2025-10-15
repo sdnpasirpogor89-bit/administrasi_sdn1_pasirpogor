@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Users, UserCheck, BookOpen, Edit3, Trash2, CheckSquare, X, Search, Filter } from 'lucide-react';
+import { Plus, Users, UserCheck, BookOpen, Edit3, Trash2, CheckSquare, X, Search, Filter, Key } from 'lucide-react';
 
 const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   const [teachers, setTeachers] = useState([]);
@@ -37,6 +37,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     data: null
   });
 
+  // PASSWORD CHANGE STATE - NEW!
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+
   // MOBILE MENU STATE
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -69,7 +72,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       const { data: teachersData, error: teachersError } = await supabase
         .from('users')
         .select('id, username, full_name, role, kelas, is_active')
-        .in('role', ['admin', 'guru_kelas', 'guru_mapel'])
+        .in('role', ['guru_kelas', 'guru_mapel'])
         .order('full_name');
       
       if (teachersError) throw teachersError;
@@ -205,13 +208,16 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   };
 
   const openTeacherModal = (mode = 'add', teacherData = null) => {
+    // Reset password change state
+    setShowPasswordChange(false);
+    
     if (mode === 'edit' && teacherData) {
       setTeacherForm({
         username: teacherData.username,
         full_name: teacherData.full_name,
         role: teacherData.role,
         kelas: teacherData.kelas || '',
-        password: ''
+        password: '' // Always empty when opening edit modal
       });
     } else {
       setTeacherForm({
@@ -233,6 +239,19 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
   const handleAddTeacher = async () => {
     try {
       setLoading(true);
+      
+      // Validation
+      if (!teacherForm.username || !teacherForm.full_name || !teacherForm.password) {
+        showToast('Please fill in all required fields', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (teacherForm.password.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        setLoading(false);
+        return;
+      }
       
       const { error } = await supabase
         .from('users')
@@ -263,6 +282,20 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     try {
       setLoading(true);
       
+      // Validation
+      if (!teacherForm.username || !teacherForm.full_name) {
+        showToast('Please fill in all required fields', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Validate password if changing
+      if (showPasswordChange && teacherForm.password && teacherForm.password.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        setLoading(false);
+        return;
+      }
+      
       const updateData = {
         username: teacherForm.username,
         full_name: teacherForm.full_name,
@@ -270,7 +303,8 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         kelas: teacherForm.kelas || null
       };
       
-      if (teacherForm.password) {
+      // Only update password if checkbox is checked and password is provided
+      if (showPasswordChange && teacherForm.password) {
         updateData.password = teacherForm.password;
       }
       
@@ -281,8 +315,13 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       
       if (error) throw error;
       
-      showToast('Teacher updated successfully!', 'success');
+      const successMessage = showPasswordChange && teacherForm.password 
+        ? 'Teacher updated successfully! Password has been changed.' 
+        : 'Teacher updated successfully!';
+      
+      showToast(successMessage, 'success');
       setTeacherModal({ show: false, mode: 'add', data: null });
+      setShowPasswordChange(false);
       await loadSchoolData();
       
     } catch (error) {
@@ -423,7 +462,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     }
   };
 
-  // TEACHER MODAL COMPONENT
+  // TEACHER MODAL COMPONENT - UPDATED WITH PASSWORD CHANGE FEATURE!
   const TeacherModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -437,7 +476,10 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             </div>
           </div>
           <button
-            onClick={() => setTeacherModal({ show: false, mode: 'add', data: null })}
+            onClick={() => {
+              setTeacherModal({ show: false, mode: 'add', data: null });
+              setShowPasswordChange(false);
+            }}
             className="p-2 hover:bg-blue-600 rounded-lg"
           >
             <X size={20} />
@@ -446,7 +488,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nama Lengkap <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={teacherForm.full_name}
@@ -457,7 +501,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Username <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={teacherForm.username}
@@ -467,16 +513,72 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             />
           </div>
 
+          {/* PASSWORD SECTION - ADD MODE */}
           {teacherModal.mode === 'add' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password <span className="text-red-500">*</span>
+              </label>
               <input
                 type="password"
                 value={teacherForm.password}
                 onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Masukkan password"
+                placeholder="Masukkan password (min. 6 karakter)"
+                minLength={6}
               />
+              {teacherForm.password && teacherForm.password.length < 6 && (
+                <p className="text-xs text-red-500 mt-1">
+                  ⚠️ Password minimal 6 karakter
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* PASSWORD CHANGE SECTION - EDIT MODE */}
+          {teacherModal.mode === 'edit' && (
+            <div className="border-t border-gray-200 pt-4">
+              <label className="flex items-center gap-2 mb-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={showPasswordChange}
+                  onChange={(e) => {
+                    setShowPasswordChange(e.target.checked);
+                    if (!e.target.checked) {
+                      setTeacherForm(prev => ({ ...prev, password: '' }));
+                    }
+                  }}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
+                  <Key size={16} className="text-blue-600" />
+                  Ganti Password User
+                </span>
+              </label>
+              
+              {showPasswordChange && (
+                <div className="space-y-2 pl-6 animate-fadeIn">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Password Baru <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={teacherForm.password}
+                    onChange={(e) => setTeacherForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan password baru (min. 6 karakter)"
+                    minLength={6}
+                  />
+                  {teacherForm.password && teacherForm.password.length < 6 && (
+                    <p className="text-xs text-red-500">
+                      ⚠️ Password minimal 6 karakter
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    💡 Password baru akan langsung aktif setelah disimpan
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -514,14 +616,17 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <button
               onClick={teacherModal.mode === 'add' ? handleAddTeacher : handleEditTeacher}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
             >
               {loading ? 'Menyimpan...' : (teacherModal.mode === 'add' ? 'Tambah Guru' : 'Update Guru')}
             </button>
             <button
-              onClick={() => setTeacherModal({ show: false, mode: 'add', data: null })}
+              onClick={() => {
+                setTeacherModal({ show: false, mode: 'add', data: null });
+                setShowPasswordChange(false);
+              }}
               disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 transition-colors"
             >
               Batal
             </button>

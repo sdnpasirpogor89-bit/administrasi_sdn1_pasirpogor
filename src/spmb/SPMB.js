@@ -381,7 +381,7 @@ const SPMB = ({ userData }) => {
             <div className="w-20 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500 mx-auto"></div>
             <p className="text-gray-700 text-base sm:text-lg">SDN 1 PASIR POGOR</p>
             <p className="text-blue-600 font-medium bg-white/60 px-4 py-2 rounded-full inline-block text-sm sm:text-base">
-              Pendaftaran TA {getCurrentAcademicYear()}
+              Pendaftaran Siswa Baru Tahun Ajaran {getCurrentAcademicYear()}
             </p>
           </div>
         </div>

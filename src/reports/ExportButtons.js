@@ -1,96 +1,140 @@
-import React, { useState } from 'react';
-import { FileDown, FileSpreadsheet, Printer } from 'lucide-react';
-import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
+import React, { useState } from "react";
+import { FileDown, FileSpreadsheet, Printer } from "lucide-react";
+import jsPDF from "jspdf";
+import ExcelJS from "exceljs";
 
 // Import autoTable separately untuk menghindari issue
 let autoTable;
 try {
-  autoTable = require('jspdf-autotable');
+  autoTable = require("jspdf-autotable");
 } catch (error) {
-  console.warn('jspdf-autotable not available, using fallback');
+  console.warn("jspdf-autotable not available, using fallback");
 }
 
-const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = false }) => {
+const ExportButtons = ({
+  data = [],
+  type,
+  filters = {},
+  stats = {},
+  loading = false,
+}) => {
   const [exporting, setExporting] = useState(null);
+
+  // School information
+  const schoolInfo = {
+    name: "SDN 1 PASIRPOGOR",
+    fullName: "Sekolah Dasar Negeri 1 Pasirpogor",
+    address: "Kp. Bojongloa RT 03 RW 02 Ds. Pasirpogor",
+    district: "Kec. Sindangkerta Kab. Bandung Barat 40563",
+    logoPath: "/logo_sekolah.png",
+  };
 
   // Helper: Format tanggal
   const formatDate = (date) => {
-    if (!date) return '';
+    if (!date) return "";
     try {
-      return new Date(date).toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
+      return new Date(date).toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
       });
     } catch (error) {
-      return date || '';
+      return date || "";
     }
   };
 
   // Helper: Get report title
   const getReportTitle = () => {
     const titles = {
-      students: 'Laporan Data Siswa',
-      grades: 'Laporan Nilai Siswa',
-      attendance: 'Laporan Presensi Siswa',
-      teachers: 'Laporan Aktivitas Guru'
+      students: "LAPORAN DATA SISWA",
+      grades: "LAPORAN NILAI SISWA",
+      attendance: "LAPORAN PRESENSI SISWA",
+      teachers: "LAPORAN AKTIVITAS GURU",
     };
-    return titles[type] || 'Laporan';
+    return titles[type] || "LAPORAN";
   };
 
   // Helper: Get filter info text
   const getFilterInfo = () => {
     const info = [];
     if (filters.kelas) info.push(`Kelas: ${filters.kelas}`);
-    if (filters.mapel) info.push(`Mapel: ${filters.mapel}`);
+    if (filters.mapel) info.push(`Mata Pelajaran: ${filters.mapel}`);
     if (filters.periode) info.push(`Periode: ${filters.periode}`);
     if (filters.dateRange?.start) {
-      info.push(`Tanggal: ${formatDate(filters.dateRange.start)} - ${formatDate(filters.dateRange.end)}`);
+      info.push(
+        `Tanggal: ${formatDate(filters.dateRange.start)} - ${formatDate(
+          filters.dateRange.end
+        )}`
+      );
     }
-    return info.join(' | ');
+    return info.join(" | ");
   };
 
   // Helper: Get columns based on type
   const getColumns = () => {
     switch (type) {
-      case 'students':
+      case "students":
         return [
-          { header: 'No', key: 'no', width: 6 },
-          { header: 'NISN', key: 'nisn', width: 12 },
-          { header: 'Nama Siswa', key: 'nama_siswa', width: 25 },
-          { header: 'Jenis Kelamin', key: 'jenis_kelamin', width: 12 },
-          { header: 'Kelas', key: 'kelas', width: 8 },
-          { header: 'Status', key: 'is_active', width: 10 }
+          { header: "No", key: "no", width: 6, align: "center" },
+          { header: "NISN", key: "nisn", width: 13, align: "center" },
+          { header: "Nama Siswa", key: "nama_siswa", width: 35, align: "left" },
+          {
+            header: "Jenis Kelamin",
+            key: "jenis_kelamin",
+            width: 18,
+            align: "center",
+          },
+          { header: "Kelas", key: "kelas", width: 10, align: "center" },
+          { header: "Status", key: "is_active", width: 12, align: "center" },
         ];
-      case 'grades':
+      case "grades":
         return [
-          { header: 'No', key: 'no', width: 6 },
-          { header: 'NISN', key: 'nisn', width: 12 },
-          { header: 'Nama Siswa', key: 'nama_siswa', width: 20 },
-          { header: 'Kelas', key: 'kelas', width: 8 },
-          { header: 'Mata Pelajaran', key: 'mata_pelajaran', width: 20 },
-          { header: 'Jenis Nilai', key: 'jenis_nilai', width: 15 },
-          { header: 'Nilai', key: 'nilai', width: 8 }
+          { header: "No", key: "no", width: 6, align: "center" },
+          { header: "NISN", key: "nisn", width: 13, align: "center" },
+          { header: "Nama Siswa", key: "nama_siswa", width: 35, align: "left" },
+          { header: "Kelas", key: "kelas", width: 10, align: "center" },
+          {
+            header: "Mata Pelajaran",
+            key: "mata_pelajaran",
+            width: 20,
+            align: "left",
+          },
+          {
+            header: "Jenis Nilai",
+            key: "jenis_nilai",
+            width: 15,
+            align: "center",
+          },
+          { header: "Nilai", key: "nilai", width: 8, align: "center" },
         ];
-      case 'attendance':
+      case "attendance":
         return [
-          { header: 'No', key: 'no', width: 6 },
-          { header: 'Tanggal', key: 'tanggal', width: 12 },
-          { header: 'NISN', key: 'nisn', width: 12 },
-          { header: 'Nama Siswa', key: 'nama_siswa', width: 20 },
-          { header: 'Kelas', key: 'kelas', width: 8 },
-          { header: 'Status', key: 'status', width: 10 },
-          { header: 'Keterangan', key: 'keterangan', width: 20 }
+          { header: "No", key: "no", width: 6, align: "center" },
+          { header: "Tanggal", key: "tanggal", width: 12, align: "center" },
+          { header: "NISN", key: "nisn", width: 13, align: "center" },
+          { header: "Nama Siswa", key: "nama_siswa", width: 35, align: "left" },
+          { header: "Kelas", key: "kelas", width: 10, align: "center" },
+          { header: "Status", key: "status", width: 12, align: "center" },
+          { header: "Keterangan", key: "keterangan", width: 20, align: "left" },
         ];
-      case 'teachers':
+      case "teachers":
         return [
-          { header: 'No', key: 'no', width: 6 },
-          { header: 'Nama Guru', key: 'full_name', width: 20 },
-          { header: 'Role', key: 'role', width: 15 },
-          { header: 'Kelas', key: 'kelas', width: 8 },
-          { header: 'Mata Pelajaran', key: 'mata_pelajaran', width: 20 },
-          { header: 'Total Input', key: 'total_input', width: 12 }
+          { header: "No", key: "no", width: 6, align: "center" },
+          { header: "Nama Guru", key: "full_name", width: 20, align: "left" },
+          { header: "Role", key: "role", width: 15, align: "center" },
+          { header: "Kelas", key: "kelas", width: 8, align: "center" },
+          {
+            header: "Mata Pelajaran",
+            key: "mata_pelajaran",
+            width: 20,
+            align: "left",
+          },
+          {
+            header: "Total Input",
+            key: "total_input",
+            width: 12,
+            align: "center",
+          },
         ];
       default:
         return [];
@@ -100,300 +144,673 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
   // Helper: Format data for export
   const formatDataForExport = () => {
     const columns = getColumns();
-    
+
     // Validasi data
     if (!data || !Array.isArray(data) || data.length === 0) {
       return [];
     }
-    
+
     return data.map((row, index) => {
       const formatted = { no: index + 1 };
-      columns.forEach(col => {
-        if (col.key === 'no') return;
-        
+      columns.forEach((col) => {
+        if (col.key === "no") return;
+
         let value = row[col.key];
-        
+
         // Format khusus
-        if (col.key === 'is_active') {
-          value = value ? 'Aktif' : 'Tidak Aktif';
-        } else if (col.key === 'tanggal') {
+        if (col.key === "is_active") {
+          value = value ? "Aktif" : "Tidak Aktif";
+        } else if (col.key === "tanggal") {
           value = formatDate(value);
-        } else if (col.key === 'jenis_kelamin') {
-          value = value === 'L' ? 'Laki-laki' : 'Perempuan';
-        } else if (col.key === 'status') {
-          value = value === 'Alfa' ? 'Alpa' : value;
+        } else if (col.key === "jenis_kelamin") {
+          // PERBAIKAN: Cek semua kemungkinan format
+          if (value === "L" || value === "Laki-laki" || value === "laki-laki") {
+            value = "Laki-laki";
+          } else if (
+            value === "P" ||
+            value === "Perempuan" ||
+            value === "perempuan"
+          ) {
+            value = "Perempuan";
+          } else {
+            value = value || "-";
+          }
+        } else if (col.key === "status") {
+          value = value === "Alfa" ? "Alpa" : value;
+        } else if (col.key === "nilai") {
+          value = value ? parseFloat(value).toFixed(1) : "-";
         }
-        
-        formatted[col.key] = value || '-';
+
+        formatted[col.key] = value || "-";
       });
       return formatted;
     });
   };
 
-  // **FIXED: Export to PDF dengan fallback**
-  const exportToPDF = () => {
-    setExporting('pdf');
-    
+  // **ENHANCED: Export to PDF dengan Template Professional**
+  const exportToPDF = async () => {
+    setExporting("pdf");
+
     try {
       // Validasi data dulu
       const formattedData = formatDataForExport();
       if (!formattedData || formattedData.length === 0) {
-        alert('Tidak ada data untuk di-export');
+        alert("Tidak ada data untuk di-export");
         setExporting(null);
         return;
       }
 
       const columns = getColumns();
-      
-      // Create PDF document
-      const doc = new jsPDF('l', 'mm', 'a4');
+
+      // Create PDF document - Portrait untuk format laporan
+      const doc = new jsPDF("p", "mm", "a4");
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
-      
-      // **SOLUSI 1: Coba pakai autoTable jika available**
-      if (autoTable && typeof autoTable === 'function') {
-        // Header
+
+      // **PROFESSIONAL TEMPLATE DENGAN LOGO**
+      let currentY = 20;
+
+      // Try to add logo
+      try {
+        const img = new Image();
+        img.src = schoolInfo.logoPath;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        // Add logo (50x50px)
+        doc.addImage(img, "PNG", 20, currentY, 15, 15);
         doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
-        doc.text('SISTEM INFORMASI SEKOLAH', pageWidth / 2, 15, { align: 'center' });
-        
-        doc.setFontSize(14);
-        doc.text(getReportTitle(), pageWidth / 2, 22, { align: 'center' });
-        
-        // Filter info
+        doc.setFont(undefined, "bold");
+        doc.text(schoolInfo.name, 40, currentY + 8);
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        doc.text(schoolInfo.fullName, 40, currentY + 14);
+        doc.text(schoolInfo.address, 40, currentY + 19);
+        doc.text(schoolInfo.district, 40, currentY + 24);
+
+        currentY += 35;
+      } catch (error) {
+        console.warn("Logo tidak bisa dimuat, menggunakan fallback text");
+        // Fallback tanpa logo
+        doc.setFontSize(16);
+        doc.setFont(undefined, "bold");
+        doc.text(schoolInfo.name, pageWidth / 2, currentY, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, "normal");
+        doc.text(schoolInfo.fullName, pageWidth / 2, currentY + 6, {
+          align: "center",
+        });
+        doc.text(schoolInfo.address, pageWidth / 2, currentY + 11, {
+          align: "center",
+        });
+        doc.text(schoolInfo.district, pageWidth / 2, currentY + 16, {
+          align: "center",
+        });
+
+        currentY += 25;
+      }
+
+      // Garis pemisah
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, currentY, pageWidth - 20, currentY);
+      currentY += 10;
+
+      // Judul Laporan
+      doc.setFontSize(14);
+      doc.setFont(undefined, "bold");
+      doc.text(getReportTitle(), pageWidth / 2, currentY, { align: "center" });
+      currentY += 7;
+
+      // Filter Info
+      const filterInfo = getFilterInfo();
+      if (filterInfo) {
         doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        const filterInfo = getFilterInfo();
-        if (filterInfo) {
-          doc.text(filterInfo, pageWidth / 2, 28, { align: 'center' });
-        }
-        
-        // Tanggal cetak
-        doc.text(`Dicetak: ${formatDate(new Date())}`, pageWidth / 2, 33, { align: 'center' });
-        
-        let startY = 40;
-        
-        // Statistics (jika ada)
-        if (stats && Object.keys(stats).length > 0) {
-          doc.setFontSize(10);
-          doc.setFont(undefined, 'bold');
-          doc.text('Statistik:', 14, startY);
-          
-          doc.setFont(undefined, 'normal');
-          doc.setFontSize(9);
-          let statsY = startY + 5;
-          
-          Object.entries(stats).slice(0, 4).forEach(([key, value]) => {
-            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            doc.text(`${label}: ${value}`, 14, statsY);
-            statsY += 5;
+        doc.setFont(undefined, "normal");
+        doc.text(filterInfo, pageWidth / 2, currentY, { align: "center" });
+        currentY += 5;
+      }
+
+      // Tanggal cetak
+      doc.text(`Dicetak: ${formatDate(new Date())}`, pageWidth / 2, currentY, {
+        align: "center",
+      });
+      currentY += 10;
+
+      // **STATISTICS BOX - PROFESSIONAL**
+      if (stats && Object.keys(stats).length > 0) {
+        const statsWidth = 80;
+        const statsX = (pageWidth - statsWidth) / 2;
+
+        // Box background
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(statsX, currentY, statsWidth, 25, 3, 3, "F");
+
+        // Box border
+        doc.setDrawColor(59, 130, 246);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(statsX, currentY, statsWidth, 25, 3, 3);
+
+        // Title
+        doc.setFontSize(10);
+        doc.setFont(undefined, "bold");
+        doc.text("STATISTIK", pageWidth / 2, currentY + 6, { align: "center" });
+
+        // Stats content
+        doc.setFontSize(8);
+        doc.setFont(undefined, "normal");
+        let statsY = currentY + 12;
+
+        Object.entries(stats)
+          .slice(0, 3)
+          .forEach(([key, value]) => {
+            const label = key
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+            doc.text(`${label}:`, statsX + 5, statsY);
+            doc.text(value.toString(), statsX + statsWidth - 15, statsY, {
+              align: "right",
+            });
+            statsY += 4;
           });
-          
-          startY = statsY + 5;
-        }
-        
-        // Table dengan autoTable
+
+        currentY += 35;
+      } else {
+        currentY += 5;
+      }
+
+      // **FIXED: PROFESSIONAL TABLE DENGAN AUTOTABLE - IMPROVED COLUMN WIDTHS**
+      if (autoTable && typeof autoTable === "function") {
+        // Calculate better column widths based on content
+        const calculateColumnWidths = () => {
+          const availableWidth = pageWidth - 40; // 20mm margin each side
+          const totalWeight = columns.reduce(
+            (sum, col) => sum + (col.width || 15),
+            0
+          );
+
+          return columns.map((col) => {
+            const weight = col.width || 15;
+            return (weight / totalWeight) * availableWidth;
+          });
+        };
+
+        const columnStyles = {};
+        const columnWidths = calculateColumnWidths();
+
+        columns.forEach((col, index) => {
+          columnStyles[index] = {
+            cellWidth: columnWidths[index],
+            minCellHeight: 8,
+            fontStyle: index === 0 ? "bold" : "normal",
+            halign: col.align || "left",
+            valign: "middle",
+          };
+        });
+
         autoTable(doc, {
-          startY: startY,
-          head: [columns.map(col => col.header)],
-          body: formattedData.map(row => columns.map(col => row[col.key] || '')),
+          startY: currentY,
+          head: [columns.map((col) => col.header)],
+          body: formattedData.map((row) =>
+            columns.map((col) => row[col.key] || "")
+          ),
           styles: {
             fontSize: 8,
-            cellPadding: 2,
+            cellPadding: 3,
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1,
           },
           headStyles: {
             fillColor: [59, 130, 246],
             textColor: 255,
-            fontStyle: 'bold'
+            fontStyle: "bold",
+            lineWidth: 0.1,
+            halign: "center",
+            valign: "middle",
+          },
+          bodyStyles: {
+            lineWidth: 0.1,
+            valign: "middle",
           },
           alternateRowStyles: {
-            fillColor: [245, 247, 250]
+            fillColor: [245, 247, 250],
           },
-          margin: { left: 14, right: 14 }
+          columnStyles: columnStyles,
+          margin: { left: 20, right: 20 },
+          tableLineColor: [0, 0, 0],
+          tableLineWidth: 0.1,
+          didDrawPage: function (data) {
+            // Header will be automatically drawn by autoTable
+          },
         });
-        
       } else {
-        // **SOLUSI 2: FALLBACK - Manual table tanpa autoTable**
-        doc.setFontSize(16);
-        doc.setFont(undefined, 'bold');
-        doc.text('SISTEM INFORMASI SEKOLAH', pageWidth / 2, 20, { align: 'center' });
-        
-        doc.setFontSize(14);
-        doc.text(getReportTitle(), pageWidth / 2, 30, { align: 'center' });
-        
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Dicetak: ${formatDate(new Date())}`, pageWidth / 2, 40, { align: 'center' });
-        
-        const filterInfo = getFilterInfo();
-        if (filterInfo) {
-          doc.text(filterInfo, pageWidth / 2, 47, { align: 'center' });
-        }
-        
-        // Simple manual table
-        let yPosition = 60;
-        const rowHeight = 8;
-        const colWidth = pageWidth / columns.length;
-        
-        // Table header
+        // **FIXED: FALLBACK MANUAL TABLE - IMPROVED LAYOUT**
+        doc.setFontSize(8);
+
+        // Calculate dynamic column widths based on content
+        const calculateColumnWidths = () => {
+          const availableWidth = pageWidth - 40;
+          const totalWeight = columns.reduce(
+            (sum, col) => sum + (col.width || 15),
+            0
+          );
+
+          return columns.map((col) => {
+            const weight = col.width || 15;
+            return (weight / totalWeight) * availableWidth;
+          });
+        };
+
+        const colWidths = calculateColumnWidths();
+        let xPosition = 20;
+
+        // **FIXED: TABLE HEADER - PASTI KELUAR**
         doc.setFillColor(59, 130, 246);
         doc.setTextColor(255, 255, 255);
-        doc.setFont(undefined, 'bold');
-        
+        doc.setFont(undefined, "bold");
+
+        // Draw header background
+        doc.rect(20, currentY, pageWidth - 40, 8, "F");
+
+        // Draw header text for each column
         columns.forEach((col, index) => {
-          doc.rect(index * colWidth, yPosition, colWidth, rowHeight, 'F');
-          doc.text(col.header, index * colWidth + 2, yPosition + 5);
+          const textX = xPosition + colWidths[index] / 2;
+          doc.text(col.header, textX, currentY + 5, { align: "center" });
+          xPosition += colWidths[index];
         });
-        
-        yPosition += rowHeight;
-        
-        // Table data
+
+        currentY += 8;
+        xPosition = 20;
+
+        // **FIXED: TABLE DATA - BETTER COLUMN WIDTHS**
         doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'normal');
-        
+        doc.setFont(undefined, "normal");
+
         formattedData.forEach((row, rowIndex) => {
+          // Check if need new page
+          if (currentY > pageHeight - 20) {
+            doc.addPage();
+            currentY = 20;
+
+            // Redraw header on new page
+            doc.setFillColor(59, 130, 246);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont(undefined, "bold");
+            doc.rect(20, currentY, pageWidth - 40, 8, "F");
+
+            let headerX = 20;
+            columns.forEach((col, index) => {
+              const textX = headerX + colWidths[index] / 2;
+              doc.text(col.header, textX, currentY + 5, { align: "center" });
+              headerX += colWidths[index];
+            });
+
+            currentY += 8;
+            doc.setTextColor(0, 0, 0);
+            doc.setFont(undefined, "normal");
+          }
+
           // Alternate row color
           if (rowIndex % 2 === 0) {
             doc.setFillColor(245, 247, 250);
-            doc.rect(0, yPosition, pageWidth, rowHeight, 'F');
+            doc.rect(20, currentY, pageWidth - 40, 8, "F");
           }
-          
+
+          // Draw row data
           columns.forEach((col, colIndex) => {
-            const value = String(row[col.key] || '');
-            doc.text(value, colIndex * colWidth + 2, yPosition + 5);
+            const value = String(row[col.key] || "");
+            const align =
+              col.align === "center"
+                ? "center"
+                : col.align === "right"
+                ? "right"
+                : "left";
+
+            let textX;
+            if (align === "center") {
+              textX = xPosition + colWidths[colIndex] / 2;
+            } else if (align === "right") {
+              textX = xPosition + colWidths[colIndex] - 2;
+            } else {
+              textX = xPosition + 2;
+            }
+
+            doc.text(value, textX, currentY + 5, { align: align });
+            xPosition += colWidths[colIndex];
           });
-          
-          yPosition += rowHeight;
-          
-          // Page break jika diperlukan
-          if (yPosition > pageHeight - 20) {
-            doc.addPage();
-            yPosition = 20;
-          }
+
+          currentY += 8;
+          xPosition = 20;
         });
       }
-      
-      // Footer
+
+      // Footer dengan page numbers
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
         doc.text(
           `Halaman ${i} dari ${pageCount}`,
           pageWidth / 2,
           pageHeight - 10,
-          { align: 'center' }
+          { align: "center" }
         );
       }
-      
+
       // Save PDF
-      const fileName = `laporan-${type}-${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `Laporan_${getReportTitle().replace(/\s+/g, "_")}_${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
       doc.save(fileName);
-      
     } catch (error) {
-      console.error('Error exporting PDF:', error);
-      
-      // **SOLUSI 3: Fallback ke Print jika PDF gagal**
-      console.log('PDF export failed, falling back to print...');
-      alert('Export PDF gagal. Membuka versi print sebagai alternatif...');
-      handlePrint();
-      
+      console.error("Error exporting PDF:", error);
+      alert("Export PDF gagal. Silakan coba lagi.");
     } finally {
       setExporting(null);
     }
   };
 
-  // Export to Excel - Tetap sama seperti sebelumnya
-  const exportToExcel = () => {
-    setExporting('excel');
+  // **ENHANCED: Export to Excel dengan ExcelJS & Professional Styling**
+  const exportToExcel = async () => {
+    setExporting("excel");
     try {
       const formattedData = formatDataForExport();
-      
+
       if (!formattedData || formattedData.length === 0) {
-        alert('Tidak ada data untuk di-export');
+        alert("Tidak ada data untuk di-export");
         setExporting(null);
         return;
       }
 
       const columns = getColumns();
-      
-      // Create workbook
-      const wb = XLSX.utils.book_new();
-      
-      // Header info
-      const headerData = [
-        ['SISTEM INFORMASI SEKOLAH'],
-        [getReportTitle()],
-        [''],
-        [`Dicetak: ${formatDate(new Date())}`],
-        ['']
-      ];
-      
+
+      // Create workbook dengan ExcelJS
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "Sistem Informasi Sekolah";
+      workbook.lastModifiedBy = "Sistem Informasi Sekolah";
+      workbook.created = new Date();
+      workbook.modified = new Date();
+
+      // Create worksheet
+      const worksheet = workbook.addWorksheet("Laporan");
+      let currentRow = 1; // DEFINE currentRow di sini
+
+      // School Header - Merged Cells
+      worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
+      const schoolTitleRow = worksheet.getRow(currentRow);
+      schoolTitleRow.getCell(1).value = "SEKOLAH DASAR NEGERI 1 PASIRPOGOR";
+      schoolTitleRow.getCell(1).font = {
+        name: "Arial",
+        size: 16,
+        bold: true,
+        color: { argb: "FF2D3748" },
+      };
+      schoolTitleRow.getCell(1).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      schoolTitleRow.height = 25;
+      currentRow++;
+
+      // **PERUBAHAN 1: ALAMAT SATU BARIS**
+      worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
+      const addressRow = worksheet.getRow(currentRow);
+      addressRow.getCell(1).value =
+        "Kp. Bojongloa RT 03 RW 02 Ds. Pasirpogor Kec. Sindangkerta Kab. Bandung Barat 40563";
+      addressRow.getCell(1).font = {
+        name: "Arial",
+        size: 12,
+        color: { argb: "FF718096" },
+      };
+      addressRow.getCell(1).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      currentRow += 2;
+
+      // Report Title - Merged Cells
+      worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
+      const reportTitleRow = worksheet.getRow(currentRow);
+      reportTitleRow.getCell(1).value = "LAPORAN DATA SISWA KELAS 5";
+      reportTitleRow.getCell(1).font = {
+        name: "Arial",
+        size: 14,
+        bold: true,
+        color: { argb: "FF2B6CB0" },
+      };
+      reportTitleRow.getCell(1).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      reportTitleRow.getCell(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFEBF8FF" },
+      };
+      reportTitleRow.getCell(1).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      reportTitleRow.height = 30;
+      currentRow++;
+
+      // Filter Info
       const filterInfo = getFilterInfo();
       if (filterInfo) {
-        headerData.splice(3, 0, [filterInfo]);
+        worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
+        const filterRow = worksheet.getRow(currentRow);
+        filterRow.getCell(1).value = filterInfo;
+        filterRow.getCell(1).font = {
+          name: "Arial",
+          size: 9,
+          italic: true,
+          color: { argb: "FF718096" },
+        };
+        filterRow.getCell(1).alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
+        currentRow++;
       }
-      
-      // Statistics
-      if (stats && Object.keys(stats).length > 0) {
-        headerData.push(['STATISTIK']);
-        Object.entries(stats).forEach(([key, value]) => {
-          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          headerData.push([`${label}:`, value]);
+
+      // Print Date
+      worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
+      const dateRow = worksheet.getRow(currentRow);
+      dateRow.getCell(1).value = `Dicetak: ${formatDate(new Date())}`;
+      dateRow.getCell(1).font = {
+        name: "Arial",
+        size: 9,
+        color: { argb: "FF718096" },
+      };
+      dateRow.getCell(1).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      currentRow += 2;
+
+      // **PROFESSIONAL TABLE HEADER**
+      const headerRow = worksheet.getRow(currentRow);
+      columns.forEach((col, index) => {
+        const cell = headerRow.getCell(index + 1);
+        cell.value = col.header;
+        cell.font = {
+          name: "Arial",
+          size: 10,
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF2B6CB0" },
+        };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: col.align || "left",
+          wrapText: true,
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF2D3748" } },
+          left: { style: "thin", color: { argb: "FF2D3748" } },
+          bottom: { style: "thin", color: { argb: "FF2D3748" } },
+          right: { style: "thin", color: { argb: "FF2D3748" } },
+        };
+      });
+      headerRow.height = 25;
+      currentRow++;
+
+      // **TABLE DATA**
+      formattedData.forEach((row, rowIndex) => {
+        const dataRow = worksheet.getRow(currentRow);
+
+        columns.forEach((col, colIndex) => {
+          const cell = dataRow.getCell(colIndex + 1);
+          cell.value = row[col.key];
+
+          // Styling untuk data
+          cell.font = {
+            name: "Arial",
+            size: 9,
+            color: { argb: "FF2D3748" },
+          };
+
+          // Alternating row colors
+          if (rowIndex % 2 === 0) {
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "FFF7FAFC" },
+            };
+          }
+
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: col.align || "left",
+            wrapText: true,
+          };
+
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } },
+          };
+
+          // Number formatting untuk nilai
+          if (col.key === "nilai" && row[col.key] !== "-") {
+            cell.numFmt = "0.0";
+          }
+
+          // Text format untuk NISN (biar 10 digit tetap utuh)
+          if (col.key === "nisn") {
+            cell.numFmt = "@";
+          }
         });
-        headerData.push(['']);
-      }
-      
-      // Add table headers
-      const tableHeaders = [columns.map(col => col.header)];
-      
-      // Combine all data
-      const allData = [
-        ...headerData,
-        tableHeaders,
-        ...formattedData.map(row => columns.map(col => row[col.key]))
-      ];
-      
-      // Create worksheet
-      const ws = XLSX.utils.aoa_to_sheet(allData);
-      
+
+        dataRow.height = 20;
+        currentRow++;
+      });
+
       // Set column widths
-      const colWidths = columns.map(col => ({ 
-        wch: col.width || 15
+      worksheet.columns = columns.map((col) => ({
+        width: col.width || 15,
       }));
-      ws['!cols'] = colWidths;
-      
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
-      
-      // Save
-      const fileName = `laporan-${type}-${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-      
+
+      currentRow += 2;
+
+      // **PERUBAHAN 3: STATISTIK FORMAT SEDERHANA**
+      const totalSiswa = formattedData.length;
+      const lakiLaki = formattedData.filter(
+        (s) => s.jenis_kelamin === "Laki-laki"
+      ).length;
+      const perempuan = formattedData.filter(
+        (s) => s.jenis_kelamin === "Perempuan"
+      ).length;
+      const persentaseLakiLaki =
+        totalSiswa > 0
+          ? ((lakiLaki / totalSiswa) * 100).toFixed(1).replace(".", ",")
+          : "0";
+      const persentasePerempuan =
+        totalSiswa > 0
+          ? ((perempuan / totalSiswa) * 100).toFixed(1).replace(".", ",")
+          : "0";
+
+      // Statistics Data Sederhana
+      const statsData = [
+        ["Jumlah Siswa", totalSiswa],
+        ["Laki Laki", lakiLaki],
+        ["Perempuan", perempuan],
+        ["PersentaseLakiLaki", persentaseLakiLaki],
+        ["PersentasePerempuan", persentasePerempuan],
+      ];
+
+      statsData.forEach(([label, value], index) => {
+        const labelCell = worksheet.getCell(`A${currentRow}`);
+        labelCell.value = label;
+        labelCell.font = {
+          name: "Arial",
+          size: 9,
+          color: { argb: "FF4A5568" },
+        };
+
+        const valueCell = worksheet.getCell(`B${currentRow}`);
+        valueCell.value = value;
+        valueCell.font = {
+          name: "Arial",
+          size: 9,
+          bold: true,
+          color: { argb: "FF2B6CB0" },
+        };
+
+        currentRow++;
+      });
+
+      // Save Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Laporan_Data_Siswa_Kelas_5_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error exporting Excel:', error);
-      alert('Gagal export Excel. Silakan coba lagi.');
+      console.error("Error exporting Excel:", error);
+      alert("Gagal export Excel. Silakan coba lagi.");
     } finally {
       setExporting(null);
     }
   };
 
-  // Print - Tetap sama
+  // Print - Tetap sama (sudah cukup baik)
   const handlePrint = () => {
-    setExporting('print');
+    setExporting("print");
     try {
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open("", "_blank");
       const columns = getColumns();
       const formattedData = formatDataForExport();
-      
+
       if (!formattedData || formattedData.length === 0) {
-        alert('Tidak ada data untuk di-print');
+        alert("Tidak ada data untuk di-print");
         setExporting(null);
         return;
       }
 
       const filterInfo = getFilterInfo();
-      
+
       const html = `
         <!DOCTYPE html>
         <html>
@@ -497,36 +914,48 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
             <h2>SISTEM INFORMASI SEKOLAH</h2>
             <h3>${getReportTitle()}</h3>
             <div class="filter-info">
-              ${filterInfo ? filterInfo : ''}
+              ${filterInfo ? filterInfo : ""}
               <br>
               Dicetak: ${formatDate(new Date())}
             </div>
           </div>
           
-          ${stats && Object.keys(stats).length > 0 ? `
+          ${
+            stats && Object.keys(stats).length > 0
+              ? `
             <div class="stats">
               <h3>Statistik</h3>
               <div class="stats-grid">
-                ${Object.entries(stats).map(([key, value]) => {
-                  const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                  return `<div><strong>${label}:</strong> ${value}</div>`;
-                }).join('')}
+                ${Object.entries(stats)
+                  .map(([key, value]) => {
+                    const label = key
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (l) => l.toUpperCase());
+                    return `<div><strong>${label}:</strong> ${value}</div>`;
+                  })
+                  .join("")}
               </div>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
           
           <table>
             <thead>
               <tr>
-                ${columns.map(col => `<th>${col.header}</th>`).join('')}
+                ${columns.map((col) => `<th>${col.header}</th>`).join("")}
               </tr>
             </thead>
             <tbody>
-              ${formattedData.map(row => `
+              ${formattedData
+                .map(
+                  (row) => `
                 <tr>
-                  ${columns.map(col => `<td>${row[col.key]}</td>`).join('')}
+                  ${columns.map((col) => `<td>${row[col.key]}</td>`).join("")}
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
           
@@ -536,19 +965,18 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
         </body>
         </html>
       `;
-      
+
       printWindow.document.write(html);
       printWindow.document.close();
       printWindow.focus();
-      
+
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
       }, 500);
-      
     } catch (error) {
-      console.error('Error printing:', error);
-      alert('Gagal print. Silakan coba lagi.');
+      console.error("Error printing:", error);
+      alert("Gagal print. Silakan coba lagi.");
     } finally {
       setExporting(null);
     }
@@ -566,14 +994,14 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
         className={`
           flex items-center gap-2 px-4 py-2 rounded-lg font-medium
           transition-all duration-200
-          ${isDisabled
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-red-600 text-white hover:bg-red-700 hover:shadow-lg'
+          ${
+            isDisabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-red-600 text-white hover:bg-red-700 hover:shadow-lg"
           }
-        `}
-      >
+        `}>
         <FileDown className="w-4 h-4" />
-        <span>{exporting === 'pdf' ? 'Exporting...' : 'Export PDF'}</span>
+        <span>{exporting === "pdf" ? "Exporting..." : "Export PDF"}</span>
       </button>
 
       {/* Export Excel Button */}
@@ -583,14 +1011,14 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
         className={`
           flex items-center gap-2 px-4 py-2 rounded-lg font-medium
           transition-all duration-200
-          ${isDisabled
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
+          ${
+            isDisabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
           }
-        `}
-      >
+        `}>
         <FileSpreadsheet className="w-4 h-4" />
-        <span>{exporting === 'excel' ? 'Exporting...' : 'Export Excel'}</span>
+        <span>{exporting === "excel" ? "Exporting..." : "Export Excel"}</span>
       </button>
 
       {/* Print Button */}
@@ -600,14 +1028,14 @@ const ExportButtons = ({ data = [], type, filters = {}, stats = {}, loading = fa
         className={`
           flex items-center gap-2 px-4 py-2 rounded-lg font-medium
           transition-all duration-200
-          ${isDisabled
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+          ${
+            isDisabled
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg"
           }
-        `}
-      >
+        `}>
         <Printer className="w-4 h-4" />
-        <span>{exporting === 'print' ? 'Printing...' : 'Print'}</span>
+        <span>{exporting === "print" ? "Printing..." : "Print"}</span>
       </button>
     </div>
   );

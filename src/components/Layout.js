@@ -336,7 +336,7 @@ const Layout = ({ children, userData, onLogout }) => {
                             className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-gray-700 hover:bg-blue-50 active:bg-blue-100 transition-colors touch-manipulation"
                           >
                             <Settings size={18} className="flex-shrink-0 text-gray-500" />
-                            <span className="font-medium">Pengaturan</span>
+                            <span className="font-medium">Profile</span>
                           </button>
                           
                           <div className="border-t border-gray-100 my-1"></div>
@@ -425,13 +425,13 @@ const Layout = ({ children, userData, onLogout }) => {
                         <div className="py-2">
                           <button
                             onClick={() => {
-                              handleMenuClick("Pengaturan");
+                              handleMenuClick("Profile");
                               setShowProfileDropdown(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors"
                           >
                             <Settings size={16} />
-                            <span className="font-medium">Pengaturan</span>
+                            <span className="font-medium">Profile</span>
                           </button>
                           <hr className="my-1 border-gray-100" />
                           <button
@@ -508,11 +508,11 @@ const Layout = ({ children, userData, onLogout }) => {
                       
                       <div className="py-2">
                         <button
-                          onClick={() => handleMenuClick("Pengaturan")}
+                          onClick={() => handleMenuClick("Profile")}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
                         >
                           <Settings size={16} className="flex-shrink-0" />
-                          <span className="font-medium">Pengaturan</span>
+                          <span className="font-medium">Profile</span>
                         </button>
                         <hr className="my-1 border-gray-100" />
                         <button

@@ -286,7 +286,7 @@ const Login = ({ onLoginSuccess }) => {
                 Administrator:
               </p>
               <p className="text-gray-700 text-sm">📧 admin@sdn1pasirpogor.sch.id</p>
-              <p className="text-gray-700 text-sm">📱 (021) xxx-xxxx</p>
+              <p className="text-gray-700 text-sm">📱 (022) 4378-5436</p>
             </div>
             <button
               type="button"

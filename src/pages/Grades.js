@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import ExcelJS from 'exceljs';
 import { 
   Save, 
   Download, 
@@ -11,8 +10,10 @@ import {
   Users,
   FileText,
   Calculator,
-  Search
+  Search,
+  Upload
 } from 'lucide-react';
+import { ImportModal, exportToExcel } from './GradesExport';
 
 // Compact Stats Card Component
 const StatsCard = ({ icon: Icon, number, label, color }) => {
@@ -150,7 +151,8 @@ const RekapGradeCard = ({ student, index }) => {
   );
 };
 
-const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGANTI JADI 'Grades'
+const Grades = ({ userData: initialUserData }) => {
+  const [showImportModal, setShowImportModal] = useState(false);
   const [userData, setUserData] = useState(initialUserData);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -167,7 +169,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
   const [isMobile, setIsMobile] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Device detection
   useEffect(() => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
@@ -178,7 +179,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  // Fetch complete user data if kelas is missing
   useEffect(() => {
     const fetchCompleteUserData = async () => {
       if (!userData?.kelas && userData?.username) {
@@ -208,14 +208,12 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     fetchCompleteUserData();
   }, [userData?.username]);
 
-  // Auto-select class for guru_kelas
   useEffect(() => {
     if (userData?.role === 'guru_kelas' && userData?.kelas && !selectedClass) {
       setSelectedClass(String(userData.kelas));
     }
   }, [userData?.role, userData?.kelas]);
 
-  // Konfigurasi mata pelajaran berdasarkan role
   const mataPelajaran = {
     guru_kelas: [
       'Pendidikan Pancasila',
@@ -232,7 +230,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     }
   };
 
-  // Jenis nilai
   const jenisNilai = [
     { value: 'NH1', label: 'NH1 - Nilai Harian 1' },
     { value: 'NH2', label: 'NH2 - Nilai Harian 2' },
@@ -243,7 +240,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     { value: 'UAS', label: 'UAS - Ulangan Akhir Semester' }
   ];
 
-  // Kelas options - Dynamic based on user role
   const getAvailableClasses = () => {
     if (userData.role === 'admin') {
       return ['1', '2', '3', '4', '5', '6'];
@@ -255,7 +251,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     return [];
   };
 
-  // Get available subjects based on user role
   const getAvailableSubjects = () => {
     if (userData.role === 'admin') {
       return [
@@ -271,7 +266,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     return [];
   };
 
-  // Check if user has access to selected class and subject
   const checkAccess = (kelas, mapel) => {
     if (userData.role === 'admin') return true;
     
@@ -292,13 +286,11 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     return false;
   };
 
-  // Show message
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
 
-  // Filter students based on search term
   const filteredStudents = students.filter(student =>
     student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.nisn.includes(searchTerm)
@@ -309,7 +301,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     student.nisn.includes(searchTerm)
   );
 
-  // Load rekap all grades for preview
   const loadRekapNilai = async () => {
     if (!selectedClass || !selectedSubject) {
       showMessage('Pilih kelas dan mata pelajaran terlebih dahulu!', 'error');
@@ -323,7 +314,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
 
     setLoadingRekap(true);
     try {
-      // Load all students for selected class
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('nisn, nama_siswa, kelas')
@@ -340,7 +330,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
         return;
       }
 
-      // Load all grades for selected class and subject
       const { data: allGrades, error: gradesError } = await supabase
         .from('nilai')
         .select('*')
@@ -349,15 +338,12 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
 
       if (gradesError) throw gradesError;
 
-      // Grade types
       const gradeTypes = ['NH1', 'NH2', 'NH3', 'NH4', 'NH5', 'UTS', 'UAS'];
       
-      // Process data for preview
       const processedData = studentsData.map((student, index) => {
         const studentGrades = {};
         const nhGrades = [];
         
-        // Get grades for each type
         gradeTypes.forEach(type => {
           const grade = allGrades?.find(g => 
             g.nisn === student.nisn && 
@@ -365,13 +351,11 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
           );
           studentGrades[type] = grade ? grade.nilai : '';
           
-          // Collect NH grades for average calculation
           if (type.startsWith('NH') && grade && grade.nilai) {
             nhGrades.push(parseFloat(grade.nilai));
           }
         });
 
-        // Calculate final grade (Nilai Akhir)
         let nilaiAkhir = '';
         const utsGrade = studentGrades['UTS'] ? parseFloat(studentGrades['UTS']) : 0;
         const uasGrade = studentGrades['UAS'] ? parseFloat(studentGrades['UAS']) : 0;
@@ -409,7 +393,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     }
   };
 
-  // Load students data with optional notification
   const loadStudents = async (showNotification = true) => {
     if (!selectedClass || !selectedSubject || !selectedType) {
       if (showNotification) {
@@ -425,7 +408,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
 
     setLoading(true);
     try {
-      // Load students
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('nisn, nama_siswa, kelas')
@@ -444,7 +426,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
         return;
       }
 
-      // Load existing grades
       const { data: gradesData, error: gradesError } = await supabase
         .from('nilai')
         .select('*')
@@ -454,7 +435,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
 
       if (gradesError) throw gradesError;
 
-      // Combine student data with grades
       const combinedData = studentsData.map(student => {
         const existingGrade = gradesData?.find(grade => 
           grade.nisn === student.nisn && 
@@ -482,7 +462,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     }
   };
 
-  // Auto-load data when all fields are selected
   useEffect(() => {
     if (selectedClass && selectedSubject && selectedType) {
       loadStudents();
@@ -493,7 +472,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     }
   }, [selectedClass, selectedSubject, selectedType]);
 
-  // Save grades with confirmation
   const saveGrades = async () => {
     if (students.length === 0) {
       showMessage('Tidak ada data untuk disimpan!', 'error');
@@ -556,232 +534,23 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
     }
   };
 
-  // Export to Excel with all grade types
-  const exportToExcel = async () => {
-    if (!selectedClass || !selectedSubject) {
-        showMessage('Pilih kelas dan mata pelajaran terlebih dahulu!', 'error');
-        return;
-    }
-
-    if (!checkAccess(selectedClass, selectedSubject)) {
-        showMessage('Anda Tidak Memiliki Akses Untuk Kelas dan Mata Pelajaran Pada Kelas ini!', 'error');
-        return;
-    }
-
+  const handleExportToExcel = async () => {
     setExporting(true);
     try {
-        const { data: studentsData, error: studentsError } = await supabase
-            .from('students')
-            .select('nisn, nama_siswa, kelas')
-            .eq('kelas', parseInt(selectedClass))
-            .eq('is_active', true)
-            .order('nama_siswa');
-
-        if (studentsError) throw studentsError;
-
-        if (!studentsData || studentsData.length === 0) {
-            showMessage('Tidak ada siswa di kelas ini', 'error');
-            return;
-        }
-
-        const { data: allGrades, error: gradesError } = await supabase
-            .from('nilai')
-            .select('*')
-            .eq('kelas', parseInt(selectedClass))
-            .eq('mata_pelajaran', selectedSubject);
-
-        if (gradesError) throw gradesError;
-
-        const gradeTypes = ['NH1', 'NH2', 'NH3', 'NH4', 'NH5', 'UTS', 'UAS'];
-        
-        const excelData = studentsData.map((student, index) => {
-            const studentGrades = {};
-            const nhGrades = [];
-            
-            gradeTypes.forEach(type => {
-                const grade = allGrades?.find(g => 
-                    g.nisn === student.nisn && 
-                    g.jenis_nilai === type
-                );
-                studentGrades[type] = grade ? grade.nilai : '';
-                
-                if (type.startsWith('NH') && grade && grade.nilai) {
-                    nhGrades.push(parseFloat(grade.nilai));
-                }
-            });
-
-            let nilaiAkhir = '';
-            const utsGrade = studentGrades['UTS'] ? parseFloat(studentGrades['UTS']) : 0;
-            const uasGrade = studentGrades['UAS'] ? parseFloat(studentGrades['UAS']) : 0;
-            
-            if (nhGrades.length > 0 || utsGrade > 0 || uasGrade > 0) {
-                const avgNH = nhGrades.length > 0 ? nhGrades.reduce((a, b) => a + b, 0) / nhGrades.length : 0;
-                nilaiAkhir = ((avgNH * 0.4) + (utsGrade * 0.3) + (uasGrade * 0.3)).toFixed(1);
-            }
-
-            return {
-                No: index + 1,
-                NISN: student.nisn,
-                'Nama Siswa': student.nama_siswa,
-                'NH-1': studentGrades['NH1'],
-                'NH-2': studentGrades['NH2'],
-                'NH-3': studentGrades['NH3'],
-                'NH-4': studentGrades['NH4'],
-                'NH-5': studentGrades['NH5'],
-                UTS: studentGrades['UTS'],
-                UAS: studentGrades['UAS'],
-                'Nilai Akhir': nilaiAkhir
-            };
-        });
-
-        const workbook = new ExcelJS.Workbook();
-        workbook.creator = userData.name || userData.username;
-        workbook.lastModifiedBy = userData.name || userData.username;
-        workbook.created = new Date();
-        workbook.modified = new Date();
-
-        const worksheet = workbook.addWorksheet('Nilai Siswa');
-        const numColumns = 11;
-
-        worksheet.columns = [
-            { key: 'No', width: 5 },
-            { key: 'NISN', width: 12 },
-            { key: 'Nama Siswa', width: 40 }, 
-            { key: 'NH-1', width: 8 },
-            { key: 'NH-2', width: 8 },
-            { key: 'NH-3', width: 8 },
-            { key: 'NH-4', width: 8 },
-            { key: 'NH-5', width: 8 },
-            { key: 'UTS', width: 8 },
-            { key: 'UAS', width: 8 },
-            { key: 'Nilai Akhir', width: 12 }
-        ];
-
-        const headerData = [
-            ['SDN 1 PASIRPOGOR'], 
-            [`REKAPITULASI NILAI MATA PELAJARAN - ${selectedSubject.toUpperCase()}`], 
-            [`KELAS ${selectedClass}`], 
-            ['Tahun Ajaran: 2025/2026'], 
-            ['']
-        ];
-
-        let currentRow = 1;
-        headerData.forEach(row => {
-            const newRow = worksheet.getRow(currentRow++);
-            newRow.getCell(1).value = row[0];
-            
-            worksheet.mergeCells(`A${currentRow - 1}:${String.fromCharCode(65 + numColumns - 1)}${currentRow - 1}`);
-            
-            newRow.getCell(1).font = { bold: true, size: currentRow <= 3 ? 14 : 11, name: 'Calibri' };
-            newRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
-        });
-
-        const tableHeaders = ['No', 'NISN', 'Nama Siswa', 'NH-1', 'NH-2', 'NH-3', 'NH-4', 'NH-5', 'UTS', 'UAS', 'Nilai Akhir'];
-        const headerRow = worksheet.getRow(currentRow);
-        headerRow.values = tableHeaders;
-        headerRow.height = 30; 
-        
-        headerRow.eachCell((cell, colNumber) => {
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFD9E1F2' }
-            };
-            cell.font = {
-                bold: true,
-                size: 10
-            };
-            cell.alignment = {
-                vertical: 'middle',
-                horizontal: 'center',
-                wrapText: true
-            };
-            cell.border = {
-                top: { style: 'thin', color: { argb: 'FF000000' } },
-                left: { style: 'thin', color: { argb: 'FF000000' } },
-                bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                right: { style: 'thin', color: { argb: 'FF000000' } }
-            };
-        });
-        
-        currentRow++; 
-
-        excelData.forEach((item, index) => {
-            const row = worksheet.addRow(Object.values(item));
-            
-            row.eachCell((cell, colNumber) => {
-                cell.border = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-                
-                if (colNumber >= 4) {
-                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                    cell.numFmt = '0';
-                    if (colNumber === numColumns) {
-                         cell.font = { bold: true };
-                    }
-                } else {
-                    cell.alignment = { vertical: 'middle', horizontal: 'left' };
-                }
-
-                if (index % 2 !== 0) {
-                    cell.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: 'FFF2F2F2' }
-                    };
-                }
-            });
-            currentRow++;
-        });
-
-        currentRow += 2;
-        const startCol = 8;
-        
-        const signRow1 = worksheet.getRow(currentRow + 0);
-        signRow1.getCell(startCol).value = 'Mengetahui,';
-        signRow1.getCell(startCol).font = { bold: true };
-
-        const signRow2 = worksheet.getRow(currentRow + 1);
-        signRow2.getCell(startCol).value = userData.role === 'guru_kelas' ? 'Wali Kelas' : 'Guru Mata Pelajaran';
-        signRow2.getCell(startCol).font = { bold: true };
-
-        const signRow3 = worksheet.getRow(currentRow + 4);
-        signRow3.getCell(startCol).value = userData.name || userData.username;
-        signRow3.getCell(startCol).font = { bold: true, underline: true };
-        
-        [signRow1, signRow2, signRow3].forEach(row => {
-            row.getCell(startCol).alignment = { horizontal: 'center' };
-        });
-
-        const filename = `Nilai_${selectedSubject.replace(/\s+/g, '_')}_Kelas_${selectedClass}.xlsx`;
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-
-        showMessage(`Data nilai ${selectedSubject} kelas ${selectedClass} berhasil diekspor!`);
-
+      await exportToExcel({
+        selectedClass,
+        selectedSubject, 
+        userData,
+        showMessage,
+        checkAccess
+      });
     } catch (error) {
-        console.error('Error exporting to Excel:', error);
-        showMessage('Error mengekspor data: ' + error.message, 'error');
+      console.error('Export error:', error);
     } finally {
-        setExporting(false);
+      setExporting(false);
     }
   };
 
-  // Handle input change
   const handleInputChange = (nisn, value) => {
     if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 100)) {
         setStudents(prev => prev.map(student => 
@@ -809,7 +578,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
         </div>
       )}
 
-      {/* Stats Cards - HANYA UNTUK REKAP MODE */}
       {showRekap && rekapData.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard
@@ -839,7 +607,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
         </div>
       )}
 
-      {/* Filter Section - OPTIMIZED FOR MOBILE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
@@ -898,7 +665,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
           </div>
         </div>
 
-        {/* Search Input */}
         {(students.length > 0 || rekapData.length > 0) && (
           <div className="mb-4">
             <div className="relative">
@@ -917,8 +683,7 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
           </div>
         )}
 
-        {/* Action Buttons - MOBILE FRIENDLY */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <button
             onClick={loadRekapNilai}
             disabled={loadingRekap || !selectedClass || !selectedSubject}
@@ -930,25 +695,34 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
 
           <button
             onClick={saveGrades}
-            disabled={saving || students.length === 0}
+            disabled={saving || students.length === 0 || showRekap}
             className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
+            title={showRekap ? "Pilih jenis nilai untuk input & simpan" : students.length === 0 ? "Pilih kelas, mata pelajaran, dan jenis nilai" : "Simpan nilai siswa"}
           >
             {saving ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
             {saving ? 'Menyimpan...' : 'Simpan Nilai'}
           </button>
 
           <button
-            onClick={exportToExcel}
+            onClick={handleExportToExcel}
             disabled={exporting || !selectedClass || !selectedSubject}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base col-span-2 lg:col-span-1"
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
           >
             {exporting ? <Loader className="animate-spin" size={18} /> : <Download size={18} />}
             {exporting ? 'Mengekspor...' : 'Export Excel'}
           </button>
+
+          <button
+            onClick={() => setShowImportModal(true)}
+            disabled={!selectedClass || !selectedSubject}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
+          >
+            <Upload size={18} />
+            Import Nilai
+          </button>
         </div>
       </div>
 
-      {/* Students List - RESPONSIVE VIEW */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -975,10 +749,8 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
             <p className="text-gray-500 font-medium">Memuat data nilai...</p>
           </div>
         ) : isMobile ? (
-          /* MOBILE CARD VIEW */
           <div className="p-4 space-y-4">
             {showRekap ? (
-              /* REKAP MOBILE CARDS */
               filteredRekapData.length > 0 ? (
                 filteredRekapData.map((student, index) => (
                   <RekapGradeCard 
@@ -996,7 +768,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
                 </div>
               )
             ) : (
-              /* INPUT NILAI MOBILE CARDS */
               filteredStudents.length > 0 ? (
                 filteredStudents.map((student, index) => (
                   <StudentGradeCard
@@ -1025,7 +796,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
             )}
           </div>
         ) : (
-          /* DESKTOP TABLE VIEW - WITH UPDATED HEADER STYLES */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -1054,7 +824,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {showRekap ? (
-                  /* REKAP TABLE BODY */
                   filteredRekapData.length > 0 ? (
                     filteredRekapData.map((student) => (
                       <tr key={student.nisn} className="hover:bg-gray-50 transition-colors">
@@ -1086,7 +855,6 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
                     </tr>
                   )
                 ) : (
-                  /* INPUT NILAI TABLE BODY */
                   filteredStudents.length > 0 ? (
                     filteredStudents.map((student, index) => (
                       <tr key={student.nisn} className="hover:bg-gray-50 transition-colors">
@@ -1139,8 +907,23 @@ const Grades = ({ userData: initialUserData }) => { // <--- KOMPONEN UTAMA DIGAN
           </div>
         )}
       </div>
+
+      <ImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        selectedClass={selectedClass}
+        selectedSubject={selectedSubject}
+        userData={userData}
+        onImportSuccess={() => {
+          if (showRekap) {
+            loadRekapNilai();
+          } else if (selectedType) {
+            loadStudents(false);
+          }
+        }}
+      />
     </div>
   );
 };
 
-export default Grades; 
+export default Grades;

@@ -32,16 +32,24 @@ const ReportTeacher = ({ user }) => {
 
   // Handle filter change
   const handleFilterChange = (newFilters) => {
-    setFilters((prev) => ({
-      ...prev,
-      ...newFilters,
-      // Keep locked filters
-      kelas: user.role === "guru_kelas" ? user.kelas : newFilters.kelas,
-      mapel:
-        user.role === "guru_mapel" && prev.type === "grades"
-          ? user.mata_pelajaran
-          : newFilters.mapel,
-    }));
+    setFilters((prev) => {
+      const updated = {
+        ...prev,
+        ...newFilters,
+      };
+
+      // Lock kelas untuk guru_kelas
+      if (user.role === "guru_kelas") {
+        updated.kelas = user.kelas;
+      }
+
+      // Lock mapel untuk guru_mapel HANYA di laporan nilai
+      if (user.role === "guru_mapel" && updated.type === "grades") {
+        updated.mapel = user.mata_pelajaran;
+      }
+
+      return updated;
+    });
   };
 
   // Reset filters ketika type berubah
@@ -110,28 +118,46 @@ const ReportTeacher = ({ user }) => {
     switch (filters.type) {
       case "students":
         return {
-          showKelas: user.role !== "guru_kelas",
+          showKelas: user.role !== "guru_kelas", // Guru kelas tidak bisa ganti kelas
           showMapel: false,
           showPeriode: false,
           showDateRange: false,
-          showStatus: false, // HAPUS STATUS FILTER
+          showStatus: false,
           kelasOptions: [1, 2, 3, 4, 5, 6],
+          lockedFilters: {
+            kelas: user.role === "guru_kelas",
+          },
         };
       case "grades":
         return {
-          showKelas: true,
-          showMapel: user.role !== "guru_mapel",
+          showKelas: true, // Semua role bisa lihat filter kelas
+          showMapel: true, // Semua role bisa lihat filter mapel
           showPeriode: true,
           showDateRange: false,
           showStatus: false,
           kelasOptions: [1, 2, 3, 4, 5, 6],
+          mapelOptions: [
+            "Matematika",
+            "Bahasa Indonesia",
+            "IPA",
+            "IPS",
+            "Bahasa Inggris",
+            "PJOK",
+            "Seni Budaya",
+            "PKN",
+            "Agama",
+          ],
           periodeOptions: [
             { value: "semua", label: "Semua Periode" },
             { value: "harian", label: "Harian" },
-            { value: "mingguan", label: "Mingguan" },
-            { value: "bulanan", label: "Bulanan" },
+            { value: "uts", label: "UTS" },
+            { value: "uas", label: "UAS" },
             { value: "semester", label: "Semester" },
           ],
+          lockedFilters: {
+            kelas: user.role === "guru_kelas", // Kelas locked untuk guru_kelas
+            mapel: user.role === "guru_mapel", // Mapel locked untuk guru_mapel
+          },
         };
       case "attendance":
         return {
@@ -139,8 +165,15 @@ const ReportTeacher = ({ user }) => {
           showMapel: false,
           showPeriode: true,
           showDateRange: true,
-          showStatus: false,
+          showStatus: true, // Tambahkan filter status (Hadir/Sakit/Izin/Alpa)
           kelasOptions: [1, 2, 3, 4, 5, 6],
+          statusOptions: [
+            { value: "semua", label: "Semua Status" },
+            { value: "Hadir", label: "Hadir" },
+            { value: "Sakit", label: "Sakit" },
+            { value: "Izin", label: "Izin" },
+            { value: "Alpa", label: "Alpa" },
+          ],
           periodeOptions: [
             { value: "semua", label: "Semua Periode" },
             { value: "harian", label: "Hari Ini" },
@@ -148,6 +181,9 @@ const ReportTeacher = ({ user }) => {
             { value: "bulanan", label: "Bulan Ini" },
             { value: "custom", label: "Rentang Tanggal" },
           ],
+          lockedFilters: {
+            kelas: user.role === "guru_kelas",
+          },
         };
       default:
         return {
@@ -157,6 +193,7 @@ const ReportTeacher = ({ user }) => {
           showDateRange: true,
           showStatus: false,
           kelasOptions: [1, 2, 3, 4, 5, 6],
+          lockedFilters: {},
         };
     }
   };

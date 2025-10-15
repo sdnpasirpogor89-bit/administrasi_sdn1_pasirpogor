@@ -19,7 +19,7 @@ import {
 
 import { supabase } from "../supabaseClient";
 import RecapModal from "./RecapModal";
-import { exportAttendanceFromComponent } from "./ExportExcel";
+import { exportAttendanceFromComponent } from "./AttendanceExport";
 
 // Toast Component - Enhanced for mobile
 const Toast = ({ show, message, type, onClose }) => {
