@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import bcrypt from "bcryptjs";
-import Logo from "../components/Logo"; // IMPORT LOGO COMPONENT
+import Logo from "../components/Logo";
 
-// Icon components (since we can't import external icons in this example)
 const EyeIcon = ({ className }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -28,9 +27,7 @@ const Login = ({ onLoginSuccess }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [rememberedUsername, setRememberedUsername] = useState("");
-  const [schoolName, setSchoolName] = useState("SDN 1 PASIRPOGOR"); // Default school name
-
-  // Statistics state
+  const [schoolName, setSchoolName] = useState("SDN 1 PASIRPOGOR");
   const [statistics, setStatistics] = useState({
     totalGuru: 0,
     totalSiswa: 0,
@@ -38,7 +35,6 @@ const Login = ({ onLoginSuccess }) => {
     loading: true,
   });
 
-  // Check for saved credentials on component mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem("rememberedUsername");
@@ -52,7 +48,6 @@ const Login = ({ onLoginSuccess }) => {
     }
   }, []);
 
-  // Fetch statistics on component mount
   useEffect(() => {
     fetchStatistics();
     fetchSchoolSettings();
@@ -65,11 +60,8 @@ const Login = ({ onLoginSuccess }) => {
         .select('school_name, school_logo')
         .single();
 
-      if (!error && data) {
-        if (data.school_name) {
-          setSchoolName(data.school_name);
-        }
-        // Logo akan dihandle oleh Logo component
+      if (!error && data && data.school_name) {
+        setSchoolName(data.school_name);
       }
     } catch (error) {
       console.error('Error fetching school settings:', error);
@@ -78,32 +70,22 @@ const Login = ({ onLoginSuccess }) => {
 
   const fetchStatistics = async () => {
     try {
-      // Fetch total guru (users with roles: guru_kelas, guru_mapel only)
-      const { data: guruData, error: guruError } = await supabase
+      const { data: guruData } = await supabase
         .from("users")
         .select("id")
         .in("role", ["guru_kelas", "guru_mapel"]);
 
-      if (guruError) throw guruError;
-
-      // Fetch total siswa aktif
-      const { data: siswaData, error: siswaError } = await supabase
+      const { data: siswaData } = await supabase
         .from("students")
         .select("id")
         .eq("is_active", true);
 
-      if (siswaError) throw siswaError;
-
-      // Fetch total kelas (distinct kelas from active students)
-      const { data: kelasData, error: kelasError } = await supabase
+      const { data: kelasData } = await supabase
         .from("students")
         .select("kelas")
         .eq("is_active", true);
 
-      if (kelasError) throw kelasError;
-
-      // Count unique classes
-      const uniqueKelas = [...new Set(kelasData.map((item) => item.kelas))];
+      const uniqueKelas = [...new Set(kelasData?.map((item) => item.kelas) || [])];
 
       setStatistics({
         totalGuru: guruData?.length || 0,
@@ -125,6 +107,7 @@ const Login = ({ onLoginSuccess }) => {
     if (error) setError("");
   };
 
+  // ✅ HANDLE SUBMIT - VERSI YANG BENAR
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -137,7 +120,7 @@ const Login = ({ onLoginSuccess }) => {
     }
 
     try {
-      // Query untuk mendapatkan user berdasarkan username
+      // Query user dari database
       const { data, error: queryError } = await supabase
         .from("users")
         .select("*")
@@ -150,25 +133,15 @@ const Login = ({ onLoginSuccess }) => {
         return;
       }
 
-      // VERIFIKASI PASSWORD - Updated dengan bcrypt
+      // Verifikasi password
       let isPasswordValid = false;
 
       try {
-        // Check apakah password sudah di-hash (bcrypt format $2a$ atau $2b$)
-        if (
-          data.password.startsWith("$2a$") ||
-          data.password.startsWith("$2b$")
-        ) {
-          // Password sudah di-hash, pakai bcrypt compare
-          isPasswordValid = await bcrypt.compare(
-            formData.password,
-            data.password
-          );
+        if (data.password.startsWith("$2a$") || data.password.startsWith("$2b$")) {
+          isPasswordValid = await bcrypt.compare(formData.password, data.password);
         } else {
-          // Password masih plain text (backward compatibility)
           isPasswordValid = formData.password === data.password;
 
-          // AUTO-HASH password lama untuk security
           if (isPasswordValid) {
             try {
               const hashedPassword = await bcrypt.hash(formData.password, 10);
@@ -179,7 +152,6 @@ const Login = ({ onLoginSuccess }) => {
               console.log(`Auto-hashed password for user: ${data.username}`);
             } catch (hashError) {
               console.error("Error hashing password:", hashError);
-              // Lanjutkan tanpa error karena login tetap valid
             }
           }
         }
@@ -196,47 +168,53 @@ const Login = ({ onLoginSuccess }) => {
         return;
       }
 
-      // Handle remember me functionality
+      // Handle remember me
       if (rememberMe) {
         try {
           localStorage.setItem("rememberedUsername", formData.username.trim());
         } catch (error) {
           console.log("Could not save to localStorage:", error);
         }
-        setRememberedUsername(formData.username.trim());
       } else {
         try {
           localStorage.removeItem("rememberedUsername");
         } catch (error) {
           console.log("Could not remove from localStorage:", error);
         }
-        setRememberedUsername("");
       }
 
-      // Create user session data
+      // ✅ CREATE SESSION DATA DENGAN EXPIRY TIME
+      const loginTime = Date.now();
+      const expiryTime = loginTime + (24 * 60 * 60 * 1000); // 24 jam dari sekarang
+
       const userData = {
         id: data.id,
         username: data.username,
         full_name: data.full_name,
         role: data.role,
         kelas: data.kelas,
-        loginTime: new Date().toISOString(),
+        mata_pelajaran: data.mata_pelajaran,
+        tahun_ajaran: data.tahun_ajaran,
+        is_active: data.is_active,
+        loginTime: loginTime,
+        expiryTime: expiryTime  // ← INI PENTING! Bikin session persist
       };
 
-      // Store session for backward compatibility (optional)
+      console.log('Login successful:', userData.username);
+
+      // ✅ SIMPAN SESSION KE LOCALSTORAGE
       try {
         localStorage.setItem("userSession", JSON.stringify(userData));
+        console.log('Session saved to localStorage');
       } catch (error) {
-        console.log("Could not save session to localStorage:", error);
+        console.error("Could not save session to localStorage:", error);
       }
 
-      // Always call onLoginSuccess if provided (this is the main method)
+      // ✅ CALL onLoginSuccess
       if (onLoginSuccess) {
         onLoginSuccess(userData);
-      } else {
-        // Fallback: if no onLoginSuccess prop, log a warning
-        console.warn("No onLoginSuccess prop provided to Login component");
       }
+      
     } catch (err) {
       setError("Terjadi kesalahan sistem. Silakan coba lagi.");
       console.error("Login error:", err);
@@ -263,7 +241,6 @@ const Login = ({ onLoginSuccess }) => {
         <div className="bg-white rounded-2xl shadow-lg ring-1 ring-gray-200/50 w-full max-w-md overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-emerald-500 p-4 sm:p-6 text-center text-white">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              {/* LOGO DI FORGOT PASSWORD - FIXED */}
               <Logo size="medium" className="shadow-lg" />
               <div>
                 <h1 className="text-lg sm:text-2xl font-bold">{schoolName}</h1>
@@ -302,9 +279,8 @@ const Login = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50">
-      {/* LEFT SIDE - Welcome Section (Desktop: 60%, Mobile: full height but compact) */}
+      {/* LEFT SIDE */}
       <div className="flex-1 lg:w-3/5 bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 flex items-center justify-center p-3 sm:p-4 lg:p-8 relative overflow-hidden min-h-[50vh] lg:min-h-screen">
-        {/* Background pattern */}
         <div
           className="absolute inset-0 opacity-20"
           style={{
@@ -315,18 +291,10 @@ const Login = ({ onLoginSuccess }) => {
             backgroundSize: "40px 40px",
           }}></div>
 
-        {/* Welcome Content */}
         <div className="text-center text-white z-10 max-w-2xl w-full">
-          {/* School Logo & Title - FIXED: Logo lebih rapi */}
           <div className="mb-4 sm:mb-6 lg:mb-8">
             <div className="flex justify-center mb-3 sm:mb-4">
-              <Logo 
-                size="large" 
-                className="drop-shadow-2xl"
-                onLogoLoad={(hasLogo) => {
-                  console.log('Logo loaded:', hasLogo);
-                }}
-              />
+              <Logo size="large" className="drop-shadow-2xl" />
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-5xl font-bold mb-1 sm:mb-2 text-white/90 leading-tight">
               Selamat Datang
@@ -336,7 +304,6 @@ const Login = ({ onLoginSuccess }) => {
             </h2>
           </div>
 
-          {/* Vision */}
           <div className="bg-white/15 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 lg:mb-8 backdrop-blur-sm border border-white/20">
             <h3 className="text-sm sm:text-base lg:text-xl font-semibold mb-2 sm:mb-3 text-blue-100">
               VISI SEKOLAH
@@ -347,9 +314,7 @@ const Login = ({ onLoginSuccess }) => {
             </p>
           </div>
 
-          {/* Statistics Cards */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
-            {/* Guru Card */}
             <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-6 backdrop-blur-sm border border-white/30 transform hover:-translate-y-1 transition-transform">
               <div className="text-lg sm:text-xl lg:text-3xl mb-1 sm:mb-2">👨‍🏫</div>
               <div className="text-lg sm:text-xl lg:text-3xl font-bold mb-1">
@@ -358,7 +323,6 @@ const Login = ({ onLoginSuccess }) => {
               <div className="text-xs sm:text-sm opacity-90">Guru</div>
             </div>
 
-            {/* Siswa Card */}
             <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-6 backdrop-blur-sm border border-white/30 transform hover:scale-105 transition-transform">
               <div className="text-lg sm:text-xl lg:text-3xl mb-1 sm:mb-2">👦👧</div>
               <div className="text-lg sm:text-xl lg:text-3xl font-bold mb-1">
@@ -367,7 +331,6 @@ const Login = ({ onLoginSuccess }) => {
               <div className="text-xs sm:text-sm opacity-90">Siswa</div>
             </div>
 
-            {/* Kelas Card */}
             <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3 lg:p-6 backdrop-blur-sm border border-white/30 transform hover:translate-y-1 transition-transform">
               <div className="text-lg sm:text-xl lg:text-3xl mb-1 sm:mb-2">🏫</div>
               <div className="text-lg sm:text-xl lg:text-3xl font-bold mb-1">
@@ -376,23 +339,16 @@ const Login = ({ onLoginSuccess }) => {
               <div className="text-xs sm:text-sm opacity-90">Kelas</div>
             </div>
           </div>
-
-
         </div>
       </div>
 
-      {/* RIGHT SIDE - Login Form (Desktop: 40%, Mobile: auto height) */}
+      {/* RIGHT SIDE */}
       <div className="flex-1 lg:w-2/5 bg-gray-100 flex items-center justify-center p-3 sm:p-4 lg:p-8 min-h-[50vh] lg:min-h-screen">
         <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
-          {/* Login Card */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg ring-1 ring-gray-200/50 p-4 sm:p-6 lg:p-10 border border-gray-100">
-            {/* Login Header - FIXED: Logo lebih rapi */}
             <div className="text-center mb-4 sm:mb-6">
               <div className="flex justify-center mb-3 sm:mb-4">
-                <Logo 
-                  size="medium" 
-                  className="drop-shadow-lg"
-                />
+                <Logo size="medium" className="drop-shadow-lg" />
               </div>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
                 Masuk ke Sistem
@@ -402,11 +358,9 @@ const Login = ({ onLoginSuccess }) => {
               </p>
             </div>
 
-            <div className="space-y-4 sm:space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               <div>
-                <label
-                  htmlFor="username"
-                  className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                <label htmlFor="username" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
                   Username
                 </label>
                 <input
@@ -424,9 +378,7 @@ const Login = ({ onLoginSuccess }) => {
               </div>
 
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                <label htmlFor="password" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -447,14 +399,8 @@ const Login = ({ onLoginSuccess }) => {
                     onClick={togglePasswordVisibility}
                     disabled={loading}
                     className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation rounded-lg hover:bg-gray-100 transition-colors"
-                    aria-label={
-                      showPassword ? "Sembunyikan password" : "Tampilkan password"
-                    }>
-                    {showPassword ? (
-                      <EyeOffIcon className="w-5 h-5" />
-                    ) : (
-                      <EyeIcon className="w-5 h-5" />
-                    )}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}>
+                    {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -490,7 +436,6 @@ const Login = ({ onLoginSuccess }) => {
               <button
                 type="submit"
                 disabled={loading}
-                onClick={handleSubmit}
                 className="w-full bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:transform-none flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl min-h-[48px] text-base touch-manipulation">
                 {loading ? (
                   <>
@@ -501,7 +446,7 @@ const Login = ({ onLoginSuccess }) => {
                   "Masuk"
                 )}
               </button>
-            </div>
+            </form>
 
             <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 text-center">
               <p className="text-xs sm:text-sm text-gray-600">

@@ -1,33 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
-import { 
-  Users, 
-  UserCheck, 
-  School, 
+import {
+  Users,
+  UserCheck,
+  School,
   BookOpen,
   Search,
   Filter,
-  MoreVertical
+  MoreVertical,
 } from "lucide-react";
 
 // Compact Stats Card Component
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
     blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
-    green: "border-l-green-500 bg-gradient-to-r from-green-50 to-white", 
+    green: "border-l-green-500 bg-gradient-to-r from-green-50 to-white",
     purple: "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white",
-    orange: "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white"
+    orange: "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white",
   };
 
   const iconColorClasses = {
     blue: "text-blue-600",
     green: "text-green-600",
-    purple: "text-purple-600", 
-    orange: "text-orange-600"
+    purple: "text-purple-600",
+    orange: "text-orange-600",
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
+    <div
+      className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-2xl font-bold text-gray-900">{number}</p>
@@ -42,11 +43,12 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
 // Status Badge Component
 const StatusBadge = ({ isActive }) => {
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-      isActive 
-        ? "bg-green-100 text-green-800 border border-green-200" 
-        : "bg-red-100 text-red-800 border border-red-200"
-    }`}>
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+        isActive
+          ? "bg-green-100 text-green-800 border border-green-200"
+          : "bg-red-100 text-red-800 border border-red-200"
+      }`}>
       {isActive ? "Aktif" : "Tidak Aktif"}
     </span>
   );
@@ -76,26 +78,36 @@ const TeacherCard = ({ teacher, index }) => {
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
               <span className="text-blue-600 font-bold text-sm">
-                {teacher.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                {teacher.full_name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
               </span>
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 text-base">{teacher.full_name}</h3>
+              <h3 className="font-bold text-gray-900 text-base">
+                {teacher.full_name}
+              </h3>
               <p className="text-sm text-gray-600">#{index + 1}</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <p className="text-xs text-gray-500 font-medium">Tugas/Kelas</p>
-              <p className="text-sm font-semibold text-gray-800">{formatTeachingArea(teacher)}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {formatTeachingArea(teacher)}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 font-medium">Jumlah Siswa</p>
-              <p className="text-sm font-semibold text-gray-800">{teacher.studentCount} siswa</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {teacher.studentCount} siswa
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <StatusBadge isActive={teacher.is_active} />
             <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
@@ -128,33 +140,41 @@ const Teacher = () => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
   // Fungsi untuk mengurutkan guru
   const sortTeachers = (teachersArray) => {
     return teachersArray.sort((a, b) => {
-      if ((a.role === "admin" || a.role === "kepala_sekolah") && 
-          (b.role !== "admin" && b.role !== "kepala_sekolah")) return -1;
-      if ((b.role === "admin" || b.role === "kepala_sekolah") && 
-          (a.role !== "admin" && a.role !== "kepala_sekolah")) return 1;
-      
+      if (
+        (a.role === "admin" || a.role === "kepala_sekolah") &&
+        b.role !== "admin" &&
+        b.role !== "kepala_sekolah"
+      )
+        return -1;
+      if (
+        (b.role === "admin" || b.role === "kepala_sekolah") &&
+        a.role !== "admin" &&
+        a.role !== "kepala_sekolah"
+      )
+        return 1;
+
       if (a.role === "guru_kelas" && b.role === "guru_mapel") return -1;
       if (a.role === "guru_mapel" && b.role === "guru_kelas") return 1;
-      
+
       if (a.role === "guru_kelas" && b.role === "guru_kelas") {
         const kelasA = parseInt(a.kelas) || 0;
         const kelasB = parseInt(b.kelas) || 0;
         return kelasA - kelasB;
       }
-      
+
       if (a.role === "guru_mapel" && b.role === "guru_mapel") {
         return a.full_name.localeCompare(b.full_name);
       }
-      
+
       return 0;
     });
   };
@@ -162,21 +182,21 @@ const Teacher = () => {
   // Filter teachers
   useEffect(() => {
     let result = teachers;
-    
+
     // Filter by search term
     if (searchTerm) {
-      result = result.filter(teacher =>
+      result = result.filter((teacher) =>
         teacher.full_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     // Filter by status
     if (statusFilter !== "all") {
-      result = result.filter(teacher =>
+      result = result.filter((teacher) =>
         statusFilter === "active" ? teacher.is_active : !teacher.is_active
       );
     }
-    
+
     setFilteredTeachers(result);
   }, [teachers, searchTerm, statusFilter]);
 
@@ -184,11 +204,12 @@ const Teacher = () => {
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("*")
-        .in("role", ["admin", "kepala_sekolah", "guru_kelas", "guru_mapel"]);
+        .or(
+          "role.in.(kepala_sekolah,guru_kelas,guru_mapel),username.eq.yayanhaedar"
+        );
 
       if (teachersError) throw teachersError;
 
@@ -213,7 +234,10 @@ const Teacher = () => {
           studentCount = studentsByClass[teacher.kelas] || 0;
         } else if (teacher.role === "guru_mapel") {
           studentCount = totalStudents;
-        } else if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
+        } else if (
+          teacher.role === "kepala_sekolah" ||
+          teacher.username === "yayanhaedar"
+        ) {
           studentCount = totalStudents;
         }
 
@@ -228,7 +252,8 @@ const Teacher = () => {
       setFilteredTeachers(sortedTeachers);
 
       const activeTeachers = sortedTeachers.filter(
-        (t) => t.is_active && (t.role === "guru_kelas" || t.role === "guru_mapel")
+        (t) =>
+          t.is_active && (t.role === "guru_kelas" || t.role === "guru_mapel")
       );
       const classTeachers = sortedTeachers.filter(
         (t) => t.role === "guru_kelas"
@@ -317,7 +342,10 @@ const Teacher = () => {
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Cari nama guru..."
@@ -326,14 +354,13 @@ const Teacher = () => {
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
-          
+
           {/* Status Filter */}
           <div className="flex gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            >
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
               <option value="all">Semua Status</option>
               <option value="active">Aktif</option>
               <option value="inactive">Tidak Aktif</option>
@@ -361,7 +388,9 @@ const Teacher = () => {
             ) : (
               <div className="text-center py-16">
                 <Users size={48} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">Tidak ada data guru yang cocok</p>
+                <p className="text-gray-500 font-medium">
+                  Tidak ada data guru yang cocok
+                </p>
               </div>
             )}
           </div>
@@ -391,7 +420,9 @@ const Teacher = () => {
               <tbody className="divide-y divide-gray-200">
                 {filteredTeachers.length > 0 ? (
                   filteredTeachers.map((teacher, index) => (
-                    <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={teacher.id}
+                      className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                         {index + 1}
                       </td>

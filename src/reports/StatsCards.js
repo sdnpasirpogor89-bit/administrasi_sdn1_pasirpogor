@@ -1,56 +1,53 @@
 // src/reports/StatsCards.js
-import React from 'react';
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
-  TrendingUp, 
-  TrendingDown,
-  Award,
-  AlertCircle,
+import React from "react";
+import {
+  Users,
+  UserCheck,
+  TrendingUp,
+  Calendar,
   CheckCircle,
   XCircle,
-  Clock,
+  AlertCircle,
   FileText,
-  BarChart3
-} from 'lucide-react';
+  Award,
+  TrendingDown,
+  BarChart3,
+} from "lucide-react";
 
 /**
- * Component untuk display statistics dalam bentuk cards
- * 
- * @param {object} stats - Stats object dari useAnalytics
- * @param {string} type - Report type: 'students' | 'grades' | 'attendance' | 'teachers'
+ * Compact Stats Cards - Single Row Layout
+ * ✅ Minimalis & Clean dengan Pastel Colors
+ * ✅ Dynamic per Tab & View Mode
+ * ✅ Support Attendance Recap View
  */
-const StatsCards = ({ stats, type }) => {
+const StatsCards = ({ type, stats, userRole, viewMode = 'detail' }) => {
   if (!stats || Object.keys(stats).length === 0) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-        <p className="text-yellow-800 text-sm">
-          Tidak ada data statistik untuk ditampilkan.
-        </p>
-      </div>
-    );
+    return null;
   }
 
   // Render berdasarkan type
   const renderCards = () => {
     switch (type) {
-      case 'students':
+      case "students":
         return renderStudentCards(stats);
-      case 'grades':
-        return renderGradeCards(stats);
-      case 'attendance':
+      case "attendance":
+        // 🆕 Check view mode untuk attendance
+        if (viewMode === "recap") {
+          return renderAttendanceRecapCards(stats);
+        }
         return renderAttendanceCards(stats);
-      case 'teachers':
-        return renderTeacherCards(stats);
+      case "grades":
+        return renderGradeCards(stats);
+      case "notes":
+        return renderNotesCards(stats, userRole);
       default:
         return null;
     }
   };
 
   return (
-    <div className="mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {renderCards()}
       </div>
     </div>
@@ -58,113 +55,72 @@ const StatsCards = ({ stats, type }) => {
 };
 
 // ========================================
-// STUDENT CARDS
+// STUDENT STATS
 // ========================================
-
 const renderStudentCards = (stats) => {
   return (
     <>
-      <StatCard
-        icon={<Users className="text-blue-600" size={24} />}
+      <MiniStatCard
+        icon={<Users className="w-5 h-5" />}
         label="Total Siswa"
-        value={stats.total}
+        value={stats.total || 0}
         color="blue"
       />
-      <StatCard
-        icon={<UserCheck className="text-green-600" size={24} />}
-        label="Siswa Aktif"
-        value={stats.aktif}
-        subtitle={`${stats.persentaseAktif}% dari total`}
-        color="green"
-      />
-      <StatCard
-        icon={<Users className="text-indigo-600" size={24} />}
+      <MiniStatCard
+        icon={<Users className="w-5 h-5" />}
         label="Laki-laki"
-        value={stats.lakiLaki}
-        subtitle={`${stats.persentaseLakiLaki}%`}
+        value={stats["Laki-laki"] || 0}
         color="indigo"
       />
-      <StatCard
-        icon={<Users className="text-pink-600" size={24} />}
+      <MiniStatCard
+        icon={<Users className="w-5 h-5" />}
         label="Perempuan"
-        value={stats.perempuan}
-        subtitle={`${stats.persentasePerempuan}%`}
+        value={stats["Perempuan"] || 0}
         color="pink"
       />
-    </>
-  );
-};
-
-// ========================================
-// GRADE CARDS
-// ========================================
-
-const renderGradeCards = (stats) => {
-  return (
-    <>
-      <StatCard
-        icon={<FileText className="text-blue-600" size={24} />}
-        label="Total Data Nilai"
-        value={stats.total}
-        color="blue"
-      />
-      <StatCard
-        icon={<TrendingUp className="text-green-600" size={24} />}
-        label="Rata-rata Nilai"
-        value={stats.rataRata}
-        subtitle={`Tertinggi: ${stats.tertinggi} | Terendah: ${stats.terendah}`}
+      <MiniStatCard
+        icon={<UserCheck className="w-5 h-5" />}
+        label="Aktif"
+        value={stats.aktif || 0}
         color="green"
       />
-      <StatCard
-        icon={<Award className="text-emerald-600" size={24} />}
-        label="Lulus (≥75)"
-        value={stats.diAtas75}
-        subtitle={`${stats.persentaseLulus}% lulus`}
-        color="emerald"
-      />
-      <StatCard
-        icon={<AlertCircle className="text-orange-600" size={24} />}
-        label="Belum Lulus (<75)"
-        value={stats.diBawah75}
-        subtitle={`${(100 - stats.persentaseLulus).toFixed(1)}% belum lulus`}
-        color="orange"
-      />
     </>
   );
 };
 
 // ========================================
-// ATTENDANCE CARDS
+// ATTENDANCE STATS (DETAIL VIEW)
 // ========================================
-
 const renderAttendanceCards = (stats) => {
+  // Calculate Izin + Alpa (convert string to number first)
+  const persenIzin = parseFloat(stats.persenIzin) || 0;
+  const persenAlpa = parseFloat(stats.persenAlpa) || 0;
+  const totalIzinAlpa = (persenIzin + persenAlpa).toFixed(1);
+
   return (
     <>
-      <StatCard
-        icon={<FileText className="text-blue-600" size={24} />}
-        label="Total Data Presensi"
-        value={stats.total}
+      <MiniStatCard
+        icon={<Calendar className="w-5 h-5" />}
+        label="Total Hari"
+        value={stats.totalHari || 0}
         color="blue"
       />
-      <StatCard
-        icon={<CheckCircle className="text-green-600" size={24} />}
+      <MiniStatCard
+        icon={<CheckCircle className="w-5 h-5" />}
         label="Hadir"
-        value={stats.hadir}
-        subtitle={`${stats.persentaseKehadiran}% kehadiran`}
+        value={`${stats.persenHadir || 0}%`}
         color="green"
       />
-      <StatCard
-        icon={<AlertCircle className="text-yellow-600" size={24} />}
+      <MiniStatCard
+        icon={<AlertCircle className="w-5 h-5" />}
         label="Sakit"
-        value={stats.sakit}
-        subtitle={`${stats.persentaseSakit}%`}
+        value={`${stats.persenSakit || 0}%`}
         color="yellow"
       />
-      <StatCard
-        icon={<XCircle className="text-red-600" size={24} />}
+      <MiniStatCard
+        icon={<XCircle className="w-5 h-5" />}
         label="Izin & Alpa"
-        value={stats.izin + stats.alpa}
-        subtitle={`Izin: ${stats.izin} | Alpa: ${stats.alpa}`}
+        value={`${totalIzinAlpa}%`}
         color="red"
       />
     </>
@@ -172,143 +128,288 @@ const renderAttendanceCards = (stats) => {
 };
 
 // ========================================
-// TEACHER CARDS
+// 🆕 ATTENDANCE RECAP STATS
 // ========================================
+const renderAttendanceRecapCards = (stats) => {
+  const rataRata = parseFloat(stats.rataRataKehadiran) || 0;
+  
+  // Determine color based on average attendance
+  let avgColor = 'red';
+  if (rataRata >= 90) avgColor = 'green';
+  else if (rataRata >= 80) avgColor = 'blue';
+  else if (rataRata >= 70) avgColor = 'yellow';
 
-const renderTeacherCards = (stats) => {
   return (
     <>
-      <StatCard
-        icon={<Users className="text-blue-600" size={24} />}
-        label="Total Guru"
-        value={stats.totalGuru}
+      {/* Card 1: Total Siswa */}
+      <MiniStatCard
+        icon={<Users className="w-5 h-5" />}
+        label="Total Siswa"
+        value={stats.totalSiswa || 0}
+        subtitle={`${stats.totalHariEfektif || 0} hari efektif`}
         color="blue"
       />
-      <StatCard
-        icon={<BarChart3 className="text-green-600" size={24} />}
-        label="Total Input"
-        value={stats.totalInput}
-        subtitle={`Rata-rata: ${stats.rataRataInputPerGuru} per guru`}
+
+      {/* Card 2: Rata-rata Kehadiran */}
+      <MiniStatCard
+        icon={<BarChart3 className="w-5 h-5" />}
+        label="Rata-rata Kehadiran"
+        value={`${stats.rataRataKehadiran || 0}%`}
+        subtitle={
+          rataRata >= 90 
+            ? "Sangat Baik" 
+            : rataRata >= 80 
+            ? "Baik" 
+            : rataRata >= 70 
+            ? "Cukup" 
+            : "Perlu Perhatian"
+        }
+        color={avgColor}
+      />
+
+      {/* Card 3: Siswa Sangat Baik (>=90%) */}
+      <MiniStatCard
+        icon={<Award className="w-5 h-5" />}
+        label="Kehadiran ≥90%"
+        value={stats.siswaSangatBaik || 0}
+        subtitle={`Tertinggi: ${stats.tertinggi || 0}%`}
         color="green"
       />
-      <StatCard
-        icon={<FileText className="text-indigo-600" size={24} />}
-        label="Input Nilai"
-        value={stats.totalInputNilai}
-        color="indigo"
-      />
-      <StatCard
-        icon={<Clock className="text-orange-600" size={24} />}
-        label="Belum Input (7 Hari)"
-        value={stats.guruBelumInput}
-        subtitle={`${stats.totalGuru - stats.guruBelumInput} guru aktif`}
-        color="orange"
+
+      {/* Card 4: Siswa Bermasalah (<80%) */}
+      <MiniStatCard
+        icon={<AlertCircle className="w-5 h-5" />}
+        label="Kehadiran <80%"
+        value={stats.siswaRendah || 0}
+        subtitle={`Terendah: ${stats.terendah || 0}%`}
+        color={stats.siswaRendah > 0 ? "red" : "green"}
       />
     </>
   );
 };
 
 // ========================================
-// STAT CARD COMPONENT (REUSABLE)
+// GRADES STATS
 // ========================================
+const renderGradeCards = (stats) => {
+  return (
+    <>
+      <MiniStatCard
+        icon={<TrendingUp className="w-5 h-5" />}
+        label="Rata-rata"
+        value={stats.rataRata || 0}
+        color="blue"
+      />
+      <MiniStatCard
+        icon={<Award className="w-5 h-5" />}
+        label="Tertinggi"
+        value={stats.tertinggi || 0}
+        color="green"
+      />
+      <MiniStatCard
+        icon={<AlertCircle className="w-5 h-5" />}
+        label="Terendah"
+        value={stats.terendah || 0}
+        color="orange"
+      />
+      <MiniStatCard
+        icon={<CheckCircle className="w-5 h-5" />}
+        label="Tuntas"
+        value={`${stats.tuntas || 0}/${stats.totalSiswa || 0}`}
+        color="emerald"
+      />
+    </>
+  );
+};
 
-const StatCard = ({ icon, label, value, subtitle, color = 'blue' }) => {
-  // Color mapping
+// ========================================
+// NOTES STATS
+// ========================================
+const renderNotesCards = (stats, userRole) => {
+  if (userRole === "guru_kelas") {
+    return (
+      <>
+        <MiniStatCard
+          icon={<FileText className="w-5 h-5" />}
+          label="Total Catatan"
+          value={stats.total || 0}
+          color="blue"
+        />
+        <MiniStatCard
+          icon={<UserCheck className="w-5 h-5" />}
+          label="Dari Saya"
+          value={stats.dariSaya || 0}
+          color="green"
+        />
+        <MiniStatCard
+          icon={<Users className="w-5 h-5" />}
+          label="Dari Guru Lain"
+          value={stats.dariGuruLain || 0}
+          color="indigo"
+        />
+        <MiniStatCard
+          icon={<AlertCircle className="w-5 h-5" />}
+          label="Butuh Tindak Lanjut"
+          value={stats.butuhTindakLanjut || 0}
+          color="orange"
+        />
+      </>
+    );
+  } else {
+    // Guru Mapel
+    return (
+      <>
+        <MiniStatCard
+          icon={<FileText className="w-5 h-5" />}
+          label="Total Catatan"
+          value={stats.total || 0}
+          color="blue"
+        />
+        <MiniStatCard
+          icon={<Users className="w-5 h-5" />}
+          label="Kelas 1-3"
+          value={
+            (stats.perKelas?.[1] || 0) +
+            (stats.perKelas?.[2] || 0) +
+            (stats.perKelas?.[3] || 0)
+          }
+          color="green"
+        />
+        <MiniStatCard
+          icon={<Users className="w-5 h-5" />}
+          label="Kelas 4-6"
+          value={
+            (stats.perKelas?.[4] || 0) +
+            (stats.perKelas?.[5] || 0) +
+            (stats.perKelas?.[6] || 0)
+          }
+          color="indigo"
+        />
+        <MiniStatCard
+          icon={<AlertCircle className="w-5 h-5" />}
+          label="Butuh Tindak Lanjut"
+          value={stats.butuhTindakLanjut || 0}
+          color="orange"
+        />
+      </>
+    );
+  }
+};
+
+// ========================================
+// MINI STAT CARD (COMPACT WITH PASTEL COLORS)
+// ========================================
+const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
+  // Color mapping - Pastel backgrounds with matching icons and text
   const colorClasses = {
     blue: {
-      border: 'border-l-blue-500',
-      bg: 'bg-blue-50',
-      text: 'text-blue-900',
+      bg: "bg-gradient-to-br from-blue-50 to-blue-100",
+      icon: "text-blue-600 bg-white/80",
+      text: "text-blue-900",
+      label: "text-blue-700",
+      subtitle: "text-blue-600",
+      border: "border-blue-200",
     },
     green: {
-      border: 'border-l-green-500',
-      bg: 'bg-green-50',
-      text: 'text-green-900',
+      bg: "bg-gradient-to-br from-green-50 to-green-100",
+      icon: "text-green-600 bg-white/80",
+      text: "text-green-900",
+      label: "text-green-700",
+      subtitle: "text-green-600",
+      border: "border-green-200",
     },
     indigo: {
-      border: 'border-l-indigo-500',
-      bg: 'bg-indigo-50',
-      text: 'text-indigo-900',
+      bg: "bg-gradient-to-br from-indigo-50 to-indigo-100",
+      icon: "text-indigo-600 bg-white/80",
+      text: "text-indigo-900",
+      label: "text-indigo-700",
+      subtitle: "text-indigo-600",
+      border: "border-indigo-200",
     },
     pink: {
-      border: 'border-l-pink-500',
-      bg: 'bg-pink-50',
-      text: 'text-pink-900',
+      bg: "bg-gradient-to-br from-pink-50 to-pink-100",
+      icon: "text-pink-600 bg-white/80",
+      text: "text-pink-900",
+      label: "text-pink-700",
+      subtitle: "text-pink-600",
+      border: "border-pink-200",
     },
     emerald: {
-      border: 'border-l-emerald-500',
-      bg: 'bg-emerald-50',
-      text: 'text-emerald-900',
+      bg: "bg-gradient-to-br from-emerald-50 to-emerald-100",
+      icon: "text-emerald-600 bg-white/80",
+      text: "text-emerald-900",
+      label: "text-emerald-700",
+      subtitle: "text-emerald-600",
+      border: "border-emerald-200",
     },
     orange: {
-      border: 'border-l-orange-500',
-      bg: 'bg-orange-50',
-      text: 'text-orange-900',
+      bg: "bg-gradient-to-br from-orange-50 to-orange-100",
+      icon: "text-orange-600 bg-white/80",
+      text: "text-orange-900",
+      label: "text-orange-700",
+      subtitle: "text-orange-600",
+      border: "border-orange-200",
     },
     yellow: {
-      border: 'border-l-yellow-500',
-      bg: 'bg-yellow-50',
-      text: 'text-yellow-900',
+      bg: "bg-gradient-to-br from-yellow-50 to-yellow-100",
+      icon: "text-yellow-600 bg-white/80",
+      text: "text-yellow-900",
+      label: "text-yellow-700",
+      subtitle: "text-yellow-600",
+      border: "border-yellow-200",
     },
     red: {
-      border: 'border-l-red-500',
-      bg: 'bg-red-50',
-      text: 'text-red-900',
+      bg: "bg-gradient-to-br from-red-50 to-red-100",
+      icon: "text-red-600 bg-white/80",
+      text: "text-red-900",
+      label: "text-red-700",
+      subtitle: "text-red-600",
+      border: "border-red-200",
     },
   };
 
   const colors = colorClasses[color] || colorClasses.blue;
 
   return (
-    <div 
-      className={`
-        bg-white rounded-lg shadow-sm border-l-4 ${colors.border}
-        p-4 hover:shadow-md transition-shadow duration-200
-      `}
-    >
-      {/* Icon & Label */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <p className="text-sm text-gray-600 font-medium mb-1">{label}</p>
-        </div>
-        <div className={`p-2 rounded-lg ${colors.bg}`}>
-          {icon}
-        </div>
+    <div
+      className={`flex items-center gap-3 p-4 rounded-xl border ${colors.border} ${colors.bg} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}>
+      <div className={`p-2.5 rounded-lg ${colors.icon} shadow-sm flex-shrink-0`}>{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-medium ${colors.label} truncate`}>
+          {label}
+        </p>
+        <p className={`text-xl font-bold ${colors.text}`}>
+          {formatValue(value)}
+        </p>
+        {subtitle && (
+          <p className={`text-xs font-medium ${colors.subtitle} truncate mt-0.5`}>
+            {subtitle}
+          </p>
+        )}
       </div>
-
-      {/* Value */}
-      <div className={`text-3xl font-bold ${colors.text} mb-1`}>
-        {formatValue(value)}
-      </div>
-
-      {/* Subtitle */}
-      {subtitle && (
-        <p className="text-xs text-gray-500">{subtitle}</p>
-      )}
     </div>
   );
 };
 
 // ========================================
-// UTILITY FUNCTIONS
+// UTILITY
 // ========================================
-
-/**
- * Format value untuk display
- */
 const formatValue = (value) => {
-  if (value === null || value === undefined) return '-';
-  
-  // Jika number dengan decimal, tampilkan 2 digit
-  if (typeof value === 'number' && !Number.isInteger(value)) {
-    return value.toFixed(2);
+  if (value === null || value === undefined) return "-";
+
+  // Jika sudah string (misal: "95%", "28/32"), return as is
+  if (typeof value === "string") return value;
+
+  // Jika number dengan decimal, tampilkan 1 digit
+  if (typeof value === "number" && !Number.isInteger(value)) {
+    return value.toFixed(1);
   }
-  
-  // Jika integer, tampilkan biasa
-  if (typeof value === 'number') {
-    return value.toLocaleString('id-ID');
+
+  // Jika integer
+  if (typeof value === "number") {
+    return value.toLocaleString("id-ID");
   }
-  
+
   return value;
 };
 

@@ -1131,7 +1131,7 @@ const Students = ({ userData }) => {
                   value={genderFilter}
                   onChange={(e) => setGenderFilter(e.target.value)}
                   className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm min-h-[44px]">
-                  <option value="">Semua Gender</option>
+                  <option value="">Semua Jenis Kelamin</option>
                   <option value="Laki-laki">Laki-laki</option>
                   <option value="Perempuan">Perempuan</option>
                 </select>

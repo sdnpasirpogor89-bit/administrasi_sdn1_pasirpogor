@@ -27,11 +27,17 @@ const Setting = () => {
   const loadUserProfile = () => {
     try {
       const userSession = JSON.parse(localStorage.getItem('userSession'));
+      console.log('🔍 Setting.js - User Session:', userSession);
+      
       if (userSession) {
+        console.log('✅ User ID:', userSession.id);
+        console.log('✅ User Data:', userSession);
         setUser(userSession);
+      } else {
+        console.error('❌ No user session found!');
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      console.error('❌ Error loading user profile:', error);
       showToast('Error loading user profile', 'error');
     }
   };
@@ -47,12 +53,27 @@ const Setting = () => {
   ];
 
   const renderActiveTab = () => {
+    // ✅ TUNGGU sampai user data loaded
+    if (!user) {
+      return (
+        <div className="flex items-center justify-center p-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600 mx-auto"></div>
+            <p className="mt-6 text-gray-600 font-medium">Memuat data user...</p>
+          </div>
+        </div>
+      );
+    }
+
     const commonProps = {
+      userId: user?.id,
       user,
       loading,
       setLoading,
       showToast
     };
+
+    console.log('🎯 Rendering ProfileTab with props:', commonProps);
 
     switch (activeTab) {
       case 'profile':

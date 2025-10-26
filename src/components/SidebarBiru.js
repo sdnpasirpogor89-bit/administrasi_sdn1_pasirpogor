@@ -13,8 +13,7 @@ import {
   X,
   School,
   Monitor,
-  BookOpen,
-  CalendarDays,
+  BookOpen, // ← ICON BARU untuk Catatan Siswa
 } from "lucide-react";
 
 const Sidebar = ({
@@ -50,10 +49,9 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
-          { name: "Presensi Siswa", icon: UserCheck },      // ← PERUBAHAN
-          { name: "Nilai Siswa", icon: BarChart3 },         // ← PERUBAHAN
-          { name: "Catatan Siswa", icon: BookOpen },
-          { name: "Jadwal Pelajaran", icon: CalendarDays },
+          { name: "Kehadiran", icon: UserCheck },
+          { name: "Nilai Akademik", icon: BarChart3 },
+          { name: "Catatan Siswa", icon: BookOpen }, // ← TAMBAH MENU BARU
           { name: "Laporan", icon: FileText },
         ],
       },
@@ -81,10 +79,9 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
-          { name: "Presensi Siswa", icon: UserCheck },      // ← PERUBAHAN
-          { name: "Nilai Siswa", icon: BarChart3 },         // ← PERUBAHAN
-          { name: "Catatan Siswa", icon: BookOpen },
-          { name: "Jadwal Pelajaran", icon: CalendarDays },
+          { name: "Kehadiran", icon: UserCheck },
+          { name: "Nilai Akademik", icon: BarChart3 },
+          { name: "Catatan Siswa", icon: BookOpen }, // ← TAMBAH MENU BARU
           { name: "Laporan", icon: FileText },
         ],
       },
@@ -104,10 +101,9 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
-          { name: "Presensi Siswa", icon: UserCheck },      // ← PERUBAHAN
-          { name: "Nilai Siswa", icon: BarChart3 },         // ← PERUBAHAN
-          { name: "Catatan Siswa", icon: BookOpen },
-          { name: "Jadwal Pelajaran", icon: CalendarDays },
+          { name: "Kehadiran", icon: UserCheck },
+          { name: "Nilai Akademik", icon: BarChart3 },
+          { name: "Catatan Siswa", icon: BookOpen }, // ← TAMBAH MENU BARU
           { name: "Laporan", icon: FileText },
         ],
       },
@@ -147,10 +143,9 @@ const Sidebar = ({
 
   return (
     <aside
-      // 1. Ganti bg-indigo-950 menjadi bg-blue-800 (Biru Gelap Menengah)
       className={`
       ${showCollapsed ? "w-20" : "w-72"} 
-      bg-blue-800 text-white flex flex-col 
+      bg-blue-700 text-white flex flex-col 
       ${mobile ? "fixed" : "fixed"} 
       left-0 top-0 h-screen shadow-2xl z-50 
       transition-all duration-300
@@ -241,8 +236,7 @@ const Sidebar = ({
                           }
                           ${
                             isActive
-                              // 2. Garis aktif diubah ke border-cyan-400 (Biru Cerah)
-                              ? "bg-white/10 text-white font-semibold border-l-4 border-cyan-400 shadow-lg"
+                              ? "bg-white/15 text-white font-semibold border-l-4 border-emerald-400 shadow-lg"
                               : "text-white/80 hover:bg-white/10 hover:text-white active:bg-white/20"
                           }
                           ${showCollapsed ? "justify-center" : ""}
@@ -251,8 +245,7 @@ const Sidebar = ({
                         <IconComponent
                           size={mobile ? 22 : 20}
                           className={`flex-shrink-0 ${
-                            // 3. Ikon aktif diubah ke text-cyan-400
-                            isActive ? "text-cyan-400" : ""
+                            isActive ? "text-emerald-400" : ""
                           }`}
                         />
                         {!showCollapsed && (
@@ -262,8 +255,7 @@ const Sidebar = ({
                         )}
 
                         {mobile && isActive && (
-                          // 4. Indikator aktif diubah ke bg-cyan-400
-                          <div className="ml-auto w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-sm"></div>
+                          <div className="ml-auto w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-sm"></div>
                         )}
                       </button>
 
@@ -282,13 +274,11 @@ const Sidebar = ({
         </div>
       </nav>
 
-      <div className="p-3 sm:p-4 border-t border-white/10 bg-white/5">
+      <div className="p-3 sm:p-4 border-t border-white/10 bg-black/10">
         {!showCollapsed ? (
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              {/* 5. Avatar background diubah ke blue-400 */}
-              {/* 6. Avatar text diubah ke blue-900 */}
-              <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-blue-400 flex items-center justify-center text-blue-900 font-semibold text-xs sm:text-sm border-2 border-white/30 shadow-sm">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center text-white font-semibold text-xs sm:text-sm border-2 border-white/30 shadow-sm">
                 {getInitials(userData.full_name || userData.username)}
               </div>
             </div>
@@ -306,8 +296,7 @@ const Sidebar = ({
                     {userData.role.replace("_", " ")}
                   </p>
                   {userData.kelas && (
-                    // 7. Teks kelas diubah ke cyan-300
-                    <p className="text-xs sm:text-sm text-cyan-300 font-medium leading-tight">
+                    <p className="text-xs sm:text-sm text-emerald-300 font-medium leading-tight">
                       Kelas {userData.kelas}
                     </p>
                   )}
@@ -318,7 +307,7 @@ const Sidebar = ({
         ) : (
           <div className="flex justify-center">
             <div
-              className="w-10 h-10 rounded-xl bg-blue-400 flex items-center justify-center text-blue-900 font-semibold text-xs border-2 border-white/30 shadow-sm"
+              className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white font-semibold text-xs border-2 border-white/30 shadow-sm"
               title={userData.full_name || userData.username}>
               {getInitials(userData.full_name || userData.username)}
             </div>
