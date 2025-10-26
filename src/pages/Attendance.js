@@ -15,13 +15,25 @@ import {
   FileX,
   Clock,
   RefreshCw,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
 import RecapModal from "./RecapModal";
 import { exportAttendanceFromComponent } from "./AttendanceExport";
 
-// Toast Component - Enhanced for mobile
+// ===== PWA OFFLINE IMPORTS =====
+import {
+  saveWithSync,
+  syncPendingData,
+  getDataWithFallback,
+} from "../offlineSync";
+import { useSyncStatus } from "../hooks/useSyncStatus";
+import SyncStatusBadge from "../components/SyncStatusBadge";
+// ===============================
+
+// Toast Component - Enhanced for mobile + OFFLINE STATUS
 const Toast = ({ show, message, type, onClose }) => {
   useEffect(() => {
     if (show) {
@@ -32,13 +44,23 @@ const Toast = ({ show, message, type, onClose }) => {
 
   if (!show) return null;
 
+  const getIcon = () => {
+    if (type === "error") return <AlertTriangle size={16} />;
+    if (type === "offline") return <WifiOff size={16} />;
+    return <Check size={16} />;
+  };
+
+  const getBgColor = () => {
+    if (type === "error") return "bg-red-600";
+    if (type === "offline") return "bg-orange-600";
+    return "bg-green-600";
+  };
+
   return (
     <div
-      className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:max-w-md z-50 px-4 sm:px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
-        type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
-      }`}>
+      className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:max-w-md z-50 px-4 sm:px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${getBgColor()} text-white`}>
       <div className="flex items-center gap-2">
-        {type === "error" ? <AlertTriangle size={16} /> : <Check size={16} />}
+        {getIcon()}
         <span className="font-medium text-sm sm:text-base flex-1">
           {message}
         </span>
@@ -52,7 +74,7 @@ const Toast = ({ show, message, type, onClose }) => {
   );
 };
 
-// Confirmation Modal Component - Enhanced for mobile
+// Confirmation Modal Component
 const ConfirmationModal = ({ show, onClose, onConfirm, title, message }) => {
   if (!show) return null;
 
@@ -85,7 +107,7 @@ const ConfirmationModal = ({ show, onClose, onConfirm, title, message }) => {
   );
 };
 
-// ExportModal Component - Enhanced for mobile
+// ExportModal Component
 const ExportModal = ({ show, onClose, onExport, loading }) => {
   const [selectedMonth, setSelectedMonth] = useState(
     (new Date().getMonth() + 1).toString()
@@ -177,7 +199,7 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
   );
 };
 
-// Status Button Component - FIXED with better mobile touch targets
+// Status Button Component
 const StatusButton = React.memo(
   ({ status, active, onClick, icon: Icon, label, disabled = false }) => {
     const getStatusClass = () => {
@@ -216,7 +238,7 @@ const StatusButton = React.memo(
   }
 );
 
-// Compact Stats Card Component - FIXED: Added semicolon
+// Compact Stats Card Component
 const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
   const getLeftBorderColor = () => {
     switch (color) {
@@ -267,9 +289,9 @@ const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
       </div>
     </div>
   );
-}); // SEMICOLON DITAMBAHKAN DI SINI
+});
 
-// Mobile Student Card Component - IMPROVED: No toggle, langsung show status
+// Mobile Student Card Component
 const StudentCard = ({
   student,
   originalIndex,
@@ -281,7 +303,6 @@ const StudentCard = ({
 }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm">
-      {/* Student Info */}
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-sm truncate">
@@ -299,7 +320,6 @@ const StudentCard = ({
         </div>
       </div>
 
-      {/* Status Buttons - LANGSUNG TAMPIL, ga perlu toggle */}
       <div className="grid grid-cols-2 gap-2">
         <StatusButton
           status="Hadir"
@@ -335,7 +355,6 @@ const StudentCard = ({
         />
       </div>
 
-      {/* Keterangan Input */}
       <input
         type="text"
         placeholder="Keterangan..."
@@ -348,12 +367,15 @@ const StudentCard = ({
   );
 };
 
-// Custom hook for attendance logic
+// Custom hook for attendance logic - DENGAN OFFLINE SYNC
 const useAttendance = (currentUser) => {
   const [studentsData, setStudentsData] = useState({});
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // ===== PWA: Sync Status Hook =====
+  const { isOnline, pendingCount, isSyncing } = useSyncStatus();
 
   const loadStudentsData = useCallback(async () => {
     try {
@@ -413,17 +435,16 @@ const useAttendance = (currentUser) => {
     setAttendanceData(attendanceDataObj);
   }, []);
 
+  // ===== PWA: Load dengan Fallback =====
   const loadAttendanceForDate = useCallback(
     async (date, classNum) => {
       try {
-        const { data, error } = await supabase
-          .from("attendance")
-          .select("*")
-          .eq("tanggal", date)
-          .eq("kelas", classNum)
-          .eq("guru_input", currentUser.username);
-
-        if (error) throw error;
+        const data = await getDataWithFallback("attendance", (query) =>
+          query
+            .eq("tanggal", date)
+            .eq("kelas", classNum)
+            .eq("guru_input", currentUser.username)
+        );
 
         setAttendanceData((prev) => {
           const newAttendanceData = { ...prev };
@@ -446,10 +467,9 @@ const useAttendance = (currentUser) => {
                   studentIndex !== -1 &&
                   newAttendanceData[classNum][studentIndex]
                 ) {
-                  // PERBAIKAN: Langsung pakai status dari database, tanpa konversi
                   newAttendanceData[classNum][studentIndex] = {
                     ...newAttendanceData[classNum][studentIndex],
-                    status: record.status, // Langsung record.status
+                    status: record.status,
                     note: record.keterangan || "",
                   };
                 }
@@ -476,10 +496,13 @@ const useAttendance = (currentUser) => {
     setSaving,
     loadStudentsData,
     loadAttendanceForDate,
+    isOnline,
+    pendingCount,
+    isSyncing,
   };
 };
 
-// Main Attendance Component - OPTIMIZED FOR MOBILE
+// Main Attendance Component
 const Attendance = ({
   currentUser = { role: "admin", kelas: null, username: "admin" },
 }) => {
@@ -492,6 +515,9 @@ const Attendance = ({
     setSaving,
     loadStudentsData,
     loadAttendanceForDate,
+    isOnline,
+    pendingCount,
+    isSyncing,
   } = useAttendance(currentUser);
 
   const [attendanceDate, setAttendanceDate] = useState("");
@@ -508,12 +534,22 @@ const Attendance = ({
   const [rekapSubtitle, setRekapSubtitle] = useState("");
   const [rekapLoading, setRekapLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
-
-  // Device detection state
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
 
-  // Device detection
+  // ===== PWA: Auto-sync saat online =====
+  useEffect(() => {
+    if (isOnline && pendingCount > 0) {
+      syncPendingData()
+        .then(() => {
+          console.log("✅ Auto-sync completed");
+        })
+        .catch((err) => {
+          console.error("❌ Auto-sync failed:", err);
+        });
+    }
+  }, [isOnline, pendingCount]);
+
   useEffect(() => {
     const checkDeviceType = () => {
       const width = window.innerWidth;
@@ -526,14 +562,12 @@ const Attendance = ({
     return () => window.removeEventListener("resize", checkDeviceType);
   }, []);
 
-  // Determine view mode - Mobile pake cards, Tablet & Desktop pake table
   const showCardView = isMobile;
 
   const getJenisPresensi = useCallback(() => {
     return currentUser.role === "guru_kelas" ? "kelas" : "mapel";
   }, [currentUser.role]);
 
-  // Initialize date with Indonesia local date
   useEffect(() => {
     const getIndonesiaDate = () => {
       const now = new Date();
@@ -546,21 +580,18 @@ const Attendance = ({
     setAttendanceDate(getIndonesiaDate());
   }, []);
 
-  // Load students when component mounts
   useEffect(() => {
     loadStudentsData().catch((error) => {
       showToast(`Error memuat data siswa: ${error.message}`, "error");
     });
   }, [loadStudentsData]);
 
-  // Set initial active class based on user role
   useEffect(() => {
     if (currentUser.role === "guru_kelas" && currentUser.kelas) {
       setActiveClass(currentUser.kelas);
     }
   }, [currentUser]);
 
-  // Load attendance when date or class changes
   useEffect(() => {
     if (attendanceDate && studentsData[activeClass]?.length > 0) {
       loadAttendanceForDate(attendanceDate, activeClass).catch((error) => {
@@ -569,7 +600,6 @@ const Attendance = ({
     }
   }, [attendanceDate, activeClass, loadAttendanceForDate, studentsData]);
 
-  // Memoized filtered students
   const filteredStudents = useMemo(() => {
     if (!studentsData[activeClass]) return [];
 
@@ -580,7 +610,6 @@ const Attendance = ({
     );
   }, [studentsData, activeClass, searchTerm]);
 
-  // Memoized summary calculation
   const summary = useMemo(() => {
     if (!attendanceData[activeClass]) {
       return { Hadir: 0, Alpa: 0, Sakit: 0, Izin: 0 };
@@ -597,7 +626,6 @@ const Attendance = ({
     return counts;
   }, [attendanceData, activeClass]);
 
-  // Show toast notification
   const showToast = useCallback((message, type = "success") => {
     setToast({ show: true, message, type });
   }, []);
@@ -606,7 +634,6 @@ const Attendance = ({
     setToast({ show: false, message: "", type: "" });
   }, []);
 
-  // Check class access
   const checkClassAccess = useCallback(
     (classNum) => {
       if (currentUser.role === "guru_kelas" && currentUser.kelas !== classNum) {
@@ -621,7 +648,6 @@ const Attendance = ({
     [currentUser, showToast]
   );
 
-  // Memoized update functions
   const updateStatus = useCallback(
     (classNum, studentIndex, status) => {
       if (!checkClassAccess(classNum)) return;
@@ -664,7 +690,6 @@ const Attendance = ({
     [checkClassAccess]
   );
 
-  // Check existing attendance
   const checkExistingAttendance = useCallback(
     async (classNum, date) => {
       try {
@@ -689,7 +714,7 @@ const Attendance = ({
     [currentUser.username]
   );
 
-  // Save attendance data to database
+  // ===== PWA: REFACTORED SAVE FUNCTION =====
   const saveAttendanceData = useCallback(
     async (classNum, date) => {
       try {
@@ -715,34 +740,33 @@ const Attendance = ({
           })
         );
 
-        const { error: deleteError } = await supabase
-          .from("attendance")
-          .delete()
-          .eq("tanggal", date)
-          .eq("kelas", classNum)
-          .eq("guru_input", currentUser.username);
+        const result = await saveWithSync("attendance", attendanceRecords, {
+          deleteCondition: {
+            tanggal: date,
+            kelas: classNum,
+            guru_input: currentUser.username,
+          },
+        });
 
-        if (deleteError) {
-          console.error("Delete error:", deleteError);
-          throw deleteError;
+        if (result.success) {
+          const jenisText =
+            getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
+
+          if (result.synced) {
+            showToast(
+              `✅ Presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
+            );
+          } else {
+            showToast(
+              `💾 Data disimpan offline. Akan disinkronkan saat online.`,
+              "offline"
+            );
+          }
+
+          await loadAttendanceForDate(date, classNum);
+        } else {
+          throw new Error(result.error || "Gagal menyimpan data");
         }
-
-        const { error: insertError } = await supabase
-          .from("attendance")
-          .insert(attendanceRecords);
-
-        if (insertError) {
-          console.error("Insert error:", insertError);
-          throw insertError;
-        }
-
-        const jenisText =
-          getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
-        showToast(
-          `Presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
-        );
-
-        await loadAttendanceForDate(date, classNum);
       } catch (error) {
         console.error("Error saving attendance:", error);
         showToast(`Error menyimpan data presensi: ${error.message}`, "error");
@@ -758,7 +782,6 @@ const Attendance = ({
     ]
   );
 
-  // Mark all present with loading state
   const markAllPresent = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
 
@@ -783,7 +806,6 @@ const Attendance = ({
     }
   }, [activeClass, checkClassAccess, saving, showToast]);
 
-  // Save attendance with loading state
   const saveAttendance = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
 
@@ -794,18 +816,25 @@ const Attendance = ({
 
     setSaving(true);
     try {
-      const exists = await checkExistingAttendance(activeClass, attendanceDate);
+      if (isOnline) {
+        const exists = await checkExistingAttendance(
+          activeClass,
+          attendanceDate
+        );
 
-      if (exists) {
-        const jenisText =
-          getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
-        setModalMessage(
-          `Data kehadiran untuk ${jenisText} ${activeClass} tanggal ${attendanceDate} sudah ada. Apakah Anda yakin ingin menimpa data yang sudah ada?`
-        );
-        setModalAction(
-          () => () => saveAttendanceData(activeClass, attendanceDate)
-        );
-        setShowModal(true);
+        if (exists) {
+          const jenisText =
+            getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
+          setModalMessage(
+            `Data kehadiran untuk ${jenisText} ${activeClass} tanggal ${attendanceDate} sudah ada. Apakah Anda yakin ingin menimpa data yang sudah ada?`
+          );
+          setModalAction(
+            () => () => saveAttendanceData(activeClass, attendanceDate)
+          );
+          setShowModal(true);
+        } else {
+          await saveAttendanceData(activeClass, attendanceDate);
+        }
       } else {
         await saveAttendanceData(activeClass, attendanceDate);
       }
@@ -823,9 +852,9 @@ const Attendance = ({
     checkExistingAttendance,
     saveAttendanceData,
     getJenisPresensi,
+    isOnline,
   ]);
 
-  // Generate rekap data from database
   const generateRekapData = useCallback(
     async (classNum, month, year) => {
       try {
@@ -903,7 +932,6 @@ const Attendance = ({
     [studentsData, showToast, currentUser.username]
   );
 
-  // Show rekap modal
   const showRekap = useCallback(async () => {
     const jenisText =
       getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
@@ -923,7 +951,6 @@ const Attendance = ({
     setRekapData(rekapData);
   }, [activeClass, generateRekapData, getJenisPresensi]);
 
-  // Handle refresh data untuk RecapModal
   const handleRekapRefresh = useCallback(
     async (month, year) => {
       const rekapData = await generateRekapData(
@@ -936,7 +963,6 @@ const Attendance = ({
     [activeClass, generateRekapData]
   );
 
-  // Export attendance function
   const exportAttendance = useCallback(
     async (month, year) => {
       try {
@@ -966,7 +992,6 @@ const Attendance = ({
     [activeClass, studentsData, showToast]
   );
 
-  // Get available classes for tabs
   const availableClasses = useMemo(() => {
     if (currentUser.role === "guru_kelas" && currentUser.kelas) {
       return [currentUser.kelas];
@@ -989,14 +1014,15 @@ const Attendance = ({
 
   return (
     <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
-      {/* Toast Notification */}
       <Toast
         show={toast.show}
         message={toast.message}
         type={toast.type}
         onClose={hideToast}
       />
-      {/* Compact Stats Cards */}
+
+      <SyncStatusBadge />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard
           icon={Check}
@@ -1023,9 +1049,8 @@ const Attendance = ({
           color="purple"
         />
       </div>
-      {/* Search and Controls - PERBAIKAN LAYOUT UNTUK LAPTOP */}
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-4">
-        {/* SEARCH INPUT - FULL WIDTH DI MOBILE */}
         <div className="relative w-full">
           <Search
             size={18}
@@ -1040,9 +1065,7 @@ const Attendance = ({
           />
         </div>
 
-        {/* --- KODE INI DIUBAH UNTUK MERAPATKAN & MEMPERLEBAR DATE PICKER DAN KELAS --- */}
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center lg:justify-start">
-          {/* DATE PICKER - DIPERLEBAR DAN DIBUAT TIDAK MENYUSUT */}
           <div className="flex items-center gap-3 w-full lg:w-auto flex-shrink-0">
             <label className="font-semibold text-gray-700 whitespace-nowrap text-sm sm:text-base">
               Tanggal:
@@ -1051,14 +1074,11 @@ const Attendance = ({
               type="date"
               value={attendanceDate}
               onChange={(e) => setAttendanceDate(e.target.value)}
-              // MENGUBAH w-64 menjadi w-72 untuk memperlebar tampilan di laptop
               className="w-full lg:w-72 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium bg-white text-sm sm:text-base"
             />
           </div>
 
-          {/* CLASS TABS - Menggunakan lg:flex-1 untuk mengisi sisa ruang */}
           <div className="flex flex-col lg:flex-row gap-2 w-full lg:flex-1">
-            {/* Baris Pertama: Kelas 1, 2, 3 */}
             <div className="flex gap-2 justify-center lg:justify-start w-full">
               {availableClasses.slice(0, 3).map((classNum) => (
                 <button
@@ -1074,7 +1094,6 @@ const Attendance = ({
               ))}
             </div>
 
-            {/* Baris Kedua: Kelas 4, 5, 6 */}
             {availableClasses.length > 3 && (
               <div className="flex gap-2 justify-center lg:justify-start w-full">
                 {availableClasses.slice(3, 6).map((classNum) => (
@@ -1093,9 +1112,8 @@ const Attendance = ({
             )}
           </div>
         </div>
-      </div>{" "}
-      {/* <-- PERBAIKAN: Menutup div utama Search and Controls */}
-      {/* Attendance Controls */}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
           <button
@@ -1111,8 +1129,7 @@ const Attendance = ({
             ) : (
               <Check size={14} />
             )}
-            <span className="hidden sm:inline">Hadir Semua</span>
-            <span className="sm:hidden">Hadir Semua</span>
+            <span>Hadir Semua</span>
           </button>
           <button
             className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
@@ -1120,15 +1137,15 @@ const Attendance = ({
             disabled={
               !studentsData[activeClass] ||
               studentsData[activeClass].length === 0 ||
-              saving
+              saving ||
+              isSyncing
             }>
-            {saving ? (
+            {saving || isSyncing ? (
               <RefreshCw size={14} className="animate-spin" />
             ) : (
               <Save size={14} />
             )}
-            <span className="hidden sm:inline">Simpan Presensi</span>
-            <span className="sm:hidden">Simpan Presensi</span>
+            <span>Simpan Presensi</span>
           </button>
           <button
             className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
@@ -1138,8 +1155,7 @@ const Attendance = ({
               studentsData[activeClass].length === 0
             }>
             <Calendar size={14} />
-            <span className="hidden sm:inline">Lihat Rekap</span>
-            <span className="sm:hidden">Lihat Rekap</span>
+            <span>Lihat Rekap</span>
           </button>
           <button
             className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
@@ -1149,14 +1165,12 @@ const Attendance = ({
               studentsData[activeClass].length === 0
             }>
             <Download size={14} />
-            <span className="hidden sm:inline">Export Excel</span>
-            <span className="sm:hidden">Export Excel</span>
+            <span>Export Excel</span>
           </button>
         </div>
       </div>
-      {/* Students List - RESPONSIVE VIEW */}
+
       {showCardView ? (
-        // MOBILE CARD VIEW
         <div className="space-y-3">
           {filteredStudents.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
@@ -1199,7 +1213,6 @@ const Attendance = ({
           )}
         </div>
       ) : (
-        // DESKTOP/TABLET TABLE VIEW
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -1386,7 +1399,7 @@ const Attendance = ({
           </div>
         </div>
       )}
-      {/* Modals */}
+
       <ConfirmationModal
         show={showModal}
         onClose={() => {

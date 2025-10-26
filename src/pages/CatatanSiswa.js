@@ -14,8 +14,20 @@ import {
   X,
   Loader2,
   ArrowLeft,
+  WifiOff,
+  RefreshCw,
 } from "lucide-react";
 import ExportCatatanSiswa from "./ExportCatatanSiswa";
+
+// ===== PWA OFFLINE IMPORTS =====
+import {
+  saveWithSync,
+  syncPendingData,
+  getDataWithFallback,
+} from "../offlineSync";
+import { useSyncStatus } from "../hooks/useSyncStatus";
+import SyncStatusBadge from "../components/SyncStatusBadge";
+// ===============================
 
 const CatatanSiswa = ({ userData }) => {
   console.log("🚀 CatatanSiswa mounted with userData:", userData);
@@ -46,11 +58,29 @@ const CatatanSiswa = ({ userData }) => {
 
   const [academicYear, setAcademicYear] = useState("2024/2025");
   const [semester, setSemester] = useState("Ganjil");
+  const [message, setMessage] = useState({ text: "", type: "" });
 
   const kategoris = ["Akademik", "Perilaku", "Sosial", "Karakter", "Kesehatan"];
 
   const isAdmin =
     userData?.role === "admin" || userData?.role === "administrator";
+
+  // ===== PWA: Sync Status Hook =====
+  const { isOnline, pendingCount, isSyncing } = useSyncStatus();
+
+  // ===== PWA: Auto-sync saat online =====
+  useEffect(() => {
+    if (isOnline && pendingCount > 0) {
+      syncPendingData()
+        .then(() => {
+          console.log("✅ Auto-sync completed");
+          showMessage("Data berhasil disinkronkan!", "success");
+        })
+        .catch((err) => {
+          console.error("❌ Auto-sync failed:", err);
+        });
+    }
+  }, [isOnline, pendingCount]);
 
   useEffect(() => {
     console.log("📌 useEffect triggered");
@@ -59,12 +89,16 @@ const CatatanSiswa = ({ userData }) => {
     }
   }, [userData?.id]);
 
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+  };
+
   const initializeData = async () => {
     try {
       setLoading(true);
       console.log("🔄 Initializing data for user:", userData.username);
 
-      // Get academic settings with better error handling
       const { data: tahunAjaranData, error: tahunError } = await supabase
         .from("school_settings")
         .select("setting_value")
@@ -111,7 +145,6 @@ const CatatanSiswa = ({ userData }) => {
         .order("nama_siswa", { ascending: true });
 
       if (!isAdmin && userData.kelas) {
-        // ✅ SPLIT kelas jadi array untuk Guru Mapel
         const kelasArray = userData.kelas.split(",").map((k) => k.trim());
         query = query.in("kelas", kelasArray);
         console.log(`🔍 Filter kelas array:`, kelasArray);
@@ -133,14 +166,17 @@ const CatatanSiswa = ({ userData }) => {
           ...new Set(siswaData.map((s) => s.kelas)),
         ]);
 
+        // ===== PWA: Load catatan dengan Fallback =====
         const processedStudents = await Promise.all(
           siswaData.map(async (siswa) => {
-            const { data: catatanData } = await supabase
-              .from("catatan_siswa")
-              .select("label, created_at")
-              .eq("student_id", siswa.id)
-              .eq("academic_year", academicYear)
-              .eq("semester", semester);
+            const catatanData = await getDataWithFallback(
+              "student_notes",
+              (query) =>
+                query
+                  .eq("student_id", siswa.id)
+                  .eq("academic_year", academicYear)
+                  .eq("semester", semester)
+            );
 
             const positif =
               catatanData?.filter((c) => c.label === "positif").length || 0;
@@ -203,26 +239,27 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
+  // ===== PWA: Load Student Notes dengan Fallback =====
   const loadStudentNotes = async (studentId) => {
     try {
       setLoading(true);
       console.log("📖 Loading notes for student:", studentId);
 
-      let query = supabase
-        .from("catatan_siswa")
-        .select("*")
-        .eq("student_id", studentId)
-        .eq("academic_year", academicYear)
-        .eq("semester", semester)
-        .order("created_at", { ascending: false });
+      let filterFunc = (query) => {
+        let q = query
+          .eq("student_id", studentId)
+          .eq("academic_year", academicYear)
+          .eq("semester", semester)
+          .order("created_at", { ascending: false });
 
-      if (!isAdmin) {
-        query = query.eq("teacher_id", userData.id);
-      }
+        if (!isAdmin) {
+          q = q.eq("teacher_id", userData.id);
+        }
 
-      const { data: notesData, error: notesError } = await query;
+        return q;
+      };
 
-      if (notesError) throw notesError;
+      const notesData = await getDataWithFallback("student_notes", filterFunc);
 
       const notesWithTeachers = await Promise.all(
         (notesData || []).map(async (note) => {
@@ -246,11 +283,12 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
+  // ===== PWA: REFACTORED CREATE NOTE FUNCTION =====
   const handleCreateNote = async (e) => {
     e.preventDefault();
 
     if (isAdmin) {
-      alert("Admin tidak dapat membuat catatan");
+      showMessage("Admin tidak dapat membuat catatan", "error");
       return;
     }
 
@@ -260,7 +298,7 @@ const CatatanSiswa = ({ userData }) => {
       !formData.label ||
       !formData.note_content
     ) {
-      alert("Harap lengkapi semua field yang wajib diisi");
+      showMessage("Harap lengkapi semua field yang wajib diisi", "error");
       return;
     }
 
@@ -286,100 +324,130 @@ const CatatanSiswa = ({ userData }) => {
 
       console.log("📝 Inserting note:", noteData);
 
-      const { data, error } = await supabase
-        .from("catatan_siswa")
-        .insert([noteData])
-        .select();
+      // Gunakan saveWithSync untuk offline-first
+      const result = await saveWithSync("student_notes", [noteData]);
 
-      if (error) {
-        console.error("❌ Supabase error:", error);
-        throw error;
+      if (result.success) {
+        if (result.synced) {
+          showMessage("✅ Catatan berhasil disimpan!", "success");
+        } else {
+          showMessage(
+            "💾 Catatan disimpan offline. Akan disinkronkan saat online.",
+            "offline"
+          );
+        }
+
+        setFormData({
+          student_id: "",
+          category: "",
+          label: "",
+          note_content: "",
+          action_taken: "",
+        });
+        await loadStudents();
+        setActiveView("dashboard");
+      } else {
+        throw new Error(result.error || "Gagal menyimpan catatan");
       }
-
-      console.log("✅ Note created:", data);
-      alert("✅ Catatan berhasil disimpan!");
-      setFormData({
-        student_id: "",
-        category: "",
-        label: "",
-        note_content: "",
-        action_taken: "",
-      });
-      await loadStudents();
-      setActiveView("dashboard");
     } catch (error) {
       console.error("❌ Error creating note:", error);
-      alert(
-        "Gagal menyimpan catatan: " + (error.message || JSON.stringify(error))
-      );
+      showMessage("Gagal menyimpan catatan: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  // ===== PWA: REFACTORED UPDATE NOTE FUNCTION =====
   const handleUpdateNote = async (e) => {
     e.preventDefault();
 
     if (isAdmin) {
-      alert("Admin tidak dapat mengedit catatan");
+      showMessage("Admin tidak dapat mengedit catatan", "error");
       return;
     }
 
     setLoading(true);
     try {
       const updates = {
+        id: editingNote.id,
+        student_id: formData.student_id,
+        teacher_id: userData.id,
+        class_id: editingNote.class_id,
+        academic_year: editingNote.academic_year,
+        semester: editingNote.semester,
         category: formData.category,
         label: formData.label,
         note_content: formData.note_content,
         action_taken: formData.action_taken || null,
+        created_at: editingNote.created_at,
       };
 
-      const { error } = await supabase
-        .from("catatan_siswa")
-        .update(updates)
-        .eq("id", editingNote.id);
-
-      if (error) throw error;
-
-      alert("✅ Catatan berhasil diupdate!");
-      setEditingNote(null);
-      setFormData({
-        student_id: "",
-        category: "",
-        label: "",
-        note_content: "",
-        action_taken: "",
+      const result = await saveWithSync("student_notes", [updates], {
+        updateById: editingNote.id,
       });
-      await loadStudentNotes(selectedSiswa.id);
-      await loadStudents();
-      setActiveView("detail");
+
+      if (result.success) {
+        if (result.synced) {
+          showMessage("✅ Catatan berhasil diupdate!", "success");
+        } else {
+          showMessage(
+            "💾 Perubahan disimpan offline. Akan disinkronkan saat online.",
+            "offline"
+          );
+        }
+
+        setEditingNote(null);
+        setFormData({
+          student_id: "",
+          category: "",
+          label: "",
+          note_content: "",
+          action_taken: "",
+        });
+        await loadStudentNotes(selectedSiswa.id);
+        await loadStudents();
+        setActiveView("detail");
+      } else {
+        throw new Error(result.error || "Gagal update catatan");
+      }
     } catch (error) {
       console.error("❌ Error updating note:", error);
-      alert("Gagal update catatan: " + error.message);
+      showMessage("Gagal update catatan: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  // ===== PWA: REFACTORED DELETE NOTE FUNCTION =====
   const handleDeleteNote = async () => {
     setIsDeleteModalOpen(false);
     if (!noteToDelete) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("catatan_siswa")
-        .delete()
-        .eq("id", noteToDelete);
+      // Gunakan saveWithSync dengan deleteById
+      const result = await saveWithSync("student_notes", [], {
+        deleteById: noteToDelete,
+      });
 
-      if (error) throw error;
+      if (result.success) {
+        if (result.synced) {
+          showMessage("✅ Catatan berhasil dihapus!", "success");
+        } else {
+          showMessage(
+            "💾 Penghapusan disimpan offline. Akan disinkronkan saat online.",
+            "offline"
+          );
+        }
 
-      alert("✅ Catatan berhasil dihapus!");
-      await loadStudentNotes(selectedSiswa.id);
-      await loadStudents();
+        await loadStudentNotes(selectedSiswa.id);
+        await loadStudents();
+      } else {
+        throw new Error(result.error || "Gagal menghapus catatan");
+      }
     } catch (error) {
       console.error("❌ Error deleting note:", error);
-      alert("Gagal menghapus catatan: " + error.message);
+      showMessage("Gagal menghapus catatan: " + error.message, "error");
     } finally {
       setLoading(false);
       setNoteToDelete(null);
@@ -432,11 +500,14 @@ const CatatanSiswa = ({ userData }) => {
 
   const handleAddNote = () => {
     if (isAdmin) {
-      alert("Admin tidak dapat membuat catatan");
+      showMessage("Admin tidak dapat membuat catatan", "error");
       return;
     }
     if (siswaList.length === 0) {
-      alert("Tidak ada data siswa. Pastikan ada siswa di kelas Anda.");
+      showMessage(
+        "Tidak ada data siswa. Pastikan ada siswa di kelas Anda.",
+        "error"
+      );
       return;
     }
     setFormData({
@@ -458,7 +529,7 @@ const CatatanSiswa = ({ userData }) => {
 
   const handleEditNote = (catatan) => {
     if (isAdmin) {
-      alert("Admin tidak dapat mengedit catatan");
+      showMessage("Admin tidak dapat mengedit catatan", "error");
       return;
     }
     setEditingNote(catatan);
@@ -512,8 +583,13 @@ const CatatanSiswa = ({ userData }) => {
             </button>
             <button
               onClick={handleDeleteNote}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 flex items-center gap-2">
-              <Trash2 className="w-4 h-4" />
+              disabled={loading || isSyncing}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 flex items-center gap-2 disabled:opacity-50">
+              {loading || isSyncing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
               Hapus
             </button>
           </div>
@@ -524,6 +600,30 @@ const CatatanSiswa = ({ userData }) => {
 
   const renderDashboard = () => (
     <div className="space-y-6">
+      <SyncStatusBadge />
+
+      {message.text && (
+        <div
+          className={`p-4 rounded-lg ${
+            message.type === "error"
+              ? "bg-red-50 border border-red-200 text-red-700"
+              : message.type === "offline"
+              ? "bg-orange-50 border border-orange-200 text-orange-700"
+              : "bg-green-50 border border-green-200 text-green-700"
+          }`}>
+          <div className="flex items-center gap-2">
+            {message.type === "error" ? (
+              <AlertCircle size={20} />
+            ) : message.type === "offline" ? (
+              <WifiOff size={20} />
+            ) : (
+              <CheckCircle size={20} />
+            )}
+            {message.text}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">
@@ -554,8 +654,13 @@ const CatatanSiswa = ({ userData }) => {
             />
             <button
               onClick={handleAddNote}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
-              <Plus className="w-5 h-5" />
+              disabled={isSyncing}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50">
+              {isSyncing ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
               Tambah Catatan
             </button>
           </div>
@@ -708,6 +813,28 @@ const CatatanSiswa = ({ userData }) => {
 
   const renderForm = () => (
     <div className="max-w-3xl mx-auto">
+      {message.text && (
+        <div
+          className={`p-4 rounded-lg mb-6 ${
+            message.type === "error"
+              ? "bg-red-50 border border-red-200 text-red-700"
+              : message.type === "offline"
+              ? "bg-orange-50 border border-orange-200 text-orange-700"
+              : "bg-green-50 border border-green-200 text-green-700"
+          }`}>
+          <div className="flex items-center gap-2">
+            {message.type === "error" ? (
+              <AlertCircle size={20} />
+            ) : message.type === "offline" ? (
+              <WifiOff size={20} />
+            ) : (
+              <CheckCircle size={20} />
+            )}
+            {message.text}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b">
           <h2 className="text-2xl font-bold text-gray-800">
@@ -830,9 +957,9 @@ const CatatanSiswa = ({ userData }) => {
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isSyncing}
               className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-              {loading ? (
+              {loading || isSyncing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {editingNote ? "Menyimpan..." : "Membuat..."}
@@ -859,6 +986,28 @@ const CatatanSiswa = ({ userData }) => {
 
   const renderDetail = () => (
     <div className="max-w-5xl mx-auto">
+      {message.text && (
+        <div
+          className={`p-4 rounded-lg mb-6 ${
+            message.type === "error"
+              ? "bg-red-50 border border-red-200 text-red-700"
+              : message.type === "offline"
+              ? "bg-orange-50 border border-orange-200 text-orange-700"
+              : "bg-green-50 border border-green-200 text-green-700"
+          }`}>
+          <div className="flex items-center gap-2">
+            {message.type === "error" ? (
+              <AlertCircle size={20} />
+            ) : message.type === "offline" ? (
+              <WifiOff size={20} />
+            ) : (
+              <CheckCircle size={20} />
+            )}
+            {message.text}
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => setActiveView("dashboard")}
         className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg border mb-6">
@@ -923,8 +1072,13 @@ const CatatanSiswa = ({ userData }) => {
                 setEditingNote(null);
                 setActiveView("form");
               }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
-              <Plus className="w-4 h-4" />
+              disabled={isSyncing}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50">
+              {isSyncing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
               Tambah Catatan
             </button>
           </div>
@@ -984,7 +1138,8 @@ const CatatanSiswa = ({ userData }) => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEditNote(catatan)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                      disabled={isSyncing}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50">
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
@@ -992,7 +1147,8 @@ const CatatanSiswa = ({ userData }) => {
                         setNoteToDelete(catatan.id);
                         setIsDeleteModalOpen(true);
                       }}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded">
+                      disabled={isSyncing}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded disabled:opacity-50">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

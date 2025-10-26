@@ -1,14 +1,16 @@
-// src/App.js - FINAL VERSION YANG PASTI JALAN
+// src/App.js - FINAL VERSION DENGAN OFFLINE SYNC
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-  useNavigate
+  useNavigate,
 } from "react-router-dom";
-import "./index.css"; 
+import "./index.css";
 import { supabase } from "./supabaseClient";
+import db from "./db"; // ← TAMBAH: Import database
+import { setupAutoSync } from "./offlineSync"; // ← TAMBAH: Import auto-sync
 import Login from "./components/Login";
 import Layout from "./components/Layout";
 import AdminDashboard from "./components/AdminDashboard";
@@ -18,11 +20,11 @@ import Attendance from "./pages/Attendance";
 import Teacher from "./pages/Teacher";
 import Grades from "./pages/Grades";
 import CatatanSiswa from "./pages/CatatanSiswa";
-import TeacherSchedule from "./pages/TeacherSchedule"; // ← PERUBAHAN: Import JadwalPelajaran diganti TeacherSchedule
-import SPMB from './spmb/SPMB';
+import TeacherSchedule from "./pages/TeacherSchedule";
+import SPMB from "./spmb/SPMB";
 import Report from "./reports/Reports";
-import Setting from './setting/setting';
-import MonitorSistem from './system/MonitorSistem';
+import Setting from "./setting/setting";
+import MonitorSistem from "./system/MonitorSistem";
 
 // Wrapper components
 const ReportWithNavigation = ({ userData }) => {
@@ -50,7 +52,7 @@ const CatatanSiswaWithNavigation = ({ userData }) => {
   return <CatatanSiswa userData={userData} onNavigate={navigate} />;
 };
 
-const TeacherScheduleWithNavigation = ({ userData }) => { // ← PERUBAHAN: Wrapper JadwalPelajaran diganti TeacherSchedule
+const TeacherScheduleWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return <TeacherSchedule userData={userData} onNavigate={navigate} />;
 };
@@ -74,25 +76,43 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ SETUP AUTO-SYNC & EXPOSE DB (DEV ONLY)
+  useEffect(() => {
+    // Setup auto-sync untuk online/offline
+    setupAutoSync();
+    console.log("🔄 Auto-sync initialized");
+
+    // Expose db ke window untuk testing (DEV ONLY!)
+    if (process.env.NODE_ENV === "development") {
+      window.testDB = db;
+      console.log("💾 Database exposed to: window.testDB");
+      console.log("📖 Usage examples:");
+      console.log("  await window.testDB.student_notes.toArray()");
+      console.log("  await window.testDB.student_notes.count()");
+      console.log("  await window.testDB.attendance.toArray()");
+      console.log("  await window.testDB.grades.toArray()");
+    }
+  }, []);
+
   // ✅ CHECK SESSION DARI LOCALSTORAGE
   useEffect(() => {
     const checkSession = async () => {
       try {
         const sessionData = localStorage.getItem("userSession");
-        
+
         if (!sessionData) {
-          console.log('No session found');
+          console.log("No session found");
           setUser(null);
           setLoading(false);
           return;
         }
 
         const session = JSON.parse(sessionData);
-        
+
         // ✅ CEK APAKAH SESSION MASIH VALID (belum expired)
         const currentTime = Date.now();
         if (session.expiryTime && currentTime > session.expiryTime) {
-          console.log('Session expired');
+          console.log("Session expired");
           localStorage.removeItem("userSession");
           setUser(null);
           setLoading(false);
@@ -101,13 +121,13 @@ function App() {
 
         // ✅ SESSION VALID - Fetch user data terbaru dari database
         const { data: userData, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.id)
+          .from("users")
+          .select("*")
+          .eq("id", session.id)
           .single();
 
         if (error || !userData) {
-          console.error('User not found in database:', error);
+          console.error("User not found in database:", error);
           localStorage.removeItem("userSession");
           setUser(null);
           setLoading(false);
@@ -126,14 +146,13 @@ function App() {
           tahun_ajaran: userData.tahun_ajaran,
           is_active: userData.is_active,
           loginTime: session.loginTime,
-          expiryTime: session.expiryTime
+          expiryTime: session.expiryTime,
         };
 
-        console.log('Session restored:', completeUserData.username);
+        console.log("Session restored:", completeUserData.username);
         setUser(completeUserData);
-
       } catch (error) {
-        console.error('Session check error:', error);
+        console.error("Session check error:", error);
         localStorage.removeItem("userSession");
         setUser(null);
       } finally {
@@ -149,13 +168,13 @@ function App() {
     try {
       // Fetch complete data dari database
       const { data: dbUserData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userData.id)
+        .from("users")
+        .select("*")
+        .eq("id", userData.id)
         .single();
 
       if (error) {
-        console.error('Error fetching user data:', error);
+        console.error("Error fetching user data:", error);
         setUser(userData);
         return;
       }
@@ -171,17 +190,16 @@ function App() {
         tahun_ajaran: dbUserData.tahun_ajaran,
         is_active: dbUserData.is_active,
         loginTime: userData.loginTime || Date.now(),
-        expiryTime: userData.expiryTime || (Date.now() + 24 * 60 * 60 * 1000)
+        expiryTime: userData.expiryTime || Date.now() + 24 * 60 * 60 * 1000,
       };
 
-      console.log('Login success:', completeUserData.username);
+      console.log("Login success:", completeUserData.username);
       setUser(completeUserData);
 
       // ✅ SIMPAN KE LOCALSTORAGE (ini yang bikin tetap login setelah refresh)
       localStorage.setItem("userSession", JSON.stringify(completeUserData));
-
     } catch (error) {
-      console.error('Login success handler error:', error);
+      console.error("Login success handler error:", error);
       setUser(userData);
     }
   };
@@ -189,11 +207,11 @@ function App() {
   // ✅ HANDLE LOGOUT
   const handleLogout = async () => {
     try {
-      console.log('Logging out...');
+      console.log("Logging out...");
       localStorage.removeItem("userSession");
       setUser(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       localStorage.removeItem("userSession");
       setUser(null);
     }
@@ -201,7 +219,7 @@ function App() {
 
   // Render dashboard based on role
   const renderDashboard = (userData) => {
-    if (userData.role === 'admin') {
+    if (userData.role === "admin") {
       return <AdminDashboard userData={userData} />;
     } else {
       return <TeacherDashboard userData={userData} />;
@@ -235,7 +253,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Dashboard Route */}
           <Route
             path="/dashboard"
@@ -249,7 +267,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Students Route */}
           <Route
             path="/students"
@@ -263,7 +281,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Attendance Route */}
           <Route
             path="/attendance"
@@ -277,7 +295,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Teachers Route */}
           <Route
             path="/teachers"
@@ -291,7 +309,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Grades Route */}
           <Route
             path="/grades"
@@ -305,7 +323,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Catatan Siswa Route */}
           <Route
             path="/catatan-siswa"
@@ -326,14 +344,14 @@ function App() {
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <TeacherScheduleWithNavigation userData={user} /> // ← PERUBAHAN
+                  <TeacherScheduleWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
               )
             }
           />
-          
+
           {/* SPMB Route */}
           <Route
             path="/spmb"
@@ -347,7 +365,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Reports Route */}
           <Route
             path="/reports"
@@ -361,7 +379,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Settings Route */}
           <Route
             path="/settings"
@@ -375,7 +393,7 @@ function App() {
               )
             }
           />
-          
+
           {/* Monitor Sistem Route */}
           <Route
             path="/monitor-sistem"
@@ -389,13 +407,13 @@ function App() {
               )
             }
           />
-          
+
           {/* Root redirect */}
           <Route
             path="/"
             element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
           />
-          
+
           {/* Catch all */}
           <Route
             path="*"

@@ -12,8 +12,20 @@ import {
   Calculator,
   Search,
   Upload,
+  WifiOff,
+  RefreshCw,
 } from "lucide-react";
 import { ImportModal, exportToExcel } from "./GradesExport";
+
+// ===== PWA OFFLINE IMPORTS =====
+import {
+  saveWithSync,
+  syncPendingData,
+  getDataWithFallback,
+} from "../offlineSync";
+import { useSyncStatus } from "../hooks/useSyncStatus";
+import SyncStatusBadge from "../components/SyncStatusBadge";
+// ===============================
 
 // Compact Stats Card Component
 const StatsCard = ({ icon: Icon, number, label, color }) => {
@@ -183,6 +195,22 @@ const Grades = ({ userData: initialUserData }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // ===== PWA: Sync Status Hook =====
+  const { isOnline, pendingCount, isSyncing } = useSyncStatus();
+
+  // ===== PWA: Auto-sync saat online =====
+  useEffect(() => {
+    if (isOnline && pendingCount > 0) {
+      syncPendingData()
+        .then(() => {
+          console.log("✅ Auto-sync completed");
+        })
+        .catch((err) => {
+          console.error("❌ Auto-sync failed:", err);
+        });
+    }
+  }, [isOnline, pendingCount]);
+
   useEffect(() => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
@@ -345,13 +373,12 @@ const Grades = ({ userData: initialUserData }) => {
         return;
       }
 
-      const { data: allGrades, error: gradesError } = await supabase
-        .from("nilai")
-        .select("*")
-        .eq("kelas", parseInt(selectedClass))
-        .eq("mata_pelajaran", selectedSubject);
-
-      if (gradesError) throw gradesError;
+      // ===== PWA: Load dengan Fallback =====
+      const allGrades = await getDataWithFallback("grades", (query) =>
+        query
+          .eq("kelas", parseInt(selectedClass))
+          .eq("mata_pelajaran", selectedSubject)
+      );
 
       const gradeTypes = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
 
@@ -417,6 +444,7 @@ const Grades = ({ userData: initialUserData }) => {
     }
   };
 
+  // ===== PWA: Load Students dengan Fallback =====
   const loadStudents = async (showNotification = true) => {
     if (!selectedClass || !selectedSubject || !selectedType) {
       if (showNotification) {
@@ -456,14 +484,13 @@ const Grades = ({ userData: initialUserData }) => {
         return;
       }
 
-      const { data: gradesData, error: gradesError } = await supabase
-        .from("nilai")
-        .select("*")
-        .eq("kelas", parseInt(selectedClass))
-        .eq("mata_pelajaran", selectedSubject)
-        .eq("jenis_nilai", selectedType);
-
-      if (gradesError) throw gradesError;
+      // Load grades dengan fallback
+      const gradesData = await getDataWithFallback("grades", (query) =>
+        query
+          .eq("kelas", parseInt(selectedClass))
+          .eq("mata_pelajaran", selectedSubject)
+          .eq("jenis_nilai", selectedType)
+      );
 
       const combinedData = studentsData.map((student) => {
         const existingGrade = gradesData?.find(
@@ -504,6 +531,7 @@ const Grades = ({ userData: initialUserData }) => {
     }
   }, [selectedClass, selectedSubject, selectedType]);
 
+  // ===== PWA: REFACTORED SAVE FUNCTION =====
   const saveGrades = async () => {
     if (students.length === 0) {
       showMessage("Tidak ada data untuk disimpan!", "error");
@@ -520,15 +548,18 @@ const Grades = ({ userData: initialUserData }) => {
       return;
     }
 
-    const isConfirmed = window.confirm(
-      `Apakah Anda yakin ingin menyimpan ${dataToSave.length} nilai siswa?\n\n` +
-        `Kelas: ${selectedClass}\n` +
-        `Mata Pelajaran: ${selectedSubject}\n` +
-        `Jenis Nilai: ${selectedType}`
-    );
+    // Skip confirmation jika offline
+    if (isOnline) {
+      const isConfirmed = window.confirm(
+        `Apakah Anda yakin ingin menyimpan ${dataToSave.length} nilai siswa?\n\n` +
+          `Kelas: ${selectedClass}\n` +
+          `Mata Pelajaran: ${selectedSubject}\n` +
+          `Jenis Nilai: ${selectedType}`
+      );
 
-    if (!isConfirmed) {
-      return;
+      if (!isConfirmed) {
+        return;
+      }
     }
 
     setSaving(true);
@@ -546,17 +577,28 @@ const Grades = ({ userData: initialUserData }) => {
         };
       });
 
-      const { error } = await supabase.from("nilai").upsert(finalData, {
+      // Gunakan saveWithSync untuk offline-first
+      const result = await saveWithSync("grades", finalData, {
+        upsert: true,
         onConflict: "nisn,mata_pelajaran,jenis_nilai",
       });
 
-      if (error) throw error;
+      if (result.success) {
+        if (result.synced) {
+          showMessage(
+            `✅ ${finalData.length} nilai berhasil disimpan dan diperbarui!`
+          );
+        } else {
+          showMessage(
+            `💾 ${finalData.length} nilai disimpan offline. Akan disinkronkan saat online.`,
+            "offline"
+          );
+        }
 
-      showMessage(
-        `${finalData.length} nilai berhasil disimpan dan diperbarui!`
-      );
-
-      await loadStudents(false);
+        await loadStudents(false);
+      } else {
+        throw new Error(result.error || "Gagal menyimpan data");
+      }
     } catch (error) {
       console.error("Error saving grades:", error);
       showMessage("Error menyimpan data: " + error.message, "error");
@@ -594,16 +636,23 @@ const Grades = ({ userData: initialUserData }) => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
+      {/* ===== PWA: Sync Status Badge ===== */}
+      <SyncStatusBadge />
+
       {message.text && (
         <div
           className={`p-4 rounded-lg ${
             message.type === "error"
               ? "bg-red-50 border border-red-200 text-red-700"
+              : message.type === "offline"
+              ? "bg-orange-50 border border-orange-200 text-orange-700"
               : "bg-green-50 border border-green-200 text-green-700"
           }`}>
           <div className="flex items-center gap-2">
             {message.type === "error" ? (
               <AlertCircle size={20} />
+            ) : message.type === "offline" ? (
+              <WifiOff size={20} />
             ) : (
               <CheckCircle size={20} />
             )}
@@ -737,7 +786,7 @@ const Grades = ({ userData: initialUserData }) => {
 
           <button
             onClick={saveGrades}
-            disabled={saving || students.length === 0 || showRekap}
+            disabled={saving || isSyncing || students.length === 0 || showRekap}
             className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
             title={
               showRekap
@@ -746,12 +795,12 @@ const Grades = ({ userData: initialUserData }) => {
                 ? "Pilih kelas, mata pelajaran, dan jenis nilai"
                 : "Simpan nilai siswa"
             }>
-            {saving ? (
+            {saving || isSyncing ? (
               <Loader className="animate-spin" size={18} />
             ) : (
               <Save size={18} />
             )}
-            {saving ? "Menyimpan..." : "Simpan Nilai"}
+            {saving || isSyncing ? "Menyimpan..." : "Simpan Nilai"}
           </button>
 
           <button

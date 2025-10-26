@@ -8,17 +8,19 @@ const db = new Dexie("SekolahPasirpogorDB");
 db.version(1).stores({
   // Table presensi
   attendance:
-    "++id, student_id, date, status, note, sync_status, created_at, supabase_id",
+    "++id, student_id, date, status, note, sync_status, sync_operation, created_at, updated_at, deleted_at, supabase_id",
 
   // Table nilai
   grades:
-    "++id, student_id, subject, grade, semester, sync_status, created_at, supabase_id",
+    "++id, student_id, subject, grade, semester, sync_status, sync_operation, created_at, updated_at, deleted_at, supabase_id",
 
   // Table catatan siswa
   student_notes:
-    "++id, student_id, note, date, teacher_id, sync_status, created_at, supabase_id",
+    "++id, student_id, note, date, teacher_id, category, sync_status, sync_operation, created_at, updated_at, deleted_at, supabase_id",
 
-  // Bisa ditambah table lain kalau perlu
+  // Bisa ditambah table lain kalau perlu:
+  // students: "++id, nisn, name, class, ...",
+  // teachers: "++id, nip, name, subject, ...",
 });
 
 export default db;

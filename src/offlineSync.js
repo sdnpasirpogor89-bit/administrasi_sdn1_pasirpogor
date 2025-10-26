@@ -3,7 +3,7 @@ import db from "./db";
 import { supabase } from "./supabaseClient";
 
 /**
- * Save data dengan auto sync (offline-first)
+ * CREATE - Save data dengan auto sync (offline-first)
  * @param {string} table - Nama table (attendance, grades, student_notes)
  * @param {object} data - Data yang mau disimpan
  */
@@ -13,6 +13,7 @@ export const saveWithSync = async (table, data) => {
     const localId = await db[table].add({
       ...data,
       sync_status: "pending", // Belum sync ke cloud
+      sync_operation: "create", // Operasi: create
       created_at: new Date().toISOString(),
     });
 
@@ -50,11 +51,121 @@ export const saveWithSync = async (table, data) => {
 };
 
 /**
- * Sync semua data yang pending ke Supabase
+ * UPDATE - Update data dengan auto sync
+ * @param {string} table - Nama table
+ * @param {number} localId - ID lokal di IndexedDB
+ * @param {object} updates - Data yang mau diupdate
+ */
+export const updateWithSync = async (table, localId, updates) => {
+  try {
+    // 1. Ambil data existing dari lokal
+    const existing = await db[table].get(localId);
+
+    if (!existing) {
+      throw new Error("Data tidak ditemukan");
+    }
+
+    // 2. Update di database lokal
+    await db[table].update(localId, {
+      ...updates,
+      sync_status: "pending",
+      sync_operation: "update",
+      updated_at: new Date().toISOString(),
+    });
+
+    console.log(`✅ Data updated lokal (ID: ${localId})`);
+
+    // 3. Coba sync ke Supabase
+    try {
+      const supabaseId = existing.supabase_id;
+
+      if (supabaseId) {
+        // Sudah pernah sync, update by supabase_id
+        const { error } = await supabase
+          .from(table)
+          .update(updates)
+          .eq("id", supabaseId);
+
+        if (!error) {
+          await db[table].update(localId, { sync_status: "synced" });
+          console.log(`✅ Update berhasil sync ke cloud`);
+        }
+      } else {
+        // Belum pernah sync, tandai pending
+        console.log("⏳ Data belum pernah sync, akan diupdate saat sync");
+      }
+    } catch (syncError) {
+      console.log("📡 Offline - Update akan disync saat online");
+    }
+
+    return { success: true, id: localId };
+  } catch (error) {
+    console.error("❌ Error update data:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * DELETE - Hapus data dengan auto sync
+ * @param {string} table - Nama table
+ * @param {number} localId - ID lokal di IndexedDB
+ */
+export const deleteWithSync = async (table, localId) => {
+  try {
+    // 1. Ambil data existing
+    const existing = await db[table].get(localId);
+
+    if (!existing) {
+      throw new Error("Data tidak ditemukan");
+    }
+
+    // 2. Tandai sebagai deleted (soft delete di lokal)
+    await db[table].update(localId, {
+      sync_status: "pending",
+      sync_operation: "delete",
+      deleted_at: new Date().toISOString(),
+    });
+
+    console.log(`✅ Data marked for deletion (ID: ${localId})`);
+
+    // 3. Coba hapus di Supabase
+    try {
+      const supabaseId = existing.supabase_id;
+
+      if (supabaseId) {
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq("id", supabaseId);
+
+        if (!error) {
+          // Hapus permanent dari lokal setelah berhasil sync
+          await db[table].delete(localId);
+          console.log(`✅ Delete berhasil sync ke cloud`);
+        }
+      } else {
+        // Data belum pernah sync, langsung hapus dari lokal
+        await db[table].delete(localId);
+        console.log(`✅ Data lokal dihapus (belum pernah sync)`);
+      }
+    } catch (syncError) {
+      console.log("📡 Offline - Delete akan disync saat online");
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error delete data:", error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * SYNC - Sync semua data yang pending ke Supabase
  */
 export const syncPendingData = async () => {
   const tables = ["attendance", "grades", "student_notes"];
   let totalSynced = 0;
+  let totalErrors = 0;
 
   console.log("🔄 Mulai sync data pending...");
 
@@ -72,24 +183,84 @@ export const syncPendingData = async () => {
 
       for (const item of pendingData) {
         try {
+          const operation = item.sync_operation || "create";
+
           // Hapus field yang gak perlu dikirim ke Supabase
-          const { id, sync_status, supabase_id, ...cleanData } = item;
+          const {
+            id,
+            sync_status,
+            sync_operation,
+            supabase_id,
+            deleted_at,
+            ...cleanData
+          } = item;
 
-          const { data, error } = await supabase
-            .from(table)
-            .insert(cleanData)
-            .select();
+          if (operation === "create") {
+            // CREATE: Insert data baru
+            const { data, error } = await supabase
+              .from(table)
+              .insert(cleanData)
+              .select();
 
-          if (!error && data && data.length > 0) {
-            // Update status jadi synced
-            await db[table].update(item.id, {
-              sync_status: "synced",
-              supabase_id: data[0].id,
-            });
-            totalSynced++;
-            console.log(`  ✅ Synced: ${item.id} → ${data[0].id}`);
+            if (!error && data && data.length > 0) {
+              await db[table].update(item.id, {
+                sync_status: "synced",
+                supabase_id: data[0].id,
+              });
+              totalSynced++;
+              console.log(`  ✅ Created: ${item.id} → ${data[0].id}`);
+            }
+          } else if (operation === "update") {
+            // UPDATE: Update data existing
+            if (item.supabase_id) {
+              const { error } = await supabase
+                .from(table)
+                .update(cleanData)
+                .eq("id", item.supabase_id);
+
+              if (!error) {
+                await db[table].update(item.id, { sync_status: "synced" });
+                totalSynced++;
+                console.log(`  ✅ Updated: ${item.id}`);
+              }
+            } else {
+              // Belum ada supabase_id, create dulu
+              const { data, error } = await supabase
+                .from(table)
+                .insert(cleanData)
+                .select();
+
+              if (!error && data && data.length > 0) {
+                await db[table].update(item.id, {
+                  sync_status: "synced",
+                  supabase_id: data[0].id,
+                });
+                totalSynced++;
+                console.log(`  ✅ Created (was update): ${item.id}`);
+              }
+            }
+          } else if (operation === "delete") {
+            // DELETE: Hapus data
+            if (item.supabase_id) {
+              const { error } = await supabase
+                .from(table)
+                .delete()
+                .eq("id", item.supabase_id);
+
+              if (!error) {
+                await db[table].delete(item.id);
+                totalSynced++;
+                console.log(`  ✅ Deleted: ${item.id}`);
+              }
+            } else {
+              // Gak ada di cloud, langsung hapus lokal
+              await db[table].delete(item.id);
+              totalSynced++;
+              console.log(`  ✅ Deleted (local only): ${item.id}`);
+            }
           }
         } catch (err) {
+          totalErrors++;
           console.log(`  ⚠️ Gagal sync item ${item.id}:`, err.message);
         }
       }
@@ -98,12 +269,14 @@ export const syncPendingData = async () => {
     }
   }
 
-  console.log(`✅ Sync selesai! Total: ${totalSynced} data`);
-  return totalSynced;
+  console.log(
+    `✅ Sync selesai! Synced: ${totalSynced}, Errors: ${totalErrors}`
+  );
+  return { synced: totalSynced, errors: totalErrors };
 };
 
 /**
- * Get data dengan fallback ke local (kalau offline)
+ * GET - Ambil data dengan fallback ke local (kalau offline)
  * @param {string} table - Nama table
  * @param {object} filter - Filter data (opsional)
  */
@@ -128,7 +301,9 @@ export const getDataWithFallback = async (table, filter = {}) => {
   }
 
   // Fallback: ambil dari database lokal
-  let localData = await db[table].toArray();
+  let localData = await db[table]
+    .filter((item) => !item.deleted_at) // Skip yang sudah dihapus
+    .toArray();
 
   // Apply filter manual
   Object.keys(filter).forEach((key) => {
@@ -140,7 +315,7 @@ export const getDataWithFallback = async (table, filter = {}) => {
 };
 
 /**
- * Get jumlah data pending sync
+ * GET PENDING COUNT - Hitung jumlah data pending sync
  */
 export const getPendingCount = async () => {
   const tables = ["attendance", "grades", "student_notes"];
@@ -155,4 +330,26 @@ export const getPendingCount = async () => {
   }
 
   return total;
+};
+
+/**
+ * CHECK ONLINE STATUS
+ */
+export const isOnline = () => {
+  return navigator.onLine;
+};
+
+/**
+ * AUTO SYNC - Setup listener untuk auto-sync saat online
+ */
+export const setupAutoSync = () => {
+  window.addEventListener("online", async () => {
+    console.log("🌐 Online! Memulai auto-sync...");
+    const result = await syncPendingData();
+    console.log(`📊 Auto-sync result:`, result);
+  });
+
+  window.addEventListener("offline", () => {
+    console.log("📡 Offline mode - data akan disimpan lokal");
+  });
 };
