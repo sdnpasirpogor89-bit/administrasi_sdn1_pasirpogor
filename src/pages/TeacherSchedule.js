@@ -14,226 +14,135 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react";
-import TeacherScheduleExcel from "./TeacherScheduleExcel";
 
 const JAM_SCHEDULE = {
   Senin: {
-    1: { start: "07:00", end: "08:00" },
-    2: { start: "08:00", end: "08:40" },
-    3: { start: "08:40", end: "09:20" },
-    4: { start: "09:20", end: "10:00" },
-    5: { start: "10:30", end: "11:05" },
-    6: { start: "11:05", end: "11:40" },
-    7: { start: "11:40", end: "12:15" },
-    8: { start: "13:00", end: "13:35" },
-    9: { start: "13:35", end: "14:10" },
+    1: { start: "07:00", end: "07:36" },
+    2: { start: "07:35", end: "08:10" },
+    "2b": { start: "08:10", end: "08:45" },
+    3: { start: "08:45", end: "09:20" },
+    4: { start: "09:35", end: "10:10" },
+    5: { start: "10:10", end: "10:45" },
+    6: { start: "11:00", end: "11:35" },
+    7: { start: "11:35", end: "12:10" },
+    8: { start: "12:10", end: "12:45" },
   },
   Selasa: {
-    1: { start: "07:00", end: "07:40" },
-    2: { start: "07:40", end: "08:20" },
-    3: { start: "08:20", end: "09:00" },
-    4: { start: "09:00", end: "09:40" },
-    5: { start: "10:10", end: "10:50" },
-    6: { start: "10:50", end: "11:30" },
-    7: { start: "11:30", end: "12:10" },
-    8: { start: "13:00", end: "13:35" },
-    9: { start: "13:35", end: "14:10" },
+    1: { start: "07:00", end: "07:36" },
+    2: { start: "07:35", end: "08:10" },
+    "2b": { start: "08:10", end: "08:45" },
+    3: { start: "08:45", end: "09:20" },
+    4: { start: "09:35", end: "10:10" },
+    5: { start: "10:10", end: "10:45" },
+    6: { start: "11:00", end: "11:35" },
+    7: { start: "11:35", end: "12:10" },
+    8: { start: "12:10", end: "12:45" },
   },
   Rabu: {
-    1: { start: "07:00", end: "07:40" },
-    2: { start: "07:40", end: "08:20" },
-    3: { start: "08:20", end: "09:00" },
-    4: { start: "09:00", end: "09:40" },
-    5: { start: "10:10", end: "10:50" },
-    6: { start: "10:50", end: "11:30" },
-    7: { start: "11:30", end: "12:10" },
-    8: { start: "13:00", end: "13:35" },
-    9: { start: "13:35", end: "14:10" },
+    1: { start: "07:00", end: "07:36" },
+    2: { start: "07:35", end: "08:10" },
+    "2b": { start: "08:10", end: "08:45" },
+    3: { start: "08:45", end: "09:20" },
+    4: { start: "09:35", end: "10:10" },
+    5: { start: "10:10", end: "10:45" },
+    6: { start: "11:00", end: "11:35" },
+    7: { start: "11:35", end: "12:10" },
+    8: { start: "12:10", end: "12:45" },
   },
   Kamis: {
-    1: { start: "07:00", end: "07:40" },
-    2: { start: "07:40", end: "08:20" },
-    3: { start: "08:20", end: "09:00" },
-    4: { start: "09:00", end: "09:40" },
-    5: { start: "10:10", end: "10:50" },
-    6: { start: "10:50", end: "11:30" },
-    7: { start: "11:30", end: "12:10" },
-    8: { start: "13:00", end: "13:35" },
-    9: { start: "13:35", end: "14:10" },
+    1: { start: "07:00", end: "07:36" },
+    2: { start: "07:35", end: "08:10" },
+    "2b": { start: "08:10", end: "08:45" },
+    3: { start: "08:45", end: "09:20" },
+    4: { start: "09:35", end: "10:10" },
+    5: { start: "10:10", end: "10:45" },
+    6: { start: "11:00", end: "11:35" },
+    7: { start: "11:35", end: "12:10" },
+    8: { start: "12:10", end: "12:45" },
   },
   Jumat: {
-    1: { start: "07:00", end: "07:30" },
-    2: { start: "07:30", end: "08:00" },
-    3: { start: "08:00", end: "08:30" },
-    4: { start: "08:30", end: "09:00" },
-    5: { start: "09:30", end: "10:00" },
-    6: { start: "10:00", end: "10:30" },
+    1: { start: "07:00", end: "07:36" },
+    2: { start: "07:35", end: "08:10" },
+    "2b": { start: "08:10", end: "08:45" },
+    3: { start: "08:45", end: "09:20" },
+    4: { start: "09:35", end: "10:10" },
+    5: { start: "10:10", end: "10:45" },
+    6: { start: "11:00", end: "11:35" },
+    7: { start: "11:35", end: "12:10" },
+  },
+  Sabtu: {
+    1: { start: "07:00", end: "07:36" },
+    2: { start: "07:35", end: "08:10" },
+    "2b": { start: "08:10", end: "08:45" },
+    3: { start: "08:45", end: "09:20" },
+    4: { start: "09:35", end: "10:10" },
+    5: { start: "10:10", end: "10:45" },
+    6: { start: "11:00", end: "11:35" },
+    7: { start: "11:35", end: "12:10" },
   },
 };
 
-const TeacherSchedule = ({ user }) => {
+const SUBJECTS = [
+  "Bahasa Indonesia",
+  "Bahasa Inggris",
+  "Bahasa Sunda",
+  "Matematika",
+  "IPAS",
+  "Pendidikan Pancasila",
+  "Seni Budaya",
+  "Pendidikan Agama Islam",
+  "PJOK",
+];
+
+const ClassSchedule = ({ user }) => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [classes, setClasses] = useState([]);
   const [viewMode, setViewMode] = useState("grid");
+
+  const classId = user?.kelas || "1"; // Ambil kelas dari user yang login
 
   const [formData, setFormData] = useState({
     day: "Senin",
     start_period: "1",
     end_period: "1",
+    subject: "",
     class_id: "",
   });
 
-  const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+  const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
   useEffect(() => {
-    if (user && user.id) {
+    if (user && user.kelas) {
       fetchSchedules();
-      fetchClasses();
     }
   }, [user]);
 
   const fetchSchedules = async () => {
+    if (!user || !user.kelas) {
+      setError("User belum login atau tidak memiliki kelas");
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("teacher_schedules")
+        .from("class_schedules")
         .select("*")
-        .eq("teacher_id", user.id)
+        .eq("class_id", user.kelas)
         .order("day")
         .order("start_time");
 
       if (error) throw error;
       setSchedules(data || []);
     } catch (err) {
+      console.error('Fetch error:', err);
       setError("Gagal memuat jadwal: " + err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ✅ FETCH CLASSES - ambil id dan grade
-  const fetchClasses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("classes")
-        .select("id, grade")
-        .eq("is_active", true)
-        .order("id");
-      if (error) throw error;
-      setClasses(data || []);
-    } catch (err) {
-      console.error("Error fetching classes:", err);
-    }
-  };
-
-  // ✅ FUNGSI BARU UNTUK SIMPAN DATA IMPORT
-  const saveImportedSchedules = async (importedSchedules) => {
-    try {
-      // Hapus jadwal lama dulu
-      const { error: deleteError } = await supabase
-        .from("teacher_schedules")
-        .delete()
-        .eq("teacher_id", user.id);
-
-      if (deleteError) throw deleteError;
-
-      // Insert jadwal baru
-      const { error: insertError } = await supabase
-        .from("teacher_schedules")
-        .insert(importedSchedules);
-
-      if (insertError) throw insertError;
-
-      return {
-        success: true,
-        message: `Berhasil menyimpan ${importedSchedules.length} jadwal`,
-      };
-    } catch (error) {
-      throw new Error("Gagal menyimpan jadwal import: " + error.message);
-    }
-  };
-
-  const handleExportToExcel = async () => {
-    try {
-      const result = await TeacherScheduleExcel.exportToExcel(
-        schedules,
-        user,
-        days
-      );
-
-      if (result.success) {
-        setSuccess(result.message);
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(result.message);
-        setTimeout(() => setError(null), 3000);
-      }
-    } catch (err) {
-      setError("Gagal export ke Excel: " + err.message);
-      setTimeout(() => setError(null), 3000);
-    }
-  };
-
-  const handleImportFromExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    try {
-      // ✅ FIX: Kirim user.id yang benar
-      const result = await TeacherScheduleExcel.importFromExcel(file, user.id);
-
-      if (result.success) {
-        // ✅ SIMPAN KE DATABASE JIKA ADA DATA
-        if (result.schedules && result.schedules.length > 0) {
-          const saveResult = await saveImportedSchedules(result.schedules);
-          if (saveResult.success) {
-            setSuccess(`${result.message} ${saveResult.message}`);
-          } else {
-            setError(saveResult.message);
-          }
-        } else {
-          setSuccess(result.message);
-        }
-
-        // ✅ SET TIMEOUT UNTUK SEMUA KASUS
-        setTimeout(() => {
-          setSuccess(null);
-          setError(null);
-        }, 4000);
-
-        fetchSchedules(); // Refresh data
-      } else {
-        setError(result.message);
-        setTimeout(() => setError(null), 4000);
-      }
-    } catch (err) {
-      setError("Gagal import dari Excel: " + err.message);
-    } finally {
-      setLoading(false);
-      event.target.value = "";
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      // ✅ FIX: Kirim user object, bukan kosong
-      const result = await TeacherScheduleExcel.downloadTemplate(user);
-      if (result.success) {
-        setSuccess(result.message);
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(result.message);
-        setTimeout(() => setError(null), 3000);
-      }
-    } catch (err) {
-      setError("Gagal download template: " + err.message);
-      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -312,6 +221,7 @@ const TeacherSchedule = ({ user }) => {
         day: schedule.day,
         start_period: startPeriod,
         end_period: endPeriod,
+        subject: schedule.subject,
         class_id: schedule.class_id,
       });
     } else {
@@ -320,7 +230,8 @@ const TeacherSchedule = ({ user }) => {
         day: "Senin",
         start_period: "1",
         end_period: "1",
-        class_id: "",
+        subject: "",
+        class_id: user?.kelas || "",
       });
     }
     setShowModal(true);
@@ -344,13 +255,18 @@ const TeacherSchedule = ({ user }) => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.class_id) {
-      setError("Kelas harus dipilih");
+    if (!formData.subject) {
+      setError("Mata pelajaran harus dipilih");
       return;
     }
 
     if (parseInt(formData.start_period) > parseInt(formData.end_period)) {
       setError("Jam mulai harus lebih awal dari jam selesai");
+      return;
+    }
+
+    if (!user || !user.kelas) {
+      setError("Data user tidak valid");
       return;
     }
 
@@ -365,22 +281,37 @@ const TeacherSchedule = ({ user }) => {
         day: formData.day,
         start_time: startTime,
         end_time: endTime,
-        class_id: formData.class_id,
+        subject: formData.subject,
+        class_id: user.kelas,
         teacher_id: user.id,
       };
 
+      console.log('Saving schedule:', scheduleData); // Debug
+
       if (editingId) {
-        const { error } = await supabase
-          .from("teacher_schedules")
+        const { data, error } = await supabase
+          .from("class_schedules")
           .update(scheduleData)
-          .eq("id", editingId);
-        if (error) throw error;
+          .eq("id", editingId)
+          .select();
+        
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Update result:', data);
         setSuccess("Jadwal berhasil diperbarui");
       } else {
-        const { error } = await supabase
-          .from("teacher_schedules")
-          .insert(scheduleData);
-        if (error) throw error;
+        const { data, error } = await supabase
+          .from("class_schedules")
+          .insert([scheduleData])
+          .select();
+        
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        console.log('Insert result:', data);
         setSuccess("Jadwal berhasil ditambahkan");
       }
 
@@ -388,6 +319,7 @@ const TeacherSchedule = ({ user }) => {
       fetchSchedules();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
+      console.error('Submit error:', err);
       setError("Gagal menyimpan jadwal: " + err.message);
     } finally {
       setLoading(false);
@@ -400,7 +332,7 @@ const TeacherSchedule = ({ user }) => {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from("teacher_schedules")
+        .from("class_schedules")
         .delete()
         .eq("id", id);
       if (error) throw error;
@@ -414,54 +346,6 @@ const TeacherSchedule = ({ user }) => {
     }
   };
 
-  const getTodaySchedules = () => {
-    const today = days[new Date().getDay() - 1] || "Senin";
-    return schedules.filter((s) => s.day === today);
-  };
-
-  // ✅ FUNCTION GROUP YANG BENER
-  // ✅ FUNCTION GROUP YANG FIX - TOLERANCE ISTIRAHAT
-  const getGroupedTodaySchedules = () => {
-    const todaySchedules = getTodaySchedules();
-    if (todaySchedules.length === 0) return [];
-
-    // Urutkan berdasarkan waktu mulai
-    const sorted = [...todaySchedules].sort((a, b) =>
-      a.start_time.localeCompare(b.start_time)
-    );
-
-    const groups = [];
-    let currentGroup = [sorted[0]];
-
-    for (let i = 1; i < sorted.length; i++) {
-      const current = sorted[i];
-      const last = currentGroup[currentGroup.length - 1];
-
-      // Cek apakah kelas sama dan waktu berurutan (dengan tolerance istirahat)
-      const isSameClass = current.class_id === last.class_id;
-
-      // Convert waktu ke minutes untuk cek berurutan
-      const lastEndMinutes = timeToMinutes(last.end_time);
-      const currentStartMinutes = timeToMinutes(current.start_time);
-      const isConsecutive =
-        Math.abs(currentStartMinutes - lastEndMinutes) <= 30; // ✅ Tolerance 30 menit untuk istirahat
-
-      if (isSameClass && isConsecutive) {
-        currentGroup.push(current);
-      } else {
-        groups.push(currentGroup);
-        currentGroup = [current];
-      }
-    }
-
-    // Push group terakhir
-    if (currentGroup.length > 0) {
-      groups.push(currentGroup);
-    }
-
-    return groups;
-  };
-
   const getAvailablePeriods = () => {
     return Object.keys(JAM_SCHEDULE[formData.day] || {});
   };
@@ -471,7 +355,7 @@ const TeacherSchedule = ({ user }) => {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* ✅ CARD 1: Header Info */}
+        {/* Header */}
         <div className="mb-4 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -479,20 +363,18 @@ const TeacherSchedule = ({ user }) => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
-                JADWAL MENGAJAR
+                JADWAL PELAJARAN KELAS {user?.kelas || "-"}
               </h1>
               <p className="text-slate-600 font-semibold">
-                {user?.full_name || "Loading..."} - TAHUN AJARAN 2025/2026
-                SEMESTER GANJIL
+                {user?.full_name || "Loading..."} - TAHUN AJARAN 2025/2026 SEMESTER GANJIL
               </p>
             </div>
           </div>
         </div>
 
-        {/* ✅ CARD 2: Action Buttons - FIXED: satu warna & lebar dinamis */}
+        {/* Action Buttons */}
         <div className="mb-8 bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <div className="flex gap-3 justify-center flex-wrap">
-            {/* Tampilan Grid - TOMBOL TERPISAH */}
             <button
               onClick={() => setViewMode("grid")}
               className={`flex-1 min-w-[140px] px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border transition-all ${
@@ -504,7 +386,6 @@ const TeacherSchedule = ({ user }) => {
               Tampilan Grid
             </button>
 
-            {/* Tampilan List - TOMBOL TERPISAH */}
             <button
               onClick={() => setViewMode("list")}
               className={`flex-1 min-w-[140px] px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border transition-all ${
@@ -516,7 +397,6 @@ const TeacherSchedule = ({ user }) => {
               Tampilan List
             </button>
 
-            {/* Tambah Jadwal */}
             <button
               onClick={() => handleOpenModal()}
               className="flex-1 min-w-[140px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-slate-300 transition-all">
@@ -524,33 +404,17 @@ const TeacherSchedule = ({ user }) => {
               Tambah Jadwal
             </button>
 
-            {/* Export Excel */}
             <button
-              onClick={handleExportToExcel}
               disabled={schedules.length === 0}
               className="flex-1 min-w-[140px] bg-slate-100 hover:bg-slate-200 disabled:bg-gray-100 disabled:text-gray-400 text-slate-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-slate-300 transition-all">
               <Download className="w-5 h-5" />
-              Export Jadwal
+              Export Excel
             </button>
 
-            {/* Download Template */}
-            <button
-              onClick={handleDownloadTemplate}
-              className="flex-1 min-w-[140px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-slate-300 transition-all">
-              <Download className="w-5 h-5" />
-              Template Excel
-            </button>
-
-            {/* Import Excel */}
             <label className="flex-1 min-w-[140px] bg-slate-100 hover:bg-slate-200 cursor-pointer text-slate-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-slate-300 transition-all">
               <Upload className="w-5 h-5" />
-              Import Jadwal
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleImportFromExcel}
-                className="hidden"
-              />
+              Import Excel
+              <input type="file" accept=".xlsx,.xls" className="hidden" />
             </label>
           </div>
         </div>
@@ -574,107 +438,12 @@ const TeacherSchedule = ({ user }) => {
           </div>
         )}
 
-        {/* Today's Schedule - COMPACT VERSION - TIDAK DIUBAH */}
-        {getGroupedTodaySchedules().length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-4 mb-8">
-            <h2 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600" />
-              Jadwal Hari Ini ({days[new Date().getDay() - 1] || "Senin"})
-            </h2>
-
-            {/* ✅ GRID DINAMIS BERDASARKAN JUMLAH CARD */}
-            <div
-              className={`
-      grid gap-2
-      ${
-        getGroupedTodaySchedules().length <= 4
-          ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
-          : ""
-      }
-      ${
-        getGroupedTodaySchedules().length > 4 &&
-        getGroupedTodaySchedules().length <= 6
-          ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3"
-          : ""
-      }
-      ${
-        getGroupedTodaySchedules().length > 6
-          ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
-          : ""
-      }
-    `}>
-              {getGroupedTodaySchedules().map((group, idx) => {
-                const first = group[0];
-                const last = group[group.length - 1];
-                const totalJP = group.length;
-
-                return (
-                  <div
-                    key={idx}
-                    className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 p-2 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-indigo-600 mb-1">
-                          {first.start_time} - {last.end_time}
-                        </p>
-                        <p className="font-semibold text-slate-800 text-sm mb-1">
-                          Kelas {first.class_id}
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          {totalJP}JP
-                          {group.length > 1 &&
-                            ` (${
-                              findPeriodsByTimeRange(
-                                first.day,
-                                first.start_time,
-                                first.end_time
-                              )[0]
-                            }-${findPeriodsByTimeRange(
-                              last.day,
-                              last.start_time,
-                              last.end_time
-                            ).pop()})`}
-                        </p>
-                      </div>
-                      <div className="flex gap-1 ml-1">
-                        <button
-                          onClick={() => handleOpenModal(first)}
-                          className="text-blue-600 hover:text-blue-700 p-0.5"
-                          title="Edit">
-                          <Edit className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                `Hapus sesi Kelas ${first.class_id}?`
-                              )
-                            ) {
-                              group.forEach((schedule) =>
-                                handleDelete(schedule.id)
-                              );
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-700 p-0.5"
-                          title="Hapus Sesi">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Schedule View - TIDAK DIUBAH SEPERTI PERINTAH */}
+        {/* Schedule View */}
         {viewMode === "grid" ? (
-          // GRID VIEW - TIDAK DIUBAH
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-6 border-b border-slate-200">
               <h2 className="text-lg font-bold text-slate-800">
-                Jadwal Mengajar Mingguan (Tampilan Grid)
+                Jadwal Pelajaran Kelas {user?.kelas || "-"} (Tampilan Grid)
               </h2>
             </div>
 
@@ -692,7 +461,7 @@ const TeacherSchedule = ({ user }) => {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-blue-800 text-white">
+                    <tr className="bg-red-600 text-white">
                       <th className="p-4 border border-slate-600 text-center font-semibold">
                         JAM KE
                       </th>
@@ -716,84 +485,63 @@ const TeacherSchedule = ({ user }) => {
                             <td className="p-3 border border-slate-300 text-center font-semibold bg-slate-100">
                               {period}
                             </td>
-                            <td
-                              className={`p-3 border border-slate-300 text-center text-sm ${
-                                period === "1"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-slate-100"
-                              }`}>
+                            <td className="p-3 border border-slate-300 text-center text-sm bg-slate-100">
                               {time.start} - {time.end}
-                              {period === "1" && (
-                                <div className="text-xs mt-1 text-yellow-600">
-                                  Senin: 07:00-08:00
-                                </div>
-                              )}
                             </td>
                             {days.map((day) => (
                               <td
                                 key={day}
                                 className="p-3 border border-slate-300 text-center">
-                                {day === "Jumat" ? (
-                                  <div className="flex flex-col items-center">
-                                    {scheduleGrid[day] &&
-                                    scheduleGrid[day][period] ? (
-                                      <>
-                                        <span className="font-bold text-slate-800 text-lg">
-                                          {scheduleGrid[day][period].class_id}
-                                        </span>
-                                        <div className="text-xs mt-1 text-blue-600 font-medium">
-                                          {JAM_SCHEDULE.Jumat[period]?.start}-
-                                          {JAM_SCHEDULE.Jumat[period]?.end}
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <span className="text-slate-400 text-lg">
-                                          -
-                                        </span>
-                                        <div className="text-xs mt-1 text-blue-600 font-medium">
-                                          {JAM_SCHEDULE.Jumat[period]?.start}-
-                                          {JAM_SCHEDULE.Jumat[period]?.end}
-                                        </div>
-                                      </>
-                                    )}
+                                {scheduleGrid[day] &&
+                                scheduleGrid[day][period] ? (
+                                  <div className="relative group">
+                                    <span className="font-bold text-slate-800 text-sm">
+                                      {scheduleGrid[day][period].subject}
+                                    </span>
+                                    <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 flex gap-1">
+                                      <button
+                                        onClick={() =>
+                                          handleOpenModal(scheduleGrid[day][period])
+                                        }
+                                        className="text-blue-600 hover:text-blue-700 p-1">
+                                        <Edit className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleDelete(scheduleGrid[day][period].id)
+                                        }
+                                        className="text-red-600 hover:text-red-700 p-1">
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
                                   </div>
-                                ) : scheduleGrid[day] &&
-                                  scheduleGrid[day][period] ? (
-                                  <span className="font-bold text-slate-800 text-lg">
-                                    {scheduleGrid[day][period].class_id}
-                                  </span>
                                 ) : day === "Senin" && period === "1" ? (
-                                  <span className="font-bold text-slate-800 text-lg">
+                                  <span className="font-bold text-slate-800 italic">
                                     UPACARA
                                   </span>
                                 ) : (
-                                  <span className="text-slate-400 text-lg">
-                                    -
-                                  </span>
+                                  <span className="text-slate-400">-</span>
                                 )}
                               </td>
                             ))}
                           </tr>
 
-                          {/* ISTIRAHAT PAGI SETELAH JP 4 */}
-                          {period === "4" && (
+                          {period === "3" && (
                             <tr>
                               <td
-                                colSpan={7}
-                                className="p-3 bg-orange-50 border border-orange-200 text-center text-orange-800 font-semibold">
-                                🕛 ISTIRAHAT {time.end} - 10:10 (30 menit)
+                                colSpan={8}
+                                className="p-3 bg-yellow-100 border border-yellow-200 text-center text-yellow-800 font-semibold italic">
+                                09:20 - 09:35 ISTIRAHAT
                               </td>
                             </tr>
                           )}
 
-                          {/* ISTIRAHAT SIANG SETELAH JP 7 (HANYA SENIN-KAMIS) */}
-                          {period === "7" && (
+                          {period === "5" && (
                             <tr>
                               <td
-                                colSpan={7}
-                                className="p-3 bg-orange-50 border border-orange-200 text-center text-orange-800 font-semibold">
-                                🕛 ISTIRAHAT 12:10 - 13:00 (50 menit)
+                                colSpan={8}
+                                className="p-3 bg-yellow-100 border border-yellow-200 text-center text-yellow-800 font-semibold italic">
+                                10:45 - 11:00 ISTIRAHAT
                               </td>
                             </tr>
                           )}
@@ -803,20 +551,18 @@ const TeacherSchedule = ({ user }) => {
                   </tbody>
                 </table>
                 <div className="p-4 bg-slate-50 border-t border-slate-200">
-                  <p className="text-sm md:text-base text-slate-600 text-center font-bold italic">
-                    *Waktu Mengikuti Jadwal Masing-Masing Hari. Senin & Jumat
-                    Memiliki Waktu Khusus.
+                  <p className="text-sm md:text-base text-slate-600 text-center font-bold">
+                    NB: Jadwal ini sebagai contoh perhitungan jumlah JP setiap mata pelajarannya setiap minggunya. Silahkan sesuaikan dengan sekolah masing-masing.
                   </p>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          // LIST VIEW - TIDAK DIUBAH
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-6 border-b border-slate-200">
               <h2 className="text-lg font-bold text-slate-800">
-                Jadwal Mengajar Mingguan (Tampilan List)
+                Jadwal Pelajaran Kelas {user?.kelas || "-"} (Tampilan List)
               </h2>
             </div>
 
@@ -833,7 +579,7 @@ const TeacherSchedule = ({ user }) => {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-blue-800 text-white">
+                  <thead className="bg-red-600 text-white">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-semibold">
                         Hari
@@ -845,7 +591,7 @@ const TeacherSchedule = ({ user }) => {
                         Waktu
                       </th>
                       <th className="px-6 py-3 text-left text-sm font-semibold">
-                        Kelas
+                        Mata Pelajaran
                       </th>
                       <th className="px-6 py-3 text-left text-sm font-semibold">
                         Aksi
@@ -890,7 +636,7 @@ const TeacherSchedule = ({ user }) => {
                               {schedule.start_time} - {schedule.end_time}
                             </td>
                             <td className="px-6 py-4 font-semibold text-slate-800">
-                              Kelas {schedule.class_id}
+                              {schedule.subject}
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex gap-2">
@@ -920,12 +666,10 @@ const TeacherSchedule = ({ user }) => {
         )}
       </div>
 
-      {/* Modal - TIDAK DIUBAH */}
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          {/* ✅ LEBAR & TINGGI SEIMBANG - SQUARE LIKE */}
-          <div className="bg-white rounded-lg shadow-xl w-[500px] h-[500px] p-6 flex flex-col">
-            {/* HEADER */}
+          <div className="bg-white rounded-lg shadow-xl w-[500px] h-[520px] p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-slate-800">
                 {editingId ? "Edit Jadwal" : "Tambah Jadwal"}
@@ -937,86 +681,82 @@ const TeacherSchedule = ({ user }) => {
               </button>
             </div>
 
-            {/* FORM - FLEXIBLE HEIGHT */}
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-              <div className="space-y-4 flex-1">
+            <div className="flex-1 flex flex-col space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Hari
+                </label>
+                <select
+                  name="day"
+                  value={formData.day}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                  {days.map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Hari
+                    Dari Jam Ke
                   </label>
                   <select
-                    name="day"
-                    value={formData.day}
+                    name="start_period"
+                    value={formData.start_period}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg">
-                    {days.map((day) => (
-                      <option key={day} value={day}>
-                        {day}
+                    {getAvailablePeriods().map((jam) => (
+                      <option key={jam} value={jam}>
+                        Jam {jam}
                       </option>
                     ))}
                   </select>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Dari Jam Ke
-                    </label>
-                    <select
-                      name="start_period"
-                      value={formData.start_period}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg">
-                      {getAvailablePeriods().map((jam) => (
-                        <option key={jam} value={jam}>
-                          Jam {jam}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Sampai Jam Ke
-                    </label>
-                    <select
-                      name="end_period"
-                      value={formData.end_period}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg">
-                      {getAvailablePeriods().map((jam) => (
-                        <option
-                          key={jam}
-                          value={jam}
-                          disabled={
-                            parseInt(jam) < parseInt(formData.start_period)
-                          }>
-                          Jam {jam}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Kelas
+                    Sampai Jam Ke
                   </label>
                   <select
-                    name="class_id"
-                    value={formData.class_id}
+                    name="end_period"
+                    value={formData.end_period}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg">
-                    <option value="">Pilih Kelas</option>
-                    {classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        Kelas {cls.id}
+                    {getAvailablePeriods().map((jam) => (
+                      <option
+                        key={jam}
+                        value={jam}
+                        disabled={
+                          parseInt(jam) < parseInt(formData.start_period)
+                        }>
+                        Jam {jam}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* BUTTONS - DI BAWAH */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Mata Pelajaran
+                </label>
+                <select
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                  <option value="">Pilih Mata Pelajaran</option>
+                  {SUBJECTS.map((subject) => (
+                    <option key={subject} value={subject}>
+                      {subject}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex gap-3 pt-6 mt-auto">
                 <button
                   type="button"
@@ -1025,13 +765,14 @@ const TeacherSchedule = ({ user }) => {
                   Batal
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:bg-indigo-400">
                   {loading ? "Menyimpan..." : "Simpan"}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -1039,4 +780,4 @@ const TeacherSchedule = ({ user }) => {
   );
 };
 
-export default TeacherSchedule;
+export default ClassSchedule;
