@@ -1,26 +1,23 @@
-// src/db.js
+// src/db.js - FIXED VERSION ✅
+// FILE INI CUMA SCHEMA DEXIE AJA!
 import Dexie from "dexie";
 
-// Bikin database lokal
 const db = new Dexie("SekolahPasirpogorDB");
 
-// Define tables (sesuaikan dengan table Supabase lo)
+// ✅ Schema FIXED - Match dengan Supabase + Tambah index sync_status
 db.version(1).stores({
-  // Table presensi
+  // Table attendance - Match dengan Supabase structure
   attendance:
-    "++id, student_id, date, status, note, sync_status, sync_operation, created_at, updated_at, deleted_at, supabase_id",
+    "++id, tanggal, nisn, nama_siswa, kelas, status, keterangan, guru_input, jenis_presensi, sync_status, sync_operation, supabase_id, created_at, updated_at, deleted_at",
 
-  // Table nilai
+  // Table nilai - Match dengan Supabase structure
   grades:
-    "++id, student_id, subject, grade, semester, sync_status, sync_operation, created_at, updated_at, deleted_at, supabase_id",
+    "++id, nisn, nama_siswa, kelas, mata_pelajaran, jenis_nilai, nilai, guru_input, tanggal, sync_status, sync_operation, supabase_id, created_at, updated_at, deleted_at",
 
-  // Table catatan siswa
+  // Table catatan_siswa - Match dengan Supabase structure
   student_notes:
-    "++id, student_id, note, date, teacher_id, category, sync_status, sync_operation, created_at, updated_at, deleted_at, supabase_id",
-
-  // Bisa ditambah table lain kalau perlu:
-  // students: "++id, nisn, name, class, ...",
-  // teachers: "++id, nip, name, subject, ...",
+    "++id, student_id, teacher_id, class_id, academic_year, semester, category, label, note_content, action_taken, sync_status, sync_operation, supabase_id, created_at, updated_at, deleted_at",
 });
 
+// ✅ PENTING: Export default db
 export default db;

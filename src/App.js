@@ -1,5 +1,5 @@
-// src/App.js - FINAL VERSION DENGAN OFFLINE SYNC
-import React, { useState, useEffect } from "react";
+// src/App.js - FINAL VERSION DENGAN OFFLINE SYNC - FIXED
+import React, { useState, useEffect, useMemo } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -9,8 +9,8 @@ import {
 } from "react-router-dom";
 import "./index.css";
 import { supabase } from "./supabaseClient";
-import db from "./db"; // ← TAMBAH: Import database
-import { setupAutoSync } from "./offlineSync"; // ← TAMBAH: Import auto-sync
+import db from "./db";
+import { setupAutoSync } from "./offlineSync";
 import Login from "./components/Login";
 import Layout from "./components/Layout";
 import AdminDashboard from "./components/AdminDashboard";
@@ -26,50 +26,77 @@ import Report from "./reports/Reports";
 import Setting from "./setting/setting";
 import MonitorSistem from "./system/MonitorSistem";
 
-// Wrapper components
+// ===== ✅ FIX: Wrapper components dengan useMemo =====
 const ReportWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <Report userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <Report userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const StudentsWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <Students userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <Students userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const AttendanceWithNavigation = ({ currentUser }) => {
   const navigate = useNavigate();
-  return <Attendance currentUser={currentUser} onNavigate={navigate} />;
+  return useMemo(
+    () => <Attendance currentUser={currentUser} onNavigate={navigate} />,
+    [currentUser]
+  );
 };
 
 const GradesWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <Grades userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <Grades userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const CatatanSiswaWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <CatatanSiswa userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <CatatanSiswa userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const TeacherScheduleWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <TeacherSchedule userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <TeacherSchedule userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const SPMBWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <SPMB userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <SPMB userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const SettingWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <Setting userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <Setting userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 const MonitorSistemWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
-  return <MonitorSistem userData={userData} onNavigate={navigate} />;
+  return useMemo(
+    () => <MonitorSistem userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
 };
 
 function App() {
@@ -78,11 +105,9 @@ function App() {
 
   // ✅ SETUP AUTO-SYNC & EXPOSE DB (DEV ONLY)
   useEffect(() => {
-    // Setup auto-sync untuk online/offline
     setupAutoSync();
     console.log("🔄 Auto-sync initialized");
 
-    // Expose db ke window untuk testing (DEV ONLY!)
     if (process.env.NODE_ENV === "development") {
       window.testDB = db;
       console.log("💾 Database exposed to: window.testDB");
@@ -166,7 +191,6 @@ function App() {
   // ✅ HANDLE LOGIN SUCCESS
   const handleLoginSuccess = async (userData) => {
     try {
-      // Fetch complete data dari database
       const { data: dbUserData, error } = await supabase
         .from("users")
         .select("*")
@@ -196,7 +220,6 @@ function App() {
       console.log("Login success:", completeUserData.username);
       setUser(completeUserData);
 
-      // ✅ SIMPAN KE LOCALSTORAGE (ini yang bikin tetap login setelah refresh)
       localStorage.setItem("userSession", JSON.stringify(completeUserData));
     } catch (error) {
       console.error("Login success handler error:", error);

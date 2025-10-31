@@ -24,15 +24,15 @@ const ReportTeacher = ({ user = {} }) => {
   const [activeTab, setActiveTab] = useState("students");
   const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState("list");
-  
-  // 🆕 STATE UNTUK ATTENDANCE VIEW MODE
+
+  // STATE UNTUK ATTENDANCE VIEW MODE
   const [attendanceViewMode, setAttendanceViewMode] = useState("detail"); // "detail" atau "recap"
 
   const [filters, setFilters] = useState({
     kelas: user.role === "guru_kelas" ? user.kelas : "",
     status: "aktif",
     jenisKelamin: "semua",
-    bulan: new Date().getMonth() + 1, // 🔄 Default: bulan ini (1-12)
+    bulan: new Date().getMonth() + 1, // Default: bulan ini (1-12)
     tahun: new Date().getFullYear(),
     statusPresensi: "semua",
     jenisPresensi: "semua",
@@ -41,7 +41,7 @@ const ReportTeacher = ({ user = {} }) => {
     siswa: "",
     kategori: "semua",
     periode: "bulan_ini",
-    dibuatOleh: "semua",
+    // ✅ HAPUS "dibuatOleh" - tidak perlu untuk guru_kelas
   });
 
   // Determine report type based on activeTab and viewMode
@@ -49,7 +49,7 @@ const ReportTeacher = ({ user = {} }) => {
     if (activeTab === "grades" && viewMode === "grid") {
       return "grades-grid";
     }
-    // 🆕 HANDLE ATTENDANCE RECAP
+    // HANDLE ATTENDANCE RECAP
     if (activeTab === "attendance" && attendanceViewMode === "recap") {
       return "attendance-recap";
     }
@@ -74,12 +74,16 @@ const ReportTeacher = ({ user = {} }) => {
     console.log("Attendance View Mode:", attendanceViewMode);
     console.log("Report Type:", getReportType());
     console.log("Filters:", filters);
+    console.log("🔐 User Info:");
+    console.log("  - ID:", user.id);
+    console.log("  - Role:", user.role);
+    console.log("  - Kelas:", user.kelas, "(type:", typeof user.kelas, ")");
     console.log("Loading:", loading);
     console.log("Error:", error);
     console.log("Data Count:", data?.length);
     console.log("Data Sample:", data?.[0]);
     console.groupEnd();
-  }, [activeTab, viewMode, attendanceViewMode, loading, data, error]);
+  }, [activeTab, viewMode, attendanceViewMode, loading, data, error, user]);
 
   // Tabs configuration
   const tabs = [
@@ -93,7 +97,7 @@ const ReportTeacher = ({ user = {} }) => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setViewMode("list");
-    // 🔄 Reset attendance view mode ke "detail" saat pindah tab
+    // Reset attendance view mode ke "detail" saat pindah tab
     if (tabId !== "attendance") {
       setAttendanceViewMode("detail");
     }
@@ -112,7 +116,7 @@ const ReportTeacher = ({ user = {} }) => {
     setViewMode(mode);
   };
 
-  // 🆕 Handle attendance view mode toggle
+  // Handle attendance view mode toggle
   const handleAttendanceViewModeToggle = (mode) => {
     setAttendanceViewMode(mode);
   };
@@ -166,10 +170,11 @@ const ReportTeacher = ({ user = {} }) => {
       case "attendance":
         return {
           ...baseConfig,
-          // 🔄 Ubah fields berdasarkan view mode
-          fields: attendanceViewMode === "recap"
-            ? ["kelas", "bulan", "tahun", "jenisPresensi"] // Rekap: tanpa filter status
-            : ["kelas", "bulan", "tahun", "statusPresensi", "jenisPresensi"], // Detail: dengan filter status
+          // Ubah fields berdasarkan view mode
+          fields:
+            attendanceViewMode === "recap"
+              ? ["kelas", "bulan", "tahun", "jenisPresensi"] // Rekap: tanpa filter status
+              : ["kelas", "bulan", "tahun", "statusPresensi", "jenisPresensi"], // Detail: dengan filter status
           locked: { kelas: user.role === "guru_kelas" },
           bulanOptions: [
             { value: 1, label: "Januari" },
@@ -221,47 +226,27 @@ const ReportTeacher = ({ user = {} }) => {
         };
 
       case "notes":
-        if (user.role === "guru_kelas") {
-          return {
-            ...baseConfig,
-            fields: ["siswa", "kategori", "periode", "dibuatOleh"],
-            kategoriOptions: [
-              { value: "semua", label: "Semua Kategori" },
-              { value: "akademik", label: "Akademik" },
-              { value: "perilaku", label: "Perilaku" },
-              { value: "prestasi", label: "Prestasi" },
-              { value: "kesehatan", label: "Kesehatan" },
-            ],
-            periodeOptions: [
-              { value: "minggu_ini", label: "Minggu Ini" },
-              { value: "bulan_ini", label: "Bulan Ini" },
-              { value: "semester", label: "Semester Ini" },
-              { value: "semua", label: "Semua Periode" },
-            ],
-            dibuatOlehOptions: [
-              { value: "semua", label: "Semua Guru" },
-              { value: "saya", label: "Saya Saja" },
-            ],
-          };
-        } else {
-          return {
-            ...baseConfig,
-            fields: ["kelas", "siswa", "kategori", "periode"],
-            kategoriOptions: [
-              { value: "semua", label: "Semua Kategori" },
-              { value: "akademik", label: "Akademik" },
-              { value: "perilaku", label: "Perilaku" },
-              { value: "prestasi", label: "Prestasi" },
-              { value: "kesehatan", label: "Kesehatan" },
-            ],
-            periodeOptions: [
-              { value: "minggu_ini", label: "Minggu Ini" },
-              { value: "bulan_ini", label: "Bulan Ini" },
-              { value: "semester", label: "Semester Ini" },
-              { value: "semua", label: "Semua Periode" },
-            ],
-          };
-        }
+        // ✅ PERBAIKAN: Hapus filter "dibuatOleh" untuk guru_kelas
+        // Catatan siswa = hanya catatan yang dibuat oleh guru_kelas itu sendiri
+        return {
+          ...baseConfig,
+          fields: ["siswa", "kategori", "periode"], // ✅ Hapus "dibuatOleh"
+          kategoriOptions: [
+            { value: "semua", label: "Semua Kategori" },
+            { value: "akademik", label: "Akademik" },
+            { value: "perilaku", label: "Perilaku" },
+            { value: "sosial", label: "Sosial" },
+            { value: "karakter", label: "Karakter" },
+            { value: "kesehatan", label: "Kesehatan" },
+          ],
+          periodeOptions: [
+            { value: "minggu_ini", label: "Minggu Ini" },
+            { value: "bulan_ini", label: "Bulan Ini" },
+            { value: "semester", label: "Semester Ini" },
+            { value: "semua", label: "Semua Periode" },
+          ],
+          // ✅ HAPUS dibuatOlehOptions - tidak perlu
+        };
 
       default:
         return baseConfig;
@@ -280,8 +265,7 @@ const ReportTeacher = ({ user = {} }) => {
               className="w-8 h-8 text-red-600"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+              stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -322,8 +306,7 @@ const ReportTeacher = ({ user = {} }) => {
           <svg
             className="w-5 h-5 text-blue-600 flex-shrink-0"
             fill="currentColor"
-            viewBox="0 0 20 20"
-          >
+            viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -357,8 +340,7 @@ const ReportTeacher = ({ user = {} }) => {
                           ? "border-blue-600 text-blue-600"
                           : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                       }
-                    `}
-                  >
+                    `}>
                     <Icon className="w-4 h-4" />
                     {tab.label}
                   </button>
@@ -371,15 +353,13 @@ const ReportTeacher = ({ user = {} }) => {
           <div className="border-b border-gray-200">
             <button
               onClick={() => setFilterCollapsed(!filterCollapsed)}
-              className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-            >
+              className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
               <div className="flex items-center gap-2">
                 <svg
                   className="w-5 h-5 text-gray-600"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -387,7 +367,9 @@ const ReportTeacher = ({ user = {} }) => {
                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
-                <span className="font-medium text-gray-900">Filter Laporan</span>
+                <span className="font-medium text-gray-900">
+                  Filter Laporan
+                </span>
               </div>
               {filterCollapsed ? (
                 <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -415,9 +397,9 @@ const ReportTeacher = ({ user = {} }) => {
         {/* Statistics Cards */}
         {!loading && !error && data && data.length > 0 && (
           <div className="mb-6">
-            <StatsCards 
-              type={activeTab} 
-              stats={stats} 
+            <StatsCards
+              type={activeTab}
+              stats={stats}
               userRole={user.role}
               viewMode={attendanceViewMode} // Pass attendance view mode
             />
@@ -436,12 +418,15 @@ const ReportTeacher = ({ user = {} }) => {
                   <span className="font-semibold text-gray-900">
                     {data?.length || 0}
                   </span>{" "}
-                  {attendanceViewMode === "recap" && activeTab === "attendance" ? "siswa" : "data"} ditemukan
+                  {attendanceViewMode === "recap" && activeTab === "attendance"
+                    ? "siswa"
+                    : "data"}{" "}
+                  ditemukan
                 </>
               )}
             </p>
 
-            {/* 🆕 View Mode Toggle - ATTENDANCE (Detail vs Rekap) */}
+            {/* View Mode Toggle - ATTENDANCE (Detail vs Rekap) */}
             {activeTab === "attendance" && (
               <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
                 <span className="text-xs text-gray-500 font-medium">
@@ -460,8 +445,7 @@ const ReportTeacher = ({ user = {} }) => {
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                  >
+                    `}>
                     <FileSpreadsheet className="w-4 h-4 inline-block mr-1" />
                     Detail
                   </button>
@@ -477,8 +461,7 @@ const ReportTeacher = ({ user = {} }) => {
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                  >
+                    `}>
                     <BarChart3 className="w-4 h-4 inline-block mr-1" />
                     Rekap
                   </button>
@@ -505,8 +488,7 @@ const ReportTeacher = ({ user = {} }) => {
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                  >
+                    `}>
                     <List className="w-4 h-4 inline-block mr-1" />
                     List
                   </button>
@@ -522,8 +504,7 @@ const ReportTeacher = ({ user = {} }) => {
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                  >
+                    `}>
                     <Grid3x3 className="w-4 h-4 inline-block mr-1" />
                     Grid
                   </button>
@@ -550,8 +531,7 @@ const ReportTeacher = ({ user = {} }) => {
                 className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -566,8 +546,7 @@ const ReportTeacher = ({ user = {} }) => {
                 <p className="text-red-700 text-sm">{error}</p>
                 <button
                   onClick={refetch}
-                  className="mt-2 px-3 py-1.5 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-                >
+                  className="mt-2 px-3 py-1.5 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors">
                   Coba Lagi
                 </button>
               </div>
@@ -582,7 +561,9 @@ const ReportTeacher = ({ user = {} }) => {
             type={activeTab}
             loading={loading}
             userRole={user.role}
-            viewMode={activeTab === "attendance" ? attendanceViewMode : viewMode}
+            viewMode={
+              activeTab === "attendance" ? attendanceViewMode : viewMode
+            }
           />
 
           {/* Empty State */}
@@ -593,8 +574,7 @@ const ReportTeacher = ({ user = {} }) => {
                   className="w-8 h-8 text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -607,7 +587,9 @@ const ReportTeacher = ({ user = {} }) => {
                 Tidak Ada Data
               </h3>
               <p className="text-gray-600 mb-1">
-                Tidak ada data yang sesuai dengan filter yang dipilih.
+                {activeTab === "notes"
+                  ? "Belum ada catatan siswa yang dibuat untuk kelas ini"
+                  : "Tidak ada data yang sesuai dengan filter yang dipilih"}
               </p>
               {activeTab === "grades" && viewMode === "grid" && (
                 <p className="text-sm text-gray-500">

@@ -1,3 +1,6 @@
+// src/pages/Attendance.js - FULL FIXED VERSION ✅
+// COPY PASTE SELURUH FILE INI, REPLACE SEMUA ISI FILE ATTENDANCE.JS LO!
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Search,
@@ -367,14 +370,13 @@ const StudentCard = ({
   );
 };
 
-// Custom hook for attendance logic - DENGAN OFFLINE SYNC
+// Custom hook for attendance logic - DENGAN OFFLINE SYNC ✅ FIXED
 const useAttendance = (currentUser) => {
   const [studentsData, setStudentsData] = useState({});
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // ===== PWA: Sync Status Hook =====
   const { isOnline, pendingCount, isSyncing } = useSyncStatus();
 
   const loadStudentsData = useCallback(async () => {
@@ -435,16 +437,17 @@ const useAttendance = (currentUser) => {
     setAttendanceData(attendanceDataObj);
   }, []);
 
-  // ===== PWA: Load dengan Fallback =====
   const loadAttendanceForDate = useCallback(
     async (date, classNum) => {
       try {
-        const data = await getDataWithFallback("attendance", (query) =>
-          query
-            .eq("tanggal", date)
-            .eq("kelas", classNum)
-            .eq("guru_input", currentUser.username)
-        );
+        const { data, error } = await supabase
+          .from("attendance")
+          .select("*")
+          .eq("tanggal", date)
+          .eq("kelas", classNum)
+          .eq("guru_input", currentUser.username);
+
+        if (error) throw error;
 
         setAttendanceData((prev) => {
           const newAttendanceData = { ...prev };
@@ -537,7 +540,6 @@ const Attendance = ({
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
 
-  // ===== PWA: Auto-sync saat online =====
   useEffect(() => {
     if (isOnline && pendingCount > 0) {
       syncPendingData()
@@ -714,7 +716,6 @@ const Attendance = ({
     [currentUser.username]
   );
 
-  // ===== PWA: REFACTORED SAVE FUNCTION =====
   const saveAttendanceData = useCallback(
     async (classNum, date) => {
       try {
@@ -725,8 +726,29 @@ const Attendance = ({
           throw new Error("Tidak ada data attendance untuk disimpan");
         }
 
-        const attendanceRecords = Object.values(attendanceData[classNum]).map(
-          (student) => ({
+        if (isOnline) {
+          try {
+            const { error: deleteError } = await supabase
+              .from("attendance")
+              .delete()
+              .eq("tanggal", date)
+              .eq("kelas", classNum)
+              .eq("guru_input", currentUser.username);
+
+            if (deleteError) {
+              console.warn("Warning delete old data:", deleteError);
+            }
+          } catch (err) {
+            console.warn("Warning delete old data:", err);
+          }
+        }
+
+        const attendanceRecords = Object.values(attendanceData[classNum]);
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const student of attendanceRecords) {
+          const record = {
             tanggal: date,
             nisn: student.nisn,
             nama_siswa: student.name,
@@ -735,38 +757,40 @@ const Attendance = ({
             keterangan: student.note || "",
             guru_input: currentUser.username,
             jenis_presensi: getJenisPresensi(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-        );
+          };
 
-        const result = await saveWithSync("attendance", attendanceRecords, {
-          deleteCondition: {
-            tanggal: date,
-            kelas: classNum,
-            guru_input: currentUser.username,
-          },
-        });
+          const result = await saveWithSync("attendance", record);
 
-        if (result.success) {
-          const jenisText =
-            getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error("Failed to save:", student.name, result.error);
+          }
+        }
 
-          if (result.synced) {
+        const jenisText =
+          getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
+
+        if (errorCount === 0) {
+          if (isOnline) {
             showToast(
-              `✅ Presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
+              `✅ ${successCount} presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
             );
           } else {
             showToast(
-              `💾 Data disimpan offline. Akan disinkronkan saat online.`,
+              `💾 ${successCount} data disimpan offline. Akan disinkronkan saat online.`,
               "offline"
             );
           }
-
-          await loadAttendanceForDate(date, classNum);
         } else {
-          throw new Error(result.error || "Gagal menyimpan data");
+          showToast(
+            `⚠️ ${successCount} berhasil, ${errorCount} gagal disimpan`,
+            "error"
+          );
         }
+
+        await loadAttendanceForDate(date, classNum);
       } catch (error) {
         console.error("Error saving attendance:", error);
         showToast(`Error menyimpan data presensi: ${error.message}`, "error");
@@ -779,6 +803,7 @@ const Attendance = ({
       loadAttendanceForDate,
       currentUser.username,
       getJenisPresensi,
+      isOnline,
     ]
   );
 

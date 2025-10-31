@@ -531,7 +531,7 @@ const Grades = ({ userData: initialUserData }) => {
     }
   }, [selectedClass, selectedSubject, selectedType]);
 
-  // ===== PWA: REFACTORED SAVE FUNCTION =====
+  // ===== PWA: FIXED SAVE FUNCTION =====
   const saveGrades = async () => {
     if (students.length === 0) {
       showMessage("Tidak ada data untuk disimpan!", "error");
@@ -577,24 +577,71 @@ const Grades = ({ userData: initialUserData }) => {
         };
       });
 
-      // Gunakan saveWithSync untuk offline-first
-      const result = await saveWithSync("grades", finalData, {
-        upsert: true,
-        onConflict: "nisn,mata_pelajaran,jenis_nilai",
-      });
+      console.log("📤 Saving grades data:", finalData);
 
+      // ✅ FIXED: Gunakan saveWithSync yang auto-detect array
+      const result = await saveWithSync("grades", finalData);
+
+      console.log("📊 Save result:", result);
+
+      // ✅ FIXED: Handle result dengan benar
       if (result.success) {
-        if (result.synced) {
-          showMessage(
-            `✅ ${finalData.length} nilai berhasil disimpan dan diperbarui!`
-          );
+        if (result.batch) {
+          // Batch save result
+          if (result.synced) {
+            // Semua berhasil sync
+            showMessage(
+              `✅ ${result.syncedCount} nilai berhasil disimpan dan disinkronkan ke server!`,
+              "success"
+            );
+          } else if (result.syncedCount > 0) {
+            // Sebagian synced
+            showMessage(
+              `⚠️ ${result.syncedCount} nilai tersinkron, ${result.pendingCount} akan disinkronkan saat online.`,
+              "warning"
+            );
+          } else {
+            // Semua pending
+            if (result.online) {
+              showMessage(
+                `⚠️ ${result.success} nilai tersimpan lokal, gagal sync ke server. Akan dicoba lagi nanti.`,
+                "warning"
+              );
+            } else {
+              showMessage(
+                `💾 ${result.success} nilai disimpan offline. Akan disinkronkan saat online.`,
+                "offline"
+              );
+            }
+          }
+
+          if (result.failed > 0) {
+            console.error("Failed items:", result.errors);
+            showMessage(`❌ ${result.failed} nilai gagal disimpan!`, "error");
+          }
         } else {
-          showMessage(
-            `💾 ${finalData.length} nilai disimpan offline. Akan disinkronkan saat online.`,
-            "offline"
-          );
+          // Single save result (fallback)
+          if (result.synced) {
+            showMessage(
+              "✅ Nilai berhasil disimpan dan disinkronkan!",
+              "success"
+            );
+          } else if (result.success) {
+            if (result.online) {
+              showMessage(
+                "⚠️ Nilai tersimpan lokal, gagal sync ke server. Akan dicoba lagi nanti.",
+                "warning"
+              );
+            } else {
+              showMessage(
+                "💾 Nilai disimpan offline. Akan disinkronkan saat online.",
+                "offline"
+              );
+            }
+          }
         }
 
+        // Refresh data setelah save
         await loadStudents(false);
       } else {
         throw new Error(result.error || "Gagal menyimpan data");
@@ -644,14 +691,14 @@ const Grades = ({ userData: initialUserData }) => {
           className={`p-4 rounded-lg ${
             message.type === "error"
               ? "bg-red-50 border border-red-200 text-red-700"
-              : message.type === "offline"
+              : message.type === "offline" || message.type === "warning"
               ? "bg-orange-50 border border-orange-200 text-orange-700"
               : "bg-green-50 border border-green-200 text-green-700"
           }`}>
           <div className="flex items-center gap-2">
             {message.type === "error" ? (
               <AlertCircle size={20} />
-            ) : message.type === "offline" ? (
+            ) : message.type === "offline" || message.type === "warning" ? (
               <WifiOff size={20} />
             ) : (
               <CheckCircle size={20} />

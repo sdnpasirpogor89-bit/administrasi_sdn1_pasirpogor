@@ -12,6 +12,10 @@ import {
   Award,
   TrendingDown,
   BarChart3,
+  BookOpen,
+  Heart,
+  Shield,
+  Activity,
 } from "lucide-react";
 
 /**
@@ -19,8 +23,9 @@ import {
  * ✅ Minimalis & Clean dengan Pastel Colors
  * ✅ Dynamic per Tab & View Mode
  * ✅ Support Attendance Recap View
+ * ✅ FIXED: Notes Stats untuk Guru Kelas
  */
-const StatsCards = ({ type, stats, userRole, viewMode = 'detail' }) => {
+const StatsCards = ({ type, stats, userRole, viewMode = "detail" }) => {
   if (!stats || Object.keys(stats).length === 0) {
     return null;
   }
@@ -31,7 +36,7 @@ const StatsCards = ({ type, stats, userRole, viewMode = 'detail' }) => {
       case "students":
         return renderStudentCards(stats);
       case "attendance":
-        // 🆕 Check view mode untuk attendance
+        // Check view mode untuk attendance
         if (viewMode === "recap") {
           return renderAttendanceRecapCards(stats);
         }
@@ -62,27 +67,27 @@ const renderStudentCards = (stats) => {
     <>
       <MiniStatCard
         icon={<Users className="w-5 h-5" />}
-        label="Total Siswa"
-        value={stats.total || 0}
+        label="Total Siswa Aktif"
+        value={stats.totalSiswaAktif || 0}
         color="blue"
       />
       <MiniStatCard
         icon={<Users className="w-5 h-5" />}
         label="Laki-laki"
-        value={stats["Laki-laki"] || 0}
+        value={stats.siswaLaki || 0}
         color="indigo"
       />
       <MiniStatCard
         icon={<Users className="w-5 h-5" />}
         label="Perempuan"
-        value={stats["Perempuan"] || 0}
+        value={stats.siswaPerempuan || 0}
         color="pink"
       />
       <MiniStatCard
-        icon={<UserCheck className="w-5 h-5" />}
-        label="Aktif"
-        value={stats.aktif || 0}
-        color="green"
+        icon={<XCircle className="w-5 h-5" />}
+        label="Tidak Aktif"
+        value={stats.siswaTidakAktif || 0}
+        color={stats.siswaTidakAktif > 0 ? "red" : "green"}
       />
     </>
   );
@@ -128,16 +133,16 @@ const renderAttendanceCards = (stats) => {
 };
 
 // ========================================
-// 🆕 ATTENDANCE RECAP STATS
+// ATTENDANCE RECAP STATS
 // ========================================
 const renderAttendanceRecapCards = (stats) => {
   const rataRata = parseFloat(stats.rataRataKehadiran) || 0;
-  
+
   // Determine color based on average attendance
-  let avgColor = 'red';
-  if (rataRata >= 90) avgColor = 'green';
-  else if (rataRata >= 80) avgColor = 'blue';
-  else if (rataRata >= 70) avgColor = 'yellow';
+  let avgColor = "red";
+  if (rataRata >= 90) avgColor = "green";
+  else if (rataRata >= 80) avgColor = "blue";
+  else if (rataRata >= 70) avgColor = "yellow";
 
   return (
     <>
@@ -156,12 +161,12 @@ const renderAttendanceRecapCards = (stats) => {
         label="Rata-rata Kehadiran"
         value={`${stats.rataRataKehadiran || 0}%`}
         subtitle={
-          rataRata >= 90 
-            ? "Sangat Baik" 
-            : rataRata >= 80 
-            ? "Baik" 
-            : rataRata >= 70 
-            ? "Cukup" 
+          rataRata >= 90
+            ? "Sangat Baik"
+            : rataRata >= 80
+            ? "Baik"
+            : rataRata >= 70
+            ? "Cukup"
             : "Perlu Perhatian"
         }
         color={avgColor}
@@ -223,77 +228,76 @@ const renderGradeCards = (stats) => {
 };
 
 // ========================================
-// NOTES STATS
+// ✅ NOTES STATS - FIXED UNTUK GURU KELAS
 // ========================================
+/**
+ * Stats untuk Catatan Siswa
+ * - Total Catatan
+ * - Catatan Akademik
+ * - Catatan Perilaku
+ * - Catatan Karakter
+ *
+ * CATATAN: Semua data sudah pasti dari guru_kelas itu sendiri
+ * karena di backend sudah difilter by teacher_id
+ */
 const renderNotesCards = (stats, userRole) => {
-  if (userRole === "guru_kelas") {
-    return (
-      <>
-        <MiniStatCard
-          icon={<FileText className="w-5 h-5" />}
-          label="Total Catatan"
-          value={stats.total || 0}
-          color="blue"
-        />
-        <MiniStatCard
-          icon={<UserCheck className="w-5 h-5" />}
-          label="Dari Saya"
-          value={stats.dariSaya || 0}
-          color="green"
-        />
-        <MiniStatCard
-          icon={<Users className="w-5 h-5" />}
-          label="Dari Guru Lain"
-          value={stats.dariGuruLain || 0}
-          color="indigo"
-        />
-        <MiniStatCard
-          icon={<AlertCircle className="w-5 h-5" />}
-          label="Butuh Tindak Lanjut"
-          value={stats.butuhTindakLanjut || 0}
-          color="orange"
-        />
-      </>
-    );
-  } else {
-    // Guru Mapel
-    return (
-      <>
-        <MiniStatCard
-          icon={<FileText className="w-5 h-5" />}
-          label="Total Catatan"
-          value={stats.total || 0}
-          color="blue"
-        />
-        <MiniStatCard
-          icon={<Users className="w-5 h-5" />}
-          label="Kelas 1-3"
-          value={
-            (stats.perKelas?.[1] || 0) +
-            (stats.perKelas?.[2] || 0) +
-            (stats.perKelas?.[3] || 0)
-          }
-          color="green"
-        />
-        <MiniStatCard
-          icon={<Users className="w-5 h-5" />}
-          label="Kelas 4-6"
-          value={
-            (stats.perKelas?.[4] || 0) +
-            (stats.perKelas?.[5] || 0) +
-            (stats.perKelas?.[6] || 0)
-          }
-          color="indigo"
-        />
-        <MiniStatCard
-          icon={<AlertCircle className="w-5 h-5" />}
-          label="Butuh Tindak Lanjut"
-          value={stats.butuhTindakLanjut || 0}
-          color="orange"
-        />
-      </>
-    );
-  }
+  return (
+    <>
+      {/* Card 1: Total Catatan */}
+      <MiniStatCard
+        icon={<FileText className="w-5 h-5" />}
+        label="Total Catatan"
+        value={stats.totalCatatan || 0}
+        subtitle={userRole === "guru_kelas" ? "Catatan Anda" : undefined}
+        color="blue"
+      />
+
+      {/* Card 2: Catatan Akademik */}
+      <MiniStatCard
+        icon={<BookOpen className="w-5 h-5" />}
+        label="Akademik"
+        value={stats.catatanAkademik || 0}
+        subtitle={
+          stats.totalCatatan > 0
+            ? `${((stats.catatanAkademik / stats.totalCatatan) * 100).toFixed(
+                0
+              )}%`
+            : undefined
+        }
+        color="green"
+      />
+
+      {/* Card 3: Catatan Perilaku */}
+      <MiniStatCard
+        icon={<Shield className="w-5 h-5" />}
+        label="Perilaku"
+        value={stats.catatanPerilaku || 0}
+        subtitle={
+          stats.totalCatatan > 0
+            ? `${((stats.catatanPerilaku / stats.totalCatatan) * 100).toFixed(
+                0
+              )}%`
+            : undefined
+        }
+        color="orange"
+      />
+
+      {/* Card 4: Catatan Karakter */}
+      <MiniStatCard
+        icon={<Heart className="w-5 h-5" />}
+        label="Karakter"
+        value={stats.catatanKarakter || 0}
+        subtitle={
+          stats.totalCatatan > 0
+            ? `${((stats.catatanKarakter / stats.totalCatatan) * 100).toFixed(
+                0
+              )}%`
+            : undefined
+        }
+        color="purple"
+      />
+    </>
+  );
 };
 
 // ========================================
@@ -334,6 +338,14 @@ const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
       subtitle: "text-pink-600",
       border: "border-pink-200",
     },
+    purple: {
+      bg: "bg-gradient-to-br from-purple-50 to-purple-100",
+      icon: "text-purple-600 bg-white/80",
+      text: "text-purple-900",
+      label: "text-purple-700",
+      subtitle: "text-purple-600",
+      border: "border-purple-200",
+    },
     emerald: {
       bg: "bg-gradient-to-br from-emerald-50 to-emerald-100",
       icon: "text-emerald-600 bg-white/80",
@@ -373,7 +385,10 @@ const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
   return (
     <div
       className={`flex items-center gap-3 p-4 rounded-xl border ${colors.border} ${colors.bg} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}>
-      <div className={`p-2.5 rounded-lg ${colors.icon} shadow-sm flex-shrink-0`}>{icon}</div>
+      <div
+        className={`p-2.5 rounded-lg ${colors.icon} shadow-sm flex-shrink-0`}>
+        {icon}
+      </div>
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-medium ${colors.label} truncate`}>
           {label}
@@ -382,7 +397,8 @@ const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
           {formatValue(value)}
         </p>
         {subtitle && (
-          <p className={`text-xs font-medium ${colors.subtitle} truncate mt-0.5`}>
+          <p
+            className={`text-xs font-medium ${colors.subtitle} truncate mt-0.5`}>
             {subtitle}
           </p>
         )}

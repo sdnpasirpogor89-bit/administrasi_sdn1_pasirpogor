@@ -1,6 +1,6 @@
 // src/reports/useReportData.js
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../supabaseClient';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "../supabaseClient";
 
 /**
  * Custom Hook untuk fetch data laporan dari Supabase
@@ -11,14 +11,14 @@ export const useReportData = (reportType, filters = {}, user) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const cacheRef = useRef({});
   const abortControllerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     // Safety Check: Hentikan fetch jika user belum terload
-    if (!user || !user.role) { 
-      setError('User tidak ditemukan');
+    if (!user || !user.role) {
+      setError("User tidak ditemukan");
       return;
     }
 
@@ -26,11 +26,12 @@ export const useReportData = (reportType, filters = {}, user) => {
     const filtersKey = JSON.stringify(filters);
     const userKey = `${user.id}-${user.role}`;
     const cacheKey = `${reportType}-${filtersKey}-${userKey}`;
-    
+
     const cached = cacheRef.current[cacheKey];
     const now = Date.now();
-    
-    if (cached && (now - cached.timestamp < 300000)) { // 5 minutes cache
+
+    if (cached && now - cached.timestamp < 300000) {
+      // 5 minutes cache
       setData(cached.data);
       setLoading(false);
       return;
@@ -49,32 +50,31 @@ export const useReportData = (reportType, filters = {}, user) => {
       let result;
 
       switch (reportType) {
-        case 'students':
+        case "students":
           result = await fetchStudentsData(filters, user);
           break;
 
-        case 'grades':
+        case "grades":
           result = await fetchGradesData(filters, user);
           break;
 
-        case 'grades-grid':
+        case "grades-grid":
           result = await fetchGradesGridData(filters, user);
           break;
 
-        case 'attendance':
+        case "attendance":
           result = await fetchAttendanceData(filters, user);
           break;
 
-        // 🆕 ATTENDANCE RECAP (REKAPITULASI BULANAN)
-        case 'attendance-recap':
+        case "attendance-recap":
           result = await fetchAttendanceRecapData(filters, user);
           break;
 
-        case 'notes':
+        case "notes":
           result = await fetchNotesData(filters, user);
           break;
 
-        case 'teachers':
+        case "teachers":
           result = await fetchTeachersData(filters, user);
           break;
 
@@ -85,15 +85,15 @@ export const useReportData = (reportType, filters = {}, user) => {
       // Cache result
       cacheRef.current[cacheKey] = {
         data: result || [],
-        timestamp: now
+        timestamp: now,
       };
 
       setData(result || []);
     } catch (err) {
-      if (err.name === 'AbortError') return;
+      if (err.name === "AbortError") return;
 
-      console.error('Error fetching report data:', err);
-      setError(err.message || 'Gagal memuat data');
+      console.error("Error fetching report data:", err);
+      setError(err.message || "Gagal memuat data");
       setData([]);
     } finally {
       setLoading(false);
@@ -131,35 +131,35 @@ export const useReportData = (reportType, filters = {}, user) => {
 const fetchStudentsData = async (filters, user) => {
   try {
     let query = supabase
-      .from('students')
-      .select('*')
-      .order('nama_siswa', { ascending: true });
+      .from("students")
+      .select("*")
+      .order("nama_siswa", { ascending: true });
 
     // Role-based filtering
-    if (user.role === 'guru_kelas') {
-      query = query.eq('kelas', user.kelas);
+    if (user.role === "guru_kelas") {
+      query = query.eq("kelas", user.kelas);
     }
 
     // Filter by kelas
-    if (filters.kelas && filters.kelas !== '') {
-      query = query.eq('kelas', filters.kelas);
+    if (filters.kelas && filters.kelas !== "") {
+      query = query.eq("kelas", filters.kelas);
     }
 
     // Filter by status
-    if (filters.status && filters.status !== 'semua') {
-      const isActive = filters.status === 'aktif';
-      query = query.eq('is_active', isActive);
+    if (filters.status && filters.status !== "semua") {
+      const isActive = filters.status === "aktif";
+      query = query.eq("is_active", isActive);
     }
 
     // Filter by jenis kelamin
-    if (filters.jenisKelamin && filters.jenisKelamin !== 'semua') {
-      query = query.eq('jenis_kelamin', filters.jenisKelamin);
+    if (filters.jenisKelamin && filters.jenisKelamin !== "semua") {
+      query = query.eq("jenis_kelamin", filters.jenisKelamin);
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
-    
+
     return data || [];
   } catch (error) {
     throw new Error(`Gagal memuat data siswa: ${error.message}`);
@@ -175,35 +175,39 @@ const fetchStudentsData = async (filters, user) => {
 const fetchGradesData = async (filters, user) => {
   try {
     let query = supabase
-      .from('nilai')
-      .select('*')
-      .order('nama_siswa', { ascending: true });
+      .from("nilai")
+      .select("*")
+      .order("nama_siswa", { ascending: true });
 
     // Role-based filtering
-    if (user.role === 'guru_kelas') {
-      query = query.eq('kelas', user.kelas);
-    } else if (user.role === 'guru_mapel') {
-      query = query.eq('mata_pelajaran', user.mata_pelajaran);
+    if (user.role === "guru_kelas") {
+      query = query.eq("kelas", user.kelas);
+    } else if (user.role === "guru_mapel") {
+      query = query.eq("mata_pelajaran", user.mata_pelajaran);
     }
 
     // Filter by kelas
-    if (filters.kelas && filters.kelas !== '') {
-      query = query.eq('kelas', filters.kelas);
+    if (filters.kelas && filters.kelas !== "") {
+      query = query.eq("kelas", filters.kelas);
     }
 
     // Filter by mapel
-    if (filters.mapel && filters.mapel !== '') {
-      query = query.eq('mata_pelajaran', filters.mapel);
+    if (filters.mapel && filters.mapel !== "") {
+      query = query.eq("mata_pelajaran", filters.mapel);
     }
 
     // Filter by semester
-    if (filters.semester && filters.semester !== 'semua') {
-      if (filters.semester === 'ganjil') {
+    if (filters.semester && filters.semester !== "semua") {
+      if (filters.semester === "ganjil") {
         const year = new Date().getFullYear();
-        query = query.gte('tanggal', `${year}-07-01`).lte('tanggal', `${year}-12-31`);
-      } else if (filters.semester === 'genap') {
+        query = query
+          .gte("tanggal", `${year}-07-01`)
+          .lte("tanggal", `${year}-12-31`);
+      } else if (filters.semester === "genap") {
         const year = new Date().getFullYear();
-        query = query.gte('tanggal', `${year}-01-01`).lte('tanggal', `${year}-06-30`);
+        query = query
+          .gte("tanggal", `${year}-01-01`)
+          .lte("tanggal", `${year}-06-30`);
       }
     }
 
@@ -213,7 +217,7 @@ const fetchGradesData = async (filters, user) => {
 
     // Process data to get latest grade per student per subject
     const latestGrades = getLatestGrades(data || []);
-    
+
     return latestGrades;
   } catch (error) {
     throw new Error(`Gagal memuat data nilai: ${error.message}`);
@@ -227,63 +231,67 @@ const fetchGradesData = async (filters, user) => {
  */
 const fetchGradesGridData = async (filters, user) => {
   try {
-    console.log('🔍 fetchGradesGridData called with filters:', filters);
-    
+    console.log("🔍 fetchGradesGridData called with filters:", filters);
+
     // Fetch semua nilai (tidak hanya "Nilai Akhir")
     let query = supabase
-      .from('nilai')
-      .select('*')
-      .order('nama_siswa', { ascending: true });
+      .from("nilai")
+      .select("*")
+      .order("nama_siswa", { ascending: true });
 
     // Role-based filtering
-    if (user.role === 'guru_kelas') {
-      query = query.eq('kelas', user.kelas);
-      console.log('👨‍🏫 Guru Kelas filter: kelas =', user.kelas);
+    if (user.role === "guru_kelas") {
+      query = query.eq("kelas", user.kelas);
+      console.log("👨‍🏫 Guru Kelas filter: kelas =", user.kelas);
     }
 
     // Filter by kelas (jika ada di filter)
-    if (filters.kelas && filters.kelas !== '') {
-      query = query.eq('kelas', filters.kelas);
-      console.log('🏫 Kelas filter:', filters.kelas);
+    if (filters.kelas && filters.kelas !== "") {
+      query = query.eq("kelas", filters.kelas);
+      console.log("🏫 Kelas filter:", filters.kelas);
     }
 
     // Filter by semester
-    if (filters.semester && filters.semester !== 'semua') {
+    if (filters.semester && filters.semester !== "semua") {
       const year = new Date().getFullYear();
-      if (filters.semester === 'ganjil') {
-        query = query.gte('tanggal', `${year}-07-01`).lte('tanggal', `${year}-12-31`);
-        console.log('📅 Semester Ganjil:', `${year}-07-01 to ${year}-12-31`);
-      } else if (filters.semester === 'genap') {
-        query = query.gte('tanggal', `${year}-01-01`).lte('tanggal', `${year}-06-30`);
-        console.log('📅 Semester Genap:', `${year}-01-01 to ${year}-06-30`);
+      if (filters.semester === "ganjil") {
+        query = query
+          .gte("tanggal", `${year}-07-01`)
+          .lte("tanggal", `${year}-12-31`);
+        console.log("📅 Semester Ganjil:", `${year}-07-01 to ${year}-12-31`);
+      } else if (filters.semester === "genap") {
+        query = query
+          .gte("tanggal", `${year}-01-01`)
+          .lte("tanggal", `${year}-06-30`);
+        console.log("📅 Semester Genap:", `${year}-01-01 to ${year}-06-30`);
       }
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('❌ Supabase error:', error);
+      console.error("❌ Supabase error:", error);
       throw error;
     }
 
-    console.log('✅ Raw data from Supabase:', data?.length, 'records');
+    console.log("✅ Raw data from Supabase:", data?.length, "records");
 
     if (!data || data.length === 0) {
-      console.warn('⚠️ No data found for grades-grid');
+      console.warn("⚠️ No data found for grades-grid");
       return [];
     }
 
     // Get latest grades first (prioritize by jenis_nilai)
     const latestGrades = getLatestGrades(data);
-    console.log('📊 Latest grades:', latestGrades.length, 'records');
+    console.log("📊 Latest grades:", latestGrades.length, "records");
 
     // Transform ke grid format
     const gridData = transformToGridFormat(latestGrades);
-    console.log('🎯 Grid data:', gridData.length, 'students');
-    
+    console.log("🎯 Grid data:", gridData.length, "students");
+
     return gridData;
   } catch (error) {
-    console.error('❌ Error in fetchGradesGridData:', error);
+    console.error("❌ Error in fetchGradesGridData:", error);
     throw new Error(`Gagal memuat data nilai grid: ${error.message}`);
   }
 };
@@ -294,32 +302,32 @@ const fetchGradesGridData = async (filters, user) => {
 const transformToGridFormat = (gradesData) => {
   // 9 Mata Pelajaran
   const MAPEL_LIST = [
-    'Bahasa Indonesia',
-    'Bahasa Inggris',
-    'Bahasa Sunda',
-    'Matematika',
-    'IPAS',
-    'Pendidikan Pancasila',
-    'Seni Budaya',
-    'Pendidikan Agama Islam',
-    'PJOK'
+    "Bahasa Indonesia",
+    "Bahasa Inggris",
+    "Bahasa Sunda",
+    "Matematika",
+    "IPAS",
+    "Pendidikan Pancasila",
+    "Seni Budaya",
+    "Pendidikan Agama Islam",
+    "PJOK",
   ];
 
   // Group by nisn
   const grouped = {};
-  
-  gradesData.forEach(grade => {
+
+  gradesData.forEach((grade) => {
     const key = grade.nisn;
-    
+
     if (!grouped[key]) {
       grouped[key] = {
         nisn: grade.nisn,
         nama_siswa: grade.nama_siswa,
         kelas: grade.kelas,
-        grades: {}
+        grades: {},
       };
     }
-    
+
     // Assign nilai per mapel (ambil yang paling tinggi prioritasnya)
     if (!grouped[key].grades[grade.mata_pelajaran]) {
       grouped[key].grades[grade.mata_pelajaran] = grade.nilai;
@@ -327,31 +335,31 @@ const transformToGridFormat = (gradesData) => {
   });
 
   // Convert to array with all mapel columns
-  const result = Object.values(grouped).map(student => {
+  const result = Object.values(grouped).map((student) => {
     const row = {
       nisn: student.nisn,
       nama_siswa: student.nama_siswa,
-      kelas: student.kelas
+      kelas: student.kelas,
     };
 
     let total = 0;
     let count = 0;
 
     // Add all 9 mapel columns + hitung jumlah & rata-rata
-    MAPEL_LIST.forEach(mapel => {
+    MAPEL_LIST.forEach((mapel) => {
       const nilai = student.grades[mapel];
-      if (nilai !== undefined && nilai !== null && nilai !== '-') {
+      if (nilai !== undefined && nilai !== null && nilai !== "-") {
         row[mapel] = nilai;
         total += parseFloat(nilai);
         count++;
       } else {
-        row[mapel] = '-';
+        row[mapel] = "-";
       }
     });
 
     // Calculate jumlah dan rata-rata OTOMATIS
-    row.jumlah = count > 0 ? Math.round(total) : '-';
-    row.rata_rata = count > 0 ? (total / count).toFixed(2) : '-';
+    row.jumlah = count > 0 ? Math.round(total) : "-";
+    row.rata_rata = count > 0 ? (total / count).toFixed(2) : "-";
 
     return row;
   });
@@ -374,25 +382,25 @@ const transformToGridFormat = (gradesData) => {
  */
 const getLatestGrades = (allGrades) => {
   const priorityMap = {
-    'Nilai Akhir': 5,
-    'semester': 4,
-    'uas': 3,
-    'uts': 2,
-    'harian': 1
+    "Nilai Akhir": 5,
+    semester: 4,
+    uas: 3,
+    uts: 2,
+    harian: 1,
   };
 
   // Group by nisn + mata_pelajaran
   const grouped = {};
-  
-  allGrades.forEach(grade => {
+
+  allGrades.forEach((grade) => {
     const key = `${grade.nisn}-${grade.mata_pelajaran}`;
-    
+
     if (!grouped[key]) {
       grouped[key] = grade;
     } else {
       const currentPriority = priorityMap[grouped[key].jenis_nilai] || 0;
       const newPriority = priorityMap[grade.jenis_nilai] || 0;
-      
+
       // Replace if higher priority, or same priority but newer date
       if (newPriority > currentPriority) {
         grouped[key] = grade;
@@ -417,35 +425,40 @@ const getLatestGrades = (allGrades) => {
 const fetchAttendanceData = async (filters, user) => {
   try {
     let query = supabase
-      .from('attendance')
-      .select('*')
-      .order('tanggal', { ascending: false });
+      .from("attendance")
+      .select("*")
+      .order("tanggal", { ascending: false });
 
     // Role-based filtering
-    if (user.role === 'guru_kelas') {
-      query = query.eq('kelas', user.kelas);
+    if (user.role === "guru_kelas") {
+      query = query.eq("kelas", user.kelas);
     }
 
     // Filter by kelas
-    if (filters.kelas && filters.kelas !== '') {
-      query = query.eq('kelas', filters.kelas);
+    if (filters.kelas && filters.kelas !== "") {
+      query = query.eq("kelas", filters.kelas);
     }
 
-    // Filter by bulan & tahun - PERBAIKAN: cek bulan !== 0
+    // Filter by bulan & tahun
     if (filters.bulan && filters.bulan !== 0 && filters.tahun) {
-      const startDate = `${filters.tahun}-${String(filters.bulan).padStart(2, '0')}-01`;
-      const endDate = new Date(filters.tahun, filters.bulan, 0).toISOString().split('T')[0];
-      query = query.gte('tanggal', startDate).lte('tanggal', endDate);
+      const startDate = `${filters.tahun}-${String(filters.bulan).padStart(
+        2,
+        "0"
+      )}-01`;
+      const endDate = new Date(filters.tahun, filters.bulan, 0)
+        .toISOString()
+        .split("T")[0];
+      query = query.gte("tanggal", startDate).lte("tanggal", endDate);
     }
 
     // Filter by status
-    if (filters.statusPresensi && filters.statusPresensi !== 'semua') {
-      query = query.eq('status', filters.statusPresensi);
+    if (filters.statusPresensi && filters.statusPresensi !== "semua") {
+      query = query.eq("status", filters.statusPresensi);
     }
 
     // Filter by jenis presensi (kelas/mapel)
-    if (filters.jenisPresensi && filters.jenisPresensi !== 'semua') {
-      query = query.eq('jenis_presensi', filters.jenisPresensi);
+    if (filters.jenisPresensi && filters.jenisPresensi !== "semua") {
+      query = query.eq("jenis_presensi", filters.jenisPresensi);
     }
 
     const { data, error } = await query;
@@ -460,90 +473,96 @@ const fetchAttendanceData = async (filters, user) => {
 
 /**
  * ========================================
- * 🆕 FETCH ATTENDANCE RECAP DATA (REKAPITULASI BULANAN)
+ * FETCH ATTENDANCE RECAP DATA (REKAPITULASI BULANAN)
  * ========================================
  */
 const fetchAttendanceRecapData = async (filters, user) => {
   try {
-    console.log('📊 fetchAttendanceRecapData called with filters:', filters);
+    console.log("📊 fetchAttendanceRecapData called with filters:", filters);
 
     // STEP 1: Fetch semua data presensi sesuai filter
     let query = supabase
-      .from('attendance')
-      .select('*')
-      .order('nisn', { ascending: true });
+      .from("attendance")
+      .select("*")
+      .order("nisn", { ascending: true });
 
     // Role-based filtering
-    if (user.role === 'guru_kelas') {
-      query = query.eq('kelas', user.kelas);
-      console.log('👨‍🏫 Guru Kelas filter: kelas =', user.kelas);
+    if (user.role === "guru_kelas") {
+      query = query.eq("kelas", user.kelas);
+      console.log("👨‍🏫 Guru Kelas filter: kelas =", user.kelas);
     }
 
     // Filter by kelas
-    if (filters.kelas && filters.kelas !== '') {
-      query = query.eq('kelas', filters.kelas);
-      console.log('🏫 Kelas filter:', filters.kelas);
+    if (filters.kelas && filters.kelas !== "") {
+      query = query.eq("kelas", filters.kelas);
+      console.log("🏫 Kelas filter:", filters.kelas);
     }
 
     // ⚠️ WAJIB: Filter by bulan & tahun untuk rekap bulanan
     if (!filters.bulan || filters.bulan === 0 || !filters.tahun) {
-      console.warn('⚠️ Bulan/Tahun tidak dipilih, gunakan bulan ini');
+      console.warn("⚠️ Bulan/Tahun tidak dipilih, gunakan bulan ini");
       const today = new Date();
       filters.bulan = today.getMonth() + 1;
       filters.tahun = today.getFullYear();
     }
 
-    const startDate = `${filters.tahun}-${String(filters.bulan).padStart(2, '0')}-01`;
+    const startDate = `${filters.tahun}-${String(filters.bulan).padStart(
+      2,
+      "0"
+    )}-01`;
     const lastDay = new Date(filters.tahun, filters.bulan, 0).getDate();
-    const endDate = `${filters.tahun}-${String(filters.bulan).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    
-    query = query.gte('tanggal', startDate).lte('tanggal', endDate);
-    console.log('📅 Date range:', startDate, 'to', endDate);
+    const endDate = `${filters.tahun}-${String(filters.bulan).padStart(
+      2,
+      "0"
+    )}-${String(lastDay).padStart(2, "0")}`;
+
+    query = query.gte("tanggal", startDate).lte("tanggal", endDate);
+    console.log("📅 Date range:", startDate, "to", endDate);
 
     // Filter by jenis presensi (optional)
-    if (filters.jenisPresensi && filters.jenisPresensi !== 'semua') {
-      query = query.eq('jenis_presensi', filters.jenisPresensi);
+    if (filters.jenisPresensi && filters.jenisPresensi !== "semua") {
+      query = query.eq("jenis_presensi", filters.jenisPresensi);
     }
 
     const { data: attendanceData, error } = await query;
 
     if (error) {
-      console.error('❌ Supabase error:', error);
+      console.error("❌ Supabase error:", error);
       throw error;
     }
 
-    console.log('✅ Raw attendance data:', attendanceData?.length, 'records');
+    console.log("✅ Raw attendance data:", attendanceData?.length, "records");
 
     if (!attendanceData || attendanceData.length === 0) {
-      console.warn('⚠️ No attendance data found for recap');
+      console.warn("⚠️ No attendance data found for recap");
       return [];
     }
 
     // STEP 2: Fetch daftar siswa untuk kelas yang dipilih
     let studentsQuery = supabase
-      .from('students')
-      .select('nisn, nama_siswa, kelas')
-      .eq('is_active', true);
+      .from("students")
+      .select("nisn, nama_siswa, kelas")
+      .eq("is_active", true);
 
-    if (user.role === 'guru_kelas') {
-      studentsQuery = studentsQuery.eq('kelas', user.kelas);
-    } else if (filters.kelas && filters.kelas !== '') {
-      studentsQuery = studentsQuery.eq('kelas', filters.kelas);
+    if (user.role === "guru_kelas") {
+      studentsQuery = studentsQuery.eq("kelas", user.kelas);
+    } else if (filters.kelas && filters.kelas !== "") {
+      studentsQuery = studentsQuery.eq("kelas", filters.kelas);
     }
 
     const { data: studentsData, error: studentsError } = await studentsQuery;
 
     if (studentsError) throw studentsError;
 
-    console.log('👥 Students data:', studentsData?.length, 'students');
+    console.log("👥 Students data:", studentsData?.length, "students");
 
     // STEP 3: Transform ke format rekap
     const recapData = transformToRecapFormat(attendanceData, studentsData);
-    console.log('🎯 Recap data:', recapData.length, 'students');
+    console.log("🎯 Recap data:", recapData.length, "students");
 
     return recapData;
   } catch (error) {
-    console.error('❌ Error in fetchAttendanceRecapData:', error);
+    console.error("❌ Error in fetchAttendanceRecapData:", error);
     throw new Error(`Gagal memuat rekapitulasi presensi: ${error.message}`);
   }
 };
@@ -554,39 +573,38 @@ const fetchAttendanceRecapData = async (filters, user) => {
  */
 const transformToRecapFormat = (attendanceData, studentsData) => {
   // Buat map siswa untuk lookup cepat
-  const studentsMap = new Map(
-    studentsData.map(s => [s.nisn, s])
-  );
+  const studentsMap = new Map(studentsData.map((s) => [s.nisn, s]));
 
   // Group attendance by NISN
   const grouped = {};
 
-  attendanceData.forEach(record => {
+  attendanceData.forEach((record) => {
     const nisn = record.nisn;
 
     if (!grouped[nisn]) {
       const student = studentsMap.get(nisn);
       grouped[nisn] = {
-        id: record.id, // Pakai id dari attendance sebagai unique key
+        id: record.id,
         nisn: nisn,
-        nama_siswa: student?.nama_siswa || record.nama_siswa || 'Tidak Diketahui',
-        kelas: student?.kelas || record.kelas || '-',
+        nama_siswa:
+          student?.nama_siswa || record.nama_siswa || "Tidak Diketahui",
+        kelas: student?.kelas || record.kelas || "-",
         hadir: 0,
         sakit: 0,
         izin: 0,
-        alpa: 0
+        alpa: 0,
       };
     }
 
     // Count status
     const status = record.status;
-    if (status === 'Hadir') {
+    if (status === "Hadir") {
       grouped[nisn].hadir++;
-    } else if (status === 'Sakit') {
+    } else if (status === "Sakit") {
       grouped[nisn].sakit++;
-    } else if (status === 'Izin') {
+    } else if (status === "Izin") {
       grouped[nisn].izin++;
-    } else if (status === 'Alpa') {
+    } else if (status === "Alpa") {
       grouped[nisn].alpa++;
     }
   });
@@ -595,17 +613,17 @@ const transformToRecapFormat = (attendanceData, studentsData) => {
   let result = Object.values(grouped);
 
   // Tambahkan siswa yang tidak punya record presensi sama sekali
-  studentsData.forEach(student => {
+  studentsData.forEach((student) => {
     if (!grouped[student.nisn]) {
       result.push({
-        id: `student-${student.nisn}`, // Generate unique ID
+        id: `student-${student.nisn}`,
         nisn: student.nisn,
         nama_siswa: student.nama_siswa,
         kelas: student.kelas,
         hadir: 0,
         sakit: 0,
         izin: 0,
-        alpa: 0
+        alpa: 0,
       });
     }
   });
@@ -619,12 +637,12 @@ const transformToRecapFormat = (attendanceData, studentsData) => {
     return 0;
   });
 
-  console.log('📊 Recap summary:', {
+  console.log("📊 Recap summary:", {
     totalStudents: result.length,
     totalHadir: result.reduce((sum, r) => sum + r.hadir, 0),
     totalSakit: result.reduce((sum, r) => sum + r.sakit, 0),
     totalIzin: result.reduce((sum, r) => sum + r.izin, 0),
-    totalAlpa: result.reduce((sum, r) => sum + r.alpa, 0)
+    totalAlpa: result.reduce((sum, r) => sum + r.alpa, 0),
   });
 
   return result;
@@ -632,93 +650,136 @@ const transformToRecapFormat = (attendanceData, studentsData) => {
 
 /**
  * ========================================
- * FETCH NOTES DATA (CATATAN SISWA)
+ * ✅ FETCH NOTES DATA (CATATAN SISWA) - FIXED
  * ========================================
+ * PERBAIKAN:
+ * - Guru Kelas: HANYA lihat catatan yang DIA BUAT SENDIRI
+ * - Hapus filter "dibuatOleh" karena tidak relevan
+ * - Auto filter by teacher_id untuk guru_kelas
  */
 const fetchNotesData = async (filters, user) => {
   try {
+    console.log("📝 fetchNotesData called with filters:", filters);
+    console.log("👤 User:", user.role, user.id, user.kelas);
+
     let query = supabase
-      .from('catatan_siswa')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("catatan_siswa")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    // Role-based filtering
-    if (user.role === 'guru_kelas') {
-      query = query.eq('class_id', parseInt(user.kelas));
-      
-      if (filters.dibuatOleh === 'saya') {
-        query = query.eq('teacher_id', user.id);
+    // ✅ ROLE-BASED FILTERING
+    if (user.role === "guru_kelas") {
+      // Guru Kelas: HANYA catatan yang dibuat oleh dirinya sendiri
+      // ⚠️ PENTING: class_id di database adalah VARCHAR, jadi jangan pakai parseInt!
+      query = query
+        .eq("teacher_id", user.id) // ✅ FILTER BY TEACHER ID
+        .eq("class_id", user.kelas); // ✅ FILTER BY CLASS (STRING, bukan parseInt!)
+
+      console.log(
+        "👨‍🏫 Guru Kelas filter: teacher_id =",
+        user.id,
+        ", class_id =",
+        user.kelas
+      );
+    } else if (user.role === "guru_mapel") {
+      // Guru Mapel: catatan yang dibuat oleh dirinya sendiri
+      query = query.eq("teacher_id", user.id);
+
+      // Filter by kelas (optional untuk guru_mapel)
+      if (filters.kelas && filters.kelas !== "") {
+        query = query.eq("class_id", filters.kelas); // ✅ STRING juga
       }
-    } else if (user.role === 'guru_mapel') {
-      query = query.eq('teacher_id', user.id);
-      
-      if (filters.kelas && filters.kelas !== '') {
-        query = query.eq('class_id', parseInt(filters.kelas));
-      }
+
+      console.log("👨‍🏫 Guru Mapel filter: teacher_id =", user.id);
     }
 
-    // Filter by siswa
-    if (filters.siswa && filters.siswa !== '') {
-      query = query.eq('student_id', filters.siswa);
+    // ✅ FILTER BY SISWA (optional)
+    if (filters.siswa && filters.siswa !== "") {
+      query = query.eq("student_id", filters.siswa);
+      console.log("👤 Student filter:", filters.siswa);
     }
 
-    // Filter by kategori
-    if (filters.kategori && filters.kategori !== 'semua') {
-      query = query.ilike('category', filters.kategori);
+    // ✅ FILTER BY KATEGORI (Case Insensitive)
+    if (filters.kategori && filters.kategori !== "semua") {
+      // Capitalize first letter untuk match database format
+      const kategoriCapitalized =
+        filters.kategori.charAt(0).toUpperCase() + filters.kategori.slice(1);
+      query = query.eq("category", kategoriCapitalized);
+      console.log("🏷️ Category filter:", kategoriCapitalized);
     }
 
-    // Filter by periode
-    if (filters.periode && filters.periode !== 'semua' && filters.periode !== 'bulan_ini') {
+    // ✅ FILTER BY PERIODE
+    if (filters.periode && filters.periode !== "semua") {
       const dateRange = getDateRangeFromPeriode(filters.periode);
       if (dateRange.start) {
-        query = query.gte('created_at', dateRange.start);
+        query = query.gte("created_at", dateRange.start);
       }
       if (dateRange.end) {
-        query = query.lte('created_at', dateRange.end);
+        query = query.lte("created_at", dateRange.end);
       }
+      console.log("📅 Period filter:", dateRange);
     }
 
     const { data: notesData, error: notesError } = await query;
 
-    if (notesError) throw notesError;
+    if (notesError) {
+      console.error("❌ Supabase error:", notesError);
+      throw notesError;
+    }
+
+    console.log("✅ Raw notes data:", notesData?.length, "records");
 
     if (!notesData || notesData.length === 0) {
+      console.warn("⚠️ No notes found");
       return [];
     }
 
-    // Fetch related students and teachers
-    const studentIds = [...new Set(notesData.map(n => n.student_id))];
-    const teacherIds = [...new Set(notesData.map(n => n.teacher_id))];
+    // ✅ FETCH RELATED STUDENTS AND TEACHERS
+    const studentIds = [...new Set(notesData.map((n) => n.student_id))];
+    const teacherIds = [...new Set(notesData.map((n) => n.teacher_id))];
 
     const [studentsResponse, teachersResponse] = await Promise.all([
-      supabase.from('students').select('id, nisn, nama_siswa, kelas').in('id', studentIds),
-      supabase.from('users').select('id, full_name, username').in('id', teacherIds)
+      supabase
+        .from("students")
+        .select("id, nisn, nama_siswa, kelas")
+        .in("id", studentIds),
+      supabase
+        .from("users")
+        .select("id, full_name, username")
+        .in("id", teacherIds),
     ]);
 
     // Create lookup maps
     const studentsMap = new Map(
-      (studentsResponse.data || []).map(s => [s.id, s])
+      (studentsResponse.data || []).map((s) => [s.id, s])
     );
     const teachersMap = new Map(
-      (teachersResponse.data || []).map(t => [t.id, t])
+      (teachersResponse.data || []).map((t) => [t.id, t])
     );
 
-    // Transform data
-    const transformedData = notesData.map(note => {
+    // ✅ TRANSFORM DATA
+    const transformedData = notesData.map((note) => {
       const student = studentsMap.get(note.student_id);
       const teacher = teachersMap.get(note.teacher_id);
 
       return {
         ...note,
-        student_name: student?.nama_siswa || 'Siswa tidak ditemukan',
-        teacher_name: teacher?.full_name || 'Guru tidak ditemukan',
-        showKelas: user.role === 'guru_mapel',
-        showTeacher: user.role === 'guru_kelas'
+        student_name: student?.nama_siswa || "Siswa tidak ditemukan",
+        student_nisn: student?.nisn || "-",
+        student_kelas: student?.kelas || "-",
+        teacher_name: teacher?.full_name || "Guru tidak ditemukan",
+        // showKelas: untuk guru_mapel perlu lihat kelas
+        // showTeacher: untuk admin (bukan untuk guru_kelas karena semua catatan dari dia sendiri)
+        showKelas: user.role === "guru_mapel",
+        showTeacher: false, // ❌ Hapus showTeacher karena semua catatan dari guru tersebut
       };
     });
 
+    console.log("🎯 Transformed notes:", transformedData.length, "records");
+
     return transformedData;
   } catch (error) {
+    console.error("❌ Error in fetchNotesData:", error);
     throw new Error(`Gagal memuat catatan siswa: ${error.message}`);
   }
 };
@@ -731,20 +792,20 @@ const fetchNotesData = async (filters, user) => {
 const fetchTeachersData = async (filters, user) => {
   try {
     let query = supabase
-      .from('users')
-      .select('*')
-      .in('role', ['guru_kelas', 'guru_mapel'])
-      .order('full_name', { ascending: true });
+      .from("users")
+      .select("*")
+      .in("role", ["guru_kelas", "guru_mapel"])
+      .order("full_name", { ascending: true });
 
     // Filter by status
-    if (filters.statusGuru && filters.statusGuru !== 'semua') {
-      const isActive = filters.statusGuru === 'aktif';
-      query = query.eq('is_active', isActive);
+    if (filters.statusGuru && filters.statusGuru !== "semua") {
+      const isActive = filters.statusGuru === "aktif";
+      query = query.eq("is_active", isActive);
     }
 
     // Filter by role
-    if (filters.roleGuru && filters.roleGuru !== 'semua') {
-      query = query.eq('role', filters.roleGuru);
+    if (filters.roleGuru && filters.roleGuru !== "semua") {
+      query = query.eq("role", filters.roleGuru);
     }
 
     const { data, error } = await query;
@@ -768,10 +829,10 @@ const getDateRangeFromPeriode = (periode) => {
   const month = today.getMonth();
   const date = today.getDate();
 
-  const toISODate = (d) => d.toISOString().split('T')[0];
+  const toISODate = (d) => d.toISOString().split("T")[0];
 
   switch (periode) {
-    case 'minggu_ini': {
+    case "minggu_ini": {
       const firstDayOfWeek = date - today.getDay();
       return {
         start: toISODate(new Date(year, month, firstDayOfWeek)),
@@ -779,13 +840,13 @@ const getDateRangeFromPeriode = (periode) => {
       };
     }
 
-    case 'bulan_ini':
+    case "bulan_ini":
       return {
         start: toISODate(new Date(year, month, 1)),
         end: toISODate(today),
       };
 
-    case 'semester': {
+    case "semester": {
       const currentMonth = month + 1;
       if (currentMonth >= 7 && currentMonth <= 12) {
         return {
@@ -800,7 +861,7 @@ const getDateRangeFromPeriode = (periode) => {
       }
     }
 
-    case 'semua':
+    case "semua":
     default:
       return { start: null, end: null };
   }

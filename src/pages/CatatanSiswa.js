@@ -16,6 +16,11 @@ import {
   ArrowLeft,
   WifiOff,
   RefreshCw,
+  BookOpen,
+  User,
+  Filter,
+  Calendar,
+  School,
 } from "lucide-react";
 import ExportCatatanSiswa from "./ExportCatatanSiswa";
 
@@ -29,15 +34,44 @@ import { useSyncStatus } from "../hooks/useSyncStatus";
 import SyncStatusBadge from "../components/SyncStatusBadge";
 // ===============================
 
-const CatatanSiswa = ({ userData }) => {
-  console.log("🚀 CatatanSiswa mounted with userData:", userData);
+/**
+ * MODUL CATATAN PERKEMBANGAN SISWA
+ *
+ * FITUR UTAMA:
+ * 1. 📊 Dashboard monitoring perkembangan siswa
+ * 2. ✏️ Input catatan perkembangan dengan berbagai kategori
+ * 3. 📱 Support offline mode (PWA)
+ * 4. 👥 Role-based access (Admin & Guru)
+ * 5. 📅 Filter berdasarkan tahun ajaran & semester
+ *
+ * CARA PENGGUNAAN:
+ * - GURU: Bisa membuat, edit, hapus catatan untuk siswa di kelasnya
+ * - ADMIN: Hanya bisa melihat/monitoring, tidak bisa edit/hapus
+ * - OFFLINE: Data tersimpan lokal dan sync otomatis saat online
+ *
+ * DOKUMENTASI KATEGORI CATATAN:
+ * 📚 AKADEMIK   : Perkembangan belajar, nilai, tugas, pemahaman materi
+ * 🎭 PERILAKU   : Sikap, kedisiplinan, tanggung jawab, sopan santun
+ * 👥 SOSIAL     : Interaksi dengan teman, kerja kelompok, komunikasi
+ * 💪 KARAKTER   : Kejujuran, empati, leadership, resilience
+ * 🏥 KESEHATAN  : Kondisi fisik, kehadiran, masalah kesehatan
+ *
+ * DOKUMENTASI LABEL:
+ * ✅ POSITIF    : Perkembangan baik, pencapaian, prestasi, improvement
+ * ⚠️ PERHATIAN  : Masalah yang perlu ditindaklanjuti, kendala, penurunan
+ * 📝 BIASA      : Catatan rutin, observasi netral, informasi umum
+ */
 
+const CatatanSiswa = ({ userData }) => {
+  // ===== STATE MANAGEMENT =====
   const [activeView, setActiveView] = useState("dashboard");
   const [selectedSiswa, setSelectedSiswa] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [siswaList, setSiswaList] = useState([]);
   const [catatanList, setCatatanList] = useState([]);
+
+  // Statistik dashboard
   const [stats, setStats] = useState({
     totalSiswa: 0,
     progressPositif: 0,
@@ -45,6 +79,7 @@ const CatatanSiswa = ({ userData }) => {
     catatanBiasa: 0,
   });
 
+  // Data form catatan
   const [formData, setFormData] = useState({
     student_id: "",
     category: "",
@@ -52,23 +87,39 @@ const CatatanSiswa = ({ userData }) => {
     note_content: "",
     action_taken: "",
   });
+
   const [editingNote, setEditingNote] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
 
-  const [academicYear, setAcademicYear] = useState("2024/2025");
+  // Settings akademik
+  const [academicYear, setAcademicYear] = useState("2025/2026");
   const [semester, setSemester] = useState("Ganjil");
   const [message, setMessage] = useState({ text: "", type: "" });
 
+  /**
+   * KATEGORI CATATAN - PENJELASAN:
+   * - Akademik  : Berkaitan dengan pembelajaran, nilai, tugas
+   * - Perilaku  : Sikap dan tingkah laku di sekolah
+   * - Sosial    : Hubungan dengan teman dan lingkungan
+   * - Karakter  : Nilai-nilai moral dan kepribadian
+   * - Kesehatan : Kondisi fisik dan kehadiran
+   */
   const kategoris = ["Akademik", "Perilaku", "Sosial", "Karakter", "Kesehatan"];
 
+  // Cek role user
   const isAdmin =
     userData?.role === "admin" || userData?.role === "administrator";
 
   // ===== PWA: Sync Status Hook =====
   const { isOnline, pendingCount, isSyncing } = useSyncStatus();
 
-  // ===== PWA: Auto-sync saat online =====
+  // ===== EFFECTS & LIFECYCLE =====
+
+  /**
+   * AUTO-SYNC SAAT ONLINE
+   * Fitur: Otomatis sync data pending ketika koneksi kembali
+   */
   useEffect(() => {
     if (isOnline && pendingCount > 0) {
       syncPendingData()
@@ -82,22 +133,47 @@ const CatatanSiswa = ({ userData }) => {
     }
   }, [isOnline, pendingCount]);
 
+  /**
+   * INISIALISASI SETTINGS
+   * Load tahun ajaran dan semester dari database
+   */
   useEffect(() => {
-    console.log("📌 useEffect triggered");
     if (userData?.id) {
-      initializeData();
+      console.log("📄 Loading settings...");
+      initializeSettings();
     }
   }, [userData?.id]);
 
+  /**
+   * LOAD DATA SISWA
+   * Trigger ketika settings atau user berubah
+   */
+  useEffect(() => {
+    if (userData?.id && academicYear && semester) {
+      console.log("📚 Loading students with:", { academicYear, semester });
+      loadStudents();
+    }
+  }, [userData?.id, academicYear, semester]);
+
+  // ===== UTILITY FUNCTIONS =====
+
+  /**
+   * MENAMPILKAN PESAN FEEDBACK
+   * @param {string} text - Teks pesan
+   * @param {string} type - Tipe pesan: success, error, offline
+   */
   const showMessage = (text, type = "success") => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: "", type: "" }), 5000);
   };
 
-  const initializeData = async () => {
+  /**
+   * INISIALISASI SETTINGS SEKOLAH
+   * Load tahun ajaran dan semester aktif
+   */
+  const initializeSettings = async () => {
     try {
-      setLoading(true);
-      console.log("🔄 Initializing data for user:", userData.username);
+      console.log("🔧 Initializing settings for user:", userData.username);
 
       const { data: tahunAjaranData, error: tahunError } = await supabase
         .from("school_settings")
@@ -115,7 +191,7 @@ const CatatanSiswa = ({ userData }) => {
         console.log("📅 Tahun Ajaran:", tahunAjaranData.setting_value);
         setAcademicYear(tahunAjaranData.setting_value);
       } else {
-        console.log("📅 Using default Tahun Ajaran: 2024/2025");
+        console.log("📅 Using default Tahun Ajaran: 2025/2026");
       }
 
       if (!semesterError && semesterData?.setting_value) {
@@ -124,19 +200,25 @@ const CatatanSiswa = ({ userData }) => {
       } else {
         console.log("📅 Using default Semester: Ganjil");
       }
-
-      await loadStudents();
     } catch (error) {
-      console.error("❌ Error initializing:", error);
-      setLoading(false);
+      console.error("❌ Error initializing settings:", error);
     }
   };
 
+  /**
+   * LOAD DATA SISWA
+   * Filter berdasarkan:
+   * - Role guru: hanya siswa di kelasnya
+   * - Role admin: semua siswa aktif
+   */
   const loadStudents = async () => {
     try {
+      setLoading(true);
       console.log("📚 Loading students...");
       console.log("👤 User role:", userData.role);
       console.log("🏫 User kelas:", userData.kelas);
+      console.log("📅 Academic Year:", academicYear);
+      console.log("📅 Semester:", semester);
 
       let query = supabase
         .from("students")
@@ -144,6 +226,7 @@ const CatatanSiswa = ({ userData }) => {
         .eq("is_active", true)
         .order("nama_siswa", { ascending: true });
 
+      // Filter untuk guru (hanya kelas sendiri)
       if (!isAdmin && userData.kelas) {
         const kelasArray = userData.kelas.split(",").map((k) => k.trim());
         query = query.in("kelas", kelasArray);
@@ -166,7 +249,7 @@ const CatatanSiswa = ({ userData }) => {
           ...new Set(siswaData.map((s) => s.kelas)),
         ]);
 
-        // ===== PWA: Load catatan dengan Fallback =====
+        // Process each student dengan catatannya
         const processedStudents = await Promise.all(
           siswaData.map(async (siswa) => {
             const catatanData = await getDataWithFallback(
@@ -178,6 +261,7 @@ const CatatanSiswa = ({ userData }) => {
                   .eq("semester", semester)
             );
 
+            // Hitung statistik per label
             const positif =
               catatanData?.filter((c) => c.label === "positif").length || 0;
             const perhatian =
@@ -185,6 +269,7 @@ const CatatanSiswa = ({ userData }) => {
             const netral =
               catatanData?.filter((c) => c.label === "netral").length || 0;
 
+            // Cari catatan terbaru
             const lastNote =
               catatanData?.length > 0
                 ? catatanData.reduce((latest, current) =>
@@ -211,15 +296,19 @@ const CatatanSiswa = ({ userData }) => {
 
         setSiswaList(processedStudents);
 
+        // Update statistik dashboard
         setStats({
           totalSiswa: processedStudents.length,
-          progressPositif: processedStudents.filter((s) => s.positif > 0)
-            .length,
-          perluPerhatian: processedStudents.filter((s) => s.perhatian > 0)
-            .length,
-          catatanBiasa: processedStudents.filter((s) => s.netral > 0).length,
+          progressPositif: processedStudents.reduce(
+            (sum, s) => sum + s.positif,
+            0
+          ),
+          perluPerhatian: processedStudents.reduce(
+            (sum, s) => sum + s.perhatian,
+            0
+          ),
+          catatanBiasa: processedStudents.reduce((sum, s) => sum + s.netral, 0),
         });
-
         console.log("✅ Students processed successfully");
       } else {
         console.warn("⚠️ No students found");
@@ -239,7 +328,10 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
-  // ===== PWA: Load Student Notes dengan Fallback =====
+  /**
+   * LOAD CATATAN SISWA SPESIFIK
+   * @param {string} studentId - ID siswa yang akan dilihat catatannya
+   */
   const loadStudentNotes = async (studentId) => {
     try {
       setLoading(true);
@@ -252,6 +344,7 @@ const CatatanSiswa = ({ userData }) => {
           .eq("semester", semester)
           .order("created_at", { ascending: false });
 
+        // Filter untuk guru (hanya catatan sendiri)
         if (!isAdmin) {
           q = q.eq("teacher_id", userData.id);
         }
@@ -261,6 +354,7 @@ const CatatanSiswa = ({ userData }) => {
 
       const notesData = await getDataWithFallback("student_notes", filterFunc);
 
+      // Tambahkan nama guru pembuat catatan
       const notesWithTeachers = await Promise.all(
         (notesData || []).map(async (note) => {
           if (note.teacher_id) {
@@ -283,15 +377,24 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
-  // ===== PWA: REFACTORED CREATE NOTE FUNCTION =====
+  // ===== CRUD OPERATIONS =====
+
+  /**
+   * BUAT CATATAN BARU
+   * Validasi:
+   * - Admin tidak bisa buat catatan
+   * - Semua field wajib diisi (kecuali tindakan)
+   */
   const handleCreateNote = async (e) => {
     e.preventDefault();
 
+    // Validasi role
     if (isAdmin) {
       showMessage("Admin tidak dapat membuat catatan", "error");
       return;
     }
 
+    // Validasi field wajib
     if (
       !formData.student_id ||
       !formData.category ||
@@ -302,29 +405,43 @@ const CatatanSiswa = ({ userData }) => {
       return;
     }
 
+    // Validasi panjang konten
+    if (formData.note_content.length < 10) {
+      showMessage("Isi catatan minimal 10 karakter", "error");
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data: student } = await supabase
+      // Ambil data siswa untuk mendapatkan kelas
+      const { data: student, error: studentError } = await supabase
         .from("students")
         .select("kelas")
         .eq("id", formData.student_id)
         .single();
 
+      if (studentError || !student) {
+        throw new Error("Data siswa tidak ditemukan");
+      }
+
+      // Struktur data catatan
       const noteData = {
         student_id: formData.student_id,
         teacher_id: userData.id,
-        class_id: student?.kelas || userData.kelas,
+        class_id: student.kelas,
         academic_year: academicYear,
         semester: semester,
         category: formData.category,
         label: formData.label,
-        note_content: formData.note_content,
-        action_taken: formData.action_taken || null,
+        note_content: formData.note_content.trim(),
+        action_taken: formData.action_taken?.trim() || "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      console.log("📝 Inserting note:", noteData);
+      console.log("📝 Data yang dikirim:", noteData);
 
-      // Gunakan saveWithSync untuk offline-first
+      // Simpan dengan sync offline
       const result = await saveWithSync("student_notes", [noteData]);
 
       if (result.success) {
@@ -337,6 +454,7 @@ const CatatanSiswa = ({ userData }) => {
           );
         }
 
+        // Reset form
         setFormData({
           student_id: "",
           category: "",
@@ -344,20 +462,25 @@ const CatatanSiswa = ({ userData }) => {
           note_content: "",
           action_taken: "",
         });
+
+        // Reload data
         await loadStudents();
         setActiveView("dashboard");
       } else {
         throw new Error(result.error || "Gagal menyimpan catatan");
       }
     } catch (error) {
-      console.error("❌ Error creating note:", error);
-      showMessage("Gagal menyimpan catatan: " + error.message, "error");
+      console.error("❌ Error:", error);
+      showMessage("Gagal menyimpan: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // ===== PWA: REFACTORED UPDATE NOTE FUNCTION =====
+  /**
+   * UPDATE CATATAN YANG SUDAH ADA
+   * Hanya bisa dilakukan oleh guru yang membuat catatan tersebut
+   */
   const handleUpdateNote = async (e) => {
     e.preventDefault();
 
@@ -377,9 +500,10 @@ const CatatanSiswa = ({ userData }) => {
         semester: editingNote.semester,
         category: formData.category,
         label: formData.label,
-        note_content: formData.note_content,
-        action_taken: formData.action_taken || null,
+        note_content: formData.note_content.trim(),
+        action_taken: formData.action_taken?.trim() || null,
         created_at: editingNote.created_at,
+        updated_at: new Date().toISOString(),
       };
 
       const result = await saveWithSync("student_notes", [updates], {
@@ -404,6 +528,7 @@ const CatatanSiswa = ({ userData }) => {
           note_content: "",
           action_taken: "",
         });
+
         await loadStudentNotes(selectedSiswa.id);
         await loadStudents();
         setActiveView("detail");
@@ -418,14 +543,16 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
-  // ===== PWA: REFACTORED DELETE NOTE FUNCTION =====
+  /**
+   * HAPUS CATATAN
+   * Konfirmasi modal akan muncul sebelum penghapusan
+   */
   const handleDeleteNote = async () => {
     setIsDeleteModalOpen(false);
     if (!noteToDelete) return;
 
     setLoading(true);
     try {
-      // Gunakan saveWithSync dengan deleteById
       const result = await saveWithSync("student_notes", [], {
         deleteById: noteToDelete,
       });
@@ -454,6 +581,12 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
+  // ===== UI HELPER FUNCTIONS =====
+
+  /**
+   * FORMAT WAKTU RELATIF
+   * Contoh: "Hari ini", "2 hari lalu", "1 minggu lalu"
+   */
   const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -466,6 +599,10 @@ const CatatanSiswa = ({ userData }) => {
     return `${Math.floor(diffDays / 30)} bulan lalu`;
   };
 
+  /**
+   * FORMAT TANGGAL LENGKAP
+   * Contoh: "25 Januari 2024, 14:30"
+   */
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("id-ID", {
       day: "numeric",
@@ -476,6 +613,9 @@ const CatatanSiswa = ({ userData }) => {
     });
   };
 
+  /**
+   * GET ICON UNTUK LABEL
+   */
   const getLabelIcon = (label) => {
     switch (label) {
       case "positif":
@@ -487,16 +627,35 @@ const CatatanSiswa = ({ userData }) => {
     }
   };
 
+  /**
+   * GET BADGE STYLE UNTUK LABEL
+   */
   const getLabelBadge = (label) => {
     switch (label) {
       case "positif":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 border-green-200";
       case "perhatian":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 border-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
+
+  /**
+   * GET DESKRIPSI KATEGORI UNTUK TOOLTIP/GUIDANCE
+   */
+  const getCategoryDescription = (category) => {
+    const descriptions = {
+      Akademik: "Perkembangan belajar, nilai, tugas, pemahaman materi",
+      Perilaku: "Sikap, kedisiplinan, tanggung jawab, sopan santun",
+      Sosial: "Interaksi dengan teman, kerja kelompok, komunikasi",
+      Karakter: "Kejujuran, empati, leadership, resilience",
+      Kesehatan: "Kondisi fisik, kehadiran, masalah kesehatan",
+    };
+    return descriptions[category] || "Catatan perkembangan siswa";
+  };
+
+  // ===== EVENT HANDLERS =====
 
   const handleAddNote = () => {
     if (isAdmin) {
@@ -543,6 +702,7 @@ const CatatanSiswa = ({ userData }) => {
     setActiveView("form");
   };
 
+  // Filter siswa berdasarkan pencarian
   const filteredSiswa = siswaList.filter(
     (siswa) =>
       siswa.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -550,47 +710,63 @@ const CatatanSiswa = ({ userData }) => {
       siswa.kelas.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // ===== RENDER COMPONENTS =====
+
+  /**
+   * MODAL KONFIRMASI HAPUS
+   */
   const renderDeleteModal = () => {
     if (!isDeleteModalOpen) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
-          <div className="flex justify-between items-center mb-4 border-b pb-3">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+          <div className="flex justify-between items-center mb-4 pb-3 border-b">
             <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" /> Konfirmasi Hapus
+              <AlertCircle className="w-5 h-5" />
+              Konfirmasi Hapus Catatan
             </h3>
             <button
               onClick={() => {
                 setIsDeleteModalOpen(false);
                 setNoteToDelete(null);
-              }}>
+              }}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-gray-700 mb-6">
-            Anda yakin ingin menghapus catatan ini? Tindakan ini tidak dapat
-            dibatalkan.
-          </p>
+
+          <div className="mb-6">
+            <p className="text-gray-700 mb-3">
+              Anda yakin ingin menghapus catatan ini?
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-yellow-800 text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Tindakan ini tidak dapat dibatalkan
+              </p>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3">
             <button
               onClick={() => {
                 setIsDeleteModalOpen(false);
                 setNoteToDelete(null);
               }}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300">
+              className="bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors">
               Batal
             </button>
             <button
               onClick={handleDeleteNote}
               disabled={loading || isSyncing}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 flex items-center gap-2 disabled:opacity-50">
+              className="bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 transition-colors">
               {loading || isSyncing ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <Trash2 className="w-4 h-4" />
               )}
-              Hapus
+              Hapus Catatan
             </button>
           </div>
         </div>
@@ -598,18 +774,23 @@ const CatatanSiswa = ({ userData }) => {
     );
   };
 
+  /**
+   * DASHBOARD VIEW - Tampilan utama
+   */
   const renderDashboard = () => (
     <div className="space-y-6">
+      {/* Sync Status */}
       <SyncStatusBadge />
 
+      {/* Message Alert */}
       {message.text && (
         <div
-          className={`p-4 rounded-lg ${
+          className={`p-4 rounded-lg border ${
             message.type === "error"
-              ? "bg-red-50 border border-red-200 text-red-700"
+              ? "bg-red-50 border-red-200 text-red-700"
               : message.type === "offline"
-              ? "bg-orange-50 border border-orange-200 text-orange-700"
-              : "bg-green-50 border border-green-200 text-green-700"
+              ? "bg-orange-50 border-orange-200 text-orange-700"
+              : "bg-green-50 border-green-200 text-green-700"
           }`}>
           <div className="flex items-center gap-2">
             {message.type === "error" ? (
@@ -624,25 +805,36 @@ const CatatanSiswa = ({ userData }) => {
         </div>
       )}
 
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <BookOpen className="w-6 h-6" />
             {isAdmin
               ? "Monitoring Catatan Siswa"
               : "Catatan Perkembangan Siswa"}
           </h2>
-          <p className="text-gray-600">
-            {userData.kelas ? `Kelas ${userData.kelas}` : "Semua Kelas"} -{" "}
-            {academicYear} (Semester {semester})
+          <div className="flex items-center gap-2 mt-2 text-gray-600">
+            <School className="w-4 h-4" />
+            <span>
+              {userData.kelas ? `Kelas ${userData.kelas}` : "Semua Kelas"}
+            </span>
+            <span>•</span>
+            <Calendar className="w-4 h-4" />
+            <span>
+              {academicYear} (Semester {semester})
+            </span>
             {isAdmin && (
-              <span className="ml-2 text-blue-600 font-semibold">
-                (Mode Admin)
+              <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                Mode Admin
               </span>
             )}
-          </p>
+          </div>
         </div>
+
+        {/* Action Buttons */}
         {!isAdmin && (
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <ExportCatatanSiswa
               siswaList={siswaList}
               catatanList={[]}
@@ -655,7 +847,7 @@ const CatatanSiswa = ({ userData }) => {
             <button
               onClick={handleAddNote}
               disabled={isSyncing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50">
+              className="bg-blue-600 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition-colors justify-center">
               {isSyncing ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
@@ -667,31 +859,45 @@ const CatatanSiswa = ({ userData }) => {
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-blue-500">
-          <p className="text-gray-600 text-sm mb-1">Total Siswa</p>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+          <p className="text-gray-600 text-sm mb-1 flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Total Siswa
+          </p>
           <p className="text-3xl font-bold text-gray-800">{stats.totalSiswa}</p>
         </div>
-        <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-green-500">
-          <p className="text-gray-600 text-sm mb-1">Progress Positif</p>
+        <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-green-500">
+          <p className="text-gray-600 text-sm mb-1 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Catatan Positif
+          </p>
           <p className="text-3xl font-bold text-green-600">
             {stats.progressPositif}
           </p>
         </div>
-        <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-red-500">
-          <p className="text-gray-600 text-sm mb-1">Perlu Perhatian</p>
+        <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
+          <p className="text-gray-600 text-sm mb-1 flex items-center gap-2">
+            <TrendingDown className="w-4 h-4" />
+            Perlu Perhatian
+          </p>
           <p className="text-3xl font-bold text-red-600">
             {stats.perluPerhatian}
           </p>
         </div>
-        <div className="bg-white p-5 rounded-lg shadow-sm border-l-4 border-gray-500">
-          <p className="text-gray-600 text-sm mb-1">Catatan Biasa</p>
+        <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-gray-500">
+          <p className="text-gray-600 text-sm mb-1 flex items-center gap-2">
+            <Info className="w-4 h-4" />
+            Catatan Biasa
+          </p>
           <p className="text-3xl font-bold text-gray-600">
             {stats.catatanBiasa}
           </p>
         </div>
       </div>
 
+      {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
         <input
@@ -699,17 +905,18 @@ const CatatanSiswa = ({ userData }) => {
           placeholder="Cari siswa berdasarkan nama, NISN, atau kelas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
         />
       </div>
 
+      {/* Students Table */}
       {loading ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
           <p className="mt-4 text-gray-600">Memuat data siswa...</p>
         </div>
       ) : filteredSiswa.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 text-lg">
             {searchTerm
@@ -723,168 +930,169 @@ const CatatanSiswa = ({ userData }) => {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Nama Siswa
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                  NISN
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Kelas
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
-                  Positif
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
-                  Perhatian
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
-                  Biasa
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Update Terakhir
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredSiswa.map((siswa) => (
-                <tr key={siswa.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {siswa.nama}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{siswa.nisn}</td>
-                  <td className="px-6 py-4 text-gray-600">{siswa.kelas}</td>
-                  <td className="px-6 py-4 text-center">
-                    {siswa.positif > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-green-600 font-semibold">
-                        <TrendingUp className="w-4 h-4" />
-                        {siswa.positif}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {siswa.perhatian > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
-                        <TrendingDown className="w-4 h-4" />
-                        {siswa.perhatian}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {siswa.netral > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-gray-600 font-semibold">
-                        <Info className="w-4 h-4" />
-                        {siswa.netral}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600 text-sm">
-                    {siswa.lastUpdate}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => handleViewDetail(siswa)}
-                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1 mx-auto font-medium">
-                      <Eye className="w-4 h-4" />
-                      Detail
-                    </button>
-                  </td>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Nama Siswa
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    NISN
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Kelas
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Positif
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Perhatian
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Biasa
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Update Terakhir
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Aksi
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredSiswa.map((siswa) => (
+                  <tr
+                    key={siswa.id}
+                    className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {siswa.nama}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{siswa.nisn}</td>
+                    <td className="px-6 py-4 text-gray-600">{siswa.kelas}</td>
+                    <td className="px-6 py-4 text-center">
+                      {siswa.positif > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full">
+                          <TrendingUp className="w-3 h-3" />
+                          {siswa.positif}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {siswa.perhatian > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-full">
+                          <TrendingDown className="w-3 h-3" />
+                          {siswa.perhatian}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {siswa.netral > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-gray-600 font-semibold bg-gray-50 px-2 py-1 rounded-full">
+                          <Info className="w-3 h-3" />
+                          {siswa.netral}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 text-sm">
+                      {siswa.lastUpdate}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => handleViewDetail(siswa)}
+                        className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-blue-200 transition-colors text-sm">
+                        <Eye className="w-4 h-4" />
+                        Lihat Detail
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
   );
 
+  /**
+   * FORM VIEW - Tambah/Edit Catatan
+   */
   const renderForm = () => (
-    <div className="max-w-3xl mx-auto">
-      {message.text && (
-        <div
-          className={`p-4 rounded-lg mb-6 ${
-            message.type === "error"
-              ? "bg-red-50 border border-red-200 text-red-700"
-              : message.type === "offline"
-              ? "bg-orange-50 border border-orange-200 text-orange-700"
-              : "bg-green-50 border border-green-200 text-green-700"
-          }`}>
-          <div className="flex items-center gap-2">
-            {message.type === "error" ? (
-              <AlertCircle size={20} />
-            ) : message.type === "offline" ? (
-              <WifiOff size={20} />
-            ) : (
-              <CheckCircle size={20} />
-            )}
-            {message.text}
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {editingNote ? "Edit Catatan" : "Tambah Catatan Baru"}
-          </h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveView(editingNote ? "detail" : "dashboard")}
-            className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg border">
-            <ArrowLeft className="w-4 h-4" />
-            Kembali
+            className="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {editingNote ? "Edit Catatan" : "Tambah Catatan Baru"}
+            </h2>
+            <p className="text-gray-600">
+              {editingNote
+                ? "Perbarui catatan perkembangan siswa"
+                : "Buat catatan perkembangan siswa baru"}
+            </p>
+          </div>
         </div>
+      </div>
 
+      {/* Form */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
         <form
           onSubmit={editingNote ? handleUpdateNote : handleCreateNote}
-          className="space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Siswa <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formData.student_id}
-              onChange={(e) =>
-                setFormData({ ...formData, student_id: e.target.value })
-              }
-              disabled={editingNote}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              required>
-              <option value="">Pilih Siswa</option>
-              {siswaList.map((siswa) => (
-                <option key={siswa.id} value={siswa.id}>
-                  {siswa.nama} - {siswa.kelas} (NISN: {siswa.nisn})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          className="space-y-6">
+          {/* Pilih Siswa & Kategori - SEJAJAR */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Pilih Siswa */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Kategori <span className="text-red-500">*</span>
+                Pilih Siswa <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.student_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, student_id: e.target.value })
+                }
+                required
+                disabled={editingNote}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 transition-colors">
+                <option value="">-- Pilih Siswa --</option>
+                {siswaList.map((siswa) => (
+                  <option key={siswa.id} value={siswa.id}>
+                    {siswa.nama} - {siswa.kelas} ({siswa.nisn})
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                Pilih siswa yang akan diberi catatan
+              </p>
+            </div>
+
+            {/* Kategori */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Kategori Catatan <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.category}
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value })
                 }
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required>
-                <option value="">Pilih Kategori</option>
+                required
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                <option value="">-- Pilih Kategori --</option>
                 {kategoris.map((kategori) => (
                   <option key={kategori} value={kategori}>
                     {kategori}
@@ -892,91 +1100,156 @@ const CatatanSiswa = ({ userData }) => {
                 ))}
               </select>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Label <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
-                {["positif", "perhatian", "netral"].map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, label })}
-                    className={`flex-1 px-3 py-2.5 rounded-lg border font-medium ${
-                      formData.label === label
-                        ? label === "positif"
-                          ? "bg-green-100 border-green-500 text-green-800"
-                          : label === "perhatian"
-                          ? "bg-red-100 border-red-500 text-red-800"
-                          : "bg-gray-100 border-gray-500 text-gray-800"
-                        : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
-                    }`}>
-                    {label === "positif"
-                      ? "👍 Positif"
-                      : label === "perhatian"
-                      ? "⚠️ Perhatian"
-                      : "📝 Biasa"}
-                  </button>
-                ))}
-              </div>
+          {/* Deskripsi Kategori (tetap di bawah) */}
+          {formData.category && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700 flex items-center gap-2">
+                <Info className="w-4 h-4" />
+                <strong>Kategori {formData.category}:</strong>{" "}
+                {getCategoryDescription(formData.category)}
+              </p>
+            </div>
+          )}
+
+          {/* LANJUTAN FORM YANG LAIN... */}
+
+          {/* Label */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Label Catatan <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                {
+                  value: "positif",
+                  label: "Positif",
+                  icon: CheckCircle,
+                  color: "green",
+                },
+                {
+                  value: "perhatian",
+                  label: "Perhatian",
+                  icon: AlertCircle,
+                  color: "red",
+                },
+                { value: "netral", label: "Biasa", icon: Info, color: "gray" },
+              ].map((option) => (
+                <label
+                  key={option.value}
+                  className={`relative flex cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                    formData.label === option.value
+                      ? `border-${option.color}-500 bg-${option.color}-50`
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}>
+                  <input
+                    type="radio"
+                    name="label"
+                    value={option.value}
+                    checked={formData.label === option.value}
+                    onChange={(e) =>
+                      setFormData({ ...formData, label: e.target.value })
+                    }
+                    className="sr-only"
+                    required
+                  />
+                  <div className="flex items-center gap-3 w-full">
+                    <div className={`p-2 rounded-full bg-${option.color}-100`}>
+                      <option.icon
+                        className={`w-5 h-5 text-${option.color}-600`}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {option.label}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {option.value === "positif" &&
+                          "Perkembangan baik & prestasi"}
+                        {option.value === "perhatian" &&
+                          "Masalah yang perlu ditindaklanjuti"}
+                        {option.value === "netral" &&
+                          "Catatan rutin & observasi"}
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              ))}
             </div>
           </div>
 
+          {/* Isi Catatan */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Isi Catatan <span className="text-red-500">*</span>
+              <span className="text-xs font-normal text-gray-500 ml-1">
+                (Minimal 10 karakter)
+              </span>
             </label>
             <textarea
               value={formData.note_content}
               onChange={(e) =>
                 setFormData({ ...formData, note_content: e.target.value })
               }
-              rows={6}
-              placeholder="Tuliskan catatan perkembangan siswa..."
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
               required
+              minLength="10"
+              rows="6"
+              placeholder="Tuliskan catatan perkembangan siswa secara detail dan jelas..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
             />
+            <div className="flex justify-between text-sm text-gray-500 mt-1">
+              <span>Panjang karakter: {formData.note_content.length}</span>
+              {formData.note_content.length < 10 && (
+                <span className="text-red-500">Minimal 10 karakter</span>
+              )}
+            </div>
           </div>
 
+          {/* Tindakan yang Diambil */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Tindakan yang Diambil
+              Tindakan yang Diambil{" "}
+              <span className="text-gray-500">(Opsional)</span>
             </label>
             <textarea
               value={formData.action_taken}
               onChange={(e) =>
                 setFormData({ ...formData, action_taken: e.target.value })
               }
-              rows={3}
-              placeholder="Tuliskan tindakan yang sudah atau akan dilakukan..."
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+              rows="3"
+              placeholder="Tuliskan tindakan yang sudah dilakukan (jika ada)..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Contoh: Diberikan motivasi, dikomunikasikan dengan orang tua, dll.
+            </p>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={loading || isSyncing}
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-              {loading || isSyncing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {editingNote ? "Menyimpan..." : "Membuat..."}
-                </>
-              ) : editingNote ? (
-                "Update Catatan"
-              ) : (
-                "Buat Catatan"
-              )}
-            </button>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
             <button
               type="button"
               onClick={() =>
                 setActiveView(editingNote ? "detail" : "dashboard")
               }
-              className="bg-gray-50 text-gray-700 px-6 py-2.5 rounded-lg border font-semibold hover:bg-gray-100">
+              className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors">
               Batal
+            </button>
+            <button
+              type="submit"
+              disabled={loading || isSyncing}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors flex-1">
+              {loading || isSyncing ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  {isSyncing ? "Menyinkronkan..." : "Menyimpan..."}
+                </>
+              ) : editingNote ? (
+                "Update Catatan"
+              ) : (
+                "Simpan Catatan"
+              )}
             </button>
           </div>
         </form>
@@ -984,118 +1257,87 @@ const CatatanSiswa = ({ userData }) => {
     </div>
   );
 
+  /**
+   * DETAIL VIEW - Lihat Catatan Siswa Spesifik
+   */
   const renderDetail = () => (
-    <div className="max-w-5xl mx-auto">
-      {message.text && (
-        <div
-          className={`p-4 rounded-lg mb-6 ${
-            message.type === "error"
-              ? "bg-red-50 border border-red-200 text-red-700"
-              : message.type === "offline"
-              ? "bg-orange-50 border border-orange-200 text-orange-700"
-              : "bg-green-50 border border-green-200 text-green-700"
-          }`}>
-          <div className="flex items-center gap-2">
-            {message.type === "error" ? (
-              <AlertCircle size={20} />
-            ) : message.type === "offline" ? (
-              <WifiOff size={20} />
-            ) : (
-              <CheckCircle size={20} />
-            )}
-            {message.text}
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={() => setActiveView("dashboard")}
-        className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-lg border mb-6">
-        <ArrowLeft className="w-4 h-4" />
-        Kembali ke Dashboard
-      </button>
-
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveView("dashboard")}
+            className="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
-              {selectedSiswa?.nama}
+              Catatan {selectedSiswa?.nama}
             </h2>
-            <p className="text-gray-600">NISN: {selectedSiswa?.nisn}</p>
-            <p className="text-gray-600">Kelas: {selectedSiswa?.kelas}</p>
+            <p className="text-gray-600">
+              {selectedSiswa?.kelas} • {selectedSiswa?.nisn}
+            </p>
           </div>
-          <div className="flex gap-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Catatan Positif</p>
-              <p className="text-3xl font-bold text-green-600">
-                {selectedSiswa?.positif}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Perlu Perhatian</p>
-              <p className="text-3xl font-bold text-red-600">
-                {selectedSiswa?.perhatian}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Catatan Biasa</p>
-              <p className="text-3xl font-bold text-gray-600">
-                {selectedSiswa?.netral}
-              </p>
-            </div>
-          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <ExportCatatanSiswa
+            siswaList={siswaList}
+            catatanList={catatanList}
+            selectedSiswa={selectedSiswa}
+            academicYear={academicYear}
+            semester={semester}
+            userData={userData}
+            currentView="detail"
+          />
+          {!isAdmin && (
+            <button
+              onClick={handleAddNote}
+              disabled={isSyncing}
+              className="bg-blue-600 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition-colors justify-center">
+              <Plus className="w-5 h-5" />
+              Tambah Catatan
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-gray-800">Timeline Catatan</h3>
-        {!isAdmin && (
-          <div className="flex gap-3">
-            <ExportCatatanSiswa
-              siswaList={siswaList}
-              catatanList={catatanList}
-              selectedSiswa={selectedSiswa}
-              academicYear={academicYear}
-              semester={semester}
-              userData={userData}
-              currentView="detail"
-            />
-            <button
-              onClick={() => {
-                setFormData({
-                  student_id: selectedSiswa.id,
-                  category: "",
-                  label: "",
-                  note_content: "",
-                  action_taken: "",
-                });
-                setEditingNote(null);
-                setActiveView("form");
-              }}
-              disabled={isSyncing}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50">
-              {isSyncing ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-              Tambah Catatan
-            </button>
+      {/* Student Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+          <div className="text-green-600 font-bold text-2xl">
+            {selectedSiswa?.positif || 0}
           </div>
-        )}
+          <div className="text-gray-600 text-sm">Catatan Positif</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+          <div className="text-red-600 font-bold text-2xl">
+            {selectedSiswa?.perhatian || 0}
+          </div>
+          <div className="text-gray-600 text-sm">Perlu Perhatian</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+          <div className="text-gray-600 font-bold text-2xl">
+            {selectedSiswa?.netral || 0}
+          </div>
+          <div className="text-gray-600 text-sm">Catatan Biasa</div>
+        </div>
       </div>
 
+      {/* Notes List */}
       {loading ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
           <p className="mt-4 text-gray-600">Memuat catatan...</p>
         </div>
       ) : catatanList.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-8 text-center text-gray-500">
-          <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg mb-2">Belum ada catatan untuk siswa ini</p>
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">
+            Belum ada catatan untuk siswa ini
+          </p>
           {!isAdmin && (
-            <p className="text-sm">
+            <p className="text-gray-500 text-sm mt-2">
               Klik "Tambah Catatan" untuk membuat catatan pertama
             </p>
           )}
@@ -1105,41 +1347,61 @@ const CatatanSiswa = ({ userData }) => {
           {catatanList.map((catatan) => (
             <div
               key={catatan.id}
-              className="bg-white rounded-lg shadow-sm p-6 border-l-4"
-              style={{
-                borderLeftColor:
-                  catatan.label === "positif"
-                    ? "#10b981"
-                    : catatan.label === "perhatian"
-                    ? "#ef4444"
-                    : "#6b7280",
-              }}>
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span
-                    className={`px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 ${getLabelBadge(
-                      catatan.label
-                    )}`}>
-                    {getLabelIcon(catatan.label)}
-                    {catatan.label === "positif"
-                      ? "Positif"
-                      : catatan.label === "perhatian"
-                      ? "Perlu Perhatian"
-                      : "Catatan Biasa"}
-                  </span>
-                  <span className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
-                    {catatan.category}
-                  </span>
-                  <span className="text-sm text-gray-500 font-medium">
-                    {formatDate(catatan.created_at)}
-                  </span>
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex-1">
+                  {/* Header */}
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <span
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getLabelBadge(
+                        catatan.label
+                      )}`}>
+                      {getLabelIcon(catatan.label)}
+                      {catatan.label === "positif"
+                        ? "Positif"
+                        : catatan.label === "perhatian"
+                        ? "Perhatian"
+                        : "Biasa"}
+                    </span>
+                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
+                      {catatan.category}
+                    </span>
+                    <span className="text-gray-500 text-sm">
+                      {formatDate(catatan.created_at)}
+                    </span>
+                    {catatan.teacher_name && (
+                      <span className="text-gray-500 text-sm">
+                        oleh {catatan.teacher_name}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="prose max-w-none mb-4">
+                    <p className="text-gray-800 whitespace-pre-line">
+                      {catatan.note_content}
+                    </p>
+                  </div>
+
+                  {/* Action Taken */}
+                  {catatan.action_taken && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-blue-800 mb-1">
+                        Tindakan yang Diambil:
+                      </p>
+                      <p className="text-blue-700 whitespace-pre-line">
+                        {catatan.action_taken}
+                      </p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Action Buttons */}
                 {!isAdmin && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 lg:flex-col">
                     <button
                       onClick={() => handleEditNote(catatan)}
-                      disabled={isSyncing}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50">
+                      className="bg-yellow-100 text-yellow-700 p-2 rounded-lg hover:bg-yellow-200 transition-colors">
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
@@ -1147,26 +1409,11 @@ const CatatanSiswa = ({ userData }) => {
                         setNoteToDelete(catatan.id);
                         setIsDeleteModalOpen(true);
                       }}
-                      disabled={isSyncing}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded disabled:opacity-50">
+                      className="bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 )}
-              </div>
-              <p className="text-gray-800 leading-relaxed mb-2 whitespace-pre-line">
-                {catatan.note_content}
-              </p>
-              {catatan.action_taken && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-semibold">Tindakan:</span>{" "}
-                    {catatan.action_taken}
-                  </p>
-                </div>
-              )}
-              <div className="mt-3 text-xs text-gray-500">
-                Oleh: {catatan.teacher_name}
               </div>
             </div>
           ))}
@@ -1175,24 +1422,15 @@ const CatatanSiswa = ({ userData }) => {
     </div>
   );
 
+  // ===== MAIN RENDER =====
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {loading && !siswaList.length ? (
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600 mb-4" />
-            <p className="text-gray-600 text-lg">Memuat data...</p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {activeView === "dashboard" && renderDashboard()}
-          {activeView === "form" && renderForm()}
-          {activeView === "detail" && renderDetail()}
-        </>
-      )}
-
-      {renderDeleteModal()}
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {activeView === "dashboard" && renderDashboard()}
+        {activeView === "form" && renderForm()}
+        {activeView === "detail" && renderDetail()}
+        {renderDeleteModal()}
+      </div>
     </div>
   );
 };

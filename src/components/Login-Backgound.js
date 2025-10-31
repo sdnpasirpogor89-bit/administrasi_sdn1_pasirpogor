@@ -4,7 +4,7 @@ import { supabase } from "../supabaseClient";
 import Logo from "./Logo";
 import backgroundImage from "../assets/Background.jpg";
 
-export const Login = ({ onLoginSuccess }) => {
+export const Login = ({ onLogin, onShowToast }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,8 +60,9 @@ export const Login = ({ onLoginSuccess }) => {
         throw new Error("Username tidak ditemukan");
       }
 
-      // LOGIN TANPA CEK PASSWORD DULU - BUAT TESTING
-      console.log("LOGIN BERHASIL:", data.username);
+      if (data.password !== password) {
+        throw new Error("Password salah");
+      }
 
       const userData = {
         id: data.id,
@@ -76,9 +77,17 @@ export const Login = ({ onLoginSuccess }) => {
         created_at: data.created_at,
       };
 
-      onLoginSuccess(userData, rememberMe);
+      onLogin(userData, rememberMe);
+
+      if (onShowToast) {
+        onShowToast(`Selamat datang, ${userData.full_name}! 👋`, "success");
+      }
     } catch (error) {
       setErrors({ general: error.message });
+
+      if (onShowToast) {
+        onShowToast(error.message, "error");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -112,10 +121,28 @@ export const Login = ({ onLoginSuccess }) => {
         .animation-delay-4000 {
           animation-delay: 4s;
         }
+        @keyframes shimmer {
+          0% { background-position: -1000px 0; }
+          100% { background-position: 1000px 0; }
+        }
+        .animate-shimmer {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+          background-size: 1000px 100%;
+          animation: shimmer 3s infinite;
+        }
+        /* Fix browser autofill kuning */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
+          -webkit-text-fill-color: white !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
       `}</style>
 
       <div className="flex-1 flex flex-col lg:flex-row relative z-10">
-        {/* PHOTO SECTION */}
+        {/* PHOTO SECTION - Enhanced with overlays */}
         <div
           className={`relative overflow-hidden flex-shrink-0 h-[35vh] lg:h-auto lg:flex-[7] transition-all duration-1000 ${
             imageLoaded ? "opacity-100" : "opacity-0"
@@ -123,25 +150,46 @@ export const Login = ({ onLoginSuccess }) => {
           style={{
             backgroundImage: imageLoaded ? `url(${backgroundImage})` : "none",
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundPosition: "center 40%",
             backgroundRepeat: "no-repeat",
           }}>
+          {/* Loading State */}
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-blue-900 flex items-center justify-center">
               <div className="relative">
                 <div className="w-16 h-16 border-4 border-white/20 border-t-white/80 rounded-full animate-spin"></div>
+                <div
+                  className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-purple-400/50 rounded-full animate-spin"
+                  style={{ animationDuration: "1.5s" }}></div>
               </div>
             </div>
           )}
 
-          {/* Gradient overlays */}
+          {/* Multi-layer gradient overlays for depth */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-pink-900/40"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.3)_100%)]"></div>
+
+          {/* Shimmer effect overlay */}
+          <div className="absolute inset-0 animate-shimmer opacity-20"></div>
+
+          {/* Floating particles effect */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div
+              className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/30 rounded-full animate-ping"
+              style={{ animationDuration: "3s" }}></div>
+            <div
+              className="absolute top-3/4 right-1/3 w-2 h-2 bg-blue-300/30 rounded-full animate-ping"
+              style={{ animationDuration: "4s", animationDelay: "1s" }}></div>
+            <div
+              className="absolute top-1/2 right-1/4 w-2 h-2 bg-purple-300/30 rounded-full animate-ping"
+              style={{ animationDuration: "5s", animationDelay: "2s" }}></div>
+          </div>
         </div>
 
-        {/* FORM SECTION */}
+        {/* FORM SECTION - Premium glassmorphism */}
         <div className="flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden flex-1 lg:flex-[2] bg-gradient-to-br from-slate-900/50 to-blue-900/50 backdrop-blur-xl">
+          {/* Animated gradient orbs */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
           <div
             className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse"
@@ -154,10 +202,12 @@ export const Login = ({ onLoginSuccess }) => {
                 : "opacity-0 translate-x-12"
             }`}
             onSubmit={handleSubmit}>
+            {/* Glass card with enhanced effects */}
             <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl relative overflow-hidden group hover:bg-white/[0.12] transition-all duration-500 hover:scale-[1.02] hover:shadow-blue-500/20">
+              {/* Gradient border effect on hover */}
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/20 group-hover:via-purple-500/20 group-hover:to-pink-500/20 transition-all duration-500 -z-10"></div>
 
-              {/* Header */}
+              {/* Header with logo */}
               <div className="text-center mb-8 relative">
                 <div className="mb-4 flex justify-center">
                   <div className="relative group/logo">
@@ -177,7 +227,7 @@ export const Login = ({ onLoginSuccess }) => {
                 <div className="mt-3 w-16 h-1 mx-auto bg-gradient-to-r from-transparent via-blue-400/50 to-transparent rounded-full"></div>
               </div>
 
-              {/* Username Field - NORMAL TANPA AUTOFILL EFFECT */}
+              {/* Username Field - Enhanced */}
               <div className="mb-5 relative group/input">
                 <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
                   Username
@@ -186,17 +236,17 @@ export const Login = ({ onLoginSuccess }) => {
                   <input
                     type="text"
                     id="username"
-                    className={`w-full px-4 py-3.5 bg-transparent border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
+                    className={`w-full px-4 py-3.5 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 autofill:bg-white/10 autofill:text-white ${
                       errors.username
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
-                        : "border-white/30 focus:border-blue-400/50 focus:shadow-lg focus:shadow-blue-500/20"
-                    } focus:outline-none hover:border-white/40`}
+                        : "border-white/20 focus:border-blue-400/50 focus:shadow-lg focus:shadow-blue-500/20"
+                    } focus:outline-none hover:border-white/30`}
                     placeholder="Masukkan username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    autoComplete="off"
                   />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover/input:from-blue-500/5 group-hover/input:to-purple-500/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
                 {errors.username && (
                   <div className="text-red-300 text-sm mt-2 flex items-center font-medium animate-pulse">
@@ -206,7 +256,7 @@ export const Login = ({ onLoginSuccess }) => {
                 )}
               </div>
 
-              {/* Password Field - NORMAL TANPA AUTOFILL EFFECT */}
+              {/* Password Field - Enhanced */}
               <div className="mb-5 relative group/input">
                 <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
                   Password
@@ -215,16 +265,15 @@ export const Login = ({ onLoginSuccess }) => {
                   <input
                     type={showPassword ? "text" : "password"}
                     id="password"
-                    className={`w-full px-4 py-3.5 pr-12 bg-transparent border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
+                    className={`w-full px-4 py-3.5 pr-12 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 autofill:bg-white/10 autofill:text-white ${
                       errors.password
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
-                        : "border-white/30 focus:border-purple-400/50 focus:shadow-lg focus:shadow-purple-500/20"
-                    } focus:outline-none hover:border-white/40`}
+                        : "border-white/20 focus:border-purple-400/50 focus:shadow-lg focus:shadow-purple-500/20"
+                    } focus:outline-none hover:border-white/30`}
                     placeholder="Masukkan password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    autoComplete="off"
                   />
                   <button
                     type="button"
@@ -232,6 +281,7 @@ export const Login = ({ onLoginSuccess }) => {
                     onClick={togglePasswordVisibility}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover/input:from-purple-500/5 group-hover/input:to-pink-500/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
                 {errors.password && (
                   <div className="text-red-300 text-sm mt-2 flex items-center font-medium animate-pulse">
@@ -241,7 +291,7 @@ export const Login = ({ onLoginSuccess }) => {
                 )}
               </div>
 
-              {/* Error Message */}
+              {/* Error Message - Enhanced */}
               {errors.general && (
                 <div className="mb-5 p-4 bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 rounded-xl text-sm font-medium shadow-lg shadow-red-500/10 animate-pulse">
                   ⚠️ {errors.general}
@@ -269,11 +319,12 @@ export const Login = ({ onLoginSuccess }) => {
                 </a>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit Button - Navy Classic */}
               <button
                 type="submit"
                 className="relative w-full py-4 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 hover:from-blue-800 hover:via-blue-700 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-800/60 hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden"
                 disabled={isLoading}>
+                {/* Animated gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
 
                 {isLoading ? (

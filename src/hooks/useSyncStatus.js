@@ -1,11 +1,27 @@
-// src/hooks/useSyncStatus.js
-import { useState, useEffect } from "react";
+// src/hooks/useSyncStatus.js - FIXED VERSION
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { getPendingCount, syncPendingData } from "../offlineSync";
 
 export const useSyncStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // ✅ FIX: useCallback untuk handleSync supaya reference stabil
+  const handleSync = useCallback(async () => {
+    if (isSyncing) return; // Prevent double sync
+
+    setIsSyncing(true);
+    try {
+      await syncPendingData();
+      const count = await getPendingCount();
+      setPendingCount(count);
+    } catch (error) {
+      console.error("Sync error:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing]); // Dependency: isSyncing
 
   useEffect(() => {
     // Detect online/offline
@@ -38,27 +54,16 @@ export const useSyncStatus = () => {
       window.removeEventListener("offline", handleOffline);
       clearInterval(interval);
     };
-  }, []);
+  }, [handleSync]); // ✅ FIX: Tambah handleSync ke dependency
 
-  const handleSync = async () => {
-    if (isSyncing) return; // Prevent double sync
-
-    setIsSyncing(true);
-    try {
-      await syncPendingData();
-      const count = await getPendingCount();
-      setPendingCount(count);
-    } catch (error) {
-      console.error("Sync error:", error);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  return {
-    isOnline,
-    pendingCount,
-    isSyncing,
-    syncNow: handleSync,
-  };
+  // ✅ FIX: useMemo untuk return value supaya object stabil
+  return useMemo(
+    () => ({
+      isOnline,
+      pendingCount,
+      isSyncing,
+      syncNow: handleSync,
+    }),
+    [isOnline, pendingCount, isSyncing, handleSync]
+  );
 };
