@@ -361,13 +361,13 @@ function App() {
             }
           />
 
-          {/* Jadwal Pelajaran Route */}
+          {/* Jadwal Pelajaran Route - SIMPLE FIX */}
           <Route
             path="/schedule"
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <TeacherScheduleWithNavigation userData={user} />
+                  <TeacherSchedule user={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
