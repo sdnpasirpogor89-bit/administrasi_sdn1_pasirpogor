@@ -1,14 +1,25 @@
-module.exports = function override(config) {
-  config.resolve.fallback = {
-    ...config.resolve.fallback,
-    crypto: false,
-    stream: false,
-    buffer: false,
-    util: false,
-    process: false
+module.exports = function override(config, env) {
+  // Fix dynamic import error
+  config.output = {
+    ...config.output,
+    environment: {
+      dynamicImport: true,
+      module: true,
+    },
   };
-  
-  config.ignoreWarnings = [/Failed to parse source map/];
-  
+
+  // Set target
+  config.target = ["web", "es2020"];
+
+  // Disable code splitting jika masih bermasalah
+  if (env === "production") {
+    config.optimization.splitChunks = {
+      cacheGroups: {
+        default: false,
+      },
+    };
+    config.optimization.runtimeChunk = false;
+  }
+
   return config;
 };
