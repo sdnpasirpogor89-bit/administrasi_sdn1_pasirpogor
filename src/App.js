@@ -1,4 +1,4 @@
-// src/App.js - FINAL VERSION DENGAN OFFLINE SYNC - FIXED
+// src/App.js - FINAL VERSION DENGAN OFFLINE SYNC - FIXED SCHEDULE ROUTE
 import React, { useState, useEffect, useMemo } from "react";
 import {
   BrowserRouter as Router,
@@ -21,12 +21,13 @@ import Teacher from "./pages/Teacher";
 import Grades from "./pages/Grades";
 import CatatanSiswa from "./pages/CatatanSiswa";
 import TeacherSchedule from "./pages/TeacherSchedule";
+import Classes from "./pages/Classes";
 import SPMB from "./spmb/SPMB";
 import Report from "./reports/Reports";
 import Setting from "./setting/setting";
 import MonitorSistem from "./system/MonitorSistem";
 
-// ===== ✅ FIX: Wrapper components dengan useMemo =====
+// ===== FIX: Wrapper components dengan useMemo =====
 const ReportWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
@@ -70,7 +71,15 @@ const CatatanSiswaWithNavigation = ({ userData }) => {
 const TeacherScheduleWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <TeacherSchedule userData={userData} onNavigate={navigate} />,
+    () => <TeacherSchedule user={userData} onNavigate={navigate} />,
+    [userData]
+  );
+};
+
+const ClassesWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return useMemo(
+    () => <Classes userData={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -103,15 +112,14 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ SETUP AUTO-SYNC & EXPOSE DB (DEV ONLY)
   useEffect(() => {
     setupAutoSync();
-    console.log("🔄 Auto-sync initialized");
+    console.log("Auto-sync initialized");
 
     if (process.env.NODE_ENV === "development") {
       window.testDB = db;
-      console.log("💾 Database exposed to: window.testDB");
-      console.log("📖 Usage examples:");
+      console.log("Database exposed to: window.testDB");
+      console.log("Usage examples:");
       console.log("  await window.testDB.student_notes.toArray()");
       console.log("  await window.testDB.student_notes.count()");
       console.log("  await window.testDB.attendance.toArray()");
@@ -119,7 +127,6 @@ function App() {
     }
   }, []);
 
-  // ✅ CHECK SESSION DARI LOCALSTORAGE
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -134,7 +141,6 @@ function App() {
 
         const session = JSON.parse(sessionData);
 
-        // ✅ CEK APAKAH SESSION MASIH VALID (belum expired)
         const currentTime = Date.now();
         if (session.expiryTime && currentTime > session.expiryTime) {
           console.log("Session expired");
@@ -144,7 +150,6 @@ function App() {
           return;
         }
 
-        // ✅ SESSION VALID - Fetch user data terbaru dari database
         const { data: userData, error } = await supabase
           .from("users")
           .select("*")
@@ -159,7 +164,6 @@ function App() {
           return;
         }
 
-        // ✅ SET USER DATA
         const completeUserData = {
           id: userData.id,
           username: userData.username,
@@ -188,7 +192,6 @@ function App() {
     checkSession();
   }, []);
 
-  // ✅ HANDLE LOGIN SUCCESS
   const handleLoginSuccess = async (userData) => {
     try {
       const { data: dbUserData, error } = await supabase
@@ -227,7 +230,6 @@ function App() {
     }
   };
 
-  // ✅ HANDLE LOGOUT
   const handleLogout = async () => {
     try {
       console.log("Logging out...");
@@ -240,7 +242,6 @@ function App() {
     }
   };
 
-  // Render dashboard based on role
   const renderDashboard = (userData) => {
     if (userData.role === "admin") {
       return <AdminDashboard userData={userData} />;
@@ -249,7 +250,6 @@ function App() {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -265,7 +265,6 @@ function App() {
     <Router>
       <div className="App min-h-screen bg-gray-50">
         <Routes>
-          {/* Login Route */}
           <Route
             path="/login"
             element={
@@ -277,7 +276,6 @@ function App() {
             }
           />
 
-          {/* Dashboard Route */}
           <Route
             path="/dashboard"
             element={
@@ -291,7 +289,6 @@ function App() {
             }
           />
 
-          {/* Students Route */}
           <Route
             path="/students"
             element={
@@ -305,7 +302,19 @@ function App() {
             }
           />
 
-          {/* Attendance Route */}
+          <Route
+            path="/classes"
+            element={
+              user ? (
+                <Layout userData={user} onLogout={handleLogout}>
+                  <ClassesWithNavigation userData={user} />
+                </Layout>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
           <Route
             path="/attendance"
             element={
@@ -319,7 +328,6 @@ function App() {
             }
           />
 
-          {/* Teachers Route */}
           <Route
             path="/teachers"
             element={
@@ -333,7 +341,6 @@ function App() {
             }
           />
 
-          {/* Grades Route */}
           <Route
             path="/grades"
             element={
@@ -347,7 +354,6 @@ function App() {
             }
           />
 
-          {/* Catatan Siswa Route */}
           <Route
             path="/catatan-siswa"
             element={
@@ -361,13 +367,12 @@ function App() {
             }
           />
 
-          {/* Jadwal Pelajaran Route - SIMPLE FIX */}
           <Route
             path="/schedule"
             element={
               user ? (
                 <Layout userData={user} onLogout={handleLogout}>
-                  <TeacherSchedule user={user} />
+                  <TeacherScheduleWithNavigation userData={user} />
                 </Layout>
               ) : (
                 <Navigate to="/login" replace />
@@ -375,7 +380,6 @@ function App() {
             }
           />
 
-          {/* SPMB Route */}
           <Route
             path="/spmb"
             element={
@@ -389,7 +393,6 @@ function App() {
             }
           />
 
-          {/* Reports Route */}
           <Route
             path="/reports"
             element={
@@ -403,7 +406,6 @@ function App() {
             }
           />
 
-          {/* Settings Route */}
           <Route
             path="/settings"
             element={
@@ -417,7 +419,6 @@ function App() {
             }
           />
 
-          {/* Monitor Sistem Route */}
           <Route
             path="/monitor-sistem"
             element={
@@ -431,13 +432,11 @@ function App() {
             }
           />
 
-          {/* Root redirect */}
           <Route
             path="/"
             element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
           />
 
-          {/* Catch all */}
           <Route
             path="*"
             element={<Navigate to={user ? "/dashboard" : "/login"} replace />}

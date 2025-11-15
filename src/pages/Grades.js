@@ -267,7 +267,7 @@ const Grades = ({ userData: initialUserData }) => {
       "Seni Budaya",
     ],
     guru_mapel: {
-      acengmudrikah: ["Pendidikan Agama Islam"],
+      acengmudrikah: ["PABP"],
       yosefedi: ["PJOK"],
     },
   };
@@ -295,7 +295,7 @@ const Grades = ({ userData: initialUserData }) => {
 
   const getAvailableSubjects = () => {
     if (userData.role === "admin") {
-      return [...mataPelajaran.guru_kelas, "Pendidikan Agama Islam", "PJOK"];
+      return [...mataPelajaran.guru_kelas, "PABP", "PJOK"];
     } else if (userData.role === "guru_kelas") {
       return mataPelajaran.guru_kelas;
     } else if (userData.role === "guru_mapel") {

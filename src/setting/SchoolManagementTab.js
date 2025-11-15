@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import {
   Plus,
@@ -51,7 +51,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     data: null,
   });
 
-  // PASSWORD STATES - NEW!
+  // PASSWORD STATES
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordEdit, setShowPasswordEdit] = useState(false);
@@ -88,7 +88,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("id, username, full_name, role, kelas, is_active")
-        .in("role", ["guru_kelas", "guru_mapel"]) // ← HAPUS 'admin'
+        .in("role", ["guru_kelas", "guru_mapel"])
         .order("full_name");
 
       if (teachersError) throw teachersError;
@@ -257,22 +257,18 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     });
   };
 
-  const handleAddTeacher = async () => {
+  const handleAddTeacher = async (formData) => {
     try {
       setLoading(true);
 
       // Validation
-      if (
-        !teacherForm.username ||
-        !teacherForm.full_name ||
-        !teacherForm.password
-      ) {
+      if (!formData.username || !formData.full_name || !formData.password) {
         showToast("Please fill in all required fields", "error");
         setLoading(false);
         return;
       }
 
-      if (teacherForm.password.length < 6) {
+      if (formData.password.length < 4) {
         showToast("Password must be at least 6 characters", "error");
         setLoading(false);
         return;
@@ -280,11 +276,11 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
       const { error } = await supabase.from("users").insert([
         {
-          username: teacherForm.username,
-          full_name: teacherForm.full_name,
-          role: teacherForm.role,
-          kelas: teacherForm.kelas || null,
-          password: teacherForm.password,
+          username: formData.username,
+          full_name: formData.full_name,
+          role: formData.role,
+          kelas: formData.kelas || null,
+          password: formData.password,
           is_active: true,
         },
       ]);
@@ -303,12 +299,12 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     }
   };
 
-  const handleEditTeacher = async () => {
+  const handleEditTeacher = async (formData) => {
     try {
       setLoading(true);
 
       // Validation
-      if (!teacherForm.username || !teacherForm.full_name) {
+      if (!formData.username || !formData.full_name) {
         showToast("Please fill in all required fields", "error");
         setLoading(false);
         return;
@@ -317,8 +313,8 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       // Validate password if changing
       if (
         showPasswordChange &&
-        teacherForm.password &&
-        teacherForm.password.length < 6
+        formData.password &&
+        formData.password.length < 4
       ) {
         showToast("Password must be at least 6 characters", "error");
         setLoading(false);
@@ -326,15 +322,15 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       }
 
       const updateData = {
-        username: teacherForm.username,
-        full_name: teacherForm.full_name,
-        role: teacherForm.role,
-        kelas: teacherForm.kelas || null,
+        username: formData.username,
+        full_name: formData.full_name,
+        role: formData.role,
+        kelas: formData.kelas || null,
       };
 
       // Only update password if checkbox is checked and password is provided
-      if (showPasswordChange && teacherForm.password) {
-        updateData.password = teacherForm.password;
+      if (showPasswordChange && formData.password) {
+        updateData.password = formData.password;
       }
 
       const { error } = await supabase
@@ -345,7 +341,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       if (error) throw error;
 
       const successMessage =
-        showPasswordChange && teacherForm.password
+        showPasswordChange && formData.password
           ? "Teacher updated successfully! Password has been changed."
           : "Teacher updated successfully!";
 
@@ -411,17 +407,17 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     });
   };
 
-  const handleAddStudent = async () => {
+  const handleAddStudent = async (formData) => {
     try {
       setLoading(true);
 
       const { error } = await supabase.from("students").insert([
         {
-          nisn: studentForm.nisn,
-          nama_siswa: studentForm.nama_siswa,
-          jenis_kelamin: studentForm.jenis_kelamin,
-          kelas: studentForm.kelas || null,
-          is_active: studentForm.is_active,
+          nisn: formData.nisn,
+          nama_siswa: formData.nama_siswa,
+          jenis_kelamin: formData.jenis_kelamin,
+          kelas: formData.kelas || null,
+          is_active: formData.is_active,
         },
       ]);
 
@@ -438,18 +434,18 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     }
   };
 
-  const handleEditStudent = async () => {
+  const handleEditStudent = async (formData) => {
     try {
       setLoading(true);
 
       const { error } = await supabase
         .from("students")
         .update({
-          nisn: studentForm.nisn,
-          nama_siswa: studentForm.nama_siswa,
-          jenis_kelamin: studentForm.jenis_kelamin,
-          kelas: studentForm.kelas || null,
-          is_active: studentForm.is_active,
+          nisn: formData.nisn,
+          nama_siswa: formData.nama_siswa,
+          jenis_kelamin: formData.jenis_kelamin,
+          kelas: formData.kelas || null,
+          is_active: formData.is_active,
         })
         .eq("id", studentModal.data.id);
 
@@ -488,228 +484,45 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     }
   };
 
-  // TEACHER MODAL COMPONENT - WITH PASSWORD VISIBILITY TOGGLE!
-  const TeacherModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <UserCheck size={24} />
-            <div>
-              <h2 className="text-xl font-bold">
-                {teacherModal.mode === "add" ? "Tambah Guru" : "Edit Guru"}
-              </h2>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setTeacherModal({ show: false, mode: "add", data: null });
-              setShowPasswordChange(false);
-              setShowPassword(false);
-              setShowPasswordEdit(false);
-            }}
-            className="p-2 hover:bg-blue-600 rounded-lg transition-colors">
-            <X size={20} />
-          </button>
-        </div>
+  // TEACHER MODAL COMPONENT - FIXED WITH LOCAL STATE
+  const TeacherModal = () => {
+    const [localForm, setLocalForm] = useState(teacherForm);
+    const nameInputRef = useRef(null);
 
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nama Lengkap <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={teacherForm.full_name}
-              onChange={(e) =>
-                setTeacherForm((prev) => ({
-                  ...prev,
-                  full_name: e.target.value,
-                }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="Masukkan nama lengkap"
-            />
-          </div>
+    // Sync dengan parent state ketika modal terbuka
+    useEffect(() => {
+      setLocalForm(teacherForm);
+      if (teacherModal.show && nameInputRef.current) {
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+        }, 100);
+      }
+    }, [teacherModal.show]);
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Username <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={teacherForm.username}
-              onChange={(e) =>
-                setTeacherForm((prev) => ({
-                  ...prev,
-                  username: e.target.value,
-                }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="Masukkan username"
-            />
-          </div>
+    const updateLocalForm = (field, value) => {
+      setLocalForm((prev) => ({ ...prev, [field]: value }));
+    };
 
-          {/* PASSWORD SECTION - ADD MODE WITH TOGGLE */}
-          {teacherModal.mode === "add" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={teacherForm.password}
-                  onChange={(e) =>
-                    setTeacherForm((prev) => ({
-                      ...prev,
-                      password: e.target.value,
-                    }))
-                  }
-                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                  placeholder="Masukkan password (min. 6 karakter)"
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
-                  title={
-                    showPassword ? "Sembunyikan password" : "Tampilkan password"
-                  }>
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+    const handleSave = () => {
+      if (teacherModal.mode === "add") {
+        handleAddTeacher(localForm);
+      } else {
+        handleEditTeacher(localForm);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <UserCheck size={24} />
+              <div>
+                <h2 className="text-xl font-bold">
+                  {teacherModal.mode === "add" ? "Tambah Guru" : "Edit Guru"}
+                </h2>
               </div>
-              {teacherForm.password && teacherForm.password.length < 6 && (
-                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <span>⚠️</span> Password minimal 6 karakter
-                </p>
-              )}
             </div>
-          )}
-
-          {/* PASSWORD CHANGE SECTION - EDIT MODE WITH TOGGLE */}
-          {teacherModal.mode === "edit" && (
-            <div className="border-t border-gray-200 pt-4">
-              <label className="flex items-center gap-2 mb-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={showPasswordChange}
-                  onChange={(e) => {
-                    setShowPasswordChange(e.target.checked);
-                    setShowPasswordEdit(false);
-                    if (!e.target.checked) {
-                      setTeacherForm((prev) => ({ ...prev, password: "" }));
-                    }
-                  }}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                />
-                <span className="text-sm font-medium text-gray-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
-                  <Key size={16} className="text-blue-600" />
-                  Ganti Password User
-                </span>
-              </label>
-
-              {showPasswordChange && (
-                <div className="space-y-2 pl-6">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Password Baru <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPasswordEdit ? "text" : "password"}
-                      value={teacherForm.password}
-                      onChange={(e) =>
-                        setTeacherForm((prev) => ({
-                          ...prev,
-                          password: e.target.value,
-                        }))
-                      }
-                      className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                      placeholder="Masukkan password baru (min. 6 karakter)"
-                      minLength={6}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordEdit(!showPasswordEdit)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
-                      title={
-                        showPasswordEdit
-                          ? "Sembunyikan password"
-                          : "Tampilkan password"
-                      }>
-                      {showPasswordEdit ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-                    </button>
-                  </div>
-                  {teacherForm.password && teacherForm.password.length < 6 && (
-                    <p className="text-xs text-red-500 flex items-center gap-1">
-                      <span>⚠️</span> Password minimal 6 karakter
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <span>💡</span> Password baru akan langsung aktif setelah
-                    disimpan
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Role
-            </label>
-            <select
-              value={teacherForm.role}
-              onChange={(e) =>
-                setTeacherForm((prev) => ({ ...prev, role: e.target.value }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-              <option value="guru_mapel">Guru Mata Pelajaran</option>
-              <option value="guru_kelas">Guru Kelas</option>
-              <option value="admin">Administrator</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kelas Diampu
-            </label>
-            <select
-              value={teacherForm.kelas}
-              onChange={(e) =>
-                setTeacherForm((prev) => ({ ...prev, kelas: e.target.value }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-              <option value="">Pilih Kelas (Opsional)</option>
-              <option value="1">Kelas 1</option>
-              <option value="2">Kelas 2</option>
-              <option value="3">Kelas 3</option>
-              <option value="4">Kelas 4</option>
-              <option value="5">Kelas 5</option>
-              <option value="6">Kelas 6</option>
-            </select>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={
-                teacherModal.mode === "add"
-                  ? handleAddTeacher
-                  : handleEditTeacher
-              }
-              disabled={loading}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
-              {loading
-                ? "Menyimpan..."
-                : teacherModal.mode === "add"
-                ? "Tambah Guru"
-                : "Update Guru"}
-            </button>
             <button
               onClick={() => {
                 setTeacherModal({ show: false, mode: "add", data: null });
@@ -717,159 +530,357 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 setShowPassword(false);
                 setShowPasswordEdit(false);
               }}
-              disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Batal
+              className="p-2 hover:bg-blue-600 rounded-lg transition-colors">
+              <X size={20} />
             </button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nama Lengkap <span className="text-red-500">*</span>
+              </label>
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={localForm.full_name}
+                onChange={(e) => updateLocalForm("full_name", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                placeholder="Masukkan nama lengkap"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={localForm.username}
+                onChange={(e) => updateLocalForm("username", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                placeholder="Masukkan username"
+              />
+            </div>
+
+            {/* PASSWORD SECTION - ADD MODE WITH TOGGLE */}
+            {teacherModal.mode === "add" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={localForm.password}
+                    onChange={(e) =>
+                      updateLocalForm("password", e.target.value)
+                    }
+                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Masukkan password (min. 4 karakter)"
+                    minLength={4}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
+                    title={
+                      showPassword
+                        ? "Sembunyikan password"
+                        : "Tampilkan password"
+                    }>
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {localForm.password && localForm.password.length < 4 && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <span>⚠️</span> Password minimal 4 karakter
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* PASSWORD CHANGE SECTION - EDIT MODE WITH TOGGLE */}
+            {teacherModal.mode === "edit" && (
+              <div className="border-t border-gray-200 pt-4">
+                <label className="flex items-center gap-2 mb-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={showPasswordChange}
+                    onChange={(e) => {
+                      setShowPasswordChange(e.target.checked);
+                      setShowPasswordEdit(false);
+                      if (!e.target.checked) {
+                        updateLocalForm("password", "");
+                      }
+                    }}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
+                    <Key size={16} className="text-blue-600" />
+                    Ganti Password User
+                  </span>
+                </label>
+
+                {showPasswordChange && (
+                  <div className="space-y-2 pl-6">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Password Baru <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPasswordEdit ? "text" : "password"}
+                        value={localForm.password}
+                        onChange={(e) =>
+                          updateLocalForm("password", e.target.value)
+                        }
+                        className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        placeholder="Masukkan password baru (min. 4 karakter)"
+                        minLength={4}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordEdit(!showPasswordEdit)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
+                        title={
+                          showPasswordEdit
+                            ? "Sembunyikan password"
+                            : "Tampilkan password"
+                        }>
+                        {showPasswordEdit ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+                    {localForm.password && localForm.password.length < 4 && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <span>⚠️</span> Password minimal 4 karakter
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <span>💡</span> Password baru akan langsung aktif setelah
+                      disimpan
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Role
+              </label>
+              <select
+                value={localForm.role}
+                onChange={(e) => updateLocalForm("role", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                <option value="guru_mapel">Guru Mata Pelajaran</option>
+                <option value="guru_kelas">Guru Kelas</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Kelas Diampu
+              </label>
+              <select
+                value={localForm.kelas}
+                onChange={(e) => updateLocalForm("kelas", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                <option value="">Pilih Kelas (Opsional)</option>
+                <option value="1">Kelas 1</option>
+                <option value="2">Kelas 2</option>
+                <option value="3">Kelas 3</option>
+                <option value="4">Kelas 4</option>
+                <option value="5">Kelas 5</option>
+                <option value="6">Kelas 6</option>
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                {loading
+                  ? "Menyimpan..."
+                  : teacherModal.mode === "add"
+                  ? "Tambah Guru"
+                  : "Update Guru"}
+              </button>
+              <button
+                onClick={() => {
+                  setTeacherModal({ show: false, mode: "add", data: null });
+                  setShowPasswordChange(false);
+                  setShowPassword(false);
+                  setShowPasswordEdit(false);
+                }}
+                disabled={loading}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Batal
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  // STUDENT MODAL COMPONENT
-  const StudentModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Users size={24} />
-            <div>
-              <h2 className="text-xl font-bold">
-                {studentModal.mode === "add" ? "Tambah Siswa" : "Edit Siswa"}
-              </h2>
+  // STUDENT MODAL COMPONENT - FIXED WITH LOCAL STATE
+  const StudentModal = () => {
+    const [localForm, setLocalForm] = useState(studentForm);
+    const nameInputRef = useRef(null);
+
+    // Sync dengan parent state ketika modal terbuka
+    useEffect(() => {
+      setLocalForm(studentForm);
+      if (studentModal.show && nameInputRef.current) {
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+        }, 100);
+      }
+    }, [studentModal.show]);
+
+    const updateLocalForm = (field, value) => {
+      setLocalForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleSave = () => {
+      if (studentModal.mode === "add") {
+        handleAddStudent(localForm);
+      } else {
+        handleEditStudent(localForm);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Users size={24} />
+              <div>
+                <h2 className="text-xl font-bold">
+                  {studentModal.mode === "add" ? "Tambah Siswa" : "Edit Siswa"}
+                </h2>
+              </div>
             </div>
-          </div>
-          <button
-            onClick={() =>
-              setStudentModal({ show: false, mode: "add", data: null })
-            }
-            className="p-2 hover:bg-green-600 rounded-lg transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              NISN
-            </label>
-            <input
-              type="text"
-              value={studentForm.nisn}
-              onChange={(e) =>
-                setStudentForm((prev) => ({ ...prev, nisn: e.target.value }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-              placeholder="Masukkan NISN siswa"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nama Siswa
-            </label>
-            <input
-              type="text"
-              value={studentForm.nama_siswa}
-              onChange={(e) =>
-                setStudentForm((prev) => ({
-                  ...prev,
-                  nama_siswa: e.target.value,
-                }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-              placeholder="Masukkan nama lengkap siswa"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Jenis Kelamin
-            </label>
-            <select
-              value={studentForm.jenis_kelamin}
-              onChange={(e) =>
-                setStudentForm((prev) => ({
-                  ...prev,
-                  jenis_kelamin: e.target.value,
-                }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
-              <option value="L">Laki-laki</option>
-              <option value="P">Perempuan</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kelas
-            </label>
-            <select
-              value={studentForm.kelas}
-              onChange={(e) =>
-                setStudentForm((prev) => ({ ...prev, kelas: e.target.value }))
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
-              <option value="">Pilih Kelas</option>
-              <option value="1">Kelas 1</option>
-              <option value="2">Kelas 2</option>
-              <option value="3">Kelas 3</option>
-              <option value="4">Kelas 4</option>
-              <option value="5">Kelas 5</option>
-              <option value="6">Kelas 6</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={studentForm.is_active}
-                onChange={(e) =>
-                  setStudentForm((prev) => ({
-                    ...prev,
-                    is_active: e.target.checked,
-                  }))
-                }
-                className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Siswa Aktif
-              </span>
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={
-                studentModal.mode === "add"
-                  ? handleAddStudent
-                  : handleEditStudent
-              }
-              disabled={loading}
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
-              {loading
-                ? "Menyimpan..."
-                : studentModal.mode === "add"
-                ? "Tambah Siswa"
-                : "Update Siswa"}
-            </button>
             <button
               onClick={() =>
                 setStudentModal({ show: false, mode: "add", data: null })
               }
-              disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Batal
+              className="p-2 hover:bg-green-600 rounded-lg transition-colors">
+              <X size={20} />
             </button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                NISN
+              </label>
+              <input
+                type="text"
+                value={localForm.nisn}
+                onChange={(e) => updateLocalForm("nisn", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                placeholder="Masukkan NISN siswa"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nama Siswa
+              </label>
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={localForm.nama_siswa}
+                onChange={(e) => updateLocalForm("nama_siswa", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                placeholder="Masukkan nama lengkap siswa"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Jenis Kelamin
+              </label>
+              <select
+                value={localForm.jenis_kelamin}
+                onChange={(e) =>
+                  updateLocalForm("jenis_kelamin", e.target.value)
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Kelas
+              </label>
+              <select
+                value={localForm.kelas}
+                onChange={(e) => updateLocalForm("kelas", e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
+                <option value="">Pilih Kelas</option>
+                <option value="1">Kelas 1</option>
+                <option value="2">Kelas 2</option>
+                <option value="3">Kelas 3</option>
+                <option value="4">Kelas 4</option>
+                <option value="5">Kelas 5</option>
+                <option value="6">Kelas 6</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={localForm.is_active}
+                  onChange={(e) =>
+                    updateLocalForm("is_active", e.target.checked)
+                  }
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Siswa Aktif
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                {loading
+                  ? "Menyimpan..."
+                  : studentModal.mode === "add"
+                  ? "Tambah Siswa"
+                  : "Update Siswa"}
+              </button>
+              <button
+                onClick={() =>
+                  setStudentModal({ show: false, mode: "add", data: null })
+                }
+                disabled={loading}
+                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Batal
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  // DELETE CONFIRMATION MODAL
+  // DELETE CONFIRMATION MODAL (tetap sama)
   const DeleteConfirmModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
@@ -927,6 +938,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
       </div>
     </div>
   );
+
+  // ... REST OF THE COMPONENT REMAINS THE SAME ...
+  // (Header, Statistics, Tables, etc. - tidak berubah)
 
   return (
     <div className="p-4 lg:p-6">

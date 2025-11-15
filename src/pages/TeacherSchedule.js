@@ -10,7 +10,6 @@ import {
   AlertCircle,
   CheckCircle,
   X,
-  Upload,
   LayoutGrid,
   List,
 } from "lucide-react";
@@ -79,13 +78,14 @@ const SUBJECTS = [
   "IPAS",
   "Pendidikan Pancasila",
   "Seni Budaya",
-  "Pendidikan Agama Islam",
+  "PABP",
   "PJOK",
 ];
 
 const TeacherSchedule = ({ user }) => {
-  const currentUser =
-    user || JSON.parse(localStorage.getItem("userSession")) || {};
+  // 🔥 FIX: Langsung pakai props user tanpa fallback localStorage
+  const currentUser = user || {};
+
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -104,8 +104,9 @@ const TeacherSchedule = ({ user }) => {
 
   const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
+  // 🔥 FIX: Simplified useEffect - hanya watch kelas user
   useEffect(() => {
-    if (currentUser && currentUser.kelas) {
+    if (currentUser?.kelas) {
       fetchSchedules();
     }
   }, [currentUser?.kelas]);
@@ -339,9 +340,8 @@ const TeacherSchedule = ({ user }) => {
 
   const scheduleGrid = generateScheduleGrid();
 
-  // FIXED: Simplified render function
   const renderScheduleContent = () => {
-    if (loading) {
+    if (loading && schedules.length === 0) {
       return (
         <div className="p-8 text-center text-slate-600">Memuat jadwal...</div>
       );
@@ -386,58 +386,80 @@ const TeacherSchedule = ({ user }) => {
           <tbody>
             {periods.map((period) => {
               const time = JAM_SCHEDULE.Senin[period];
+
+              // 🔥 PERBAIKAN: ISTIRAHAT SETELAH JAM KE-5 (period "5")
+              const showIstirahat = period === "5"; // Jam ke-5 adalah sebelum istirahat
+
               return (
-                <tr
-                  key={period}
-                  className="hover:bg-green-50 transition-colors">
-                  <td className="p-3 border border-green-100 text-center font-semibold bg-green-50 text-green-900">
-                    {period}
-                  </td>
-                  <td className="p-3 border border-green-100 text-center text-sm bg-green-50 text-green-800">
-                    {time.start} - {time.end}
-                  </td>
-                  {days.map((day) => {
-                    const cellData = scheduleGrid[day]?.[period];
-                    const pagiActivity = getPagiActivity(day, period);
+                <React.Fragment key={period}>
+                  {/* BARIS JAM NORMAL */}
+                  <tr className="hover:bg-green-50 transition-colors">
+                    <td className="p-3 border border-green-100 text-center font-semibold text-green-900">
+                      {period}
+                    </td>
+                    <td className="p-3 border border-green-100 text-center text-sm text-green-800">
+                      {time.start} - {time.end}
+                    </td>
+                    {days.map((day) => {
+                      const cellData = scheduleGrid[day]?.[period];
+                      const pagiActivity = getPagiActivity(day, period);
 
-                    if (cellData?.skip) {
-                      return null;
-                    }
+                      if (cellData?.skip) {
+                        return null;
+                      }
 
-                    return (
-                      <td
-                        key={`${day}-${period}`}
-                        colSpan={cellData?.colspan || 1}
-                        className="p-3 border border-green-100 text-center">
-                        {cellData && !cellData.skip ? (
-                          <div className="relative group">
-                            <span className="font-bold text-slate-800 text-sm">
-                              {cellData.subject}
-                            </span>
-                            <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                              <button
-                                onClick={() => handleOpenModal(cellData)}
-                                className="text-blue-600 hover:text-blue-700 p-1 bg-white rounded shadow-sm">
-                                <Edit className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(cellData.id)}
-                                className="text-red-600 hover:text-red-700 p-1 bg-white rounded shadow-sm">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                      return (
+                        <td
+                          key={`${day}-${period}`}
+                          colSpan={cellData?.colspan || 1}
+                          className="p-3 border border-green-100 text-center">
+                          {cellData && !cellData.skip ? (
+                            <div className="relative group">
+                              <span className="font-bold text-slate-800 text-sm">
+                                {cellData.subject}
+                              </span>
+                              <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                                <button
+                                  onClick={() => handleOpenModal(cellData)}
+                                  className="text-blue-600 hover:text-blue-700 p-1 bg-white rounded shadow-sm">
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(cellData.id)}
+                                  className="text-red-600 hover:text-red-700 p-1 bg-white rounded shadow-sm">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ) : pagiActivity ? (
-                          <span className="font-bold text-green-700 italic text-xs">
-                            {pagiActivity}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
+                          ) : pagiActivity ? (
+                            <span className="font-bold text-green-700 text-xs">
+                              {pagiActivity}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+
+                  {/* 🔥 PERBAIKAN: BARIS ISTIRAHAT SETELAH JAM KE-5 */}
+                  {showIstirahat && (
+                    <tr className="bg-orange-50 hover:bg-orange-100 transition-colors">
+                      <td className="p-3 border border-green-100 text-center font-semibold text-orange-800">
+                        -
                       </td>
-                    );
-                  })}
-                </tr>
+                      <td className="p-3 border border-green-100 text-center text-sm text-orange-800">
+                        09:20 - 09:50
+                      </td>
+                      <td
+                        colSpan={5}
+                        className="p-3 border border-green-100 text-center font-bold text-orange-700">
+                        ISTIRAHAT
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
           </tbody>
@@ -445,7 +467,7 @@ const TeacherSchedule = ({ user }) => {
         <div className="p-4 bg-green-50 border-t border-green-200">
           <p className="text-sm md:text-base text-green-800 text-center font-bold">
             NB: Jadwal ini sebagai contoh perhitungan jumlah JP setiap mata
-            pelajarannya setiap minggunya. Silahkan sesuaikan dengan sekolah
+            pelajarannya setiap minggunya. Silahkan sesuaikan dengan Kelasnya
             masing-masing.
           </p>
         </div>
@@ -560,7 +582,7 @@ const TeacherSchedule = ({ user }) => {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header - HANYA SATU */}
+        {/* Header - ONLY ONE */}
         <div className="mb-6 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -571,14 +593,13 @@ const TeacherSchedule = ({ user }) => {
                 JADWAL PELAJARAN KELAS {currentUser?.kelas || "-"}
               </h1>
               <p className="text-slate-600 font-semibold">
-                {currentUser?.full_name || "Loading..."} - TAHUN AJARAN
-                2025/2026 SEMESTER GANJIL
+                TAHUN AJARAN 2025/2026 - SEMESTER GANJIL
               </p>
             </div>
           </div>
         </div>
 
-        {/* Controls - HANYA SATU */}
+        {/* Controls */}
         <div className="mb-6 bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <div className="flex gap-3 justify-center flex-wrap">
             <button
@@ -611,6 +632,7 @@ const TeacherSchedule = ({ user }) => {
               schedules={schedules}
               className={`Kelas ${currentUser?.kelas}`}
               user={currentUser}
+              onRefresh={fetchSchedules}
             />
           </div>
         </div>
@@ -634,7 +656,7 @@ const TeacherSchedule = ({ user }) => {
           </div>
         )}
 
-        {/* Main Content - HANYA SATU */}
+        {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
           {renderScheduleContent()}
         </div>

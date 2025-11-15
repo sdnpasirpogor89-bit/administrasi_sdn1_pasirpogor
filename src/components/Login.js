@@ -111,6 +111,16 @@ export const Login = ({ onLoginSuccess }) => {
         .animation-delay-4000 {
           animation-delay: 4s;
         }
+        
+        /* HAPUS WARNA KUNING AUTOFILL */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.1) inset !important;
+          -webkit-text-fill-color: white !important;
+          transition: background-color 5000s ease-in-out 0s !important;
+        }
       `}</style>
 
       <div className="flex-1 flex flex-col lg:flex-row relative z-10">
@@ -176,7 +186,7 @@ export const Login = ({ onLoginSuccess }) => {
                 <div className="mt-3 w-16 h-1 mx-auto bg-gradient-to-r from-transparent via-blue-400/50 to-transparent rounded-full"></div>
               </div>
 
-              {/* Username Field - NORMAL TANPA AUTOFILL EFFECT */}
+              {/* Username Field */}
               <div className="mb-5 relative group/input">
                 <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
                   Username
@@ -185,17 +195,18 @@ export const Login = ({ onLoginSuccess }) => {
                   <input
                     type="text"
                     id="username"
-                    className={`w-full px-4 py-3.5 bg-transparent border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
+                    autoComplete="off"
+                    className={`w-full px-4 py-3.5 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
                       errors.username
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
-                        : "border-white/30 focus:border-blue-400/50 focus:shadow-lg focus:shadow-blue-500/20"
-                    } focus:outline-none hover:border-white/40`}
+                        : "border-white/20 focus:border-blue-400/50 focus:shadow-lg focus:shadow-blue-500/20"
+                    } focus:outline-none hover:border-white/30`}
                     placeholder="Masukkan username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    autoComplete="off"
                   />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover/input:from-blue-500/5 group-hover/input:to-purple-500/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
                 {errors.username && (
                   <div className="text-red-300 text-sm mt-2 flex items-center font-medium animate-pulse">
@@ -205,7 +216,7 @@ export const Login = ({ onLoginSuccess }) => {
                 )}
               </div>
 
-              {/* Password Field - NORMAL TANPA AUTOFILL EFFECT */}
+              {/* Password Field */}
               <div className="mb-5 relative group/input">
                 <label className="block font-semibold text-white/90 mb-2 text-sm tracking-wide">
                   Password
@@ -214,23 +225,24 @@ export const Login = ({ onLoginSuccess }) => {
                   <input
                     type={showPassword ? "text" : "password"}
                     id="password"
-                    className={`w-full px-4 py-3.5 pr-12 bg-transparent border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
+                    autoComplete="off"
+                    className={`w-full px-4 py-3.5 pr-12 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
                       errors.password
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
-                        : "border-white/30 focus:border-purple-400/50 focus:shadow-lg focus:shadow-purple-500/20"
-                    } focus:outline-none hover:border-white/40`}
+                        : "border-white/20 focus:border-purple-400/50 focus:shadow-lg focus:shadow-purple-500/20"
+                    } focus:outline-none hover:border-white/30`}
                     placeholder="Masukkan password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    autoComplete="off"
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-all duration-300 p-2 hover:bg-white/10 rounded-lg"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-all duration-300 p-2 hover:bg-white/10 rounded-lg z-10"
                     onClick={togglePasswordVisibility}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover/input:from-purple-500/5 group-hover/input:to-pink-500/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
                 {errors.password && (
                   <div className="text-red-300 text-sm mt-2 flex items-center font-medium animate-pulse">

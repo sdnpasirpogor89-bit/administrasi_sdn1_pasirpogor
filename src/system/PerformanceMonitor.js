@@ -43,10 +43,20 @@ const PerformanceMonitor = () => {
       loadTime: 0,
       renderTime: 0,
     },
-    history: [], // Tracking history untuk trend
+    history: [],
   });
   const [isRunning, setIsRunning] = useState(false);
   const [previousAvg, setPreviousAvg] = useState(null);
+
+  // 🔧 FIX #1: Performance Score Calculator yang BENAR
+  const calculatePerformanceScore = (avgTime) => {
+    if (avgTime < 80) return Math.round(Math.max(80, 100 - avgTime * 0.25));
+    if (avgTime < 100)
+      return Math.round(Math.max(60, 80 - (avgTime - 80) * 1.0));
+    if (avgTime < 150)
+      return Math.round(Math.max(20, 60 - (avgTime - 100) * 0.8));
+    return Math.round(Math.max(0, 20 - (avgTime - 150) * 0.4));
+  };
 
   const testQueryPerformance = async () => {
     setIsRunning(true);
@@ -66,14 +76,18 @@ const PerformanceMonitor = () => {
       for (const table of tables) {
         const startTime = performance.now();
 
-        const { data, error, count } = await supabase
+        // 🔧 OPTIMIZED: Skip count untuk performance test
+        const { data, error } = await supabase
           .from(table.name)
-          .select("*", { count: "estimated", head: true }); // ← GANTI INI!
+          .select("*")
+          .limit(100);
 
         const endTime = performance.now();
         const duration = endTime - startTime;
 
-        // Enhanced status calculation
+        // Get count from actual data
+        const count = data?.length || 0;
+
         let status = "fast";
         if (duration >= 150) status = "critical";
         else if (duration >= 100) status = "warning";
@@ -89,13 +103,12 @@ const PerformanceMonitor = () => {
           timestamp: new Date().toLocaleTimeString(),
         });
 
-        await new Promise((resolve) => setTimeout(resolve, 50)); // ← GANTI JADI 50ms (atau hapus)
+        // 🔧 FIX #3: Hapus artificial delay
       }
 
       const testEndTime = performance.now();
       const totalTestTime = testEndTime - testStartTime;
 
-      // Calculate summary
       const durations = results.map((r) => parseFloat(r.duration));
       const avgQueryTime = (
         durations.reduce((a, b) => a + b, 0) / durations.length
@@ -105,29 +118,21 @@ const PerformanceMonitor = () => {
         (a, b) => parseFloat(b.duration) - parseFloat(a.duration)
       );
 
-      // Calculate performance score (0-100)
-      const maxAcceptableTime = 100;
-      const performanceScore = Math.max(
-        0,
-        Math.min(
-          100,
-          ((maxAcceptableTime - parseFloat(avgQueryTime)) / maxAcceptableTime) *
-            100
-        )
-      ).toFixed(0);
+      // 🔧 FIX #4: Gunakan formula yang BENAR
+      const performanceScore = calculatePerformanceScore(
+        parseFloat(avgQueryTime)
+      );
 
-      // Store previous avg for trend comparison
       if (metrics.summary.avgQueryTime > 0) {
         setPreviousAvg(parseFloat(metrics.summary.avgQueryTime));
       }
 
-      // Update history (keep last 10 tests)
       const newHistory = [
         ...metrics.history,
         {
           timestamp: new Date().toLocaleTimeString(),
           avgQueryTime: parseFloat(avgQueryTime),
-          performanceScore: parseInt(performanceScore),
+          performanceScore: performanceScore,
         },
       ].slice(-10);
 
@@ -138,7 +143,7 @@ const PerformanceMonitor = () => {
           slowestQuery: sortedByDuration[0],
           fastestQuery: sortedByDuration[sortedByDuration.length - 1],
           totalQueries: results.length,
-          performanceScore: parseInt(performanceScore),
+          performanceScore: performanceScore,
           totalTestTime: totalTestTime.toFixed(2),
         },
         pagePerformance: {
@@ -286,7 +291,6 @@ const PerformanceMonitor = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -318,7 +322,6 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      {/* Performance Score Card */}
       <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-lg shadow-md border-2 border-yellow-300">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -355,7 +358,6 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      {/* Performance Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
           <div className="flex items-center justify-between">
@@ -383,7 +385,11 @@ const PerformanceMonitor = () => {
                 {metrics.summary.totalQueries}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {metrics.queries.filter((q) => q.status === "fast").length}{" "}
+                {
+                  metrics.queries.filter(
+                    (q) => q.status === "fast" || q.status === "medium"
+                  ).length
+                }{" "}
                 optimal
               </p>
             </div>
@@ -424,8 +430,7 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      {/* Performance Trend Chart */}
-      {metrics.history.length > 1 && (
+      {metrics.history.length >= 3 && (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
@@ -450,7 +455,6 @@ const PerformanceMonitor = () => {
         </div>
       )}
 
-      {/* Query Performance Bar Chart */}
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
@@ -468,7 +472,6 @@ const PerformanceMonitor = () => {
         </ResponsiveContainer>
       </div>
 
-      {/* Query Performance Details */}
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <Target className="w-5 h-5" />
@@ -515,7 +518,6 @@ const PerformanceMonitor = () => {
                   </div>
                 </div>
 
-                {/* Progress Bar with Labels */}
                 <div className="relative w-full bg-gray-200 rounded-full h-3 mb-2">
                   <div
                     className={`h-3 rounded-full transition-all ${
@@ -535,7 +537,6 @@ const PerformanceMonitor = () => {
                     }}></div>
                 </div>
 
-                {/* Recommendation */}
                 <div className="flex items-start gap-2 mt-2">
                   <span className="text-sm font-medium text-gray-700">
                     {getRecommendation(query)}
@@ -546,7 +547,6 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      {/* Performance Thresholds Info */}
       <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-500 p-4 rounded">
         <div className="flex items-start gap-3">
           <Activity className="w-5 h-5 text-blue-600 mt-0.5" />
@@ -584,7 +584,6 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      {/* Smart Alerts */}
       {metrics.queries.filter((q) => q.status === "critical").length > 0 && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded animate-pulse">
           <div className="flex items-start gap-3">
@@ -641,7 +640,6 @@ const PerformanceMonitor = () => {
         </div>
       )}
 
-      {/* Optimization Tips */}
       <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <Zap className="w-5 h-5 text-yellow-500" />
@@ -765,7 +763,6 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      {/* Test Info */}
       {metrics.summary.totalTestTime && (
         <div className="bg-gray-50 border border-gray-200 p-3 rounded text-center">
           <p className="text-sm text-gray-600">

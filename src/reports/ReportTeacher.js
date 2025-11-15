@@ -140,7 +140,7 @@ const ReportTeacher = ({ user = {} }) => {
         "IPAS",
         "Pendidikan Pancasila",
         "Seni Budaya",
-        "Pendidikan Agama Islam",
+        "PABP",
         "PJOK",
       ],
     };
@@ -315,9 +315,9 @@ const ReportTeacher = ({ user = {} }) => {
           </svg>
           <p className="text-blue-800 text-sm">
             {user.role === "guru_kelas" &&
-              `Akses terbatas untuk kelas ${user.kelas}`}
+              `Akses Hanya Untuk Guru Kelas ${user.kelas}`}
             {user.role === "guru_mapel" &&
-              `Akses untuk mata pelajaran ${user.mata_pelajaran} (Kelas 1-6)`}
+              `Akses Untuk Mata Pelajaran ${user.mata_pelajaran} (Kelas 1-6)`}
           </p>
         </div>
 

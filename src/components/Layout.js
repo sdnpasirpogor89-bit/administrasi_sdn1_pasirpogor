@@ -143,14 +143,15 @@ const Layout = ({ children, userData, onLogout }) => {
     });
   };
 
-  // Get current page name from location - PERUBAHAN
+  // Get current page name from location
   const getCurrentPageName = () => {
     const pathMap = {
       "/dashboard": "Dashboard",
       "/students": "Data Siswa",
+      "/classes": "Data Kelas",
       "/teachers": "Data Guru",
-      "/attendance": "Presensi Siswa", // ← PERUBAHAN: Kehadiran -> Presensi Siswa
-      "/grades": "Nilai Siswa",        // ← PERUBAHAN: Nilai Akademik -> Nilai Siswa
+      "/attendance": "Presensi Siswa",
+      "/grades": "Nilai Siswa",
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
       "/spmb": "SPMB",
@@ -161,14 +162,15 @@ const Layout = ({ children, userData, onLogout }) => {
     return pathMap[location.pathname] || "Dashboard";
   };
 
-  // Mobile-optimized page names - PERUBAHAN
+  // Mobile-optimized page names
   const getMobilePageName = () => {
     const mobileNames = {
       "/dashboard": "Dashboard",
       "/students": "Siswa",
+      "/classes": "Kelas",
       "/teachers": "Guru",
-      "/attendance": "Presensi", // ← PERUBAHAN: Presensi
-      "/grades": "Nilai",        // ← PERUBAHAN: Nilai
+      "/attendance": "Presensi",
+      "/grades": "Nilai",
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
       "/spmb": "SPMB",
@@ -181,7 +183,7 @@ const Layout = ({ children, userData, onLogout }) => {
 
   const currentPageName = isMobile ? getMobilePageName() : getCurrentPageName();
 
-  // Simplified navigation - PERUBAHAN
+  // Simplified navigation
   const handleMenuClick = useCallback(
     (menuName) => {
       if (isNavigating) return;
@@ -190,11 +192,13 @@ const Layout = ({ children, userData, onLogout }) => {
         Dashboard: "/dashboard",
         "Data Siswa": "/students",
         Siswa: "/students",
+        "Data Kelas": "/classes",
+        Kelas: "/classes",
         "Data Guru": "/teachers",
         Guru: "/teachers",
-        "Presensi Siswa": "/attendance", // ← PERUBAHAN: Presensi Siswa
+        "Presensi Siswa": "/attendance",
         Presensi: "/attendance",
-        "Nilai Siswa": "/grades",        // ← PERUBAHAN: Nilai Siswa
+        "Nilai Siswa": "/grades",
         Nilai: "/grades",
         "Catatan Siswa": "/catatan-siswa",
         Catatan: "/catatan-siswa",
@@ -352,7 +356,7 @@ const Layout = ({ children, userData, onLogout }) => {
 
                           <button
                             onClick={() => {
-                              onLogout(); // Ganti navigate("/settings") ke onLogout() untuk Logout
+                              onLogout();
                               setShowProfileDropdown(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors touch-manipulation">
@@ -435,7 +439,7 @@ const Layout = ({ children, userData, onLogout }) => {
                         <div className="py-2">
                           <button
                             onClick={() => {
-                              navigate("/settings"); // Ganti handleMenuClick("Profile") ke navigate("/settings")
+                              navigate("/settings");
                               setShowProfileDropdown(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors">

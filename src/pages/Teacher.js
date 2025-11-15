@@ -10,7 +10,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// Compact Stats Card Component
+// Compact Stats Card Component - RESPONSIVE
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
     blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
@@ -28,23 +28,30 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
+      className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-3 sm:p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-2xl font-bold text-gray-900">{number}</p>
-          <p className="text-sm font-medium text-gray-600">{label}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">
+            {number}
+          </p>
+          <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
+            {label}
+          </p>
         </div>
-        <Icon size={28} className={iconColorClasses[color]} />
+        <Icon
+          size={24}
+          className={`${iconColorClasses[color]} sm:w-7 sm:h-7`}
+        />
       </div>
     </div>
   );
 };
 
-// Status Badge Component
+// Status Badge Component - RESPONSIVE
 const StatusBadge = ({ isActive }) => {
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+      className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold ${
         isActive
           ? "bg-green-100 text-green-800 border border-green-200"
           : "bg-red-100 text-red-800 border border-red-200"
@@ -54,7 +61,7 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
-// Teacher Card Component untuk Mobile
+// Teacher Card Component - FULLY RESPONSIVE
 const TeacherCard = ({ teacher, index }) => {
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
@@ -64,7 +71,7 @@ const TeacherCard = ({ teacher, index }) => {
     } else if (teacher.role === "guru_mapel") {
       const subjectMap = {
         yosefedi: "Mapel PJOK",
-        acengmudrikah: "Mapel PAI",
+        acengmudrikah: "Mapel PABP",
       };
       return subjectMap[teacher.username] || "Mapel Lainnya";
     }
@@ -72,12 +79,12 @@ const TeacherCard = ({ teacher, index }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all duration-300">
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-sm">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-blue-600 font-bold text-xs sm:text-sm">
                 {teacher.full_name
                   .split(" ")
                   .map((n) => n[0])
@@ -85,33 +92,36 @@ const TeacherCard = ({ teacher, index }) => {
                   .toUpperCase()}
               </span>
             </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">
                 {teacher.full_name}
               </h3>
-              <p className="text-sm text-gray-600">#{index + 1}</p>
+              <p className="text-xs text-gray-600">#{index + 1}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="min-w-0">
               <p className="text-xs text-gray-500 font-medium">Tugas/Kelas</p>
-              <p className="text-sm font-semibold text-gray-800">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">
                 {formatTeachingArea(teacher)}
               </p>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-gray-500 font-medium">Jumlah Siswa</p>
-              <p className="text-sm font-semibold text-gray-800">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800">
                 {teacher.studentCount} siswa
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <StatusBadge isActive={teacher.is_active} />
-            <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
-              <MoreVertical size={18} className="text-gray-500" />
+            <button className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">
+              <MoreVertical
+                size={16}
+                className="sm:w-[18px] sm:h-[18px] text-gray-500"
+              />
             </button>
           </div>
         </div>
@@ -120,7 +130,7 @@ const TeacherCard = ({ teacher, index }) => {
   );
 };
 
-// Main Teacher Component
+// Main Teacher Component - FULLY RESPONSIVE
 const Teacher = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
@@ -135,10 +145,10 @@ const Teacher = () => {
     guruMapel: 0,
   });
 
-  // Cek device type
+  // Cek device type - UPDATE BREAKPOINT
   useEffect(() => {
     const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 1024); // Changed from 768 to 1024
     };
 
     checkDevice();
@@ -183,14 +193,12 @@ const Teacher = () => {
   useEffect(() => {
     let result = teachers;
 
-    // Filter by search term
     if (searchTerm) {
       result = result.filter((teacher) =>
         teacher.full_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filter by status
     if (statusFilter !== "all") {
       result = result.filter((teacher) =>
         statusFilter === "active" ? teacher.is_active : !teacher.is_active
@@ -285,7 +293,7 @@ const Teacher = () => {
     } else if (teacher.role === "guru_mapel") {
       const subjectMap = {
         yosefedi: "Mapel PJOK",
-        acengmudrikah: "Mapel PAI",
+        acengmudrikah: "Mapel PABP",
       };
       return subjectMap[teacher.username] || "Mapel Lainnya";
     }
@@ -298,19 +306,21 @@ const Teacher = () => {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center h-96 bg-white rounded-xl shadow-sm">
-          <div className="w-10 h-10 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 font-medium">Memuat data guru...</p>
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
+        <div className="flex flex-col items-center justify-center h-64 sm:h-96 bg-white rounded-xl shadow-sm">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Memuat data guru...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
-      {/* Compact Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
+      {/* Compact Stats Cards - RESPONSIVE GRID */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <StatsCard
           icon={Users}
           number={stats.totalGuru}
@@ -337,21 +347,21 @@ const Teacher = () => {
         />
       </div>
 
-      {/* Filter Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div className="flex flex-col md:flex-row gap-4">
+      {/* Filter Section - FULLY RESPONSIVE */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
             <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
+              size={18}
             />
             <input
               type="text"
               placeholder="Cari nama guru..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
             />
           </div>
 
@@ -360,7 +370,7 @@ const Teacher = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+              className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base">
               <option value="all">Semua Status</option>
               <option value="active">Aktif</option>
               <option value="inactive">Tidak Aktif</option>
@@ -369,33 +379,38 @@ const Teacher = () => {
         </div>
       </div>
 
-      {/* Tabel Data Guru untuk Desktop & Cards untuk Mobile */}
+      {/* Tabel Data Guru - RESPONSIVE LAYOUT */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900">Daftar Guru</h2>
-          <p className="text-sm text-gray-500 mt-1">
+        <div className="p-4 sm:p-5 lg:p-6 border-b border-gray-100">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+            Daftar Guru
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
             Menampilkan {filteredTeachers.length} dari {teachers.length} guru
           </p>
         </div>
 
         {isMobile ? (
-          /* Mobile Card View */
-          <div className="p-4 space-y-4">
+          /* Mobile/Tablet Card View (< 1024px) */
+          <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
             {filteredTeachers.length > 0 ? (
               filteredTeachers.map((teacher, index) => (
                 <TeacherCard key={teacher.id} teacher={teacher} index={index} />
               ))
             ) : (
-              <div className="text-center py-16">
-                <Users size={48} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">
+              <div className="text-center py-12 sm:py-16">
+                <Users
+                  size={40}
+                  className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3 sm:mb-4"
+                />
+                <p className="text-sm sm:text-base text-gray-500 font-medium">
                   Tidak ada data guru yang cocok
                 </p>
               </div>
             )}
           </div>
         ) : (
-          /* Desktop Table View */
+          /* Desktop Table View (>= 1024px) */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
