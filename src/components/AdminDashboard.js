@@ -1,134 +1,414 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Users,
   GraduationCap,
   UserCheck,
-  BarChart3,
-  TrendingUp,
-  UserPlus,
-  Download,
-  RefreshCw,
-  ClipboardList,
-  Edit,
-  Trash2,
-  Key,
-  Search,
-  Filter,
-  Eye,
-  EyeOff,
-  Save,
-  X,
-  AlertTriangle,
-  Calendar,
-  Database,
-  FileDown,
-  Upload,
   BookOpen,
-  Settings,
+  RefreshCw,
   Smartphone,
-  Monitor
-} from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  LineChart,
-  Line,
-  ResponsiveContainer
-} from 'recharts';
-import { supabase } from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+  Settings,
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react";
+import { supabase } from "../supabaseClient";
+import { useNavigate } from "react-router-dom";
 
-// Confirmation Modal Component
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, type = 'danger' }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full mx-4">
-        <div className="p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className={`p-2 rounded-full ${
-              type === 'danger' ? 'bg-red-100' : 'bg-yellow-100'
-            }`}>
-              <AlertTriangle className={`h-5 w-5 sm:h-6 sm:w-6 ${
-                type === 'danger' ? 'text-red-600' : 'text-yellow-600'
-              }`} />
-            </div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{title}</h3>
-          </div>
-          
-          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{message}</p>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base font-medium touch-manipulation"
-            >
-              Batal
-            </button>
-            <button
-              onClick={onConfirm}
-              className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base font-medium touch-manipulation ${
-                type === 'danger' 
-                  ? 'bg-red-600 hover:bg-red-700' 
-                  : 'bg-yellow-600 hover:bg-yellow-700'
-              }`}
-            >
-              {type === 'danger' ? 'Hapus' : 'Konfirmasi'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Enhanced Stats Card Component with better mobile optimization
-const StatsCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue', isLoading = false }) => {
+// Compact Stats Card Component
+const StatsCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = "blue",
+  isLoading = false,
+}) => {
   const colorClasses = {
-    blue: 'border-l-blue-500',
-    green: 'border-l-emerald-500',
-    purple: 'border-l-purple-500',
-    orange: 'border-l-orange-500',
-    red: 'border-l-red-500'
+    blue: "border-l-blue-500",
+    green: "border-l-emerald-500",
+    purple: "border-l-purple-500",
+    orange: "border-l-orange-500",
+    red: "border-l-red-500",
   };
 
   const iconColorClasses = {
-    blue: 'text-blue-500',
-    green: 'text-emerald-500',
-    purple: 'text-purple-500',
-    orange: 'text-orange-500',
-    red: 'text-red-500'
+    blue: "text-blue-500",
+    green: "text-emerald-500",
+    purple: "text-purple-500",
+    orange: "text-orange-500",
+    red: "text-red-500",
   };
 
   return (
-    <div className={`bg-white rounded-lg sm:rounded-xl p-3 sm:p-5 shadow-sm border-l-4 ${colorClasses[color]} hover:shadow-md transition-all duration-200 touch-manipulation`}>
-      <div className="flex items-start justify-between gap-3">
+    <div
+      className={`bg-white rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow-sm border-l-4 ${colorClasses[color]} hover:shadow-md transition-all duration-200 touch-manipulation`}>
+      <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2 leading-none">
+          <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-0.5 sm:mb-1 leading-none">
             {isLoading ? (
-              <div className="bg-gray-200 animate-pulse h-6 sm:h-10 w-10 sm:w-16 rounded"></div>
+              <div className="bg-gray-200 animate-pulse h-5 sm:h-8 w-8 sm:w-14 rounded"></div>
             ) : (
               <span className="block">{value}</span>
             )}
           </div>
           <div>
-            <p className="text-xs sm:text-base font-semibold text-gray-700 truncate leading-tight">{title}</p>
+            <p className="text-xs sm:text-sm font-semibold text-gray-700 leading-tight line-clamp-1">
+              {title}
+            </p>
             {subtitle && (
-              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-tight">
+              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 leading-tight">
                 {subtitle}
               </p>
             )}
           </div>
         </div>
         <div className="flex-shrink-0">
-          <Icon size={20} className={`sm:size-6 lg:size-7 ${iconColorClasses[color]}`} />
+          <Icon
+            size={18}
+            className={`sm:size-5 lg:size-6 ${iconColorClasses[color]}`}
+          />
         </div>
       </div>
+    </div>
+  );
+};
+
+// Table: Guru Belum Input Absen
+const GuruBelumInputTable = ({ guruData, isMobile }) => {
+  if (guruData.length === 0) {
+    return (
+      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+        <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+            Monitoring Input Absensi
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Status input absensi hari ini
+          </p>
+        </div>
+        <div className="text-center py-12">
+          <CheckCircle size={64} className="mx-auto text-green-400 mb-4" />
+          <p className="text-xl font-bold text-gray-900 mb-2">
+            Semua guru sudah input absen! 🎉
+          </p>
+          <p className="text-sm text-gray-500">
+            Kehadiran hari ini sudah tercatat lengkap
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+      <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+              Guru Belum Input Absensi
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Total: {guruData.length} guru
+            </p>
+          </div>
+          <div className="bg-red-100 px-3 py-1.5 rounded-full">
+            <span className="text-red-700 font-bold text-sm">
+              {guruData.length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Table */}
+      {!isMobile ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  No
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Nama Guru
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Role
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Kelas
+                </th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {guruData.map((guru, index) => (
+                <tr
+                  key={guru.id}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    {index + 1}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {guru.full_name
+                          ? guru.full_name.charAt(0).toUpperCase()
+                          : "?"}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {guru.full_name || "Nama tidak tersedia"}
+                        </p>
+                        <p className="text-xs text-gray-500">{guru.username}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        guru.role === "guru_kelas"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}>
+                      {guru.role === "guru_kelas" ? "Guru Kelas" : "Guru Mapel"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    {guru.kelas
+                      ? `Kelas ${guru.kelas}`
+                      : guru.mata_pelajaran || "-"}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-200">
+                      <XCircle size={14} />
+                      Belum Input
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* Mobile Card Layout */
+        <div className="space-y-3">
+          {guruData.map((guru, index) => (
+            <div
+              key={guru.id}
+              className="bg-gradient-to-r from-orange-50 to-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                  {guru.full_name
+                    ? guru.full_name.charAt(0).toUpperCase()
+                    : "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 text-sm truncate">
+                        {guru.full_name || "Nama tidak tersedia"}
+                      </h4>
+                      <p className="text-xs text-gray-500">{guru.username}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                      <XCircle size={12} />
+                      Belum
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        guru.role === "guru_kelas"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}>
+                      {guru.role === "guru_kelas" ? "Guru Kelas" : "Guru Mapel"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                      {guru.kelas
+                        ? `Kelas ${guru.kelas}`
+                        : guru.mata_pelajaran || "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Table: Siswa Bermasalah (Alpa > 3x bulan ini)
+const SiswaBermasalahTable = ({ siswaData, isMobile }) => {
+  if (siswaData.length === 0) {
+    return (
+      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+        <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+            Siswa Bermasalah
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">Alpa {">"} 3x bulan ini</p>
+        </div>
+        <div className="text-center py-12">
+          <CheckCircle size={64} className="mx-auto text-green-400 mb-4" />
+          <p className="text-xl font-bold text-gray-900 mb-2">
+            Tidak ada siswa bermasalah! 🎉
+          </p>
+          <p className="text-sm text-gray-500">Semua siswa kehadirannya baik</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+      <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+              Siswa Bermasalah
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Alpa {">"} 3x bulan ini • Total: {siswaData.length} siswa
+            </p>
+          </div>
+          <div className="bg-yellow-100 px-3 py-1.5 rounded-full">
+            <span className="text-yellow-700 font-bold text-sm">
+              {siswaData.length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Table */}
+      {!isMobile ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  No
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Nama Siswa
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Kelas
+                </th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
+                  Total Alpa
+                </th>
+                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
+                  Kehadiran
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {siswaData.map((siswa, index) => (
+                <tr
+                  key={siswa.nisn}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    {index + 1}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {siswa.nama_siswa
+                          ? siswa.nama_siswa.charAt(0).toUpperCase()
+                          : "?"}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {siswa.nama_siswa || "Nama tidak tersedia"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          NISN: {siswa.nisn || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                      Kelas {siswa.kelas || "N/A"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-200">
+                      {siswa.total_alpa}x Alpa
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                        siswa.attendance_rate >= 80
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : siswa.attendance_rate >= 60
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                          : "bg-red-100 text-red-700 border-red-200"
+                      }`}>
+                      {siswa.attendance_rate}%
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* Mobile Card Layout */
+        <div className="space-y-3">
+          {siswaData.map((siswa, index) => (
+            <div
+              key={siswa.nisn}
+              className="bg-gradient-to-r from-yellow-50 to-red-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                  {siswa.nama_siswa
+                    ? siswa.nama_siswa.charAt(0).toUpperCase()
+                    : "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 text-sm truncate">
+                        {siswa.nama_siswa || "Nama tidak tersedia"}
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        NISN: {siswa.nisn || "N/A"}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                      {siswa.total_alpa}x
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                      Kelas {siswa.kelas || "N/A"}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                        siswa.attendance_rate >= 80
+                          ? "bg-green-100 text-green-700"
+                          : siswa.attendance_rate >= 60
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                      }`}>
+                      {siswa.attendance_rate}% Hadir
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -136,38 +416,235 @@ const StatsCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue', 
 const AdminDashboard = ({ userData }) => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
-
-  // Dashboard states
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [guruBelumInput, setGuruBelumInput] = useState([]);
+  const [siswaBermasalah, setSiswaBermasalah] = useState([]);
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
     totalTeachers: 0,
     todayAttendance: 0,
     attendanceRate: 0,
-    classAttendance: [],
-    weeklyTrend: [],
-    totalClasses: 0
+    totalClasses: 0,
   });
 
-  // Cek device type
+  // Check device type
   useEffect(() => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
+
+  // Get today's date
+  const getTodayDate = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
+  // Get first day of month
+  const getFirstDayOfMonth = () => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
+  };
+
+  // Navigation handler
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  // Fetch Guru Belum Input Absen
+  const fetchGuruBelumInput = async (today) => {
+    try {
+      const { data: allTeachers, error: teachersError } = await supabase
+        .from("users")
+        .select("id, username, full_name, role, kelas, mata_pelajaran")
+        .in("role", ["guru_kelas", "guru_mapel"])
+        .eq("is_active", true);
+
+      if (teachersError) throw teachersError;
+
+      const { data: todayAttendance, error: attendanceError } = await supabase
+        .from("attendance")
+        .select("guru_input")
+        .eq("tanggal", today);
+
+      if (attendanceError) throw attendanceError;
+
+      const teachersWhoInput = new Set(
+        todayAttendance?.map((r) => r.guru_input).filter(Boolean) || []
+      );
+      const belumInput =
+        allTeachers?.filter(
+          (teacher) => !teachersWhoInput.has(teacher.username)
+        ) || [];
+
+      setGuruBelumInput(belumInput);
+    } catch (error) {
+      console.error("Error fetching guru belum input:", error);
+      setGuruBelumInput([]);
+    }
+  };
+
+  // Fetch Siswa Bermasalah (Alpa > 3x bulan ini)
+  const fetchSiswaBermasalah = async (firstDayOfMonth, today) => {
+    try {
+      const { data: students, error: studentsError } = await supabase
+        .from("students")
+        .select("nisn, nama_siswa, kelas")
+        .eq("is_active", true);
+
+      if (studentsError) throw studentsError;
+
+      const { data: monthAttendance, error: attendanceError } = await supabase
+        .from("attendance")
+        .select("nisn, status, tanggal")
+        .gte("tanggal", firstDayOfMonth)
+        .lte("tanggal", today);
+
+      if (attendanceError) throw attendanceError;
+
+      const siswaStats = [];
+      students?.forEach((student) => {
+        const studentRecords =
+          monthAttendance?.filter((r) => r.nisn === student.nisn) || [];
+        const totalRecords = studentRecords.length;
+        const alpaCount = studentRecords.filter(
+          (r) => r.status.toLowerCase() === "alpa"
+        ).length;
+        const hadirCount = studentRecords.filter(
+          (r) => r.status.toLowerCase() === "hadir"
+        ).length;
+
+        const attendanceRate =
+          totalRecords > 0
+            ? Math.round((hadirCount / totalRecords) * 100)
+            : 100;
+
+        if (alpaCount > 3) {
+          siswaStats.push({
+            nisn: student.nisn,
+            nama_siswa: student.nama_siswa,
+            kelas: student.kelas,
+            total_alpa: alpaCount,
+            attendance_rate: attendanceRate,
+          });
+        }
+      });
+
+      siswaStats.sort((a, b) => b.total_alpa - a.total_alpa);
+      setSiswaBermasalah(siswaStats);
+    } catch (error) {
+      console.error("Error fetching siswa bermasalah:", error);
+      setSiswaBermasalah([]);
+    }
+  };
+
+  // Fetch Recent Activities (Simplified)
+  const fetchRecentActivities = async (today) => {
+    try {
+      const { data: attendanceActivities, error } = await supabase
+        .from("attendance")
+        .select("kelas, guru_input, created_at, status")
+        .eq("tanggal", today)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      const activities = [];
+      const grouped = {};
+
+      attendanceActivities?.forEach((record) => {
+        const key = `${record.kelas}-${record.guru_input}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            kelas: record.kelas,
+            guru: record.guru_input || "Unknown",
+            created_at: record.created_at,
+            count: 0,
+          };
+        }
+        grouped[key].count++;
+      });
+
+      Object.values(grouped).forEach((group) => {
+        activities.push({
+          id: `${group.kelas}-${group.created_at}`,
+          icon: "📊",
+          message: `${group.guru} input ${group.count} siswa Kelas ${group.kelas}`,
+          time: group.created_at,
+        });
+      });
+
+      setRecentActivities(activities.slice(0, 5));
+    } catch (error) {
+      console.error("Error fetching recent activities:", error);
+      setRecentActivities([]);
+    }
+  };
+
+  // Main fetch function
+  const fetchAdminDashboardData = async () => {
+    setRefreshing(true);
+    try {
+      const today = getTodayDate();
+      const firstDayOfMonth = getFirstDayOfMonth();
+
+      const [studentsRes, teachersRes, attendanceRes] = await Promise.all([
+        supabase.from("students").select("nisn, kelas").eq("is_active", true),
+        supabase
+          .from("users")
+          .select("id")
+          .in("role", ["guru_kelas", "guru_mapel"])
+          .eq("is_active", true),
+        supabase.from("attendance").select("status").eq("tanggal", today),
+      ]);
+
+      const totalStudents = studentsRes.data?.length || 0;
+      const totalTeachers = teachersRes.data?.length || 0;
+      const todayPresentCount =
+        attendanceRes.data?.filter((r) => r.status.toLowerCase() === "hadir")
+          .length || 0;
+      const attendanceRate =
+        totalStudents > 0
+          ? Math.round((todayPresentCount / totalStudents) * 100)
+          : 0;
+      const totalClasses = [
+        ...new Set(studentsRes.data?.map((s) => s.kelas) || []),
+      ].length;
+
+      setDashboardData({
+        totalStudents,
+        totalTeachers,
+        todayAttendance: todayPresentCount,
+        attendanceRate,
+        totalClasses,
+      });
+
+      await Promise.all([
+        fetchGuruBelumInput(today),
+        fetchSiswaBermasalah(firstDayOfMonth, today),
+        fetchRecentActivities(today),
+      ]);
+    } catch (error) {
+      console.error("Error fetching admin dashboard data:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (userData) {
       fetchAdminDashboardData();
     }
 
-    // Auto refresh every 5 minutes
     const interval = setInterval(() => {
       if (userData) {
         fetchAdminDashboardData();
@@ -177,544 +654,197 @@ const AdminDashboard = ({ userData }) => {
     return () => clearInterval(interval);
   }, [userData]);
 
-  // Check if userData is undefined - EARLY RETURN HARUS SETELAH SEMUA HOOKS
+  // EARLY RETURN - AFTER ALL HOOKS
   if (!userData) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">Memuat data user...</p>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Memuat data user...
+          </p>
         </div>
       </div>
     );
   }
 
-  // Get today's date in YYYY-MM-DD format
-  const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
-  };
-
-  // Get week dates for trend analysis
-  const getWeekDates = () => {
-    const today = new Date();
-    const week = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      week.push({
-        date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('id-ID', { weekday: isMobile ? 'narrow' : 'short' })
-      });
-    }
-    return week;
-  };
-
-  // Navigation handler
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
-
-  // ✅ FIXED: Fetch recent activities - Simplified without join
-  const fetchRecentActivities = async () => {
-    try {
-      const today = getTodayDate();
-      
-      // Get recent attendance records (simplified - no join)
-      const { data: attendanceActivities, error: attendanceError } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('tanggal', today)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (attendanceError) {
-        console.error('Error fetching recent activities:', attendanceError);
-        setRecentActivities([]);
-        return;
-      }
-
-      const activities = [];
-
-      // Process attendance activities
-      if (attendanceActivities && attendanceActivities.length > 0) {
-        const groupedByClass = {};
-        
-        attendanceActivities.forEach(record => {
-          // Group by kelas + guru_input + tanggal
-          const key = `${record.kelas}-${record.guru_input || 'unknown'}-${record.tanggal}`;
-          if (!groupedByClass[key]) {
-            groupedByClass[key] = {
-              kelas: record.kelas,
-              guru: record.guru_input || 'Unknown',
-              created_at: record.created_at,
-              count: 0,
-              hadir: 0,
-              izin: 0,
-              sakit: 0,
-              alpa: 0
-            };
-          }
-          
-          groupedByClass[key].count++;
-          const status = record.status.toLowerCase();
-          if (status === 'hadir') groupedByClass[key].hadir++;
-          else if (status === 'izin') groupedByClass[key].izin++;
-          else if (status === 'sakit') groupedByClass[key].sakit++;
-          else if (status === 'alpa') groupedByClass[key].alpa++;
-        });
-
-        // Convert to activities
-        Object.values(groupedByClass).forEach(group => {
-          activities.push({
-            id: `attendance-${group.kelas}-${group.created_at}`,
-            type: 'attendance_input',
-            icon: '📊',
-            color: 'green',
-            message: `${group.guru} input absen Kelas ${group.kelas} (${group.hadir}✓ ${group.izin}i ${group.sakit}s ${group.alpa}a)`,
-            time: group.created_at
-          });
-        });
-      }
-
-      // Sort by time and limit
-      activities.sort((a, b) => new Date(b.time) - new Date(a.time));
-      setRecentActivities(activities.slice(0, 8));
-
-    } catch (error) {
-      console.error('Error fetching recent activities:', error);
-      setRecentActivities([]);
-    }
-  };
-
-  const downloadCSV = (csvContent, filename) => {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Quick Export function for dashboard
-  const handleQuickExport = async (type) => {
-    try {
-      const today = getTodayDate();
-      
-      if (type === 'attendance') {
-        const { data: attendanceData } = await supabase
-          .from('attendance')
-          .select(`tanggal, nisn, nama_siswa, kelas, status, keterangan, created_at`)
-          .eq('tanggal', today)
-          .order('kelas', { ascending: true })
-          .order('nama_siswa', { ascending: true });
-
-        const csvContent = [
-          ['Tanggal', 'NISN', 'Nama Siswa', 'Kelas', 'Status', 'Keterangan', 'Input Time'].join(','),
-          ...attendanceData.map(record => [
-            record.tanggal,
-            record.nisn,
-            `"${record.nama_siswa}"`,
-            record.kelas,
-            record.status,
-            record.keterangan || '',
-            new Date(record.created_at).toLocaleString('id-ID')
-          ].join(','))
-        ].join('\n');
-
-        downloadCSV(csvContent, `attendance_${today}.csv`);
-      } else if (type === 'classAttendance') {
-        const csvContent = [
-          ['Kelas', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Total'].join(','),
-          ...dashboardData.classAttendance.map(cls => [
-            cls.kelas,
-            cls.hadir,
-            cls.izin,
-            cls.sakit,
-            cls.alpa,
-            cls.hadir + cls.izin + cls.sakit + cls.alpa
-          ].join(','))
-        ].join('\n');
-
-        downloadCSV(csvContent, `class_attendance_${today}.csv`);
-      }
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      alert('Error saat export data');
-    }
-  };
-
-  // Fetch dashboard data for ADMIN
-  const fetchAdminDashboardData = async () => {
-    setRefreshing(true);
-    try {
-      const today = getTodayDate();
-      const weekDates = getWeekDates();
-
-      // 1. Total Students (active only)
-      const { data: studentsData, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('is_active', true);
-
-      if (studentsError) throw studentsError;
-
-      // 2. Total Teachers
-      const { data: teachersData, error: teachersError } = await supabase
-        .from('users')
-        .select('*')
-        .in('role', ['guru_kelas', 'guru_mapel']);
-
-      if (teachersError) throw teachersError;
-
-      // 3. Today's Attendance
-      const { data: todayAttendanceData, error: todayError } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('tanggal', today);
-
-      if (todayError) throw todayError;
-
-      // 4. Class-wise attendance for today
-      const classAttendanceMap = {};
-      const allClasses = [...new Set(studentsData?.map(s => s.kelas) || [])].sort();
-
-      // Initialize all classes
-      allClasses.forEach(kelas => {
-        classAttendanceMap[kelas] = {
-          kelas: `Kelas ${kelas}`,
-          hadir: 0,
-          izin: 0,
-          sakit: 0,
-          alpa: 0
-        };
-      });
-
-      // Count attendance by class and status
-      todayAttendanceData?.forEach(record => {
-        if (classAttendanceMap[record.kelas]) {
-          const status = record.status.toLowerCase();
-          if (status === 'hadir') {
-            classAttendanceMap[record.kelas].hadir++;
-          } else if (status === 'izin') {
-            classAttendanceMap[record.kelas].izin++;
-          } else if (status === 'sakit') {
-            classAttendanceMap[record.kelas].sakit++;
-          } else if (status === 'alpa') {
-            classAttendanceMap[record.kelas].alpa++;
-          }
-        }
-      });
-
-      // For students not marked, consider as alpa
-      const todayMarkedNisns = new Set(todayAttendanceData?.map(r => r.nisn) || []);
-      studentsData?.forEach(student => {
-        if (!todayMarkedNisns.has(student.nisn)) {
-          if (classAttendanceMap[student.kelas]) {
-            classAttendanceMap[student.kelas].alpa++;
-          }
-        }
-      });
-
-      // 5. Weekly Trend
-      const weeklyTrendPromises = weekDates.map(async ({ date, day }) => {
-        const { data: dayAttendance } = await supabase
-          .from('attendance')
-          .select('*')
-          .eq('tanggal', date)
-          .eq('status', 'Hadir');
-
-        const attendanceCount = dayAttendance?.length || 0;
-        const totalStudents = studentsData?.length || 0;
-        const attendanceRate = totalStudents > 0 
-          ? Math.round((attendanceCount / totalStudents) * 100)
-          : 0;
-
-        return {
-          day: day,
-          attendance: attendanceRate,
-          date: date
-        };
-      });
-
-      const weeklyTrend = await Promise.all(weeklyTrendPromises);
-
-      // Calculate overall attendance rate
-      const todayPresentCount = todayAttendanceData?.filter(
-        r => r.status.toLowerCase() === 'hadir'
-      ).length || 0;
-      const totalStudentsCount = studentsData?.length || 0;
-      const attendanceRate = totalStudentsCount > 0 
-        ? Math.round((todayPresentCount / totalStudentsCount) * 100)
-        : 0;
-
-      // Update state
-      setDashboardData({
-        totalStudents: totalStudentsCount,
-        totalTeachers: teachersData?.length || 0,
-        todayAttendance: todayPresentCount,
-        attendanceRate: attendanceRate,
-        classAttendance: Object.values(classAttendanceMap),
-        weeklyTrend: weeklyTrend,
-        totalClasses: allClasses.length
-      });
-
-      // Fetch recent activities
-      await fetchRecentActivities();
-
-    } catch (error) {
-      console.error('Error fetching admin dashboard data:', error);
-      alert('Error mengambil data dashboard: ' + error.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">Memuat data dashboard...</p>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Memuat data dashboard...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-      {/* Header with Refresh Button */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-            Dashboard Admin
-          </h1>
-          <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
-            <Smartphone size={12} />
-            <span>Mobile</span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-3 sm:p-6 lg:p-8">
+      <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+              Dashboard Admin
+            </h1>
+            <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
+              <Smartphone size={12} />
+              <span>Mobile</span>
+            </div>
           </div>
-        </div>
-        <button
-          onClick={fetchAdminDashboardData}
-          disabled={refreshing}
-          className={`flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[44px] touch-manipulation w-full sm:w-auto justify-center ${
-            refreshing ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-          <span>
-            {refreshing ? 'Memperbarui...' : 'Refresh Data'}
-          </span>
-        </button>
-      </div>
-
-      {/* Stats Cards - Enhanced Mobile Layout */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        <StatsCard
-          title="Total Siswa"
-          value={dashboardData.totalStudents}
-          subtitle="Siswa aktif terdaftar"
-          icon={Users}
-          color="blue"
-        />
-        <StatsCard
-          title="Total Guru"
-          value={dashboardData.totalTeachers}
-          subtitle="Guru aktif mengajar"
-          icon={GraduationCap}
-          color="green"
-        />
-        <StatsCard
-          title="Hadir Hari Ini"
-          value={dashboardData.todayAttendance}
-          subtitle={`${dashboardData.attendanceRate}% dari total`}
-          icon={UserCheck}
-          color="purple"
-        />
-        <StatsCard
-          title="Total Kelas"
-          value={dashboardData.totalClasses}
-          subtitle="Kelas aktif beroperasi"
-          icon={BookOpen}
-          color="orange"
-        />
-      </div>
-
-      {/* Charts - Enhanced Mobile Responsiveness */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-        {/* Class Attendance Chart */}
-        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-          <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Kehadiran Per Kelas
-            </h3>
-          </div>
-          <div className={isMobile ? "h-72" : "h-80"}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={dashboardData.classAttendance} 
-                margin={isMobile ? { top: 10, right: 5, left: 5, bottom: 50 } : { top: 10, right: 10, left: 10, bottom: 40 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis 
-                  dataKey="kelas" 
-                  fontSize={isMobile ? 10 : 12} 
-                  angle={isMobile ? -45 : 0}
-                  textAnchor={isMobile ? "end" : "middle"}
-                  height={isMobile ? 60 : 50}
-                  interval={0}
-                />
-                <YAxis fontSize={isMobile ? 10 : 12} />
-                <Tooltip 
-                  contentStyle={{
-                    fontSize: isMobile ? '12px' : '14px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    backgroundColor: 'white'
-                  }}
-                />
-                <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Weekly Trend Chart */}
-        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-          <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Trend 7 Hari
-            </h3>
-          </div>
-          <div className={isMobile ? "h-72" : "h-80"}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart 
-                data={dashboardData.weeklyTrend} 
-                margin={isMobile ? { top: 10, right: 5, left: 5, bottom: 10 } : { top: 10, right: 10, left: 10, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis dataKey="day" fontSize={isMobile ? 10 : 12} />
-                <YAxis fontSize={isMobile ? 10 : 12} />
-                <Tooltip
-                  formatter={(value) => [`${value}%`, 'Kehadiran']}
-                  labelFormatter={(label) => `Hari: ${label}`}
-                  contentStyle={{
-                    fontSize: isMobile ? '12px' : '14px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    backgroundColor: 'white'
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="attendance"
-                  stroke="#2563eb"
-                  strokeWidth={isMobile ? 2 : 3}
-                  dot={{ r: isMobile ? 3 : 4, fill: '#2563eb' }}
-                  activeDot={{ r: isMobile ? 5 : 6, fill: '#1d4ed8' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions for Admin - Enhanced Mobile */}
-      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-        <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
-          Aksi Cepat
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          <button 
-            onClick={() => handleNavigation('/students')}
-            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
-          >
-            <Users size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold text-center">Kelola Siswa</span>
-          </button>
-          <button 
-            onClick={() => handleNavigation('/teachers')}
-            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
-          >
-            <GraduationCap size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold text-center">Kelola Guru</span>
-          </button>
-          <button 
-            onClick={() => handleQuickExport('attendance')}
-            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
-          >
-            <Download size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold text-center">Export Data</span>
-          </button>
-          <button 
-            onClick={() => handleNavigation('/settings')}
-            className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation"
-          >
-            <Settings size={isMobile ? 18 : 20} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-            <span className="font-semibold text-center">Pengaturan</span>
+          <button
+            onClick={fetchAdminDashboardData}
+            disabled={refreshing}
+            className={`flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[44px] touch-manipulation w-full sm:w-auto justify-center ${
+              refreshing ? "opacity-50 cursor-not-allowed" : ""
+            }`}>
+            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+            <span>{refreshing ? "Memperbarui..." : "Refresh Data"}</span>
           </button>
         </div>
-      </div>
 
-      {/* Recent Activities Section - Mobile Optimized */}
-      {recentActivities.length > 0 && (
+        {/* Compact Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+          <StatsCard
+            title="Total Siswa"
+            value={dashboardData.totalStudents}
+            subtitle="Siswa aktif"
+            icon={Users}
+            color="blue"
+          />
+          <StatsCard
+            title="Total Guru"
+            value={dashboardData.totalTeachers}
+            subtitle="Guru aktif"
+            icon={GraduationCap}
+            color="green"
+          />
+          <StatsCard
+            title="Hadir Hari Ini"
+            value={dashboardData.todayAttendance}
+            subtitle={`${dashboardData.attendanceRate}% dari total`}
+            icon={UserCheck}
+            color="purple"
+          />
+          <StatsCard
+            title="Total Kelas"
+            value={dashboardData.totalClasses}
+            subtitle="Kelas aktif"
+            icon={BookOpen}
+            color="orange"
+          />
+        </div>
+
+        {/* Monitoring Tables - Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Guru Belum Input */}
+          <GuruBelumInputTable guruData={guruBelumInput} isMobile={isMobile} />
+
+          {/* Siswa Bermasalah */}
+          <SiswaBermasalahTable
+            siswaData={siswaBermasalah}
+            isMobile={isMobile}
+          />
+        </div>
+
+        {/* Quick Actions - 4 Buttons */}
         <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
-            Aktivitas Terbaru
+            Aksi Cepat
           </h3>
-          <div className="space-y-2 sm:space-y-4">
-            {recentActivities.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-start gap-2 sm:gap-4 p-2 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors min-h-[50px] touch-manipulation">
-                <div className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm sm:text-xl">{activity.icon}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-base text-gray-900 line-clamp-2 leading-relaxed">
-                    {activity.message}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 font-medium">
-                    {new Date(activity.time).toLocaleString('id-ID', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      day: 'numeric',
-                      month: 'short'
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <button
+              onClick={() => handleNavigation("/students")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Users
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">
+                Kelola Data Siswa
+              </span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/teachers")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <GraduationCap
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">
+                Kelola Data Guru
+              </span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/settings")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Settings
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Pengaturan</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/system-health")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Activity
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">System Health</span>
+            </button>
           </div>
-          
-          {recentActivities.length > 5 && (
-            <div className="mt-3 text-center">
-              <button className="text-blue-600 hover:text-blue-700 font-medium text-xs sm:text-base py-1.5 px-3 rounded-lg hover:bg-blue-50 transition-colors touch-manipulation">
-                Lihat Semua
-              </button>
-            </div>
-          )}
         </div>
-      )}
 
-      {/* Mobile-specific floating action button */}
-      <div className="fixed bottom-20 right-4 sm:hidden z-40">
-        <button
-          onClick={fetchAdminDashboardData}
-          disabled={refreshing}
-          className={`w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
-            refreshing ? 'opacity-50' : 'hover:bg-blue-700 active:scale-95'
-          }`}
-        >
-          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-        </button>
+        {/* Recent Activities - Simplified */}
+        {recentActivities.length > 0 && (
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+              Aktivitas Terbaru
+            </h3>
+            <div className="space-y-2 sm:space-y-3">
+              {recentActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation">
+                  <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm sm:text-base">
+                      {activity.icon}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-900 line-clamp-2 leading-relaxed">
+                      {activity.message}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                      {new Date(activity.time).toLocaleString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile floating refresh button */}
+        <div className="fixed bottom-20 right-4 sm:hidden z-40">
+          <button
+            onClick={fetchAdminDashboardData}
+            disabled={refreshing}
+            className={`w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+              refreshing ? "opacity-50" : "hover:bg-blue-700 active:scale-95"
+            }`}>
+            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+          </button>
+        </div>
       </div>
     </div>
   );

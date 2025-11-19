@@ -573,10 +573,13 @@ const Attendance = ({
   useEffect(() => {
     const getIndonesiaDate = () => {
       const now = new Date();
-      const indonesiaOffset = 7 * 60;
-      const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
-      const indonesiaTime = new Date(utcTime + indonesiaOffset * 60000);
-      return indonesiaTime.toISOString().split("T")[0];
+
+      // Dapatkan komponen tanggal lokal (sesuai timezone browser)
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
     };
 
     setAttendanceDate(getIndonesiaDate());

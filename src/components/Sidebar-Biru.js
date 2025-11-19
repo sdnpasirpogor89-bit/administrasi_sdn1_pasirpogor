@@ -152,22 +152,22 @@ const Sidebar = ({
     <aside
       className={`
       ${showCollapsed ? "w-20" : "w-72"} 
-      bg-blue-800 text-white flex flex-col 
+      bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white flex flex-col 
       ${mobile ? "fixed" : "fixed"} 
       left-0 top-0 h-screen shadow-2xl z-50 
       transition-all duration-300
       ${
         mobile
-          ? "overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
+          ? "overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400/20 scrollbar-track-transparent"
           : "overflow-y-auto"
       }
-      scroll-smooth
+      scroll-smooth border-r border-blue-700/30
     `}>
-      <div className="p-3 sm:p-4 border-b border-white/10">
+      <div className="p-3 sm:p-4 border-b border-blue-700/30">
         <div className="flex items-center justify-between">
           {!showCollapsed && (
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="text-xl sm:text-2xl bg-white/15 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-sm">
+              <div className="text-xl sm:text-2xl bg-blue-500/20 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-sm border border-blue-400/40">
                 🏫
               </div>
               <h2 className="text-sm sm:text-base font-bold text-white leading-tight tracking-wide">
@@ -178,7 +178,7 @@ const Sidebar = ({
 
           {showCollapsed && (
             <div className="w-full flex justify-center">
-              <div className="text-2xl bg-white/15 p-2 rounded-xl backdrop-blur-sm">
+              <div className="text-2xl bg-blue-500/20 p-2 rounded-xl backdrop-blur-sm border border-blue-400/40">
                 🏫
               </div>
             </div>
@@ -187,7 +187,7 @@ const Sidebar = ({
           {!mobile && (
             <button
               onClick={toggleSidebar}
-              className={`p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-300 ${
+              className={`p-2 rounded-lg bg-blue-700/40 hover:bg-blue-600/40 transition-all duration-300 border border-blue-600/30 ${
                 showCollapsed ? "ml-0" : "ml-auto"
               }`}
               title={showCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
@@ -198,7 +198,7 @@ const Sidebar = ({
           {mobile && (
             <button
               onClick={onClose}
-              className="p-2 sm:p-2.5 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all duration-200 ml-auto touch-manipulation"
+              className="p-2 sm:p-2.5 rounded-lg bg-blue-700/40 hover:bg-blue-600/40 active:bg-blue-500/40 transition-all duration-200 ml-auto touch-manipulation border border-blue-600/30"
               title="Close menu">
               <X size={18} className="sm:w-5 sm:h-5" />
             </button>
@@ -206,25 +206,25 @@ const Sidebar = ({
         </div>
       </div>
 
-      <nav className="flex-1 py-2 sm:py-3">
+      <nav className="flex-1 py-2 sm:py-2">
         <div className="px-2 sm:px-3">
           {menuSections.map((section, sectionIndex) => (
             <div
               key={section.category}
-              className={sectionIndex > 0 ? "mt-3 sm:mt-4" : ""}>
+              className={sectionIndex > 0 ? "mt-2 sm:mt-3" : ""}>
               {!showCollapsed && (
-                <div className="px-2 sm:px-3 mb-1.5 sm:mb-2">
-                  <h3 className="text-xs sm:text-sm font-semibold text-white/70 uppercase tracking-wider">
+                <div className="px-2 sm:px-3 mb-1 sm:mb-1.5">
+                  <h3 className="text-xs sm:text-sm font-semibold text-blue-300/70 uppercase tracking-wider">
                     {section.category}
                   </h3>
                 </div>
               )}
 
               {showCollapsed && sectionIndex > 0 && (
-                <div className="w-full h-px bg-white/10 mb-2"></div>
+                <div className="w-full h-px bg-blue-700/30 mb-1.5"></div>
               )}
 
-              <ul className="space-y-0.5 sm:space-y-1">
+              <ul className="space-y-0.5">
                 {section.items.map((item) => {
                   const IconComponent = item.icon;
                   const isActive = currentPage === item.name;
@@ -234,25 +234,25 @@ const Sidebar = ({
                       <button
                         onClick={() => handleMenuClick(item.name)}
                         className={`
-                          w-full flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-left
+                          w-full flex items-center gap-3 sm:gap-3 px-3 sm:px-3 py-2 sm:py-2 rounded-lg text-left
                           transition-all duration-200 touch-manipulation
                           ${
                             mobile
-                              ? "min-h-[44px] active:scale-[0.98]"
-                              : "min-h-[40px]"
+                              ? "min-h-[42px] active:scale-[0.98]"
+                              : "min-h-[38px]"
                           }
                           ${
                             isActive
-                              ? "bg-white/10 text-white font-semibold border-l-4 border-cyan-400 shadow-lg"
-                              : "text-white/80 hover:bg-white/10 hover:text-white active:bg-white/20"
+                              ? "bg-blue-500/30 text-white font-semibold border-l-4 border-cyan-400 shadow-lg"
+                              : "text-blue-100/90 hover:bg-blue-700/30 hover:text-white active:bg-blue-600/40"
                           }
                           ${showCollapsed ? "justify-center" : ""}
                         `}
                         title={showCollapsed ? item.name : ""}>
                         <IconComponent
-                          size={mobile ? 22 : 20}
+                          size={mobile ? 20 : 18}
                           className={`flex-shrink-0 ${
-                            isActive ? "text-cyan-400" : ""
+                            isActive ? "text-cyan-300" : ""
                           }`}
                         />
                         {!showCollapsed && (
@@ -262,14 +262,14 @@ const Sidebar = ({
                         )}
 
                         {mobile && isActive && (
-                          <div className="ml-auto w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-sm"></div>
+                          <div className="ml-auto w-2 h-2 bg-cyan-400 rounded-full shadow-sm"></div>
                         )}
                       </button>
 
                       {showCollapsed && !mobile && (
-                        <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                        <div className="absolute left-full top-1/2 transform -translate-y-1/2 ml-3 px-3 py-2 bg-blue-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg border border-blue-600/50">
                           {item.name}
-                          <div className="absolute -left-1 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                          <div className="absolute -left-1 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-blue-800 rotate-45"></div>
                         </div>
                       )}
                     </li>
@@ -281,11 +281,11 @@ const Sidebar = ({
         </div>
       </nav>
 
-      <div className="p-3 sm:p-4 border-t border-white/10 bg-white/5">
+      <div className="p-3 sm:p-4 border-t border-blue-700/30 bg-blue-800/30">
         {!showCollapsed ? (
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
-              <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-blue-400 flex items-center justify-center text-blue-900 font-semibold text-xs sm:text-sm border-2 border-white/30 shadow-sm">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500 flex items-center justify-center text-white font-semibold text-xs sm:text-sm border-2 border-blue-400/50 shadow-sm">
                 {getInitials(userData.full_name || userData.username)}
               </div>
             </div>
@@ -294,12 +294,12 @@ const Sidebar = ({
                 {userData.full_name || userData.username}
               </p>
               {userData.role === "guru_kelas" && userData.kelas ? (
-                <p className="text-xs sm:text-sm text-white/80 capitalize leading-tight">
+                <p className="text-xs sm:text-sm text-blue-200/80 capitalize leading-tight">
                   Guru Kelas {userData.kelas}
                 </p>
               ) : (
                 <>
-                  <p className="text-xs sm:text-sm text-white/80 capitalize leading-tight">
+                  <p className="text-xs sm:text-sm text-blue-200/80 capitalize leading-tight">
                     {userData.role.replace("_", " ")}
                   </p>
                   {userData.kelas && (
@@ -314,7 +314,7 @@ const Sidebar = ({
         ) : (
           <div className="flex justify-center">
             <div
-              className="w-10 h-10 rounded-xl bg-blue-400 flex items-center justify-center text-blue-900 font-semibold text-xs border-2 border-white/30 shadow-sm"
+              className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white font-semibold text-xs border-2 border-blue-400/50 shadow-sm"
               title={userData.full_name || userData.username}>
               {getInitials(userData.full_name || userData.username)}
             </div>

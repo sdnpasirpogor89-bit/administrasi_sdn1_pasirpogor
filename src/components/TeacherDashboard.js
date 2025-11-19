@@ -99,8 +99,92 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
     });
   };
 
+  // 🔥 FUNGSI GROUPING: Gabung jadwal yang mapel sama + waktu nyambung
+  const groupSchedule = (scheduleData) => {
+    if (!scheduleData || scheduleData.length === 0) return [];
+
+    // 1. Sort dulu by start_time
+    const sorted = [...scheduleData].sort((a, b) => {
+      const timeA = (a.start_time || a.jam_mulai || "00:00:00").toString();
+      const timeB = (b.start_time || b.jam_mulai || "00:00:00").toString();
+      return timeA.localeCompare(timeB);
+    });
+
+    console.log("📋 Sorted schedule:", sorted);
+
+    const grouped = [];
+    let sessionNumber = 1;
+
+    for (let i = 0; i < sorted.length; i++) {
+      const current = sorted[i];
+      const mapel = current.subject || current.mata_pelajaran || current.mapel;
+      const kelas = current.class_id || current.class_name || current.kelas;
+      const startTime = (
+        current.start_time ||
+        current.jam_mulai ||
+        ""
+      ).toString();
+      const endTime = (
+        current.end_time ||
+        current.jam_selesai ||
+        ""
+      ).toString();
+
+      // Cek apakah bisa digabung dengan item berikutnya
+      let sessions = [current];
+      let finalEndTime = endTime;
+      let j = i + 1;
+
+      while (j < sorted.length) {
+        const next = sorted[j];
+        const nextMapel = next.subject || next.mata_pelajaran || next.mapel;
+        const nextKelas = next.class_id || next.class_name || next.kelas;
+        const nextStart = (next.start_time || next.jam_mulai || "").toString();
+        const nextEnd = (next.end_time || next.jam_selesai || "").toString();
+
+        // Cek: mapel sama, kelas sama, waktu nyambung
+        if (
+          nextMapel === mapel &&
+          nextKelas === kelas &&
+          finalEndTime === nextStart
+        ) {
+          sessions.push(next);
+          finalEndTime = nextEnd;
+          j++;
+        } else {
+          break;
+        }
+      }
+
+      // Bikin grup
+      const sessionCount = sessions.length;
+      const endSession = sessionNumber + sessionCount - 1;
+
+      grouped.push({
+        mapel: mapel,
+        kelas: kelas,
+        jam_mulai: startTime,
+        jam_selesai: finalEndTime,
+        startSession: sessionNumber,
+        endSession: endSession,
+        sessionCount: sessionCount,
+        sessions: sessions,
+      });
+
+      // Skip items yang udah digabung
+      i = j - 1;
+      sessionNumber = endSession + 1;
+    }
+
+    console.log("✅ Grouped schedule:", grouped);
+    return grouped;
+  };
+
   const todayDay = getDayName();
   const isWeekend = todayDay === "Sabtu" || todayDay === "Minggu";
+
+  // Group schedule sebelum di-render
+  const groupedSchedule = groupSchedule(schedule);
 
   if (!schedule || schedule.length === 0) {
     return (
@@ -152,36 +236,50 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
       </div>
 
       <div className="space-y-3 max-h-80 overflow-y-auto">
-        {schedule.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg hover:shadow-md transition-all duration-200">
-            <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Clock size={20} className="text-blue-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-gray-900 text-sm sm:text-base truncate">
-                {item.mapel}
-              </h4>
-              <div className="flex flex-wrap gap-2 mt-1">
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                  <BookOpen size={10} />
-                  {item.kelas}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                  <Clock size={10} />
-                  {item.jam_mulai} - {item.jam_selesai}
-                </span>
+        {groupedSchedule.map((group, index) => {
+          // Label jam pelajaran
+          const sessionLabel =
+            group.sessionCount === 1
+              ? `Jam ke-${group.startSession}`
+              : `Jam ke-${group.startSession}-${group.endSession}`;
+
+          console.log(`🎯 Rendering group ${index + 1}:`, group);
+
+          return (
+            <div
+              key={`grouped-${index}-${group.mapel}-${group.startSession}`}
+              className="flex items-center gap-3 sm:gap-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg hover:shadow-md transition-all duration-200">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Clock size={20} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                  {group.mapel}
+                </h4>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    <BookOpen size={10} />
+                    Kelas {group.kelas}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    📚 {sessionLabel}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                    <Clock size={10} />
+                    {group.jam_mulai.substring(0, 5)} -{" "}
+                    {group.jam_selesai.substring(0, 5)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
 
-// NEW: Absent Students Table Component
+// Absent Students Table Component
 const AbsentStudentsTable = ({
   absentStudents,
   isMobile,
@@ -236,7 +334,6 @@ const AbsentStudentsTable = ({
             </p>
           </div>
 
-          {/* Dropdown Filter Kelas untuk Guru Mapel */}
           {isGuruMapel && allClasses.length > 0 && (
             <select
               value={selectedKelas}
@@ -252,7 +349,6 @@ const AbsentStudentsTable = ({
         </div>
       </div>
 
-      {/* Empty State */}
       {filteredStudents.length === 0 ? (
         <div className="text-center py-12">
           <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
@@ -263,7 +359,6 @@ const AbsentStudentsTable = ({
         </div>
       ) : (
         <>
-          {/* Desktop Table */}
           {!isMobile ? (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -326,7 +421,6 @@ const AbsentStudentsTable = ({
               </table>
             </div>
           ) : (
-            /* Mobile Card Layout */
             <div className="space-y-3">
               {filteredStudents.map((student, index) => (
                 <div
@@ -387,7 +481,6 @@ const TeacherDashboard = ({ userData }) => {
   const isGuruKelas = userData.role === "guru_kelas";
   const isGuruMapel = userData.role === "guru_mapel";
 
-  // Check device type
   useEffect(() => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
@@ -398,12 +491,10 @@ const TeacherDashboard = ({ userData }) => {
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
-  // Get today's date
   const getTodayDate = () => {
     return new Date().toISOString().split("T")[0];
   };
 
-  // Get day name
   const getTodayDayName = () => {
     const days = [
       "Minggu",
@@ -417,44 +508,95 @@ const TeacherDashboard = ({ userData }) => {
     return days[new Date().getDay()];
   };
 
-  // Fetch today's schedule
+  // 🔧 FIXED: Fetch today's schedule dengan nama tabel yang benar
   const fetchTodaySchedule = async () => {
     try {
       const todayDay = getTodayDayName();
 
       if (todayDay === "Sabtu" || todayDay === "Minggu") {
+        console.log("🏖️ Weekend - No schedule");
         return [];
       }
 
+      console.log("📅 Fetching schedule for:", todayDay);
+
+      // Query ke tabel class_schedules (bukan teacher_schedules)
       const { data: scheduleData, error: scheduleError } = await supabase
-        .from("teacher_schedules")
-        .select("*")
-        .eq("hari", todayDay)
-        .order("jam_mulai", { ascending: true });
+        .from("class_schedules")
+        .select(
+          `
+          *,
+          class_id,
+          day,
+          start_time,
+          end_time,
+          subject,
+          teacher_id
+        `
+        )
+        .eq("day", todayDay)
+        .order("start_time", { ascending: true });
 
-      if (scheduleError) throw scheduleError;
+      if (scheduleError) {
+        console.error("❌ Schedule fetch error:", scheduleError);
+        throw scheduleError;
+      }
 
-      return scheduleData || [];
+      console.log("✅ Schedule data fetched:", scheduleData);
+
+      // Filter berdasarkan role
+      let filteredSchedule = scheduleData || [];
+
+      if (isGuruKelas && userData.kelas) {
+        // Guru Kelas: tampilkan jadwal kelasnya saja
+        filteredSchedule = scheduleData.filter(
+          (item) => item.class_id === userData.kelas
+        );
+        console.log(
+          `👨‍🏫 Guru Kelas ${userData.kelas} schedule:`,
+          filteredSchedule
+        );
+      } else if (isGuruMapel && userData.id) {
+        // Guru Mapel: tampilkan jadwal yang dia ajar
+        filteredSchedule = scheduleData.filter(
+          (item) => item.teacher_id === userData.id
+        );
+        console.log(`📚 Guru Mapel schedule:`, filteredSchedule);
+      }
+
+      // Transform data untuk tampilan (sesuaikan dengan struktur lama)
+      const transformedSchedule = filteredSchedule.map((item) => ({
+        kelas: item.class_id,
+        class_name: item.class_id,
+        mapel: item.subject,
+        mata_pelajaran: item.subject,
+        jam_mulai: item.start_time,
+        start_time: item.start_time,
+        jam_selesai: item.end_time,
+        end_time: item.end_time,
+        hari: item.day,
+        teacher_id: item.teacher_id,
+      }));
+
+      return transformedSchedule;
     } catch (error) {
-      console.error("Error fetching today schedule:", error);
+      console.error("❌ Error fetching today schedule:", error);
       return [];
     }
   };
 
-  // Navigation handler
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  // Fetch dashboard data for GURU KELAS
   const fetchGuruKelasDashboardData = async () => {
     try {
       const today = getTodayDate();
       const userKelas = userData.kelas;
 
       const todaySchedule = await fetchTodaySchedule();
+      console.log("📋 Guru Kelas - Today Schedule:", todaySchedule);
 
-      // 1. Students in this class
       const { data: classStudents, error: studentsError } = await supabase
         .from("students")
         .select("nisn, nama_siswa, jenis_kelamin, kelas, is_active")
@@ -462,8 +604,6 @@ const TeacherDashboard = ({ userData }) => {
         .eq("is_active", true);
 
       if (studentsError) throw studentsError;
-
-      console.log("📊 Class Students:", classStudents); // DEBUG
 
       if (!classStudents || classStudents.length === 0) {
         setDashboardData((prev) => ({
@@ -480,16 +620,14 @@ const TeacherDashboard = ({ userData }) => {
         return;
       }
 
-      // 2. Today's Attendance
       const { data: todayAttendanceData, error: todayError } = await supabase
         .from("attendance")
-        .select("*")
+        .select("nisn, nama_siswa, kelas, status, tanggal")
         .eq("tanggal", today)
         .eq("kelas", userKelas);
 
       if (todayError) throw todayError;
 
-      // 3. Calculate stats
       const todayPresentCount = todayAttendanceData.filter(
         (r) => r.status.toLowerCase() === "hadir"
       ).length;
@@ -500,7 +638,6 @@ const TeacherDashboard = ({ userData }) => {
           ? Math.round((todayPresentCount / totalClassStudents) * 100)
           : 0;
 
-      // 4. Get absent students
       const absentStudents = [];
       const todayMarkedMap = new Map(
         todayAttendanceData.map((r) => [r.nisn, r.status])
@@ -509,7 +646,6 @@ const TeacherDashboard = ({ userData }) => {
       classStudents.forEach((student) => {
         const status = todayMarkedMap.get(student.nisn);
         if (!status) {
-          // Not marked = Alpa
           absentStudents.push({
             nisn: student.nisn,
             nama_siswa: student.nama_siswa,
@@ -517,7 +653,6 @@ const TeacherDashboard = ({ userData }) => {
             status: "Alpa",
           });
         } else if (status.toLowerCase() !== "hadir") {
-          // Marked as Izin/Sakit/Alpa
           absentStudents.push({
             nisn: student.nisn,
             nama_siswa: student.nama_siswa,
@@ -529,7 +664,6 @@ const TeacherDashboard = ({ userData }) => {
 
       const tidakHadirCount = absentStudents.length;
 
-      // Update state
       setDashboardData((prev) => ({
         ...prev,
         totalStudents: totalClassStudents,
@@ -546,38 +680,33 @@ const TeacherDashboard = ({ userData }) => {
     }
   };
 
-  // Fetch dashboard data for GURU MAPEL
   const fetchGuruMapelDashboardData = async () => {
     try {
       const today = getTodayDate();
 
       const todaySchedule = await fetchTodaySchedule();
+      console.log("📋 Guru Mapel - Today Schedule:", todaySchedule);
 
-      // 1. All Students
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
-        .select("*")
+        .select("nisn, nama_siswa, jenis_kelamin, kelas, is_active")
         .eq("is_active", true);
 
       if (studentsError) throw studentsError;
 
-      // 2. Today's Attendance
       const { data: todayAttendanceData, error: todayError } = await supabase
         .from("attendance")
-        .select("*")
+        .select("nisn, nama_siswa, kelas, status, tanggal")
         .eq("tanggal", today);
 
       if (todayError) throw todayError;
 
-      // 3. Get all classes
       const allClasses = [...new Set(studentsData.map((s) => s.kelas))].sort();
 
-      // Set default selected kelas
       if (!selectedKelas && allClasses.length > 0) {
         setSelectedKelas(allClasses[0]);
       }
 
-      // 4. Calculate stats
       const todayPresentCount = todayAttendanceData.filter(
         (r) => r.status.toLowerCase() === "hadir"
       ).length;
@@ -587,7 +716,6 @@ const TeacherDashboard = ({ userData }) => {
           ? Math.round((todayPresentCount / totalStudentsCount) * 100)
           : 0;
 
-      // 5. Get absent students
       const absentStudents = [];
       const todayMarkedMap = new Map(
         todayAttendanceData.map((r) => [r.nisn, r.status])
@@ -614,7 +742,6 @@ const TeacherDashboard = ({ userData }) => {
 
       const tidakHadirCount = absentStudents.length;
 
-      // Update state
       setDashboardData((prev) => ({
         ...prev,
         totalStudents: totalStudentsCount,
@@ -631,7 +758,6 @@ const TeacherDashboard = ({ userData }) => {
     }
   };
 
-  // Main fetch function
   const fetchDashboardData = async () => {
     setRefreshing(true);
     try {
@@ -651,7 +777,6 @@ const TeacherDashboard = ({ userData }) => {
   useEffect(() => {
     fetchDashboardData();
 
-    // Auto refresh every 5 minutes
     const interval = setInterval(() => {
       fetchDashboardData();
     }, 300000);
@@ -659,7 +784,6 @@ const TeacherDashboard = ({ userData }) => {
     return () => clearInterval(interval);
   }, [userData.role, userData.kelas]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -673,11 +797,9 @@ const TeacherDashboard = ({ userData }) => {
     );
   }
 
-  // Render Guru Kelas Dashboard
   const renderGuruKelasDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* Header with Refresh Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3">
             <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
@@ -699,7 +821,6 @@ const TeacherDashboard = ({ userData }) => {
           </button>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           <StatsCard
             title={`Siswa Kelas ${userData.kelas}`}
@@ -731,9 +852,7 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Main Content Grid - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Absent Students Table */}
           <AbsentStudentsTable
             absentStudents={dashboardData.absentStudents}
             isMobile={isMobile}
@@ -743,14 +862,12 @@ const TeacherDashboard = ({ userData }) => {
             onKelasChange={() => {}}
           />
 
-          {/* Today's Schedule */}
           <TodayScheduleCard
             schedule={dashboardData.todaySchedule}
             isMobile={isMobile}
           />
         </div>
 
-        {/* Quick Actions - 4 Buttons */}
         <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
             Aksi Cepat
@@ -795,7 +912,6 @@ const TeacherDashboard = ({ userData }) => {
           </div>
         </div>
 
-        {/* Mobile floating refresh button */}
         <div className="fixed bottom-20 right-4 sm:hidden z-40">
           <button
             onClick={fetchDashboardData}
@@ -810,7 +926,6 @@ const TeacherDashboard = ({ userData }) => {
     );
   };
 
-  // Render Guru Mapel Dashboard
   const renderGuruMapelDashboard = () => {
     const bestClass =
       dashboardData.allClasses.length > 0
@@ -829,7 +944,6 @@ const TeacherDashboard = ({ userData }) => {
 
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* Header with Refresh Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3">
             <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
@@ -851,7 +965,6 @@ const TeacherDashboard = ({ userData }) => {
           </button>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           <StatsCard
             title="Total Kelas"
@@ -883,9 +996,7 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Main Content Grid - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Absent Students Table with Dropdown Filter */}
           <AbsentStudentsTable
             absentStudents={dashboardData.absentStudents}
             isMobile={isMobile}
@@ -895,14 +1006,12 @@ const TeacherDashboard = ({ userData }) => {
             onKelasChange={setSelectedKelas}
           />
 
-          {/* Today's Schedule */}
           <TodayScheduleCard
             schedule={dashboardData.todaySchedule}
             isMobile={isMobile}
           />
         </div>
 
-        {/* Quick Actions - 4 Buttons */}
         <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
             Aksi Cepat
@@ -947,7 +1056,6 @@ const TeacherDashboard = ({ userData }) => {
           </div>
         </div>
 
-        {/* Mobile floating refresh button */}
         <div className="fixed bottom-20 right-4 sm:hidden z-40">
           <button
             onClick={fetchDashboardData}

@@ -25,15 +25,15 @@ const DatabaseCleanupMonitor = () => {
   const fetchStats = async () => {
     try {
       const tables = [
-        "attendances",
-        "grades",
         "students",
-        "system_health_logs",
+        "attendance",
+        "nilai",
+        "catatan_siswa",
+        "class_schedules",
         "siswa_baru",
-        "konseling",
-        "student_development_notes",
         "users",
-        "teachers",
+        "system_health_logs",
+        "cleanup_history",
       ];
 
       const tableStats = {};
