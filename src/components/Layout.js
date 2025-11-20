@@ -8,6 +8,8 @@ import {
   Menu,
   User,
   ChevronDown,
+  LogOut,
+  X,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 
@@ -19,6 +21,7 @@ const Layout = ({ children, userData, onLogout }) => {
   const [isTablet, setIsTablet] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const timerRef = useRef(null);
@@ -243,6 +246,21 @@ const Layout = ({ children, userData, onLogout }) => {
     setShowProfileDropdown(!showProfileDropdown);
   };
 
+  // Logout handlers
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+    setShowProfileDropdown(false);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    onLogout();
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
+  };
+
   // Get responsive sidebar margin
   const getSidebarMargin = () => {
     if (isMobile || isTablet) return "ml-0";
@@ -251,6 +269,40 @@ const Layout = ({ children, userData, onLogout }) => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex flex-col items-center px-6 pt-6 pb-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <LogOut className="text-blue-600" size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center">
+                Keluar dari Sistem?
+              </h3>
+              <p className="text-gray-600 text-center mt-2">
+                Anda harus login kembali untuk mengakses sistem
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 px-6 pb-6">
+              <button
+                onClick={handleCancelLogout}
+                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors duration-150">
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-xl transition-colors duration-150 shadow-lg shadow-blue-500/30">
+                Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Sidebar */}
       {!isMobile && !isTablet && (
         <Sidebar
@@ -355,12 +407,9 @@ const Layout = ({ children, userData, onLogout }) => {
                           <div className="border-t border-gray-100 my-1"></div>
 
                           <button
-                            onClick={() => {
-                              onLogout();
-                              setShowProfileDropdown(false);
-                            }}
+                            onClick={handleLogoutClick}
                             className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors touch-manipulation">
-                            <Users size={18} className="flex-shrink-0" />
+                            <LogOut size={18} className="flex-shrink-0" />
                             <span className="font-medium">Logout</span>
                           </button>
                         </div>
@@ -448,12 +497,9 @@ const Layout = ({ children, userData, onLogout }) => {
                           </button>
                           <hr className="my-1 border-gray-100" />
                           <button
-                            onClick={() => {
-                              onLogout();
-                              setShowProfileDropdown(false);
-                            }}
+                            onClick={handleLogoutClick}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                            <Users size={16} />
+                            <LogOut size={16} />
                             <span className="font-medium">Logout</span>
                           </button>
                         </div>
@@ -534,9 +580,9 @@ const Layout = ({ children, userData, onLogout }) => {
                         </button>
                         <hr className="my-1 border-gray-100" />
                         <button
-                          onClick={onLogout}
+                          onClick={handleLogoutClick}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150">
-                          <Users size={16} className="flex-shrink-0" />
+                          <LogOut size={16} className="flex-shrink-0" />
                           <span className="font-medium">Logout</span>
                         </button>
                       </div>
