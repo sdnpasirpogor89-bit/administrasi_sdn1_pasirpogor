@@ -152,7 +152,25 @@ const AttendanceModal = ({
     if (data && data.length > 0) {
       const dates = extractAllDatesFromData(data);
       setAttendanceDates(dates);
-      setProcessedData(data);
+
+      // ✅ NEW: Sort data by name untuk konsistensi urutan bulanan & semester
+      const sortedData = [...data].sort((a, b) => {
+        const nameA = (
+          a.name ||
+          a.full_name ||
+          a.nama_siswa ||
+          ""
+        ).toLowerCase();
+        const nameB = (
+          b.name ||
+          b.full_name ||
+          b.nama_siswa ||
+          ""
+        ).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      setProcessedData(sortedData);
     } else {
       setAttendanceDates([]);
       setProcessedData([]);

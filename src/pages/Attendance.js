@@ -1,4 +1,4 @@
-// src/pages/Attendance.js - FULL FIXED VERSION WITH SEMESTER SUPPORT ✅
+// src/pages/Attendance.js - FULL VERSION WITH SEMESTER EXPORT ✅
 // COPY PASTE SELURUH FILE INI, REPLACE SEMUA ISI FILE ATTENDANCE.JS LO!
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -24,7 +24,10 @@ import {
 
 import { supabase } from "../supabaseClient";
 import AttendanceModal from "./AttendanceModal";
-import { exportAttendanceFromComponent } from "./AttendanceExport";
+import {
+  exportAttendanceFromComponent,
+  exportSemesterRecapFromComponent, // ✅ ADDED: Import semester export
+} from "./AttendanceExport";
 import { getSemesterData } from "../services/semesterService";
 
 // ===== PWA OFFLINE IMPORTS =====
@@ -111,7 +114,7 @@ const ConfirmationModal = ({ show, onClose, onConfirm, title, message }) => {
   );
 };
 
-// ExportModal Component
+// ExportModal Component - MONTHLY
 const ExportModal = ({ show, onClose, onExport, loading }) => {
   const [selectedMonth, setSelectedMonth] = useState(
     (new Date().getMonth() + 1).toString()
@@ -132,7 +135,7 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
         <div className="flex items-center gap-3 mb-4">
           <Download className="text-blue-500 flex-shrink-0" size={20} />
           <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-            Export Data Presensi ke Excel
+            Export Data Presensi Bulanan
           </h3>
         </div>
 
@@ -194,6 +197,100 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
               <>
                 <Download size={14} />
                 Export Excel
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ✅ ADDED: ExportSemesterModal Component - SEMESTER
+const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
+  const [selectedSemester, setSelectedSemester] = useState(1);
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear().toString()
+  );
+
+  const handleExport = () => {
+    onExport(selectedSemester, selectedYear);
+  };
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <Calendar className="text-purple-500 flex-shrink-0" size={20} />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            Export Rekap Semester
+          </h3>
+        </div>
+
+        <div className="space-y-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Semester:
+            </label>
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(parseInt(e.target.value))}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+              disabled={loading}>
+              <option value={1}>Semester 1 (Ganjil - Juli-Desember)</option>
+              <option value={2}>Semester 2 (Genap - Januari-Juni)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tahun:
+            </label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+              disabled={loading}>
+              {Array.from({ length: 10 }, (_, i) => (
+                <option key={2020 + i} value={2020 + i}>
+                  {2020 + i}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-700">
+              💡 <strong>Info:</strong> Export semester akan menghasilkan rekap
+              total kehadiran untuk periode{" "}
+              {selectedSemester === 1 ? "Juli-Desember" : "Januari-Juni"}{" "}
+              {selectedYear}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+          <button
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
+            disabled={loading}>
+            Batal
+          </button>
+          <button
+            onClick={handleExport}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            disabled={loading}>
+            {loading ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" />
+                Memproses...
+              </>
+            ) : (
+              <>
+                <Download size={14} />
+                Export Semester
               </>
             )}
           </button>
@@ -371,7 +468,7 @@ const StudentCard = ({
   );
 };
 
-// Custom hook for attendance logic - DENGAN OFFLINE SYNC ✅
+// Custom hook for attendance logic
 const useAttendance = (currentUser) => {
   const [studentsData, setStudentsData] = useState({});
   const [attendanceData, setAttendanceData] = useState({});
@@ -532,6 +629,11 @@ const Attendance = ({
   const [modalAction, setModalAction] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+
+  // ✅ ADDED: State untuk semester export modal
+  const [showExportSemesterModal, setShowExportSemesterModal] = useState(false);
+  const [exportSemesterLoading, setExportSemesterLoading] = useState(false);
+
   const [showRekapModal, setShowRekapModal] = useState(false);
   const [rekapData, setRekapData] = useState([]);
   const [rekapTitle, setRekapTitle] = useState("");
@@ -758,7 +860,7 @@ const Attendance = ({
             keterangan: student.note || "",
             guru_input: currentUser.username,
             jenis_presensi: getJenisPresensi(),
-            tahun_ajaran: "2025/2026", // ADDED: Auto-set tahun ajaran
+            tahun_ajaran: "2025/2026",
           };
 
           const result = await saveWithSync("attendance", record);
@@ -978,9 +1080,6 @@ const Attendance = ({
     setRekapData(rekapData);
   }, [activeClass, generateRekapData, getJenisPresensi]);
 
-  // REPLACE handleRekapRefresh function di Attendance.js lo (around line 800-900)
-  // COPY PASTE function ini, replace yang lama!
-
   const handleRekapRefresh = useCallback(
     async (params) => {
       try {
@@ -988,11 +1087,9 @@ const Attendance = ({
 
         console.log("🔥 handleRekapRefresh called with:", params);
 
-        // Handle different parameter formats
         const mode = params?.mode || "monthly";
 
         if (mode === "monthly") {
-          // ===== MONTHLY MODE =====
           const month = params.month;
           const year = params.year;
 
@@ -1006,9 +1103,8 @@ const Attendance = ({
 
           setRekapData(rekapData);
         } else if (mode === "semester") {
-          // ===== SEMESTER MODE =====
-          const semester = params.semester; // "Ganjil" or "Genap"
-          const academicYear = params.academicYear; // "2025/2026"
+          const semester = params.semester;
+          const academicYear = params.academicYear;
           const year = params.year;
 
           console.log("📊 Fetching SEMESTER data:", {
@@ -1017,23 +1113,19 @@ const Attendance = ({
             year,
           });
 
-          // Parse academic year
           const [startYear, endYear] = academicYear.split("/").map(Number);
           let startDate, endDate;
 
           if (semester === "Ganjil") {
-            // Juli - Desember
             startDate = `${startYear}-07-01`;
             endDate = `${startYear}-12-31`;
           } else {
-            // Januari - Juni
             startDate = `${endYear}-01-01`;
             endDate = `${endYear}-06-30`;
           }
 
           console.log("📅 Date range:", { startDate, endDate });
 
-          // Get students for this class
           const students = studentsData[activeClass] || [];
 
           if (students.length === 0) {
@@ -1042,7 +1134,6 @@ const Attendance = ({
             return;
           }
 
-          // ✅ FETCH ALL DATA DENGAN PAGINATION (NO LIMIT!)
           console.log("🔍 Fetching semester data with pagination...");
 
           let allRecords = [];
@@ -1073,7 +1164,6 @@ const Attendance = ({
                 })`
               );
 
-              // Kalau data kurang dari pageSize, berarti udah habis
               if (data.length < pageSize) {
                 hasMore = false;
               } else {
@@ -1096,7 +1186,6 @@ const Attendance = ({
             return;
           }
 
-          // Calculate unique dates (hari efektif)
           const uniqueDates = [
             ...new Set(attendanceRecords.map((r) => r.tanggal)),
           ];
@@ -1105,7 +1194,6 @@ const Attendance = ({
           console.log("📊 Total hari efektif:", totalHariEfektif);
           console.log("📅 Unique dates:", uniqueDates.slice(0, 5), "...");
 
-          // Group by NISN
           const grouped = {};
           students.forEach((student) => {
             grouped[student.nisn] = {
@@ -1120,36 +1208,27 @@ const Attendance = ({
             };
           });
 
-          // Count attendance by status - HANDLE DUPLICATE TANGGAL
-          // Kalau ada guru kelas DAN guru mapel input di tanggal sama,
-          // Prioritas: guru_kelas > guru_mapel
           const recordsByDate = {};
 
           attendanceRecords.forEach((record) => {
-            const key = `${record.nisn}_${record.tanggal}`; // ✅ FIX: Pake underscore bukan dash
+            const key = `${record.nisn}_${record.tanggal}`;
 
             if (!recordsByDate[key]) {
-              // First record untuk tanggal ini
               recordsByDate[key] = record;
             } else {
-              // Ada duplicate - pilih berdasarkan prioritas
               const existing = recordsByDate[key];
 
-              // Prioritas: jenis_presensi "kelas" > "mapel"
               if (
                 record.jenis_presensi === "kelas" &&
                 existing.jenis_presensi === "mapel"
               ) {
-                recordsByDate[key] = record; // Timpa dengan data guru kelas
-              }
-              // Kalau sama-sama kelas atau sama-sama mapel, ambil yang terakhir
-              else if (record.jenis_presensi === existing.jenis_presensi) {
+                recordsByDate[key] = record;
+              } else if (record.jenis_presensi === existing.jenis_presensi) {
                 recordsByDate[key] = record;
               }
             }
           });
 
-          // Convert back to array (data unik per tanggal)
           const uniqueRecords = Object.values(recordsByDate);
 
           console.log("📊 Total records (raw):", attendanceRecords.length);
@@ -1160,30 +1239,23 @@ const Attendance = ({
             "duplicates"
           );
 
-          // Count attendance by status using unique records
           uniqueRecords.forEach((record) => {
             if (grouped[record.nisn]) {
               const status = record.status.toLowerCase();
 
-              // Count by status
               if (status === "hadir") grouped[record.nisn].hadir++;
               else if (status === "sakit") grouped[record.nisn].sakit++;
               else if (status === "izin") grouped[record.nisn].izin++;
               else if (status === "alpa") grouped[record.nisn].alpa++;
 
-              // Store daily status for potential use
               grouped[record.nisn].dailyStatus[record.tanggal] = status;
             }
           });
 
-          // Calculate percentage and total
           const processedData = Object.values(grouped).map((student) => {
-            // Total hari yang ada record untuk siswa ini
             const totalRecords =
               student.hadir + student.sakit + student.izin + student.alpa;
 
-            // Percentage = hadir / total hari efektif
-            // Jika hari efektif = 0, default ke 0%
             const percentage =
               totalHariEfektif > 0
                 ? Math.round((student.hadir / totalHariEfektif) * 100)
@@ -1191,8 +1263,8 @@ const Attendance = ({
 
             return {
               ...student,
-              total: totalHariEfektif, // ✅ PENTING: Total = hari efektif, bukan record count!
-              totalRecords: totalRecords, // Info tambahan: total record siswa
+              total: totalHariEfektif,
+              totalRecords: totalRecords,
               percentage,
             };
           });
@@ -1244,6 +1316,37 @@ const Attendance = ({
         showToast(`Error mengexport data: ${error.message}`, "error");
       } finally {
         setExportLoading(false);
+      }
+    },
+    [activeClass, studentsData, showToast, currentUser]
+  );
+
+  // ✅ ADDED: Handler untuk export semester
+  const exportSemester = useCallback(
+    async (semester, year) => {
+      try {
+        setExportSemesterLoading(true);
+
+        const result = await exportSemesterRecapFromComponent(
+          supabase,
+          activeClass,
+          semester,
+          year,
+          studentsData,
+          currentUser
+        );
+
+        if (result.success) {
+          showToast(result.message);
+          setShowExportSemesterModal(false);
+        } else {
+          showToast(result.message, "error");
+        }
+      } catch (error) {
+        console.error("Error exporting semester:", error);
+        showToast(`Error mengexport semester: ${error.message}`, "error");
+      } finally {
+        setExportSemesterLoading(false);
       }
     },
     [activeClass, studentsData, showToast, currentUser]
@@ -1372,7 +1475,7 @@ const Attendance = ({
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 w-full">
           <button
             className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
             onClick={markAllPresent}
@@ -1422,7 +1525,18 @@ const Attendance = ({
               studentsData[activeClass].length === 0
             }>
             <Download size={14} />
-            <span>Export Excel</span>
+            <span>Export Bulanan</span>
+          </button>
+          {/* ✅ ADDED: Tombol Export Semester */}
+          <button
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            onClick={() => setShowExportSemesterModal(true)}
+            disabled={
+              !studentsData[activeClass] ||
+              studentsData[activeClass].length === 0
+            }>
+            <Calendar size={14} />
+            <span>Export Semester</span>
           </button>
         </div>
       </div>
@@ -1677,12 +1791,22 @@ const Attendance = ({
         title="Konfirmasi Penyimpanan"
         message={modalMessage}
       />
+
       <ExportModal
         show={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={exportAttendance}
         loading={exportLoading}
       />
+
+      {/* ✅ ADDED: Modal Export Semester */}
+      <ExportSemesterModal
+        show={showExportSemesterModal}
+        onClose={() => setShowExportSemesterModal(false)}
+        onExport={exportSemester}
+        loading={exportSemesterLoading}
+      />
+
       <AttendanceModal
         show={showRekapModal}
         onClose={() => setShowRekapModal(false)}

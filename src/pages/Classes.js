@@ -118,17 +118,6 @@ export default function ClassesPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 lg:mb-8">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <School className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8" />
-            Daftar Kelas
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
-            Tahun Ajaran 2025/2026
-          </p>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md p-4 sm:p-5 lg:p-6 border border-blue-200">
