@@ -54,7 +54,7 @@ const Setting = () => {
   // ✅ Load user profile dari localStorage
   const loadUserProfile = () => {
     try {
-      const userSession = JSON.parse(localStorage.getItem("userSession"));
+      const userSession = JSON.parse(localStorage.getItem("user"));
       console.log("📋 Setting.js - User Session:", userSession);
 
       if (userSession) {
