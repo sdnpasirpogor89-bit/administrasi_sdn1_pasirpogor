@@ -26,16 +26,21 @@ const MaintenancePage = ({ message }) => {
 const ProtectedRoute = ({ children, user, isLoading }) => {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [whitelist, setWhitelist] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Check maintenance mode dari Supabase
+  // ✅ Check maintenance mode + whitelist dari Supabase
   useEffect(() => {
     const checkMaintenance = async () => {
       try {
         const { data, error } = await supabase
           .from("school_settings")
           .select("setting_key, setting_value")
-          .in("setting_key", ["maintenance_mode", "maintenance_message"]);
+          .in("setting_key", [
+            "maintenance_mode",
+            "maintenance_message",
+            "maintenance_whitelist",
+          ]);
 
         if (error) throw error;
 
@@ -52,6 +57,18 @@ const ProtectedRoute = ({ children, user, isLoading }) => {
           settings.maintenance_message ||
             "Aplikasi sedang dalam maintenance. Kami akan kembali segera!"
         );
+
+        // 🔥 PARSE WHITELIST - Handle object array
+        try {
+          const whitelistData =
+            typeof settings.maintenance_whitelist === "string"
+              ? JSON.parse(settings.maintenance_whitelist)
+              : settings.maintenance_whitelist || [];
+          setWhitelist(Array.isArray(whitelistData) ? whitelistData : []);
+        } catch (e) {
+          console.error("Error parsing whitelist:", e);
+          setWhitelist([]);
+        }
       } catch (error) {
         console.error("Error checking maintenance mode:", error);
       } finally {
@@ -77,9 +94,34 @@ const ProtectedRoute = ({ children, user, isLoading }) => {
     );
   }
 
-  // ✅ Jika maintenance ON dan user bukan admin, tampilkan maintenance page
-  if (maintenanceMode && user?.role !== "admin") {
-    return <MaintenancePage message={maintenanceMessage} />;
+  // 🔥 FIX: Cek admin ATAU whitelist (handle object array)
+  if (maintenanceMode) {
+    const isAdmin = user?.role === "admin";
+
+    // 🔥 CEK WHITELIST - Handle object array dengan .some()
+    const isWhitelisted = whitelist.some((item) => {
+      // Kalau item adalah object {id, username, full_name}
+      if (typeof item === "object" && item !== null) {
+        return item.id === user?.id;
+      }
+      // Kalau item adalah string UUID langsung
+      return item === user?.id || item === String(user?.id);
+    });
+
+    // Debug log (hapus kalau udah production)
+    console.log("🔍 Debug Maintenance Check:", {
+      userId: user?.id,
+      userRole: user?.role,
+      isAdmin,
+      isWhitelisted,
+      whitelist,
+      whitelistType: whitelist[0] ? typeof whitelist[0] : "empty",
+    });
+
+    // ❌ Kalau bukan admin DAN bukan di whitelist → BLOCK!
+    if (!isAdmin && !isWhitelisted) {
+      return <MaintenancePage message={maintenanceMessage} />;
+    }
   }
 
   // ✅ Tampilkan halaman normal

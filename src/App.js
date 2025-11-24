@@ -1,5 +1,5 @@
-// src/App.js - SD VERSION DENGAN MAINTENANCE MODE
-import React, { useState, useEffect, useMemo } from "react";
+// src/App.js - SD VERSION DENGAN MAINTENANCE MODE + WHITELIST
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -26,10 +26,10 @@ import SPMB from "./spmb/SPMB";
 import Report from "./reports/Reports";
 import Setting from "./setting/setting";
 import MonitorSistem from "./system/MonitorSistem";
-import MaintenancePage from "./setting/MaintenancePage"; // ✅ Import maintenance
-import AdminPanel from "./setting/AdminPanel"; // ✅ Import admin panel
+import MaintenancePage from "./setting/MaintenancePage";
+import AdminPanel from "./setting/AdminPanel";
 
-// ===== WRAPPER COMPONENTS DENGAN useMemo =====
+// ===== WRAPPER COMPONENTS =====
 const ReportWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
@@ -125,10 +125,8 @@ function App() {
     setupAutoSync();
     console.log("✅ Auto-sync initialized");
 
-    // Maintenance check
     checkMaintenanceStatus();
 
-    // Subscribe to maintenance changes
     const subscription = supabase
       .channel("maintenance-changes")
       .on(
@@ -198,7 +196,9 @@ function App() {
         try {
           const parsed = JSON.parse(settings.maintenance_whitelist);
           setWhitelistUsers(Array.isArray(parsed) ? parsed : []);
+          console.log("✅ Whitelist loaded:", parsed);
         } catch (e) {
+          console.error("❌ Error parsing whitelist:", e);
           setWhitelistUsers([]);
         }
       } else {
@@ -209,11 +209,20 @@ function App() {
     }
   };
 
+  // 🔥 HELPER: Cek apakah user ada di whitelist
+  const isUserWhitelisted = useCallback(
+    (userId) => {
+      return whitelistUsers.some((u) => u.id === userId);
+    },
+    [whitelistUsers]
+  );
+
   // ========== 3. CHECK SESSION ==========
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const sessionData = localStorage.getItem("userSession");
+        // 🔥 GUNAKAN KEY "user" (bukan "userSession")
+        const sessionData = localStorage.getItem("user");
 
         if (!sessionData) {
           console.log("❌ No session found");
@@ -227,7 +236,7 @@ function App() {
         const currentTime = Date.now();
         if (session.expiryTime && currentTime > session.expiryTime) {
           console.log("❌ Session expired");
-          localStorage.removeItem("userSession");
+          localStorage.removeItem("user");
           setUser(null);
           setLoading(false);
           return;
@@ -241,7 +250,7 @@ function App() {
 
         if (error || !userData) {
           console.error("❌ User not found in database:", error);
-          localStorage.removeItem("userSession");
+          localStorage.removeItem("user");
           setUser(null);
           setLoading(false);
           return;
@@ -265,7 +274,7 @@ function App() {
         setUser(completeUserData);
       } catch (error) {
         console.error("❌ Session check error:", error);
-        localStorage.removeItem("userSession");
+        localStorage.removeItem("user");
         setUser(null);
       } finally {
         setLoading(false);
@@ -275,8 +284,8 @@ function App() {
     checkSession();
   }, []);
 
-  // ========== 4. HANDLE LOGIN SUCCESS ==========
-  const handleLoginSuccess = async (userData) => {
+  // ========== 4. 🔥 FIX: HANDLE LOGIN (bukan handleLoginSuccess) ==========
+  const handleLogin = async (userData, rememberMe = false) => {
     try {
       const { data: dbUserData, error } = await supabase
         .from("users")
@@ -290,6 +299,11 @@ function App() {
         return;
       }
 
+      const loginTime = Date.now();
+      const expiryTime = rememberMe
+        ? loginTime + 30 * 24 * 60 * 60 * 1000 // 30 hari
+        : loginTime + 24 * 60 * 60 * 1000; // 24 jam
+
       const completeUserData = {
         id: dbUserData.id,
         username: dbUserData.username,
@@ -300,16 +314,23 @@ function App() {
         mata_pelajaran: dbUserData.mata_pelajaran,
         tahun_ajaran: dbUserData.tahun_ajaran,
         is_active: dbUserData.is_active,
-        loginTime: userData.loginTime || Date.now(),
-        expiryTime: userData.expiryTime || Date.now() + 24 * 60 * 60 * 1000,
+        loginTime: loginTime,
+        expiryTime: expiryTime,
       };
 
       console.log("✅ Login success:", completeUserData.username);
       setUser(completeUserData);
 
-      localStorage.setItem("userSession", JSON.stringify(completeUserData));
+      // 🔥 GUNAKAN KEY "user" (bukan "userSession")
+      localStorage.setItem("user", JSON.stringify(completeUserData));
+
+      if (rememberMe) {
+        console.log("✅ Remember Me enabled - 30 days");
+      } else {
+        console.log("✅ Session valid for 24 hours");
+      }
     } catch (error) {
-      console.error("❌ Login success handler error:", error);
+      console.error("❌ Login handler error:", error);
       setUser(userData);
     }
   };
@@ -318,11 +339,12 @@ function App() {
   const handleLogout = async () => {
     try {
       console.log("👋 Logging out...");
-      localStorage.removeItem("userSession");
+      localStorage.removeItem("user");
+      localStorage.removeItem("rememberMe");
       setUser(null);
     } catch (error) {
       console.error("❌ Logout error:", error);
-      localStorage.removeItem("userSession");
+      localStorage.removeItem("user");
       setUser(null);
     }
   };
@@ -335,6 +357,26 @@ function App() {
       return <TeacherDashboard userData={userData} />;
     }
   };
+
+  // 🔥 HELPER: Cek apakah user boleh akses (admin ATAU whitelisted)
+  const canAccessDuringMaintenance = useCallback(
+    (userData) => {
+      if (!isMaintenanceMode) return true;
+      if (userData.role === "admin") {
+        console.log("✅ Admin bypassed maintenance");
+        return true;
+      }
+      if (isUserWhitelisted(userData.id)) {
+        console.log(
+          `✅ Whitelisted user ${userData.username} bypassed maintenance`
+        );
+        return true;
+      }
+      console.log(`🔴 User ${userData.username} blocked by maintenance`);
+      return false;
+    },
+    [isMaintenanceMode, isUserWhitelisted]
+  );
 
   // ========== 7. LOADING STATE ==========
   if (loading || maintenanceLoading) {
@@ -365,30 +407,29 @@ function App() {
     <Router>
       <div className="App min-h-screen bg-gray-50">
         <Routes>
-          {/* LOGIN ROUTE */}
+          {/* 🔥 FIX: LOGIN ROUTE - PROPS DIPERBAIKI */}
           <Route
             path="/login"
             element={
               user ? (
                 <Navigate to="/dashboard" replace />
               ) : (
-                <Login onLoginSuccess={handleLoginSuccess} />
+                <Login onLogin={handleLogin} />
               )
             }
           />
 
-          {/* PROTECTED ROUTES - CEK MAINTENANCE */}
+          {/* 🔥 PROTECTED ROUTES - CEK MAINTENANCE + WHITELIST */}
           <Route
             path="/dashboard"
             element={
               user ? (
-                // ✅ CEK MAINTENANCE: Jika ON & user bukan admin
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     {renderDashboard(user)}
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -400,12 +441,12 @@ function App() {
             path="/students"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <StudentsWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -417,12 +458,12 @@ function App() {
             path="/classes"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <ClassesWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -434,12 +475,12 @@ function App() {
             path="/attendance"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <AttendanceWithNavigation currentUser={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -451,12 +492,12 @@ function App() {
             path="/teachers"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <Teacher />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -468,12 +509,12 @@ function App() {
             path="/grades"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <GradesWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -485,12 +526,12 @@ function App() {
             path="/catatan-siswa"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <CatatanSiswaWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -502,12 +543,12 @@ function App() {
             path="/schedule"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <TeacherScheduleWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -519,12 +560,12 @@ function App() {
             path="/spmb"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <SPMBWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -536,12 +577,12 @@ function App() {
             path="/reports"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <ReportWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -553,12 +594,12 @@ function App() {
             path="/settings"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <SettingWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />
@@ -570,12 +611,12 @@ function App() {
             path="/monitor-sistem"
             element={
               user ? (
-                isMaintenanceMode && user.role !== "admin" ? (
-                  <MaintenancePage message={maintenanceMessage} />
-                ) : (
+                canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <MonitorSistemWithNavigation userData={user} />
                   </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
                 )
               ) : (
                 <Navigate to="/login" replace />

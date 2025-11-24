@@ -4,7 +4,8 @@ import { supabase } from "../supabaseClient";
 import Logo from "./Logo";
 import backgroundImage from "../assets/Background.jpg";
 
-export const Login = ({ onLoginSuccess }) => {
+// 🔥 FIX: Ganti onLoginSuccess jadi onLogin dan onShowToast
+export const Login = ({ onLogin, onShowToast }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -75,9 +76,15 @@ export const Login = ({ onLoginSuccess }) => {
         created_at: data.created_at,
       };
 
-      onLoginSuccess(userData, rememberMe);
+      // 🔥 FIX: Panggil onLogin (bukan onLoginSuccess)
+      onLogin(userData, rememberMe);
     } catch (error) {
       setErrors({ general: error.message });
+
+      // 🔥 TAMBAH: Show toast untuk error
+      if (onShowToast) {
+        onShowToast(error.message, "error");
+      }
     } finally {
       setIsLoading(false);
     }
