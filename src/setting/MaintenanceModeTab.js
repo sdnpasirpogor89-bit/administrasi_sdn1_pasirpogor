@@ -435,15 +435,6 @@ const MaintenanceModeTab = ({ showToast }) => {
         </div>
       )}
 
-      {/* Info Box */}
-      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <p className="text-sm text-blue-900">
-          <strong>ℹ️ Informasi:</strong> Saat maintenance ON, hanya admin + user
-          di whitelist yang bisa akses. User lain akan melihat halaman
-          maintenance.
-        </p>
-      </div>
-
       {/* Save Indicator */}
       {saved && (
         <div className="fixed bottom-6 right-6 p-4 bg-green-50 border border-green-300 rounded-lg shadow-lg flex items-center gap-2 animate-pulse">
