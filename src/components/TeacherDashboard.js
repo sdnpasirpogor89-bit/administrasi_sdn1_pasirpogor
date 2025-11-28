@@ -915,14 +915,14 @@ const TeacherDashboard = ({ userData }) => {
   const renderGuruKelasDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 lg:p-8">
+        {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL */}
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-2">
               Selamat Datang, {userData?.full_name || userData?.username}
             </h1>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 text-blue-700 border border-blue-200/50">
                 Guru Kelas {userData.kelas}
               </span>
             </div>
@@ -1077,18 +1077,18 @@ const TeacherDashboard = ({ userData }) => {
 
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 lg:p-8">
+        {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL */}
+        <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-xl shadow-sm border border-green-100 p-4 sm:p-6 lg:p-8">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-2">
               Selamat Datang, {userData?.full_name || userData?.username}
             </h1>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-green-100/80 text-green-700 border border-green-200/50">
                 Guru Mata Pelajaran
               </span>
               {userData.mata_pelajaran && (
-                <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-emerald-100/80 text-emerald-700 border border-emerald-200/50">
                   {userData.mata_pelajaran}
                 </span>
               )}
