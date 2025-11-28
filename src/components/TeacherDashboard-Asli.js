@@ -461,121 +461,6 @@ const AbsentStudentsTable = ({
   );
 };
 
-// Quick Actions Component untuk Mobile
-const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => (
-  <div className="mb-6">
-    <h2 className="text-lg font-semibold text-slate-800 mb-3">Aksi Cepat</h2>
-
-    {/* Baris 1 */}
-    <div className="grid grid-cols-3 gap-2 mb-3">
-      <button
-        onClick={() => handleNavigation("/attendance")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👨‍🎓</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Presensi Siswa
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/attendance-teacher")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👨‍🏫</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Presensi Guru
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/grades")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📊</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Nilai Siswa
-        </span>
-      </button>
-    </div>
-
-    {/* Baris 2 */}
-    <div className="grid grid-cols-3 gap-2 mb-3">
-      <button
-        onClick={() => handleNavigation("/teachers")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👥</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Data Guru
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/classes")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">🏫</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Data Kelas
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/students")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-pink-50 hover:border-pink-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👤</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Data Siswa
-        </span>
-      </button>
-    </div>
-
-    {/* Baris 3 */}
-    <div className="grid grid-cols-3 gap-2">
-      <button
-        onClick={() => handleNavigation("/student-notes")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📝</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Catatan Siswa
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/my-schedule")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📅</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Jadwal Saya
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/reports")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📄</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Laporan
-        </span>
-      </button>
-    </div>
-  </div>
-);
-
 const TeacherDashboard = ({ userData }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -915,39 +800,26 @@ const TeacherDashboard = ({ userData }) => {
   const renderGuruKelasDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 lg:p-8">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-2">
-              Selamat Datang, {userData?.full_name || userData?.username}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+              Dashboard Guru Kelas {userData.kelas}
             </h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                Guru Kelas {userData.kelas}
-              </span>
+            <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
+              <Smartphone size={12} />
+              <span>Mobile</span>
             </div>
           </div>
+          <button
+            onClick={fetchDashboardData}
+            disabled={refreshing}
+            className={`flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[44px] touch-manipulation w-full sm:w-auto justify-center ${
+              refreshing ? "opacity-50 cursor-not-allowed" : ""
+            }`}>
+            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+            <span>{refreshing ? "Memperbarui..." : "Refresh Data"}</span>
+          </button>
         </div>
-
-        {/* HEADER JUDUL DASHBOARD */}
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-            Dashboard Guru Kelas {userData.kelas}
-          </h1>
-          <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
-            <Smartphone size={12} />
-            <span>Mobile</span>
-          </div>
-        </div>
-
-        {/* AKSI CEPAT MOBILE */}
-        {isMobile && (
-          <QuickActionsMobile
-            isGuruKelas={isGuruKelas}
-            isGuruMapel={isGuruMapel}
-            handleNavigation={handleNavigation}
-          />
-        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           <StatsCard
@@ -996,54 +868,49 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop - Muncul hanya di Desktop/Tablet */}
-        {!isMobile && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
-              Aksi Cepat
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-              <button
-                onClick={() => handleNavigation("/students")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <Users
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">Data Siswa</span>
-              </button>
-              <button
-                onClick={() => handleNavigation("/attendance")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <ClipboardList
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">
-                  Presensi Siswa
-                </span>
-              </button>
-              <button
-                onClick={() => handleNavigation("/grades")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <BarChart3
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">Nilai Siswa</span>
-              </button>
-              <button
-                onClick={() => handleNavigation("/reports")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <FileText
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">Laporan</span>
-              </button>
-            </div>
+        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+            Aksi Cepat
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <button
+              onClick={() => handleNavigation("/students")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Users
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Data Siswa</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/attendance")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <ClipboardList
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Presensi Siswa</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/grades")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <BarChart3
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Nilai Siswa</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/reports")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <FileText
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Laporan</span>
+            </button>
           </div>
-        )}
+        </div>
 
         <div className="fixed bottom-20 right-4 sm:hidden z-40">
           <button
@@ -1077,44 +944,26 @@ const TeacherDashboard = ({ userData }) => {
 
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 lg:p-8">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-2">
-              Selamat Datang, {userData?.full_name || userData?.username}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+              Dashboard Guru Mapel
             </h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                Guru Mata Pelajaran
-              </span>
-              {userData.mata_pelajaran && (
-                <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  {userData.mata_pelajaran}
-                </span>
-              )}
+            <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
+              <Smartphone size={12} />
+              <span>Mobile</span>
             </div>
           </div>
+          <button
+            onClick={fetchDashboardData}
+            disabled={refreshing}
+            className={`flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[44px] touch-manipulation w-full sm:w-auto justify-center ${
+              refreshing ? "opacity-50 cursor-not-allowed" : ""
+            }`}>
+            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+            <span>{refreshing ? "Memperbarui..." : "Refresh Data"}</span>
+          </button>
         </div>
-
-        {/* HEADER JUDUL DASHBOARD */}
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-            Dashboard Guru Mapel
-          </h1>
-          <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
-            <Smartphone size={12} />
-            <span>Mobile</span>
-          </div>
-        </div>
-
-        {/* AKSI CEPAT MOBILE */}
-        {isMobile && (
-          <QuickActionsMobile
-            isGuruKelas={isGuruKelas}
-            isGuruMapel={isGuruMapel}
-            handleNavigation={handleNavigation}
-          />
-        )}
 
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           <StatsCard
@@ -1163,54 +1012,49 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop - Muncul hanya di Desktop/Tablet */}
-        {!isMobile && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
-              Aksi Cepat
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-              <button
-                onClick={() => handleNavigation("/students")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <Users
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">Data Siswa</span>
-              </button>
-              <button
-                onClick={() => handleNavigation("/attendance")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <ClipboardList
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">
-                  Presensi Siswa
-                </span>
-              </button>
-              <button
-                onClick={() => handleNavigation("/grades")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <BarChart3
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">Nilai Siswa</span>
-              </button>
-              <button
-                onClick={() => handleNavigation("/reports")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <FileText
-                  size={isMobile ? 18 : 20}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                <span className="font-semibold text-center">Laporan</span>
-              </button>
-            </div>
+        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+            Aksi Cepat
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <button
+              onClick={() => handleNavigation("/students")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Users
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Data Siswa</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/attendance")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <ClipboardList
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Presensi Siswa</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/grades")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <BarChart3
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Nilai Siswa</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/reports")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <FileText
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Laporan</span>
+            </button>
           </div>
-        )}
+        </div>
 
         <div className="fixed bottom-20 right-4 sm:hidden z-40">
           <button
