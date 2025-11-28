@@ -1,4 +1,4 @@
-// src/attendance-teacher/MyAttendanceStatus.js
+// src/attendance-teacher/MyAttendanceStatus.js - FIXED
 import React, { useState, useEffect } from "react";
 import { CheckCircle, Clock, AlertCircle, XCircle } from "lucide-react";
 import { supabase } from "../supabaseClient";
@@ -10,6 +10,8 @@ const formatCheckInMethod = (method) => {
     qr: "Scan QR",
     manual: "Manual",
     nfc: "NFC",
+    admin_qr: "Admin QR",
+    admin_manual: "Admin Manual",
   };
   return methodMap[method] || method;
 };
@@ -18,8 +20,9 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ FIXED: Ganti currentUser.teacher_id jadi currentUser.id
   useEffect(() => {
-    if (currentUser?.teacher_id) {
+    if (currentUser?.id) {
       fetchMyAttendance();
     }
   }, [currentUser, refreshTrigger]);
@@ -27,17 +30,18 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
   const fetchMyAttendance = async () => {
     setLoading(true);
     try {
-      // ✅ FIX: Get today's date in local timezone (Indonesia/WIB)
+      // ✅ Get today's date in local timezone (Indonesia/WIB)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
       const today = `${year}-${month}-${day}`;
 
+      // ✅ FIXED: Pake currentUser.id langsung
       const { data, error } = await supabase
         .from("teacher_attendance")
         .select("*")
-        .eq("teacher_id", currentUser.teacher_id)
+        .eq("teacher_id", currentUser.id)
         .eq("attendance_date", today)
         .maybeSingle();
 

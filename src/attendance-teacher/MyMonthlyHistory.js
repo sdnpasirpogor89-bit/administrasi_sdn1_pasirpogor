@@ -1,4 +1,4 @@
-// src/attendance-teacher/MyMonthlyHistory.js
+// src/attendance-teacher/MyMonthlyHistory.js - FIXED
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -67,6 +67,8 @@ const MyMonthlyHistory = ({ currentUser }) => {
       qr: "Scan QR",
       manual: "Manual",
       nfc: "NFC",
+      admin_qr: "Admin QR",
+      admin_manual: "Admin Manual",
     };
     return methodMap[method] || method || "-";
   };
@@ -83,8 +85,9 @@ const MyMonthlyHistory = ({ currentUser }) => {
     return dayOfWeek === 0 || dayOfWeek === 6;
   };
 
+  // ✅ FIXED: Ganti currentUser.teacher_id jadi currentUser.id
   useEffect(() => {
-    if (currentUser?.teacher_id) {
+    if (currentUser?.id) {
       fetchMyMonthlyData();
     }
   }, [selectedMonth, selectedYear, currentUser]);
@@ -102,10 +105,11 @@ const MyMonthlyHistory = ({ currentUser }) => {
         "0"
       )}-${lastDay}`;
 
+      // ✅ FIXED: Pake currentUser.id langsung (bukan currentUser.teacher_id)
       const { data, error } = await supabase
         .from("teacher_attendance")
         .select("*")
-        .eq("teacher_id", currentUser.teacher_id)
+        .eq("teacher_id", currentUser.id)
         .gte("attendance_date", startDate)
         .lte("attendance_date", endDate)
         .order("attendance_date", { ascending: false });
