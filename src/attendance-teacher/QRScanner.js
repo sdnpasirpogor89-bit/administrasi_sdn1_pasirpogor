@@ -1,4 +1,4 @@
-// src/attendance-teacher/QRScanner.js - FIXED CAMERA FLICKERING
+// src/attendance-teacher/QRScanner.js - FIXED QR CODE VALIDATION
 import React, { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
@@ -20,23 +20,19 @@ const QRScanner = ({ currentUser, onSuccess }) => {
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
   const [teachersList, setTeachersList] = useState([]);
 
-  // ✅ USE REF INSTEAD OF STATE - mencegah re-render
   const html5QrCodeRef = useRef(null);
   const isScanningRef = useRef(false);
 
-  // Check if user is admin
   useEffect(() => {
     checkAdminStatus();
   }, [currentUser]);
 
-  // Load teachers list for admin
   useEffect(() => {
     if (isAdmin) {
       loadTeachers();
     }
   }, [isAdmin]);
 
-  // ✅ CAMERA CONTROL - FIXED dengan useRef
   useEffect(() => {
     let mounted = true;
 
@@ -87,9 +83,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
     }
   };
 
-  // ✅ FUNGSI KAMERA - FIXED FLICKERING
   const startCamera = async () => {
-    // Cegah double start
     if (isScanningRef.current) {
       console.log("⚠️ Camera already running, skipping start");
       return;
@@ -146,35 +140,31 @@ const QRScanner = ({ currentUser, onSuccess }) => {
   const onScanSuccess = async (decodedText) => {
     console.log("📷 QR Detected:", decodedText);
 
-    // Validasi QR Code
+    // ✅ FIXED: Validasi QR Code untuk SDN 1 PASIRPOGOR
     const validQRCodes = [
-      "QR_PRESENSI_GURU_SMP_MUSLIMIN_CILILIN",
-      "QR_PRESENSI_GURU_2024",
+      "QR_PRESENSI_GURU_SDN1_PASIRPOGOR", // ✅ Kode yang benar
     ];
 
     if (!validQRCodes.includes(decodedText)) {
       console.log("❌ Invalid QR Code");
       setMessage({
         type: "error",
-        text: "QR Code tidak valid! Gunakan QR Code resmi presensi guru.",
+        text: "QR Code tidak valid! Gunakan QR Code resmi presensi guru SDN 1 Pasirpogor.",
       });
       return;
     }
 
     console.log("✅ Valid QR Code");
 
-    // Stop camera dulu sebelum proses lebih lanjut
     await stopCamera();
     setScanning(false);
 
-    // Jika Admin, tanya dulu mau input untuk siapa
     if (isAdmin) {
       console.log("👤 Admin detected, showing teacher selection...");
       setShowTeacherSelect(true);
       return;
     }
 
-    // Jika bukan admin, langsung proses
     await processAttendance();
   };
 
@@ -183,7 +173,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
     setShowTeacherSelect(false);
 
     try {
-      // Get current time in Jakarta timezone
       const jakartaDate = new Date(
         new Date().toLocaleString("en-US", {
           timeZone: "Asia/Jakarta",
@@ -223,19 +212,16 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         }
       }
 
-      // Get teacher_id
       let targetTeacherId;
       let targetTeacherName;
 
       if (isAdmin && adminSelectedTeacherId) {
-        // Admin input untuk guru lain
         targetTeacherId = adminSelectedTeacherId;
         const teacher = teachersList.find(
           (t) => t.teacher_id === adminSelectedTeacherId
         );
         targetTeacherName = teacher?.full_name || "Unknown";
       } else {
-        // Guru input sendiri
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("teacher_id, full_name")
@@ -252,7 +238,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         targetTeacherName = userData.full_name;
       }
 
-      // Cek sudah absen hari ini atau belum
       console.log("🔍 Checking existing attendance...");
       const { data: existingAttendance, error: checkError } = await supabase
         .from("teacher_attendance")
@@ -282,7 +267,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         return;
       }
 
-      // Prepare attendance data
       const attendanceData = {
         teacher_id: targetTeacherId,
         attendance_date: today,
@@ -292,7 +276,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         notes: null,
       };
 
-      // Tambahkan admin_info jika di-input oleh admin
       if (isAdmin) {
         const { data: adminData } = await supabase
           .from("users")
@@ -308,7 +291,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         });
       }
 
-      // Insert attendance
       console.log("💾 Inserting attendance...");
       const { error: insertError } = await supabase
         .from("teacher_attendance")
@@ -329,15 +311,12 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             )} WIB`,
       });
 
-      // Reset selection
       setSelectedTeacherId(null);
 
-      // Auto-hide success message
       setTimeout(() => {
         setMessage(null);
       }, 3000);
 
-      // Trigger refresh
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("❌ Error submitting attendance:", error);
@@ -396,7 +375,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         </p>
       </div>
 
-      {/* Message Alert */}
       {message && (
         <div
           className={`p-4 rounded-lg flex items-start gap-3 ${
@@ -426,7 +404,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         </div>
       )}
 
-      {/* Teacher Selection Modal (Admin Only) */}
       {showTeacherSelect && isAdmin && (
         <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 space-y-4">
           <div className="flex items-center gap-2 text-blue-800 font-semibold">
@@ -462,7 +439,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         </div>
       )}
 
-      {/* QR Scanner */}
       {!scanning && !loading && !showTeacherSelect && (
         <button
           onClick={startScanning}
@@ -497,7 +473,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         </div>
       )}
 
-      {/* Info */}
       <div className="space-y-3">
         <div
           className={`${
