@@ -1,4 +1,4 @@
-// attendance-teacher/LocationValidator.js
+// attendance-teacher/LocationValidator.js - FIXED FOR SD
 // Utility untuk validasi lokasi guru saat presensi manual
 
 import { supabase } from "../supabaseClient";
@@ -8,8 +8,8 @@ import { supabase } from "../supabaseClient";
 // ========================================
 
 const SCHOOL_COORDS = {
-  lat: -6.954375, // Koordinat sekolah
-  lng: 107.416371,
+  lat: -6.987732, // Koordinat sekolah
+  lng: 107.399172,
 };
 
 const SCHOOL_RADIUS = 300; // 300 meter radius
@@ -224,7 +224,8 @@ const getPermissionHelp = () => {
 };
 
 /**
- * Check apakah guru punya jadwal hari ini
+ * ✅ FIXED: Check apakah guru punya jadwal hari ini
+ * Menggunakan tabel class_schedules (SD)
  */
 export const validateTeacherSchedule = async (userId) => {
   try {
@@ -241,8 +242,9 @@ export const validateTeacherSchedule = async (userId) => {
 
     console.log("📅 Checking schedule for user:", userId, "Day:", today);
 
+    // ✅ FIXED: Query ke class_schedules dengan teacher_id = user.id
     const { data: schedules, error } = await supabase
-      .from("teacher_schedules")
+      .from("class_schedules")
       .select("*")
       .eq("teacher_id", userId)
       .eq("day", today)
@@ -285,7 +287,7 @@ export const validateTeacherSchedule = async (userId) => {
         message: `Kelas pertama Anda dimulai pukul ${firstClass.start_time.slice(
           0,
           5
-        )} (Kelas ${firstClass.class_id})`,
+        )} (${firstClass.subject || "Mata Pelajaran"})`,
       };
     }
 
