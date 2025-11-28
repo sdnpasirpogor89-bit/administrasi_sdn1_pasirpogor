@@ -71,7 +71,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select("teacher_id, full_name, username")
+        .select("id, full_name, username")
         .eq("role", "teacher")
         .eq("is_active", true)
         .order("full_name");
@@ -418,7 +418,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">-- Pilih Guru --</option>
             {teachersList.map((teacher) => (
-              <option key={teacher.teacher_id} value={teacher.teacher_id}>
+              <option key={teacher.id} value={teacher.id}>
                 {teacher.full_name}
               </option>
             ))}
