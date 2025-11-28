@@ -193,12 +193,11 @@ const QRScanner = ({ currentUser, onSuccess }) => {
 
       console.log("📅 Date:", today, "Time:", clockInTime);
 
-      // ✅ VALIDASI JAM OPERASIONAL: 00:00 - 23:59 (TESTING MODE - 24 JAM)
-      // TODO: Kembalikan ke 07:00 - 14:00 untuk production!
+      // ✅ VALIDASI JAM OPERASIONAL
       if (!isAdmin) {
         const currentTimeInMinutes = hour * 60 + minute;
-        const startTime = 0 * 60; // ✅ Dari jam 00:00 (testing)
-        const endTime = 23 * 60 + 59; // ✅ Sampai jam 23:59 (testing)
+        const startTime = 0 * 60;
+        const endTime = 23 * 60 + 59;
 
         if (
           currentTimeInMinutes < startTime ||
@@ -213,30 +212,21 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         }
       }
 
+      // ✅ FIXED: Ambil teacher_id (sebenarnya UUID dari users.id)
       let targetTeacherId;
       let targetTeacherName;
 
       if (isAdmin && adminSelectedTeacherId) {
+        // Admin scan untuk guru lain
         targetTeacherId = adminSelectedTeacherId;
         const teacher = teachersList.find(
-          (t) => t.teacher_id === adminSelectedTeacherId
+          (t) => t.id === adminSelectedTeacherId
         );
         targetTeacherName = teacher?.full_name || "Unknown";
       } else {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("teacher_id, full_name")
-          .eq("id", currentUser.id)
-          .single();
-
-        if (userError) throw userError;
-
-        if (!userData.teacher_id) {
-          throw new Error("Teacher ID tidak ditemukan di data guru");
-        }
-
-        targetTeacherId = userData.teacher_id;
-        targetTeacherName = userData.full_name;
+        // ✅ Guru scan sendiri - LANGSUNG PAKAI currentUser.id
+        targetTeacherId = currentUser.id;
+        targetTeacherName = currentUser.full_name;
       }
 
       console.log("🔍 Checking existing attendance...");
@@ -274,22 +264,14 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         status: "Hadir",
         clock_in: clockInTime,
         check_in_method: isAdmin ? "admin_qr" : "qr",
+        full_name: targetTeacherName, // ✅ Denormalisasi
         notes: null,
       };
 
       if (isAdmin) {
-        const { data: adminData } = await supabase
-          .from("users")
-          .select("full_name")
-          .eq("id", currentUser.id)
-          .single();
-
-        attendanceData.admin_info = JSON.stringify({
-          admin_id: currentUser.id,
-          admin_name: adminData?.full_name || "Admin",
-          input_time: new Date().toISOString(),
-          reason: "Scan QR oleh admin",
-        });
+        attendanceData.admin_info = `Scan QR oleh admin: ${
+          currentUser.full_name
+        } pada ${new Date().toLocaleString("id-ID")}`;
       }
 
       console.log("💾 Inserting attendance...");
