@@ -1,4 +1,4 @@
-// src/attendance-teacher/AdminAttendanceView.js
+// src/attendance-teacher/AdminAttendanceView.js - SD PASIRPOGOR VERSION
 import React, { useState } from "react";
 import { Users, FileText, RefreshCw, Settings } from "lucide-react";
 import DailySummary from "./reports/DailySummary";
@@ -29,7 +29,7 @@ const AdminAttendanceView = ({ currentUser }) => {
                 Manajemen Presensi Guru
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                Monitoring dan laporan presensi seluruh guru
+                SDN 1 Pasirpogor - Monitoring dan laporan presensi seluruh guru
               </p>
             </div>
             <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
@@ -85,6 +85,15 @@ const AdminAttendanceView = ({ currentUser }) => {
             <FileText size={18} />
             <span>Laporan</span>
           </button>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            className="ml-auto px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-all flex items-center gap-2 text-sm"
+            title="Refresh Data">
+            <RefreshCw size={16} className="text-gray-600" />
+            <span className="hidden sm:inline text-gray-600">Refresh</span>
+          </button>
         </div>
 
         {/* Content */}
@@ -92,7 +101,10 @@ const AdminAttendanceView = ({ currentUser }) => {
           {activeView === "today" ? (
             <>
               {/* Daily Summary Stats */}
-              <DailySummary refreshTrigger={refreshTrigger} />
+              <DailySummary
+                currentUser={currentUser}
+                refreshTrigger={refreshTrigger}
+              />
 
               {/* Info Card */}
               <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -114,9 +126,12 @@ const AdminAttendanceView = ({ currentUser }) => {
             </>
           ) : activeView === "monthly" ? (
             /* Monthly Report */
-            <MonthlyView currentUser={currentUser} />
+            <MonthlyView
+              currentUser={currentUser}
+              refreshTrigger={refreshTrigger}
+            />
           ) : (
-            /* Manage Tab - NEW! */
+            /* Manage Tab */
             <div className="space-y-4">
               {/* Info Banner */}
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">

@@ -21,7 +21,7 @@ const DEBUG_MODE = true;
 // ⏰ TIME WINDOW untuk Manual Input
 // ========================================
 const MANUAL_INPUT_ALLOWED = {
-  startHour: 7,
+  startHour: 5,
   startMinute: 0,
   endHour: 14,
   endMinute: 0,

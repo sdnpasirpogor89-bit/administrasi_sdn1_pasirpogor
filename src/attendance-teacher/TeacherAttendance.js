@@ -1,4 +1,4 @@
-// src/attendance-teacher/TeacherAttendance.js
+// src/attendance-teacher/TeacherAttendance.js - SD PASIRPOGOR VERSION
 import React, { useState, useEffect } from "react";
 import { Clock, Bell, X } from "lucide-react";
 import { supabase } from "../supabaseClient";
@@ -7,39 +7,29 @@ import { supabase } from "../supabaseClient";
 import AttendanceTabs from "./AttendanceTabs";
 import MyAttendanceStatus from "./MyAttendanceStatus";
 import MyMonthlyHistory from "./MyMonthlyHistory";
-import TodaySchedule from "./TodaySchedule";
 
 // Admin Component
 import AdminAttendanceView from "./AdminAttendanceView";
 
-const TeacherAttendance = ({ user }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+const TeacherAttendance = ({ userData }) => {
   const [activeView, setActiveView] = useState("presensi");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showReminder, setShowReminder] = useState(false);
-  const [hasScheduleToday, setHasScheduleToday] = useState(false);
 
   useEffect(() => {
-    // Use user from props (from App.js) or fallback to localStorage
-    const userData =
-      user ||
-      JSON.parse(
-        localStorage.getItem("user") || sessionStorage.getItem("user")
-      );
-    setCurrentUser(userData);
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    if (currentUser && currentUser.role !== "admin") {
-      checkAttendanceReminder();
+    if (userData) {
+      setLoading(false);
+      // Check reminder only for teachers (not admin)
+      if (userData.role !== "admin") {
+        checkAttendanceReminder();
+      }
     }
-  }, [currentUser, refreshTrigger]);
+  }, [userData, refreshTrigger]);
 
   const checkAttendanceReminder = async () => {
     try {
-      // ✅ FIX: Gunakan timezone Indonesia (WIB/GMT+7)
+      // Get Indonesia time (WIB/GMT+7)
       const nowIndonesia = new Date().toLocaleString("en-US", {
         timeZone: "Asia/Jakarta",
       });
@@ -48,7 +38,7 @@ const TeacherAttendance = ({ user }) => {
       const currentHour = indonesiaDate.getHours();
       const currentMinute = indonesiaDate.getMinutes();
 
-      // Get today's date in Indonesia timezone
+      // Get today's date
       const year = indonesiaDate.getFullYear();
       const month = String(indonesiaDate.getMonth() + 1).padStart(2, "0");
       const day = String(indonesiaDate.getDate()).padStart(2, "0");
@@ -78,53 +68,24 @@ const TeacherAttendance = ({ user }) => {
 
       console.log(`🔔 Within reminder window`);
 
-      // ✅ STEP 1: Check if user has schedule today
-      const dayName = indonesiaDate.toLocaleDateString("id-ID", {
-        weekday: "long",
-        timeZone: "Asia/Jakarta",
-      });
-
-      console.log(`📆 Day: ${dayName}`);
-      console.log(`🔍 User ID: ${currentUser.id}`);
-      console.log(`🔍 Teacher Code: ${currentUser.teacher_id}`);
-
-      // ✅ Query schedule pakai user.id (UUID)
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from("teacher_schedules")
-        .select("*")
-        .eq("teacher_id", currentUser.id) // Pakai UUID
-        .eq("day", dayName);
-
-      if (scheduleError) throw scheduleError;
-
-      const hasSchedule = scheduleData && scheduleData.length > 0;
-      setHasScheduleToday(hasSchedule);
-
-      console.log(`📋 Has schedule? ${hasSchedule}`);
-
-      if (!hasSchedule) {
-        console.log("⏭️ No schedule today, no reminder");
-        setShowReminder(false);
-        return;
-      }
-
-      // ✅ STEP 2: Check if already attended today in DATABASE
-      // Query attendance pakai teacher_id code (G-XX)
+      // ✅ Check if already attended today using UUID
       const { data: attendanceData, error: attendanceError } = await supabase
         .from("teacher_attendance")
         .select("*")
-        .eq("teacher_id", currentUser.teacher_id) // Pakai kode guru (G-XX)
+        .eq("teacher_id", userData.id) // ✅ Pakai UUID dari users.id
         .eq("attendance_date", todayLocal);
 
-      if (attendanceError) throw attendanceError;
+      if (attendanceError) {
+        console.error("❌ Error checking attendance:", attendanceError);
+        setShowReminder(false);
+        return;
+      }
 
       const hasAttended = attendanceData && attendanceData.length > 0;
 
       console.log(`✅ Already attended? ${hasAttended}`);
 
-      // 🎯 SIMPLE LOGIC: Database = Source of Truth
-      // - Belum presensi → SHOW REMINDER
-      // - Sudah presensi → HIDE REMINDER
+      // Show reminder if not attended yet
       if (!hasAttended) {
         console.log("🔔 SHOWING REMINDER - Not attended yet!");
         setShowReminder(true);
@@ -139,7 +100,6 @@ const TeacherAttendance = ({ user }) => {
   };
 
   const handleDismissReminder = () => {
-    // ✅ Simple: Just hide, will show again on refresh if not attended
     setShowReminder(false);
   };
 
@@ -168,7 +128,7 @@ const TeacherAttendance = ({ user }) => {
     );
   }
 
-  if (!currentUser) {
+  if (!userData) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -180,11 +140,11 @@ const TeacherAttendance = ({ user }) => {
   }
 
   // ✅ ROLE-BASED RENDERING
-  const isAdmin = currentUser.role === "admin";
+  const isAdmin = userData.role === "admin";
 
   // ========== ADMIN VIEW ==========
   if (isAdmin) {
-    return <AdminAttendanceView currentUser={currentUser} />;
+    return <AdminAttendanceView currentUser={userData} />;
   }
 
   // ========== TEACHER VIEW ==========
@@ -225,8 +185,8 @@ const TeacherAttendance = ({ user }) => {
 
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
                 <p className="text-blue-800 text-sm">
-                  <strong>📋 Info:</strong> Anda memiliki jadwal mengajar hari
-                  ini. Silakan lakukan presensi untuk mencatat kehadiran Anda.
+                  <strong>📋 Info:</strong> Silakan lakukan presensi untuk
+                  mencatat kehadiran Anda hari ini.
                 </p>
               </div>
 
@@ -270,7 +230,7 @@ const TeacherAttendance = ({ user }) => {
                   Presensi Guru
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  Sistem presensi guru menggunakan QR Code atau input manual
+                  SDN 1 Pasirpogor - Sistem Presensi Guru
                 </p>
               </div>
             </div>
@@ -278,14 +238,16 @@ const TeacherAttendance = ({ user }) => {
             {/* User Info - Responsive */}
             <div className="flex items-center gap-2 bg-gray-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-gray-200">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                {currentUser.full_name.charAt(0)}
+                {userData.full_name.charAt(0)}
               </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-semibold text-gray-800">
-                  {currentUser.full_name}
+                  {userData.full_name}
                 </p>
                 <p className="text-xs text-gray-500 capitalize">
-                  {currentUser.role === "guru_bk" ? "Guru BK" : "Guru"}
+                  {userData.role === "guru_kelas" && userData.kelas
+                    ? `Guru Kelas ${userData.kelas}`
+                    : userData.role.replace("_", " ")}
                 </p>
               </div>
             </div>
@@ -340,29 +302,23 @@ const TeacherAttendance = ({ user }) => {
         {/* Content */}
         {activeView === "presensi" ? (
           <div className="space-y-4 sm:space-y-6">
-            {/* 1️⃣ Status Presensi Anda - TETAP DI ATAS! */}
+            {/* 1️⃣ Status Presensi Anda */}
             <MyAttendanceStatus
-              currentUser={currentUser}
+              currentUser={userData}
               refreshTrigger={refreshTrigger}
             />
 
-            {/* 2️⃣ Attendance Tabs (QR Scanner / Manual Input) - NAIK KE ATAS! */}
+            {/* 2️⃣ Attendance Tabs (QR Scanner / Manual Input) */}
             <div id="attendance-tabs">
               <AttendanceTabs
-                currentUser={currentUser}
+                currentUser={userData}
                 onSuccess={handleAttendanceSuccess}
               />
             </div>
-
-            {/* 3️⃣ Jadwal Mengajar Hari Ini - TURUN KE BAWAH! */}
-            <TodaySchedule
-              currentUser={currentUser}
-              refreshTrigger={refreshTrigger}
-            />
           </div>
         ) : (
           /* Monthly History */
-          <MyMonthlyHistory currentUser={currentUser} />
+          <MyMonthlyHistory currentUser={userData} />
         )}
       </div>
 

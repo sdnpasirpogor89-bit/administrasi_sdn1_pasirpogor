@@ -1,4 +1,4 @@
-// src/attendance-teacher/ManualCheckIn.js
+// src/attendance-teacher/ManualCheckIn.js - SD PASIRPOGOR VERSION
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -13,7 +13,6 @@ import {
 import { supabase } from "../supabaseClient";
 import {
   validateAttendanceLocation,
-  validateTeacherSchedule,
   validateManualInputTime,
 } from "./LocationValidator";
 
@@ -23,7 +22,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
   const [formData, setFormData] = useState({
     date: today,
-    status: "Hadir",
+    status: "hadir",
     clockIn: now,
     notes: "",
     teacherId: null, // Untuk admin bisa pilih guru lain
@@ -36,10 +35,10 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
   const [teachersList, setTeachersList] = useState([]);
 
   const statusOptions = [
-    { value: "Hadir", label: "Hadir", color: "bg-green-500" },
-    { value: "Izin", label: "Izin", color: "bg-blue-500" },
-    { value: "Sakit", label: "Sakit", color: "bg-yellow-500" },
-    { value: "Alpa", label: "Alpa", color: "bg-red-500" },
+    { value: "hadir", label: "Hadir", color: "bg-green-500" },
+    { value: "izin", label: "Izin", color: "bg-blue-500" },
+    { value: "sakit", label: "Sakit", color: "bg-yellow-500" },
+    { value: "alpha", label: "Alpha", color: "bg-red-500" },
   ];
 
   // Check if user is admin
@@ -56,7 +55,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
   // Pre-check location saat component mount (untuk status "Hadir" only)
   useEffect(() => {
-    if (formData.status === "Hadir" && !isAdmin) {
+    if (formData.status === "hadir" && !isAdmin) {
       checkLocation();
     } else {
       setLocationStatus(null);
@@ -80,11 +79,11 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
   const loadTeachers = async () => {
     try {
-      // QUERY DARI TABLE USERS (bukan teachers)
+      // ✅ QUERY DARI TABLE USERS - AMBIL ID (UUID) & FULL_NAME
       const { data, error } = await supabase
         .from("users")
-        .select("teacher_id, full_name, username")
-        .eq("role", "teacher")
+        .select("id, full_name, username, kelas")
+        .in("role", ["guru_kelas", "guru_mapel"]) // ✅ Role guru SD
         .eq("is_active", true)
         .order("full_name");
 
@@ -129,58 +128,33 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
       }
 
       // VALIDASI GPS - HANYA UNTUK GURU BIASA & STATUS "HADIR"
-      if (!isAdmin && formData.status === "Hadir") {
+      if (!isAdmin && formData.status === "hadir") {
         const locationCheck = await validateAttendanceLocation();
         setLocationStatus(locationCheck);
 
-        // VALIDASI JADWAL (SOFT WARNING)
-        const scheduleCheck = await validateTeacherSchedule(currentUser.id);
-
-        if (scheduleCheck.suspicious) {
-          const confirmMessage = `⚠️ Perhatian!\n\n${scheduleCheck.message}\n\nTetap lanjutkan presensi?`;
-          const confirmed = window.confirm(confirmMessage);
-
-          if (!confirmed) {
-            setLoading(false);
-            return;
-          }
-        }
+        // Optional: bisa tambah validasi lokasi di sini
       }
 
-      // Get teacher_id
+      // ✅ Get teacher_id (UUID)
       let targetTeacherId;
       let targetTeacherName;
 
       if (isAdmin && formData.teacherId) {
-        // Admin input untuk guru lain (teacher_id udah langsung dari dropdown)
+        // Admin input untuk guru lain (teacherId = UUID)
         targetTeacherId = formData.teacherId;
-        const teacher = teachersList.find(
-          (t) => t.teacher_id === formData.teacherId
-        );
+        const teacher = teachersList.find((t) => t.id === formData.teacherId);
         targetTeacherName = teacher?.full_name || "Unknown";
       } else {
         // Guru input sendiri atau admin input untuk diri sendiri
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("teacher_id, full_name")
-          .eq("id", currentUser.id)
-          .single();
-
-        if (userError) throw userError;
-
-        if (!userData.teacher_id) {
-          throw new Error("Teacher ID tidak ditemukan");
-        }
-
-        targetTeacherId = userData.teacher_id;
-        targetTeacherName = userData.full_name;
+        targetTeacherId = currentUser.id; // ✅ UUID dari users.id
+        targetTeacherName = currentUser.full_name;
       }
 
       // Cek apakah sudah ada presensi di tanggal yang dipilih
       const { data: existingAttendance, error: checkError } = await supabase
         .from("teacher_attendance")
         .select("*")
-        .eq("teacher_id", targetTeacherId)
+        .eq("teacher_id", targetTeacherId) // ✅ UUID
         .eq("attendance_date", formData.date)
         .maybeSingle();
 
@@ -188,54 +162,33 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         throw checkError;
       }
 
-      // Prepare attendance metadata (untuk audit trail)
-      const attendanceMetadata = {
-        check_in_method: isAdmin ? "admin_manual" : "manual",
+      // Prepare attendance data
+      const attendanceData = {
+        teacher_id: targetTeacherId, // ✅ UUID
+        attendance_date: formData.date,
+        status: formData.status,
+        clock_in: formData.clockIn + ":00", // Format TIME: HH:MM:SS
+        check_in_method: isAdmin ? "admin" : "Manual", // ✅ Sesuai ENUM
         notes: formData.notes || null,
+        full_name: targetTeacherName, // ✅ Denormalisasi
         updated_at: new Date().toISOString(),
       };
 
       // Tambahkan info admin jika di-input oleh admin
       if (isAdmin) {
-        const { data: adminData } = await supabase
-          .from("users")
-          .select("full_name")
-          .eq("id", currentUser.id)
-          .single();
-
-        attendanceMetadata.admin_info = JSON.stringify({
-          admin_id: currentUser.id,
-          admin_name: adminData?.full_name || "Admin",
-          input_time: new Date().toISOString(),
-          reason: formData.notes || "Input manual oleh admin",
-        });
+        attendanceData.admin_info = `Input oleh: ${
+          currentUser.full_name
+        } pada ${new Date().toLocaleString("id-ID")}`;
       }
 
-      // Tambahkan GPS metadata jika bukan admin DAN status "Hadir" DAN lokasi valid
+      // Tambahkan GPS metadata jika bukan admin DAN status "hadir" DAN lokasi valid
       if (
         !isAdmin &&
-        formData.status === "Hadir" &&
+        formData.status === "hadir" &&
         locationStatus?.allowed &&
         locationStatus?.coords
       ) {
-        attendanceMetadata.gps_location = JSON.stringify({
-          lat: locationStatus.coords.lat,
-          lng: locationStatus.coords.lng,
-          distance: locationStatus.distance,
-          accuracy: locationStatus.accuracy,
-          timestamp: new Date().toISOString(),
-        });
-      } else if (
-        !isAdmin &&
-        formData.status === "Hadir" &&
-        !locationStatus?.allowed
-      ) {
-        // GPS error tapi diizinkan submit
-        attendanceMetadata.gps_location = JSON.stringify({
-          error: locationStatus?.error || "GPS_UNAVAILABLE",
-          message: locationStatus?.message || "Lokasi tidak tersedia",
-          timestamp: new Date().toISOString(),
-        });
+        attendanceData.gps_location = `${locationStatus.coords.lat},${locationStatus.coords.lng}`;
       }
 
       // Jika sudah ada, update. Jika belum, insert
@@ -243,11 +196,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         // UPDATE existing attendance
         const { error: updateError } = await supabase
           .from("teacher_attendance")
-          .update({
-            status: formData.status,
-            clock_in: formData.clockIn + ":00", // Format TIME: HH:MM:SS
-            ...attendanceMetadata,
-          })
+          .update(attendanceData)
           .eq("id", existingAttendance.id);
 
         if (updateError) throw updateError;
@@ -262,13 +211,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         // INSERT new attendance
         const { error: insertError } = await supabase
           .from("teacher_attendance")
-          .insert({
-            teacher_id: targetTeacherId,
-            attendance_date: formData.date,
-            status: formData.status,
-            clock_in: formData.clockIn + ":00", // Format TIME: HH:MM:SS
-            ...attendanceMetadata,
-          });
+          .insert(attendanceData);
 
         if (insertError) throw insertError;
 
@@ -291,7 +234,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
       // Reset form
       setFormData({
         date: today,
-        status: "Hadir",
+        status: "hadir",
         clockIn: now,
         notes: "",
         teacherId: null,
@@ -374,10 +317,11 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 handleChange("teacherId", e.target.value || null)
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">-- Pilih Guru --</option>
+              <option value="">-- Input untuk diri sendiri --</option>
               {teachersList.map((teacher) => (
-                <option key={teacher.teacher_id} value={teacher.teacher_id}>
+                <option key={teacher.id} value={teacher.id}>
                   {teacher.full_name}
+                  {teacher.kelas && ` - Kelas ${teacher.kelas}`}
                 </option>
               ))}
             </select>
@@ -428,7 +372,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
               </button>
             ))}
           </div>
-          {formData.status !== "Hadir" && (
+          {formData.status !== "hadir" && (
             <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
               <AlertTriangle size={14} />
               Status selain "Hadir" tidak memerlukan validasi GPS
