@@ -1,4 +1,4 @@
-// src/attendance-teacher/reports/MonthlyView.js
+// src/attendance-teacher/reports/MonthlyView.js - FIXED
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -88,10 +88,10 @@ const MonthlyView = ({ currentUser }) => {
       const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
 
-      // Fetch all active teachers
+      // ✅ FIXED: Fetch all active teachers - hapus teacher_id dari select
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
-        .select("id, full_name, role, teacher_id")
+        .select("id, full_name, role")
         .in("role", ["teacher", "guru_bk", "homeroom_teacher"])
         .eq("is_active", true)
         .order("full_name");
@@ -148,6 +148,7 @@ const MonthlyView = ({ currentUser }) => {
     );
   };
 
+  // ✅ FIXED: Ganti teacher_id jadi id
   const calculateTeacherStats = (teacherId) => {
     const teacherAttendances = attendances.filter(
       (att) => att.teacher_id === teacherId
@@ -278,17 +279,16 @@ const MonthlyView = ({ currentUser }) => {
                 </tr>
               ) : (
                 filteredTeachers.map((teacher) => {
-                  const stats = calculateTeacherStats(teacher.teacher_id);
+                  // ✅ FIXED: Ganti teacher.teacher_id jadi teacher.id
+                  const stats = calculateTeacherStats(teacher.id);
                   return (
                     <tr key={teacher.id} className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
                         {teacher.full_name}
                       </td>
                       {days.map((day) => {
-                        const attendance = getAttendanceForDay(
-                          teacher.teacher_id,
-                          day
-                        );
+                        // ✅ FIXED: Ganti teacher.teacher_id jadi teacher.id
+                        const attendance = getAttendanceForDay(teacher.id, day);
 
                         // Format date string untuk check holiday
                         const year = selectedYear;
@@ -306,20 +306,6 @@ const MonthlyView = ({ currentUser }) => {
                           day
                         );
                         const holiday = isNationalHoliday(dateStr);
-
-                        // 🐛 DEBUG LOG - Cek weekend detection (Hapus setelah berhasil!)
-                        if (
-                          teacher.teacher_id === teachers[0]?.teacher_id &&
-                          day >= 22 &&
-                          day <= 24 &&
-                          selectedMonth === 10
-                        ) {
-                          console.log(
-                            `🔍 Debug Day ${day} Nov 2025: weekend=${weekend}, holiday=${holiday}, bg=${
-                              weekend || holiday ? "bg-gray-100" : "TIDAK"
-                            }`
-                          );
-                        }
 
                         const badge = attendance
                           ? getStatusBadge(attendance.status)

@@ -1,4 +1,4 @@
-// src/attendance-teacher/reports/DailySummary.js
+// src/attendance-teacher/reports/DailySummary.js - FIXED
 import React, { useState, useEffect } from "react";
 import {
   Users,
@@ -30,7 +30,7 @@ const DailySummary = ({ refreshTrigger }) => {
   const fetchDailySummary = async () => {
     setLoading(true);
     try {
-      // ✅ FIX: Get today's date in local timezone (Indonesia/WIB)
+      // ✅ Get today's date in local timezone (Indonesia/WIB)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -73,13 +73,15 @@ const DailySummary = ({ refreshTrigger }) => {
         attendanceRate,
       });
 
-      // Fetch attendance list with teacher info
+      // ✅ FIXED: Fetch attendance list with teacher info
+      // Gunakan left join dengan format yang benar
       const { data: attendanceListData, error: listError } = await supabase
         .from("teacher_attendance")
         .select(
           `
           *,
-          users!teacher_id (
+          users!teacher_attendance_teacher_id_fkey (
+            id,
             full_name
           )
         `
