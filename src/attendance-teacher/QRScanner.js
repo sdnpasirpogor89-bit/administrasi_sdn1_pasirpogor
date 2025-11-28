@@ -193,11 +193,12 @@ const QRScanner = ({ currentUser, onSuccess }) => {
 
       console.log("📅 Date:", today, "Time:", clockInTime);
 
-      // ✅ VALIDASI JAM OPERASIONAL: 07:00 - 14:00 (HANYA UNTUK GURU BIASA)
+      // ✅ VALIDASI JAM OPERASIONAL: 00:00 - 23:59 (TESTING MODE - 24 JAM)
+      // TODO: Kembalikan ke 07:00 - 14:00 untuk production!
       if (!isAdmin) {
         const currentTimeInMinutes = hour * 60 + minute;
-        const startTime = 7 * 60;
-        const endTime = 14 * 60;
+        const startTime = 0 * 60; // ✅ Dari jam 00:00 (testing)
+        const endTime = 23 * 60 + 59; // ✅ Sampai jam 23:59 (testing)
 
         if (
           currentTimeInMinutes < startTime ||
@@ -205,7 +206,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         ) {
           setMessage({
             type: "error",
-            text: `⏰ Presensi hanya dapat dilakukan pada jam 07:00 - 14:00 WIB. Waktu saat ini: ${hourStr}:${minuteStr} WIB`,
+            text: `⏰ Presensi hanya dapat dilakukan pada jam 00:00 - 23:59 WIB. Waktu saat ini: ${hourStr}:${minuteStr} WIB`,
           });
           setLoading(false);
           return;
