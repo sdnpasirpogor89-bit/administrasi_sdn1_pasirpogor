@@ -76,9 +76,26 @@ export const Login = ({ onLogin, onShowToast }) => {
         created_at: data.created_at,
       };
 
+      // 🔥 FIX: SAVE KE LOCALSTORAGE SEBELUM PANGGIL CALLBACK
+      try {
+        localStorage.setItem("userSession", JSON.stringify(userData));
+        console.log("✅ Session saved to localStorage:", userData);
+      } catch (storageError) {
+        console.error("❌ Failed to save to localStorage:", storageError);
+        throw new Error("Gagal menyimpan sesi login");
+      }
+
+      // Show success toast
+      if (onShowToast) {
+        onShowToast("Login berhasil! 🎉", "success");
+      }
+
       // 🔥 FIX: Panggil onLogin (bukan onLoginSuccess)
-      onLogin(userData, rememberMe);
+      if (onLogin) {
+        onLogin(userData, rememberMe);
+      }
     } catch (error) {
+      console.error("❌ Login error:", error);
       setErrors({ general: error.message });
 
       // 🔥 TAMBAH: Show toast untuk error

@@ -33,7 +33,7 @@ import AdminPanel from "./setting/AdminPanel";
 const ReportWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <Report userData={userData} onNavigate={navigate} />,
+    () => <Report user={userData} onNavigate={navigate} />, // ✅ BENAR
     [userData]
   );
 };
