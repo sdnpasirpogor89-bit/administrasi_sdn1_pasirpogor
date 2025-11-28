@@ -263,8 +263,8 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         attendance_date: today,
         status: "Hadir",
         clock_in: clockInTime,
-        check_in_method: isAdmin ? "admin_qr" : "qr",
-        full_name: targetTeacherName, // ✅ Denormalisasi
+        check_in_method: isAdmin ? "admin" : "Scan QR", // ✅ PAKAI "Scan QR"
+        full_name: targetTeacherName,
         notes: null,
       };
 
