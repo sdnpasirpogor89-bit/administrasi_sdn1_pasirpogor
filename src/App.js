@@ -1,4 +1,4 @@
-// src/App.js - SD VERSION DENGAN MAINTENANCE MODE + WHITELIST
+// src/App.js - SD VERSION DENGAN MAINTENANCE MODE + WHITELIST + PRESENSI GURU
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BrowserRouter as Router,
@@ -28,12 +28,14 @@ import Setting from "./setting/setting";
 import MonitorSistem from "./system/MonitorSistem";
 import MaintenancePage from "./setting/MaintenancePage";
 import AdminPanel from "./setting/AdminPanel";
+// 🔥 IMPORT PRESENSI GURU
+import TeacherAttendance from "./attendance-teacher/TeacherAttendance";
 
 // ===== WRAPPER COMPONENTS =====
 const ReportWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <Report user={userData} onNavigate={navigate} />, // ✅ BENAR
+    () => <Report user={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -106,6 +108,15 @@ const MonitorSistemWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
     () => <MonitorSistem userData={userData} onNavigate={navigate} />,
+    [userData]
+  );
+};
+
+// 🔥 WRAPPER UNTUK PRESENSI GURU
+const TeacherAttendanceWithNavigation = ({ userData }) => {
+  const navigate = useNavigate();
+  return useMemo(
+    () => <TeacherAttendance userData={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -478,6 +489,24 @@ function App() {
                 canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
                     <AttendanceWithNavigation currentUser={user} />
+                  </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
+                )
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
+          {/* 🔥 ROUTE BARU: PRESENSI GURU */}
+          <Route
+            path="/teacher-attendance"
+            element={
+              user ? (
+                canAccessDuringMaintenance(user) ? (
+                  <Layout userData={user} onLogout={handleLogout}>
+                    <TeacherAttendanceWithNavigation userData={user} />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />

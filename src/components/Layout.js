@@ -154,6 +154,7 @@ const Layout = ({ children, userData, onLogout }) => {
       "/classes": "Data Kelas",
       "/teachers": "Data Guru",
       "/attendance": "Presensi Siswa",
+      "/teacher-attendance": "Presensi Guru", // 🔥 TAMBAH INI
       "/grades": "Nilai Siswa",
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
@@ -173,6 +174,7 @@ const Layout = ({ children, userData, onLogout }) => {
       "/classes": "Kelas",
       "/teachers": "Guru",
       "/attendance": "Presensi",
+      "/teacher-attendance": "Presensi Guru", // 🔥 TAMBAH INI
       "/grades": "Nilai",
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
@@ -200,6 +202,7 @@ const Layout = ({ children, userData, onLogout }) => {
         "Data Guru": "/teachers",
         Guru: "/teachers",
         "Presensi Siswa": "/attendance",
+        "Presensi Guru": "/teacher-attendance", // 🔥 TAMBAH INI
         Presensi: "/attendance",
         "Nilai Siswa": "/grades",
         Nilai: "/grades",

@@ -15,6 +15,8 @@ import {
   Monitor,
   BookOpen,
   CalendarDays,
+  Clock,
+  ClipboardCheck,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -49,9 +51,15 @@ const Sidebar = ({
         ],
       },
       {
-        category: "AKADEMIK",
+        category: "PRESENSI",
         items: [
           { name: "Presensi Siswa", icon: UserCheck },
+          { name: "Presensi Guru", icon: ClipboardCheck },
+        ],
+      },
+      {
+        category: "AKADEMIK",
+        items: [
           { name: "Nilai Siswa", icon: BarChart3 },
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
@@ -81,9 +89,15 @@ const Sidebar = ({
         ],
       },
       {
-        category: "AKADEMIK",
+        category: "PRESENSI",
         items: [
           { name: "Presensi Siswa", icon: UserCheck },
+          { name: "Presensi Guru", icon: Clock },
+        ],
+      },
+      {
+        category: "AKADEMIK",
+        items: [
           { name: "Nilai Siswa", icon: BarChart3 },
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
@@ -105,9 +119,15 @@ const Sidebar = ({
         ],
       },
       {
-        category: "AKADEMIK",
+        category: "PRESENSI",
         items: [
           { name: "Presensi Siswa", icon: UserCheck },
+          { name: "Presensi Guru", icon: Clock },
+        ],
+      },
+      {
+        category: "AKADEMIK",
+        items: [
           { name: "Nilai Siswa", icon: BarChart3 },
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
