@@ -41,7 +41,7 @@ const DailySummary = ({ refreshTrigger }) => {
       const { count: totalTeachers, error: teacherError } = await supabase
         .from("users")
         .select("*", { count: "exact", head: true })
-        .in("role", ["teacher", "guru_bk", "homeroom_teacher"])
+        .in("role", ["guru_kelas", "guru_mapel"])
         .eq("is_active", true);
 
       if (teacherError) throw teacherError;
@@ -54,11 +54,11 @@ const DailySummary = ({ refreshTrigger }) => {
 
       if (attendanceError) throw attendanceError;
 
-      // Calculate stats - CASE SENSITIVE!
-      const hadir = attendances.filter((a) => a.status === "Hadir").length;
-      const izin = attendances.filter((a) => a.status === "Izin").length;
-      const sakit = attendances.filter((a) => a.status === "Sakit").length;
-      const alpa = attendances.filter((a) => a.status === "Alpa").length;
+      // Calculate stats - lowercase!
+      const hadir = attendances.filter((a) => a.status === "hadir").length;
+      const izin = attendances.filter((a) => a.status === "izin").length;
+      const sakit = attendances.filter((a) => a.status === "sakit").length;
+      const alpa = attendances.filter((a) => a.status === "alpa").length;
       const belumAbsen = (totalTeachers || 0) - attendances.length;
       const attendanceRate =
         totalTeachers > 0 ? ((hadir / totalTeachers) * 100).toFixed(1) : 0;
@@ -73,19 +73,10 @@ const DailySummary = ({ refreshTrigger }) => {
         attendanceRate,
       });
 
-      // ✅ FIXED: Fetch attendance list with teacher info
-      // Gunakan left join dengan format yang benar
+      // ✅ FIXED: Fetch attendance list tanpa join (pake denormalisasi)
       const { data: attendanceListData, error: listError } = await supabase
         .from("teacher_attendance")
-        .select(
-          `
-          *,
-          users!teacher_attendance_teacher_id_fkey (
-            id,
-            full_name
-          )
-        `
-        )
+        .select("*")
         .eq("attendance_date", today)
         .order("clock_in", { ascending: true });
 
@@ -93,10 +84,10 @@ const DailySummary = ({ refreshTrigger }) => {
         console.error("Error fetching attendance list:", listError);
       }
 
-      // Format attendance list
+      // Format attendance list (pake full_name langsung dari table)
       const formattedList = (attendanceListData || []).map((att, index) => ({
         no: index + 1,
-        name: att.users?.full_name || "Unknown",
+        name: att.full_name || "Unknown",
         time: att.clock_in ? formatTime(att.clock_in) : "-",
         status: att.status,
       }));
@@ -140,10 +131,10 @@ const DailySummary = ({ refreshTrigger }) => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      Hadir: "bg-green-100 text-green-700 border-green-200",
-      Izin: "bg-yellow-100 text-yellow-700 border-yellow-200",
-      Sakit: "bg-orange-100 text-orange-700 border-orange-200",
-      Alpa: "bg-red-100 text-red-700 border-red-200",
+      hadir: "bg-green-100 text-green-700 border-green-200",
+      izin: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      sakit: "bg-orange-100 text-orange-700 border-orange-200",
+      alpa: "bg-red-100 text-red-700 border-red-200",
     };
     return badges[status] || "bg-gray-100 text-gray-700 border-gray-200";
   };
@@ -151,7 +142,6 @@ const DailySummary = ({ refreshTrigger }) => {
   if (loading) {
     return (
       <div className="space-y-6">
-        {/* 🔥 LOADING: 2 kolom di mobile, 4 di desktop */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
@@ -208,7 +198,7 @@ const DailySummary = ({ refreshTrigger }) => {
 
   return (
     <div className="space-y-6">
-      {/* 🔥 STATS CARDS: 2 kolom di mobile, 4 di desktop */}
+      {/* STATS CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {cards.map((card, index) => {
           const Icon = card.icon;
@@ -218,7 +208,6 @@ const DailySummary = ({ refreshTrigger }) => {
               className={`bg-gradient-to-br ${card.gradient} rounded-xl shadow-lg border ${card.borderColor} p-4 sm:p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                  {/* 🔥 Text size responsive */}
                   <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2 truncate">
                     {card.title}
                   </p>
@@ -233,7 +222,6 @@ const DailySummary = ({ refreshTrigger }) => {
                     </p>
                   )}
                 </div>
-                {/* 🔥 Icon dengan gradient background */}
                 <div
                   className={`${card.iconBg} p-2 sm:p-3 rounded-lg flex-shrink-0 shadow-md`}>
                   <Icon className="text-white w-4 h-4 sm:w-5 sm:h-5" />
@@ -244,7 +232,7 @@ const DailySummary = ({ refreshTrigger }) => {
         })}
       </div>
 
-      {/* 🔥 ATTENDANCE TABLE: Responsive dengan scroll horizontal di mobile */}
+      {/* ATTENDANCE TABLE */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 sm:px-6 py-3 sm:py-4">
           <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
@@ -257,7 +245,6 @@ const DailySummary = ({ refreshTrigger }) => {
         </div>
 
         {attendanceList.length > 0 ? (
-          /* 🔥 Scroll horizontal di mobile */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b-2 border-gray-200">

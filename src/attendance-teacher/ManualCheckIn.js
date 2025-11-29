@@ -317,7 +317,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 handleChange("teacherId", e.target.value || null)
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Input Presensi Guru</option>
+              <option value="">Nama Guru</option>
               {teachersList.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
                   {teacher.full_name} {/* ✅ NAMA AJA */}

@@ -88,11 +88,11 @@ const MonthlyView = ({ currentUser }) => {
       const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
 
-      // ✅ FIXED: Fetch all active teachers - hapus teacher_id dari select
+      // ✅ FIXED: Fetch all active teachers
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("id, full_name, role")
-        .in("role", ["teacher", "guru_bk", "homeroom_teacher"])
+        .in("role", ["guru_kelas", "guru_mapel"]) // ✅ FIXED!
         .eq("is_active", true)
         .order("full_name");
 
