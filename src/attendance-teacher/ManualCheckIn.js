@@ -397,25 +397,19 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         {/* Catatan */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Catatan {isAdmin && <span className="text-red-500">*</span>}
+            Catatan (Optional)
           </label>
           <textarea
             value={formData.notes}
             onChange={(e) => handleChange("notes", e.target.value)}
             rows={3}
-            required={isAdmin}
             placeholder={
               isAdmin
                 ? "Contoh: Lupa input presensi, konfirmasi via WA pukul 15.30"
-                : "Contoh: Sakit demam, Ada keperluan keluarga, dll..."
+                : "Contoh: Sakit demam, Ada keperluan keluarga, dll... (opsional)"
             }
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
-          {isAdmin && (
-            <p className="text-xs text-red-500 mt-1">
-              * Wajib diisi untuk audit trail
-            </p>
-          )}
         </div>
 
         {/* Submit Button */}
@@ -451,8 +445,8 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         <p className="text-sm text-gray-800">
           <strong>ℹ️ Info:</strong>{" "}
           {isAdmin
-            ? "Sebagai Admin, Anda dapat input presensi kapan saja tanpa batasan waktu. Pastikan mengisi catatan untuk audit trail."
-            : "Input manual presensi hanya tersedia pada jam 07:00 - 13:00. Jika lupa input, hubungi Admin untuk bantuan."}
+            ? "Sebagai Admin, Anda Dapat Input Presensi Kapan Saja Tanpa Batasan Waktu."
+            : "Input Manual Presensi Hanya Tersedia Pada Jam 07:00 - 13:00. Jika Lupa Input, Harap Menghubungi Admin Untuk Bantuan."}
         </p>
       </div>
 

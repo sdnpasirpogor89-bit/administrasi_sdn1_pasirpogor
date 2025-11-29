@@ -922,7 +922,7 @@ const TeacherDashboard = ({ userData }) => {
               <span className="text-xl font-semibold text-slate-800 block sm:inline-block">
                 Selamat Datang,
               </span>{" "}
-              <span className="text-lg sm:text-xl font-bold text-slate-900 block sm:inline-block mt-0.5 sm:mt-0 break-words">
+              <span className="text-lg sm:text-xl font-bold text-slate-900 block sm:inline-block mt-0 sm:mt-0 break-words">
                 {userData?.full_name || userData?.username}
               </span>
             </div>

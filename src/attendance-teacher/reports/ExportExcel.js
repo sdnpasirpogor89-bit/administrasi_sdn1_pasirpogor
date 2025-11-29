@@ -132,7 +132,7 @@ const ExportExcel = ({
 
       // Header Info - Nama Sekolah
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell("A1").value = "SMP MUSLIMIN CILILIN";
+      worksheet.getCell("A1").value = "SEKOLAH DASAR NEGERI 1 PASIRPOGOR";
       worksheet.getCell("A1").font = { bold: true, size: 16 };
       worksheet.getCell("A1").alignment = {
         horizontal: "center",
@@ -141,7 +141,7 @@ const ExportExcel = ({
 
       // Header Info - Judul Daftar Hadir
       worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell("A2").value = "DAFTAR HADIR GURU/STAFF";
+      worksheet.getCell("A2").value = "DAFTAR HADIR GURU";
       worksheet.getCell("A2").font = { bold: true, size: 14 };
       worksheet.getCell("A2").alignment = {
         horizontal: "center",
