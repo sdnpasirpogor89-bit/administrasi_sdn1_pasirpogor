@@ -26,3 +26,4 @@ yarn-error.log*
 
 # Deploy scripts
 *.bat
+.env*.local
