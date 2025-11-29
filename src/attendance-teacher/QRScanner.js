@@ -261,9 +261,9 @@ const QRScanner = ({ currentUser, onSuccess }) => {
       const attendanceData = {
         teacher_id: targetTeacherId,
         attendance_date: today,
-        status: "Hadir",
+        status: "hadir", // ✅ LOWERCASE, bukan "Hadir"
         clock_in: clockInTime,
-        check_in_method: "Manual", // ✅ Sama kayak manual input
+        check_in_method: "Manual",
         full_name: targetTeacherName,
         notes: null,
       };
