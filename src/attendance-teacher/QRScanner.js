@@ -263,7 +263,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         attendance_date: today,
         status: "Hadir",
         clock_in: clockInTime,
-        check_in_method: isAdmin ? "admin" : "Scan QR", // ✅ PAKAI "Scan QR"
+        check_in_method: "Manual", // ✅ Sama kayak manual input
         full_name: targetTeacherName,
         notes: null,
       };
