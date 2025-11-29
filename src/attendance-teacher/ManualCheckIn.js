@@ -309,7 +309,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
               <Shield size={18} className="text-blue-600" />
-              Pilih Guru (Opsional)
+              Pilih Guru
             </label>
             <select
               value={formData.teacherId || ""}
@@ -317,11 +317,10 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 handleChange("teacherId", e.target.value || null)
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">-- Input untuk diri sendiri --</option>
+              <option value="">Input Presensi Guru</option>
               {teachersList.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
-                  {teacher.full_name}
-                  {teacher.kelas && ` - Kelas ${teacher.kelas}`}
+                  {teacher.full_name} {/* ✅ NAMA AJA */}
                 </option>
               ))}
             </select>

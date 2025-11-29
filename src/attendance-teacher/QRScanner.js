@@ -66,13 +66,12 @@ const QRScanner = ({ currentUser, onSuccess }) => {
       console.error("Error checking admin status:", error);
     }
   };
-
   const loadTeachers = async () => {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select("id, full_name, username")
-        .eq("role", "teacher")
+        .select("id, full_name, username") // ✅ Gak perlu kelas
+        .in("role", ["guru_kelas", "guru_mapel"])
         .eq("is_active", true)
         .order("full_name");
 
@@ -398,10 +397,10 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             value={selectedTeacherId || ""}
             onChange={(e) => setSelectedTeacherId(e.target.value)}
             className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">-- Pilih Guru --</option>
+            <option value="">Pilih Guru</option>
             {teachersList.map((teacher) => (
               <option key={teacher.id} value={teacher.id}>
-                {teacher.full_name}
+                {teacher.full_name} {/* ✅ NAMA AJA, SAMA KAYAK MANUAL */}
               </option>
             ))}
           </select>
