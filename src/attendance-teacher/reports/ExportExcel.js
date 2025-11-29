@@ -24,31 +24,47 @@ const ExportExcel = ({
     );
   };
 
+  // Replace function getStatusLabel (line ~23-32)
   const getStatusLabel = (status) => {
-    // FIXED: Pake huruf besar (Hadir, Izin, Sakit, Alpa) sesuai database
+    // Normalize to lowercase for comparison
+    const normalizedStatus = status?.toLowerCase();
+
     const labels = {
-      Hadir: "H",
-      Izin: "I",
-      Sakit: "S",
-      Alpa: "A",
+      hadir: "H",
+      izin: "I",
+      sakit: "S",
+      alpa: "A",
+      alpha: "A", // Support both spellings
     };
-    return labels[status] || "-";
+
+    return labels[normalizedStatus] || "-";
   };
 
+  // Replace function calculateTeacherStats (line ~34-56)
   const calculateTeacherStats = (teacherId) => {
     const teacherAttendances = attendances.filter(
       (att) => att.teacher_id === teacherId
     );
-    // FIXED: Pake huruf besar (Hadir, Izin, Sakit, Alpa)
-    const hadir = teacherAttendances.filter((a) => a.status === "Hadir").length;
+
+    // FIXED: Use lowercase comparison
+    const hadir = teacherAttendances.filter(
+      (a) => a.status?.toLowerCase() === "hadir"
+    ).length;
     const total = teacherAttendances.length;
     const percentage = total > 0 ? ((hadir / total) * 100).toFixed(1) : 0;
 
     return {
       hadir: hadir,
-      izin: teacherAttendances.filter((a) => a.status === "Izin").length,
-      sakit: teacherAttendances.filter((a) => a.status === "Sakit").length,
-      alpa: teacherAttendances.filter((a) => a.status === "Alpa").length,
+      izin: teacherAttendances.filter((a) => a.status?.toLowerCase() === "izin")
+        .length,
+      sakit: teacherAttendances.filter(
+        (a) => a.status?.toLowerCase() === "sakit"
+      ).length,
+      alpa: teacherAttendances.filter(
+        (a) =>
+          a.status?.toLowerCase() === "alpa" ||
+          a.status?.toLowerCase() === "alpha"
+      ).length,
       total: total,
       percentage: percentage,
     };
@@ -133,7 +149,7 @@ const ExportExcel = ({
 
       // Header Info - Nama Sekolah
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell("A1").value = "SMP MUSLIMIN CILILIN";
+      worksheet.getCell("A1").value = "SDN 1 PASIRPOGOR";
       worksheet.getCell("A1").font = { bold: true, size: 16 };
       worksheet.getCell("A1").alignment = {
         horizontal: "center",
@@ -142,7 +158,7 @@ const ExportExcel = ({
 
       // Header Info - Judul Daftar Hadir
       worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell("A2").value = "DAFTAR HADIR GURU/STAFF";
+      worksheet.getCell("A2").value = "DAFTAR HADIR GURU";
       worksheet.getCell("A2").font = { bold: true, size: 14 };
       worksheet.getCell("A2").alignment = {
         horizontal: "center",

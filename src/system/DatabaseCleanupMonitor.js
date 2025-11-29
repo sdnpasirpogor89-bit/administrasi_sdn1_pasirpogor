@@ -27,13 +27,13 @@ const DatabaseCleanupMonitor = () => {
       const tables = [
         "students",
         "attendance",
+        "teacher_attendance",
         "nilai",
         "catatan_siswa",
         "class_schedules",
         "siswa_baru",
         "users",
         "system_health_logs",
-        "cleanup_history",
       ];
 
       const tableStats = {};

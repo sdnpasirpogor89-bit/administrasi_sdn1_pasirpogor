@@ -80,37 +80,42 @@ const MonthlyView = ({ currentUser }) => {
   const fetchMonthlyData = async () => {
     setLoading(true);
     try {
-      // FIX: Format date untuk range dengan timezone WIB
       const year = selectedYear;
       const month = String(selectedMonth + 1).padStart(2, "0");
       const startDate = `${year}-${month}-01`;
-
       const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
 
-      // ✅ FIXED: Fetch all active teachers
+      console.log("🔍 DEBUG - Date Range:", { startDate, endDate });
+
+      // ✅ Fetch teachers
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("id, full_name, role")
-        .in("role", ["guru_kelas", "guru_mapel"]) // ✅ FIXED!
+        .in("role", ["guru_kelas", "guru_mapel"]) // 🔴 UBAH INI SESUAI DB LU
         .eq("is_active", true)
         .order("full_name");
 
-      if (teachersError) throw teachersError;
+      console.log("👥 Teachers Data:", teachersData);
+      console.log("❌ Teachers Error:", teachersError);
 
-      // Fetch attendances for the month
+      // ✅ Fetch attendances
       const { data: attendancesData, error: attendancesError } = await supabase
         .from("teacher_attendance")
         .select("*")
         .gte("attendance_date", startDate)
         .lte("attendance_date", endDate);
 
+      console.log("📊 Attendances Data:", attendancesData);
+      console.log("❌ Attendances Error:", attendancesError);
+
+      if (teachersError) throw teachersError;
       if (attendancesError) throw attendancesError;
 
       setTeachers(teachersData || []);
       setAttendances(attendancesData || []);
     } catch (error) {
-      console.error("Error fetching monthly data:", error);
+      console.error("💥 Error fetching monthly data:", error);
     } finally {
       setLoading(false);
     }
@@ -132,15 +137,21 @@ const MonthlyView = ({ currentUser }) => {
     );
   };
 
+  // 🔥 FIXED: Case-insensitive status matching
   const getStatusBadge = (status) => {
+    // Normalize status to lowercase for comparison
+    const normalizedStatus = status?.toLowerCase();
+
     const badges = {
-      Hadir: { bg: "bg-green-500", text: "H", title: "Hadir" },
-      Izin: { bg: "bg-blue-500", text: "I", title: "Izin" },
-      Sakit: { bg: "bg-yellow-500", text: "S", title: "Sakit" },
-      Alpa: { bg: "bg-red-500", text: "A", title: "Alpha" },
+      hadir: { bg: "bg-green-500", text: "H", title: "Hadir" },
+      izin: { bg: "bg-blue-500", text: "I", title: "Izin" },
+      sakit: { bg: "bg-yellow-500", text: "S", title: "Sakit" },
+      alpa: { bg: "bg-red-500", text: "A", title: "Alpha" },
+      alpha: { bg: "bg-red-500", text: "A", title: "Alpha" }, // Support both "alpa" and "alpha"
     };
+
     return (
-      badges[status] || {
+      badges[normalizedStatus] || {
         bg: "bg-gray-300",
         text: "-",
         title: "Tidak ada data",
@@ -148,16 +159,26 @@ const MonthlyView = ({ currentUser }) => {
     );
   };
 
-  // ✅ FIXED: Ganti teacher_id jadi id
+  // 🔥 FIXED: Case-insensitive filtering untuk stats
   const calculateTeacherStats = (teacherId) => {
     const teacherAttendances = attendances.filter(
       (att) => att.teacher_id === teacherId
     );
+
     return {
-      hadir: teacherAttendances.filter((a) => a.status === "Hadir").length,
-      izin: teacherAttendances.filter((a) => a.status === "Izin").length,
-      sakit: teacherAttendances.filter((a) => a.status === "Sakit").length,
-      alpa: teacherAttendances.filter((a) => a.status === "Alpa").length,
+      hadir: teacherAttendances.filter(
+        (a) => a.status?.toLowerCase() === "hadir"
+      ).length,
+      izin: teacherAttendances.filter((a) => a.status?.toLowerCase() === "izin")
+        .length,
+      sakit: teacherAttendances.filter(
+        (a) => a.status?.toLowerCase() === "sakit"
+      ).length,
+      alpa: teacherAttendances.filter(
+        (a) =>
+          a.status?.toLowerCase() === "alpa" ||
+          a.status?.toLowerCase() === "alpha"
+      ).length,
       total: teacherAttendances.length,
     };
   };

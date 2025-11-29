@@ -4,13 +4,14 @@ import {
   GraduationCap,
   UserCheck,
   BookOpen,
+  RefreshCw,
   Smartphone,
   Settings,
-  FileText,
-  ClipboardList,
-  UserCog,
-  StickyNote,
-  BarChart3,
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
@@ -74,26 +75,26 @@ const StatsCard = ({
   );
 };
 
-// Table: Guru Belum Input Presensi GURU (BUKAN SISWA)
+// Table: Guru Belum Input Absen
 const GuruBelumInputTable = ({ guruData, isMobile }) => {
   if (guruData.length === 0) {
     return (
       <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
         <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-            Monitoring Presensi Guru
+            Monitoring Input Absensi
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            Status presensi guru hari ini
+            Status input absensi hari ini
           </p>
         </div>
         <div className="text-center py-12">
-          <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
+          <CheckCircle size={64} className="mx-auto text-green-400 mb-4" />
           <p className="text-xl font-bold text-gray-900 mb-2">
-            Semua guru sudah input presensi! 🎉
+            Semua guru sudah input absen! 🎉
           </p>
           <p className="text-sm text-gray-500">
-            Kehadiran guru hari ini sudah tercatat lengkap
+            Kehadiran hari ini sudah tercatat lengkap
           </p>
         </div>
       </div>
@@ -106,7 +107,7 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Guru Belum Input Presensi
+              Guru Belum Input Absensi
             </h3>
             <p className="text-sm text-gray-600 mt-1">
               Total: {guruData.length} guru
@@ -136,7 +137,7 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
                   Role
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
-                  Kelas/Mapel
+                  Kelas
                 </th>
                 <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
                   Status
@@ -183,7 +184,8 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-200">
-                      ❌ Belum Input
+                      <XCircle size={14} />
+                      Belum Input
                     </span>
                   </td>
                 </tr>
@@ -213,7 +215,8 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
                       <p className="text-xs text-gray-500">{guru.username}</p>
                     </div>
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
-                      ❌ Belum
+                      <XCircle size={12} />
+                      Belum
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -253,7 +256,7 @@ const SiswaBermasalahTable = ({ siswaData, isMobile }) => {
           <p className="text-sm text-gray-600 mt-1">Alpa {">"} 3x bulan ini</p>
         </div>
         <div className="text-center py-12">
-          <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
+          <CheckCircle size={64} className="mx-auto text-green-400 mb-4" />
           <p className="text-xl font-bold text-gray-900 mb-2">
             Tidak ada siswa bermasalah! 🎉
           </p>
@@ -414,6 +417,8 @@ const AdminDashboard = ({ userData }) => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [guruBelumInput, setGuruBelumInput] = useState([]);
   const [siswaBermasalah, setSiswaBermasalah] = useState([]);
   const [dashboardData, setDashboardData] = useState({
@@ -453,7 +458,7 @@ const AdminDashboard = ({ userData }) => {
     navigate(path);
   };
 
-  // Fetch Guru Belum Input Presensi GURU (BUKAN SISWA)
+  // Fetch Guru Belum Input Absen
   const fetchGuruBelumInput = async (today) => {
     try {
       const { data: allTeachers, error: teachersError } = await supabase
@@ -464,38 +469,22 @@ const AdminDashboard = ({ userData }) => {
 
       if (teachersError) throw teachersError;
 
-      // 🔥 QUERY BARU: Ambil data dari teacher_attendance (bukan attendance)
-      const { data: todayTeacherAttendance, error: attendanceError } =
-        await supabase
-          .from("teacher_attendance")
-          .select("teacher_id")
-          .eq("attendance_date", today);
+      const { data: todayAttendance, error: attendanceError } = await supabase
+        .from("attendance")
+        .select("guru_input")
+        .eq("tanggal", today);
 
       if (attendanceError) throw attendanceError;
 
       const teachersWhoInput = new Set(
-        todayTeacherAttendance?.map((r) => r.teacher_id) || []
+        todayAttendance?.map((r) => r.guru_input).filter(Boolean) || []
       );
-
-      // Filter guru yang belum input presensi
       const belumInput =
-        allTeachers?.filter((teacher) => !teachersWhoInput.has(teacher.id)) ||
-        [];
+        allTeachers?.filter(
+          (teacher) => !teachersWhoInput.has(teacher.username)
+        ) || [];
 
-      // 🔥 URUTKAN: Kelas 1-6 dulu, lalu Mapel
-      const sortedBelumInput = belumInput.sort((a, b) => {
-        // Guru Kelas dulu (1-6)
-        if (a.role === "guru_kelas" && b.role === "guru_kelas") {
-          return parseInt(a.kelas) - parseInt(b.kelas);
-        }
-        if (a.role === "guru_kelas") return -1;
-        if (b.role === "guru_kelas") return 1;
-
-        // Lalu Guru Mapel
-        return (a.mata_pelajaran || "").localeCompare(b.mata_pelajaran || "");
-      });
-
-      setGuruBelumInput(sortedBelumInput);
+      setGuruBelumInput(belumInput);
     } catch (error) {
       console.error("Error fetching guru belum input:", error);
       setGuruBelumInput([]);
@@ -556,9 +545,53 @@ const AdminDashboard = ({ userData }) => {
     }
   };
 
+  // Fetch Recent Activities (Simplified)
+  const fetchRecentActivities = async (today) => {
+    try {
+      const { data: attendanceActivities, error } = await supabase
+        .from("attendance")
+        .select("kelas, guru_input, created_at, status")
+        .eq("tanggal", today)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      const activities = [];
+      const grouped = {};
+
+      attendanceActivities?.forEach((record) => {
+        const key = `${record.kelas}-${record.guru_input}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            kelas: record.kelas,
+            guru: record.guru_input || "Unknown",
+            created_at: record.created_at,
+            count: 0,
+          };
+        }
+        grouped[key].count++;
+      });
+
+      Object.values(grouped).forEach((group) => {
+        activities.push({
+          id: `${group.kelas}-${group.created_at}`,
+          icon: "📊",
+          message: `${group.guru} input ${group.count} siswa Kelas ${group.kelas}`,
+          time: group.created_at,
+        });
+      });
+
+      setRecentActivities(activities.slice(0, 5));
+    } catch (error) {
+      console.error("Error fetching recent activities:", error);
+      setRecentActivities([]);
+    }
+  };
+
   // Main fetch function
   const fetchAdminDashboardData = async () => {
-    setLoading(true);
+    setRefreshing(true);
     try {
       const today = getTodayDate();
       const firstDayOfMonth = getFirstDayOfMonth();
@@ -597,11 +630,13 @@ const AdminDashboard = ({ userData }) => {
       await Promise.all([
         fetchGuruBelumInput(today),
         fetchSiswaBermasalah(firstDayOfMonth, today),
+        fetchRecentActivities(today),
       ]);
     } catch (error) {
       console.error("Error fetching admin dashboard data:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -649,7 +684,7 @@ const AdminDashboard = ({ userData }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-3 sm:p-6 lg:p-8">
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* Header - TANPA TOMBOL REFRESH */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3">
             <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
@@ -660,102 +695,18 @@ const AdminDashboard = ({ userData }) => {
               <span>Mobile</span>
             </div>
           </div>
+          <button
+            onClick={fetchAdminDashboardData}
+            disabled={refreshing}
+            className={`flex items-center gap-2 px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm hover:shadow-md min-h-[44px] touch-manipulation w-full sm:w-auto justify-center ${
+              refreshing ? "opacity-50 cursor-not-allowed" : ""
+            }`}>
+            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+            <span>{refreshing ? "Memperbarui..." : "Refresh Data"}</span>
+          </button>
         </div>
 
-        {/* 🔥 AKSI CEPAT - DIPINDAH KE ATAS */}
-        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
-            Aksi Cepat
-          </h3>
-
-          {/* Baris 1: 4 tombol */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-4">
-            <button
-              onClick={() => handleNavigation("/teacher-attendance")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg text-blue-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <UserCheck
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Presensi Guru</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation("/attendance")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg text-green-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <ClipboardList
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Presensi Siswa</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation("/teachers")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <UserCog
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Data Guru</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation("/students")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg text-orange-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <Users
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Data Siswa</span>
-            </button>
-          </div>
-
-          {/* Baris 2: 4 tombol */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-            <button
-              onClick={() => handleNavigation("/grades")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 font-medium hover:bg-gradient-to-br hover:from-indigo-600 hover:to-indigo-700 hover:text-white hover:border-indigo-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <BarChart3
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Nilai Siswa</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation("/catatan-siswa")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg text-pink-700 font-medium hover:bg-gradient-to-br hover:from-pink-600 hover:to-pink-700 hover:text-white hover:border-pink-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <StickyNote
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Catatan Siswa</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation("/reports")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 rounded-lg text-teal-700 font-medium hover:bg-gradient-to-br hover:from-teal-600 hover:to-teal-700 hover:text-white hover:border-teal-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <FileText
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Laporan</span>
-            </button>
-
-            <button
-              onClick={() => handleNavigation("/settings")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-gray-600 hover:to-gray-700 hover:text-white hover:border-gray-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <Settings
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
-              <span className="font-semibold text-center">Pengaturan</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Compact Stats Cards - SETELAH AKSI CEPAT */}
+        {/* Compact Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           <StatsCard
             title="Total Siswa"
@@ -789,7 +740,7 @@ const AdminDashboard = ({ userData }) => {
 
         {/* Monitoring Tables - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* 🔥 GURU BELUM INPUT PRESENSI GURU (BUKAN SISWA) */}
+          {/* Guru Belum Input */}
           <GuruBelumInputTable guruData={guruBelumInput} isMobile={isMobile} />
 
           {/* Siswa Bermasalah */}
@@ -797,6 +748,102 @@ const AdminDashboard = ({ userData }) => {
             siswaData={siswaBermasalah}
             isMobile={isMobile}
           />
+        </div>
+
+        {/* Quick Actions - 4 Buttons */}
+        <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+            Aksi Cepat
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <button
+              onClick={() => handleNavigation("/students")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Users
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">
+                Kelola Data Siswa
+              </span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/teachers")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <GraduationCap
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">
+                Kelola Data Guru
+              </span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/settings")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Settings
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">Pengaturan</span>
+            </button>
+            <button
+              onClick={() => handleNavigation("/system-health")}
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <Activity
+                size={isMobile ? 18 : 20}
+                className="group-hover:scale-110 transition-transform"
+              />
+              <span className="font-semibold text-center">System Health</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Recent Activities - Simplified */}
+        {recentActivities.length > 0 && (
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+              Aktivitas Terbaru
+            </h3>
+            <div className="space-y-2 sm:space-y-3">
+              {recentActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation">
+                  <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm sm:text-base">
+                      {activity.icon}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-900 line-clamp-2 leading-relaxed">
+                      {activity.message}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                      {new Date(activity.time).toLocaleString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile floating refresh button */}
+        <div className="fixed bottom-20 right-4 sm:hidden z-40">
+          <button
+            onClick={fetchAdminDashboardData}
+            disabled={refreshing}
+            className={`w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+              refreshing ? "opacity-50" : "hover:bg-blue-700 active:scale-95"
+            }`}>
+            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+          </button>
         </div>
       </div>
     </div>
