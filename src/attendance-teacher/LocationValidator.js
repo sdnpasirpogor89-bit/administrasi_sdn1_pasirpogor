@@ -349,5 +349,5 @@ export default {
   validateManualInputTime,
   SCHOOL_COORDS,
   SCHOOL_RADIUS,
-  MANUAL_INPUT_ALLOWED,
+  MANUAL_INPUT_ALLOWED, // ✅ TAMBAH BARIS INI AJA
 };

@@ -10,10 +10,7 @@ import {
   Shield,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import {
-  validateManualInputTime,
-  MANUAL_INPUT_ALLOWED,
-} from "./LocationValidator"; // ✅ IMPORT DARI LOCATIONVALIDATOR
+import LocationValidator from "./LocationValidator"; // ✅ IMPORT DARI LOCATIONVALIDATOR
 
 const QRScanner = ({ currentUser, onSuccess }) => {
   const [scanning, setScanning] = useState(false);
@@ -198,23 +195,30 @@ const QRScanner = ({ currentUser, onSuccess }) => {
 
       // ✅ VALIDASI JAM OPERASIONAL - PAKAI FUNCTION DARI LOCATIONVALIDATOR
       if (!isAdmin) {
-        const timeCheck = validateManualInputTime();
+        const timeCheck = LocationValidator.validateManualInputTime();
 
         if (!timeCheck.allowed) {
+          const currentTime = new Date().toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Jakarta",
+            hour12: false,
+          });
+
           setMessage({
             type: "error",
             text: `⏰ Presensi hanya dapat dilakukan pada jam ${String(
-              MANUAL_INPUT_ALLOWED.startHour
+              LocationValidator.MANUAL_INPUT_ALLOWED.startHour
             ).padStart(2, "0")}:${String(
-              MANUAL_INPUT_ALLOWED.startMinute
+              LocationValidator.MANUAL_INPUT_ALLOWED.startMinute
             ).padStart(2, "0")} - ${String(
-              MANUAL_INPUT_ALLOWED.endHour
+              LocationValidator.MANUAL_INPUT_ALLOWED.endHour
             ).padStart(2, "0")}:${String(
-              MANUAL_INPUT_ALLOWED.endMinute
+              LocationValidator.MANUAL_INPUT_ALLOWED.endMinute
             ).padStart(
               2,
               "0"
-            )} WIB.\n\nWaktu saat ini: ${hourStr}:${minuteStr} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
+            )} WIB.\n\nWaktu saat ini: ${currentTime} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
           });
           setLoading(false);
           return;
@@ -485,13 +489,26 @@ const QRScanner = ({ currentUser, onSuccess }) => {
               <p className="text-sm text-amber-800">
                 <strong>⏰ Jam Operasional:</strong> Presensi hanya dapat
                 dilakukan pada pukul{" "}
-                {String(MANUAL_INPUT_ALLOWED.startHour).padStart(2, "0")}:
-                {String(MANUAL_INPUT_ALLOWED.startMinute).padStart(2, "0")} -{" "}
-                {String(MANUAL_INPUT_ALLOWED.endHour).padStart(2, "0")}:
-                {String(MANUAL_INPUT_ALLOWED.endMinute).padStart(2, "0")} WIB
+                {String(
+                  LocationValidator.MANUAL_INPUT_ALLOWED.startHour
+                ).padStart(2, "0")}
+                :
+                {String(
+                  LocationValidator.MANUAL_INPUT_ALLOWED.startMinute
+                ).padStart(2, "0")}{" "}
+                -{" "}
+                {String(
+                  LocationValidator.MANUAL_INPUT_ALLOWED.endHour
+                ).padStart(2, "0")}
+                :
+                {String(
+                  LocationValidator.MANUAL_INPUT_ALLOWED.endMinute
+                ).padStart(2, "0")}{" "}
+                WIB
               </p>
               <p className="text-xs text-amber-700 mt-1">
                 🔧 Setting dapat diubah di LocationValidator.js
+                (MANUAL_INPUT_ALLOWED)
               </p>
             </div>
           </div>
