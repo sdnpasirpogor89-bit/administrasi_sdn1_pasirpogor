@@ -1,4 +1,4 @@
-// attendance-teacher/LocationValidator.js - FIXED FOR SD + ADMIN EXCEPTION
+// attendance-teacher/LocationValidator.js - FIXED FOR SD
 // Utility untuk validasi lokasi guru saat presensi manual
 
 import { supabase } from "../supabaseClient";
@@ -82,32 +82,6 @@ const checkGeolocationSupport = async () => {
   }
 
   return { supported: true };
-};
-
-/**
- * 🆕 Check apakah user adalah Admin
- */
-export const checkIsAdmin = async (userId) => {
-  try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("❌ Error checking admin role:", error);
-      return false;
-    }
-
-    const isAdmin = data?.role === "admin";
-    console.log(`👤 User ${userId} is ${isAdmin ? "ADMIN" : "TEACHER"}`);
-
-    return isAdmin;
-  } catch (error) {
-    console.error("❌ Exception checking admin:", error);
-    return false;
-  }
 };
 
 /**
@@ -336,26 +310,9 @@ export const validateTeacherSchedule = async (userId) => {
 };
 
 /**
- * 🆕 Validasi waktu untuk manual input (DENGAN ADMIN EXCEPTION)
- * @param {string} userId - ID user yang melakukan presensi
- * @returns {Promise<Object>} - { allowed, message, isAdmin, bypassReason }
+ * Validasi waktu untuk manual input
  */
-export const validateManualInputTime = async (userId = null) => {
-  // ✅ Cek apakah user adalah Admin
-  const isAdmin = userId ? await checkIsAdmin(userId) : false;
-
-  // ✅ Admin BYPASS semua time restriction
-  if (isAdmin) {
-    console.log("🔓 ADMIN DETECTED - Time restriction bypassed");
-    return {
-      allowed: true,
-      isAdmin: true,
-      bypassReason: "ADMIN_PRIVILEGE",
-      message: "Admin dapat mengisi presensi kapan saja",
-    };
-  }
-
-  // ✅ Guru biasa - cek jam operasional
+export const validateManualInputTime = () => {
   const now = new Date();
   const hour = now.getHours();
   const minute = now.getMinutes();
@@ -372,71 +329,19 @@ export const validateManualInputTime = async (userId = null) => {
   if (!isWithinWindow) {
     return {
       allowed: false,
-      isAdmin: false,
-      message: `Presensi hanya dapat dilakukan pada jam operasional sekolah: ${
+      message: `Manual input hanya bisa dilakukan jam ${
         MANUAL_INPUT_ALLOWED.startHour
       }:${MANUAL_INPUT_ALLOWED.startMinute.toString().padStart(2, "0")} - ${
         MANUAL_INPUT_ALLOWED.endHour
       }:${MANUAL_INPUT_ALLOWED.endMinute
         .toString()
-        .padStart(2, "0")}. Jika terlambat, hubungi Admin untuk bantuan.`,
+        .padStart(2, "0")} (jam datang guru)`,
     };
   }
 
   return {
     allowed: true,
-    isAdmin: false,
-    message: "Waktu presensi valid",
-  };
-};
-
-/**
- * 🆕 Validasi LENGKAP untuk presensi (Location + Time + Schedule)
- * Digunakan di ManualCheckIn.js dan QRScanner.js
- */
-export const validateFullAttendance = async (userId) => {
-  console.log("🔍 Starting full attendance validation for user:", userId);
-
-  // 1️⃣ Cek apakah admin
-  const isAdmin = await checkIsAdmin(userId);
-
-  // 2️⃣ Validasi waktu (dengan admin exception)
-  const timeCheck = await validateManualInputTime(userId);
-  if (!timeCheck.allowed && !isAdmin) {
-    return {
-      valid: false,
-      error: "TIME_RESTRICTION",
-      ...timeCheck,
-    };
-  }
-
-  // 3️⃣ Validasi lokasi (admin tetap harus di radius sekolah)
-  const locationCheck = await validateAttendanceLocation();
-  if (!locationCheck.allowed) {
-    return {
-      valid: false,
-      error: "LOCATION_RESTRICTION",
-      ...locationCheck,
-      isAdmin,
-    };
-  }
-
-  // 4️⃣ Validasi jadwal (kecuali admin)
-  let scheduleCheck = { hasSchedule: true, suspicious: false };
-  if (!isAdmin) {
-    scheduleCheck = await validateTeacherSchedule(userId);
-  }
-
-  // ✅ Semua validasi lolos
-  return {
-    valid: true,
-    isAdmin,
-    location: locationCheck,
-    time: timeCheck,
-    schedule: scheduleCheck,
-    message: isAdmin
-      ? "Validasi berhasil (Admin privilege)"
-      : "Semua validasi berhasil",
+    message: "Waktu input valid",
   };
 };
 
@@ -444,8 +349,6 @@ export default {
   validateAttendanceLocation,
   validateTeacherSchedule,
   validateManualInputTime,
-  validateFullAttendance,
-  checkIsAdmin,
   SCHOOL_COORDS,
   SCHOOL_RADIUS,
   MANUAL_INPUT_ALLOWED,

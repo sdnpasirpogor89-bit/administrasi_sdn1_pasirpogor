@@ -109,7 +109,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
     try {
       // VALIDASI WAKTU - HANYA UNTUK GURU BIASA (BUKAN ADMIN)
       if (!isAdmin) {
-        const timeCheck = await validateManualInputTime(currentUser.id);
+        const timeCheck = validateManualInputTime();
         if (!timeCheck.allowed) {
           const currentTime = new Date().toLocaleTimeString("id-ID", {
             hour: "2-digit",
