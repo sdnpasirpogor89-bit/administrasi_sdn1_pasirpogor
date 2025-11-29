@@ -287,6 +287,8 @@ const AbsentStudentsTable = ({
   allClasses,
   selectedKelas,
   onKelasChange,
+  // 🔥 FIX 1: Tambahkan prop todayAttendance
+  todayAttendance,
 }) => {
   const getStatusBadge = (status) => {
     const badges = {
@@ -349,15 +351,29 @@ const AbsentStudentsTable = ({
         </div>
       </div>
 
-      {filteredStudents.length === 0 ? (
+      {/* 🔥 FIX 2: Ganti dashboardData.todayAttendance menjadi todayAttendance (prop) */}
+      {filteredStudents.length === 0 && todayAttendance === 0 ? (
+        /* BELUM INPUT PRESENSI SAMA SEKALI */
+        <div className="text-center py-12">
+          <UserCheck size={64} className="mx-auto text-yellow-400 mb-4" />
+          <p className="text-xl font-bold text-gray-900 mb-2">
+            Anda Belum Melakukan Presensi Siswa Hari Ini! 📝
+          </p>
+          <p className="text-sm text-gray-500">
+            Silakan input presensi siswa terlebih dahulu
+          </p>
+        </div>
+      ) : filteredStudents.length === 0 ? (
+        /* SUDAH INPUT PRESENSI & SEMUA HADIR */
         <div className="text-center py-12">
           <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
           <p className="text-xl font-bold text-gray-900 mb-2">
-            Semua siswa hadir hari ini! 🎉
+            Semua Siswa Hadir Hari Ini! 🎉
           </p>
           <p className="text-sm text-gray-500">Kehadiran 100% - Luar biasa!</p>
         </div>
       ) : (
+        /* ADA YANG TIDAK HADIR */
         <>
           {!isMobile ? (
             <div className="overflow-x-auto">
@@ -480,7 +496,7 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => (
       </button>
 
       <button
-        onClick={() => handleNavigation("/teacher-attendance")} // 🔥 DIPERBAIKI
+        onClick={() => handleNavigation("/teacher-attendance")}
         className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm">
         <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
           <span className="text-white text-lg">👨‍🏫</span>
@@ -583,7 +599,7 @@ const TeacherDashboard = ({ userData }) => {
   const [selectedKelas, setSelectedKelas] = useState("");
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
-    todayAttendance: 0,
+    todayAttendance: 0, // Nilai ini yang diperlukan di AbsentStudentsTable
     attendanceRate: 0,
     totalClasses: 0,
     tidakHadir: 0,
@@ -623,7 +639,7 @@ const TeacherDashboard = ({ userData }) => {
     return days[new Date().getDay()];
   };
 
-  // 🔧 FIXED: Fetch today's schedule dengan nama tabel yang benar
+  // 🔧 Fetch today's schedule
   const fetchTodaySchedule = async () => {
     try {
       const todayDay = getTodayDayName();
@@ -635,7 +651,7 @@ const TeacherDashboard = ({ userData }) => {
 
       console.log("📅 Fetching schedule for:", todayDay);
 
-      // Query ke tabel class_schedules (bukan teacher_schedules)
+      // Query ke tabel class_schedules
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("class_schedules")
         .select(
@@ -710,7 +726,6 @@ const TeacherDashboard = ({ userData }) => {
       const userKelas = userData.kelas;
 
       const todaySchedule = await fetchTodaySchedule();
-      console.log("📋 Guru Kelas - Today Schedule:", todaySchedule);
 
       const { data: classStudents, error: studentsError } = await supabase
         .from("students")
@@ -743,41 +758,28 @@ const TeacherDashboard = ({ userData }) => {
 
       if (todayError) throw todayError;
 
-      const todayPresentCount = todayAttendanceData.filter(
-        (r) => r.status.toLowerCase() === "hadir"
-      ).length;
-
+      // 🔥 LOGIC BARU: Default semua HADIR, yang ditampilkan cuma yang TIDAK HADIR
       const totalClassStudents = classStudents.length;
+
+      // Hitung yang sudah di-mark tidak hadir
+      const absentStudents =
+        todayAttendanceData?.filter(
+          (record) => record.status.toLowerCase() !== "hadir"
+        ) || [];
+
+      const todayPresentCount = totalClassStudents - absentStudents.length;
       const attendanceRate =
         totalClassStudents > 0
           ? Math.round((todayPresentCount / totalClassStudents) * 100)
           : 0;
 
-      const absentStudents = [];
-      const todayMarkedMap = new Map(
-        todayAttendanceData.map((r) => [r.nisn, r.status])
-      );
-
-      classStudents.forEach((student) => {
-        const status = todayMarkedMap.get(student.nisn);
-        if (!status) {
-          absentStudents.push({
-            nisn: student.nisn,
-            nama_siswa: student.nama_siswa,
-            kelas: student.kelas,
-            status: "Alpa",
-          });
-        } else if (status.toLowerCase() !== "hadir") {
-          absentStudents.push({
-            nisn: student.nisn,
-            nama_siswa: student.nama_siswa,
-            kelas: student.kelas,
-            status: status,
-          });
-        }
-      });
-
-      const tidakHadirCount = absentStudents.length;
+      // Transform data untuk table
+      const transformedAbsentStudents = absentStudents.map((record) => ({
+        nisn: record.nisn,
+        nama_siswa: record.nama_siswa,
+        kelas: record.kelas,
+        status: record.status,
+      }));
 
       setDashboardData((prev) => ({
         ...prev,
@@ -785,9 +787,9 @@ const TeacherDashboard = ({ userData }) => {
         todayAttendance: todayPresentCount,
         attendanceRate: attendanceRate,
         totalClasses: 1,
-        tidakHadir: tidakHadirCount,
+        tidakHadir: absentStudents.length,
         todaySchedule: todaySchedule,
-        absentStudents: absentStudents,
+        absentStudents: transformedAbsentStudents,
         allClasses: [],
       }));
     } catch (error) {
@@ -800,7 +802,6 @@ const TeacherDashboard = ({ userData }) => {
       const today = getTodayDate();
 
       const todaySchedule = await fetchTodaySchedule();
-      console.log("📋 Guru Mapel - Today Schedule:", todaySchedule);
 
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
@@ -822,38 +823,20 @@ const TeacherDashboard = ({ userData }) => {
         setSelectedKelas(allClasses[0]);
       }
 
-      const todayPresentCount = todayAttendanceData.filter(
-        (r) => r.status.toLowerCase() === "hadir"
-      ).length;
+      // 🔥 LOGIC BARU: Default semua HADIR
       const totalStudentsCount = studentsData.length;
+
+      // Yang ditampilkan cuma yang TIDAK HADIR
+      const absentStudents =
+        todayAttendanceData?.filter(
+          (record) => record.status.toLowerCase() !== "hadir"
+        ) || [];
+
+      const todayPresentCount = totalStudentsCount - absentStudents.length;
       const attendanceRate =
         totalStudentsCount > 0
           ? Math.round((todayPresentCount / totalStudentsCount) * 100)
           : 0;
-
-      const absentStudents = [];
-      const todayMarkedMap = new Map(
-        todayAttendanceData.map((r) => [r.nisn, r.status])
-      );
-
-      studentsData.forEach((student) => {
-        const status = todayMarkedMap.get(student.nisn);
-        if (!status) {
-          absentStudents.push({
-            nisn: student.nisn,
-            nama_siswa: student.nama_siswa,
-            kelas: student.kelas,
-            status: "Alpa",
-          });
-        } else if (status.toLowerCase() !== "hadir") {
-          absentStudents.push({
-            nisn: student.nisn,
-            nama_siswa: student.nama_siswa,
-            kelas: student.kelas,
-            status: status,
-          });
-        }
-      });
 
       const tidakHadirCount = absentStudents.length;
 
@@ -993,6 +976,8 @@ const TeacherDashboard = ({ userData }) => {
             allClasses={[]}
             selectedKelas=""
             onKelasChange={() => {}}
+            // 🔥 FIX 3a: Melewatkan prop todayAttendance
+            todayAttendance={dashboardData.todayAttendance}
           />
 
           <TodayScheduleCard
@@ -1096,7 +1081,7 @@ const TeacherDashboard = ({ userData }) => {
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
               <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 text-blue-700 border border-blue-200/50">
-                Guru Kelas {userData.kelas}
+                Guru Mapel
               </span>
             </div>
           </div>
@@ -1161,6 +1146,8 @@ const TeacherDashboard = ({ userData }) => {
             allClasses={dashboardData.allClasses}
             selectedKelas={selectedKelas}
             onKelasChange={setSelectedKelas}
+            // 🔥 FIX 3b: Melewatkan prop todayAttendance
+            todayAttendance={dashboardData.todayAttendance}
           />
 
           <TodayScheduleCard
