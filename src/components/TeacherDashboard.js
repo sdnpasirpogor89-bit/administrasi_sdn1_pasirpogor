@@ -480,7 +480,7 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => (
       </button>
 
       <button
-        onClick={() => handleNavigation("/attendance-teacher")}
+        onClick={() => handleNavigation("/teacher-attendance")} // 🔥 DIPERBAIKI
         className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm">
         <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
           <span className="text-white text-lg">👨‍🏫</span>
