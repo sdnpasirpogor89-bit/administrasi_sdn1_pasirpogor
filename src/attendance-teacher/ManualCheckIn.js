@@ -452,7 +452,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
           <strong>ℹ️ Info:</strong>{" "}
           {isAdmin
             ? "Sebagai Admin, Anda dapat input presensi kapan saja tanpa batasan waktu. Pastikan mengisi catatan untuk audit trail."
-            : "Input manual presensi hanya tersedia pada jam 07:00 - 14:00. Jika lupa input, hubungi Admin untuk bantuan."}
+            : "Input manual presensi hanya tersedia pada jam 07:00 - 13:00. Jika lupa input, hubungi Admin untuk bantuan."}
         </p>
       </div>
 

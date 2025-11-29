@@ -74,7 +74,7 @@ const StatsCard = ({
   );
 };
 
-// Table: Guru Belum Input Presensi GURU (BUKAN SISWA)
+// Table: Guru Belum Input Presensi GURU
 const GuruBelumInputTable = ({ guruData, isMobile }) => {
   if (guruData.length === 0) {
     return (
@@ -241,23 +241,27 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
   );
 };
 
-// Table: Siswa Bermasalah (Alpa > 3x bulan ini)
-const SiswaBermasalahTable = ({ siswaData, isMobile }) => {
-  if (siswaData.length === 0) {
+// Table: Monitoring Presensi SISWA (GANTI DARI SISWA BERMASALAH)
+const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
+  if (guruData.length === 0) {
     return (
       <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
         <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-            Siswa Bermasalah
+            Monitoring Presensi Siswa
           </h3>
-          <p className="text-sm text-gray-600 mt-1">Alpa {">"} 3x bulan ini</p>
+          <p className="text-sm text-gray-600 mt-1">
+            Status input presensi siswa hari ini
+          </p>
         </div>
         <div className="text-center py-12">
           <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
           <p className="text-xl font-bold text-gray-900 mb-2">
-            Tidak ada siswa bermasalah! 🎉
+            Semua guru sudah input presensi siswa! 🎉
           </p>
-          <p className="text-sm text-gray-500">Semua siswa kehadirannya baik</p>
+          <p className="text-sm text-gray-500">
+            Presensi siswa hari ini sudah tercatat lengkap
+          </p>
         </div>
       </div>
     );
@@ -269,15 +273,15 @@ const SiswaBermasalahTable = ({ siswaData, isMobile }) => {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Siswa Bermasalah
+              Guru Belum Input Presensi Siswa
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Alpa {">"} 3x bulan ini • Total: {siswaData.length} siswa
+              Total: {guruData.length} guru
             </p>
           </div>
           <div className="bg-yellow-100 px-3 py-1.5 rounded-full">
             <span className="text-yellow-700 font-bold text-sm">
-              {siswaData.length}
+              {guruData.length}
             </span>
           </div>
         </div>
@@ -293,64 +297,60 @@ const SiswaBermasalahTable = ({ siswaData, isMobile }) => {
                   No
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
-                  Nama Siswa
+                  Nama Guru
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
-                  Kelas
+                  Role
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  Kelas/Mapel
                 </th>
                 <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
-                  Total Alpa
-                </th>
-                <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
-                  Kehadiran
+                  Status
                 </th>
               </tr>
             </thead>
             <tbody>
-              {siswaData.map((siswa, index) => (
+              {guruData.map((guru, index) => (
                 <tr
-                  key={siswa.nisn}
+                  key={guru.id}
                   className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-4 text-sm text-gray-600">
                     {index + 1}
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {siswa.nama_siswa
-                          ? siswa.nama_siswa.charAt(0).toUpperCase()
+                      <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {guru.full_name
+                          ? guru.full_name.charAt(0).toUpperCase()
                           : "?"}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">
-                          {siswa.nama_siswa || "Nama tidak tersedia"}
+                          {guru.full_name || "Nama tidak tersedia"}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          NISN: {siswa.nisn || "N/A"}
-                        </p>
+                        <p className="text-xs text-gray-500">{guru.username}</p>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-600">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                      Kelas {siswa.kelas || "N/A"}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-200">
-                      {siswa.total_alpa}x Alpa
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                        siswa.attendance_rate >= 80
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : siswa.attendance_rate >= 60
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-200"
-                          : "bg-red-100 text-red-700 border-red-200"
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        guru.role === "guru_kelas"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-purple-100 text-purple-700"
                       }`}>
-                      {siswa.attendance_rate}%
+                      {guru.role === "guru_kelas" ? "Guru Kelas" : "Guru Mapel"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-600">
+                    {guru.kelas
+                      ? `Kelas ${guru.kelas}`
+                      : guru.mata_pelajaran || "-"}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-yellow-100 text-yellow-700 border-yellow-200">
+                      ⚠️ Belum Input
                     </span>
                   </td>
                 </tr>
@@ -361,43 +361,41 @@ const SiswaBermasalahTable = ({ siswaData, isMobile }) => {
       ) : (
         /* Mobile Card Layout */
         <div className="space-y-3">
-          {siswaData.map((siswa, index) => (
+          {guruData.map((guru, index) => (
             <div
-              key={siswa.nisn}
-              className="bg-gradient-to-r from-yellow-50 to-red-50 border border-yellow-200 rounded-lg p-4">
+              key={guru.id}
+              className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                  {siswa.nama_siswa
-                    ? siswa.nama_siswa.charAt(0).toUpperCase()
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                  {guru.full_name
+                    ? guru.full_name.charAt(0).toUpperCase()
                     : "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-gray-900 text-sm truncate">
-                        {siswa.nama_siswa || "Nama tidak tersedia"}
+                        {guru.full_name || "Nama tidak tersedia"}
                       </h4>
-                      <p className="text-xs text-gray-500">
-                        NISN: {siswa.nisn || "N/A"}
-                      </p>
+                      <p className="text-xs text-gray-500">{guru.username}</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
-                      {siswa.total_alpa}x
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                      ⚠️ Belum
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                      Kelas {siswa.kelas || "N/A"}
-                    </span>
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                        siswa.attendance_rate >= 80
-                          ? "bg-green-100 text-green-700"
-                          : siswa.attendance_rate >= 60
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        guru.role === "guru_kelas"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-purple-100 text-purple-700"
                       }`}>
-                      {siswa.attendance_rate}% Hadir
+                      {guru.role === "guru_kelas" ? "Guru Kelas" : "Guru Mapel"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                      {guru.kelas
+                        ? `Kelas ${guru.kelas}`
+                        : guru.mata_pelajaran || "-"}
                     </span>
                   </div>
                 </div>
@@ -414,8 +412,11 @@ const AdminDashboard = ({ userData }) => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [guruBelumInput, setGuruBelumInput] = useState([]);
-  const [siswaBermasalah, setSiswaBermasalah] = useState([]);
+  const [guruBelumInputPresensiGuru, setGuruBelumInputPresensiGuru] = useState(
+    []
+  );
+  const [guruBelumInputPresensiSiswa, setGuruBelumInputPresensiSiswa] =
+    useState([]);
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -440,21 +441,13 @@ const AdminDashboard = ({ userData }) => {
     return new Date().toISOString().split("T")[0];
   };
 
-  // Get first day of month
-  const getFirstDayOfMonth = () => {
-    const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), 1)
-      .toISOString()
-      .split("T")[0];
-  };
-
   // Navigation handler
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  // Fetch Guru Belum Input Presensi GURU (BUKAN SISWA)
-  const fetchGuruBelumInput = async (today) => {
+  // Fetch Guru Belum Input Presensi GURU
+  const fetchGuruBelumInputPresensiGuru = async (today) => {
     try {
       const { data: allTeachers, error: teachersError } = await supabase
         .from("users")
@@ -464,7 +457,7 @@ const AdminDashboard = ({ userData }) => {
 
       if (teachersError) throw teachersError;
 
-      // 🔥 QUERY BARU: Ambil data dari teacher_attendance (bukan attendance)
+      // Query teacher_attendance untuk presensi guru
       const { data: todayTeacherAttendance, error: attendanceError } =
         await supabase
           .from("teacher_attendance")
@@ -477,82 +470,71 @@ const AdminDashboard = ({ userData }) => {
         todayTeacherAttendance?.map((r) => r.teacher_id) || []
       );
 
-      // Filter guru yang belum input presensi
+      // Filter guru yang belum input presensi GURU
       const belumInput =
         allTeachers?.filter((teacher) => !teachersWhoInput.has(teacher.id)) ||
         [];
 
-      // 🔥 URUTKAN: Kelas 1-6 dulu, lalu Mapel
+      // Urutkan: Kelas 1-6 dulu, lalu Mapel
       const sortedBelumInput = belumInput.sort((a, b) => {
-        // Guru Kelas dulu (1-6)
         if (a.role === "guru_kelas" && b.role === "guru_kelas") {
           return parseInt(a.kelas) - parseInt(b.kelas);
         }
         if (a.role === "guru_kelas") return -1;
         if (b.role === "guru_kelas") return 1;
-
-        // Lalu Guru Mapel
         return (a.mata_pelajaran || "").localeCompare(b.mata_pelajaran || "");
       });
 
-      setGuruBelumInput(sortedBelumInput);
+      setGuruBelumInputPresensiGuru(sortedBelumInput);
     } catch (error) {
-      console.error("Error fetching guru belum input:", error);
-      setGuruBelumInput([]);
+      console.error("Error fetching guru belum input presensi guru:", error);
+      setGuruBelumInputPresensiGuru([]);
     }
   };
 
-  // Fetch Siswa Bermasalah (Alpa > 3x bulan ini)
-  const fetchSiswaBermasalah = async (firstDayOfMonth, today) => {
+  // Fetch Guru Belum Input Presensi SISWA
+  const fetchGuruBelumInputPresensiSiswa = async (today) => {
     try {
-      const { data: students, error: studentsError } = await supabase
-        .from("students")
-        .select("nisn, nama_siswa, kelas")
+      const { data: allTeachers, error: teachersError } = await supabase
+        .from("users")
+        .select("id, username, full_name, role, kelas, mata_pelajaran")
+        .in("role", ["guru_kelas", "guru_mapel"])
         .eq("is_active", true);
 
-      if (studentsError) throw studentsError;
+      if (teachersError) throw teachersError;
 
-      const { data: monthAttendance, error: attendanceError } = await supabase
+      // Query attendance untuk presensi SISWA (dilihat dari guru_input)
+      const { data: todayAttendance, error: attendanceError } = await supabase
         .from("attendance")
-        .select("nisn, status, tanggal")
-        .gte("tanggal", firstDayOfMonth)
-        .lte("tanggal", today);
+        .select("guru_input")
+        .eq("tanggal", today);
 
       if (attendanceError) throw attendanceError;
 
-      const siswaStats = [];
-      students?.forEach((student) => {
-        const studentRecords =
-          monthAttendance?.filter((r) => r.nisn === student.nisn) || [];
-        const totalRecords = studentRecords.length;
-        const alpaCount = studentRecords.filter(
-          (r) => r.status.toLowerCase() === "alpa"
-        ).length;
-        const hadirCount = studentRecords.filter(
-          (r) => r.status.toLowerCase() === "hadir"
-        ).length;
+      const teachersWhoInput = new Set(
+        todayAttendance?.map((r) => r.guru_input).filter(Boolean) || []
+      );
 
-        const attendanceRate =
-          totalRecords > 0
-            ? Math.round((hadirCount / totalRecords) * 100)
-            : 100;
+      // Filter guru yang belum input presensi SISWA
+      const belumInput =
+        allTeachers?.filter(
+          (teacher) => !teachersWhoInput.has(teacher.username)
+        ) || [];
 
-        if (alpaCount > 3) {
-          siswaStats.push({
-            nisn: student.nisn,
-            nama_siswa: student.nama_siswa,
-            kelas: student.kelas,
-            total_alpa: alpaCount,
-            attendance_rate: attendanceRate,
-          });
+      // Urutkan: Kelas 1-6 dulu, lalu Mapel
+      const sortedBelumInput = belumInput.sort((a, b) => {
+        if (a.role === "guru_kelas" && b.role === "guru_kelas") {
+          return parseInt(a.kelas) - parseInt(b.kelas);
         }
+        if (a.role === "guru_kelas") return -1;
+        if (b.role === "guru_kelas") return 1;
+        return (a.mata_pelajaran || "").localeCompare(b.mata_pelajaran || "");
       });
 
-      siswaStats.sort((a, b) => b.total_alpa - a.total_alpa);
-      setSiswaBermasalah(siswaStats);
+      setGuruBelumInputPresensiSiswa(sortedBelumInput);
     } catch (error) {
-      console.error("Error fetching siswa bermasalah:", error);
-      setSiswaBermasalah([]);
+      console.error("Error fetching guru belum input presensi siswa:", error);
+      setGuruBelumInputPresensiSiswa([]);
     }
   };
 
@@ -561,7 +543,6 @@ const AdminDashboard = ({ userData }) => {
     setLoading(true);
     try {
       const today = getTodayDate();
-      const firstDayOfMonth = getFirstDayOfMonth();
 
       const [studentsRes, teachersRes, attendanceRes] = await Promise.all([
         supabase.from("students").select("nisn, kelas").eq("is_active", true),
@@ -595,8 +576,8 @@ const AdminDashboard = ({ userData }) => {
       });
 
       await Promise.all([
-        fetchGuruBelumInput(today),
-        fetchSiswaBermasalah(firstDayOfMonth, today),
+        fetchGuruBelumInputPresensiGuru(today),
+        fetchGuruBelumInputPresensiSiswa(today),
       ]);
     } catch (error) {
       console.error("Error fetching admin dashboard data:", error);
@@ -662,7 +643,7 @@ const AdminDashboard = ({ userData }) => {
           </div>
         </div>
 
-        {/* 🔥 AKSI CEPAT - DIPINDAH KE ATAS */}
+        {/* AKSI CEPAT - DIPINDAH KE ATAS */}
         <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
             Aksi Cepat
@@ -789,12 +770,15 @@ const AdminDashboard = ({ userData }) => {
 
         {/* Monitoring Tables - Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* 🔥 GURU BELUM INPUT PRESENSI GURU (BUKAN SISWA) */}
-          <GuruBelumInputTable guruData={guruBelumInput} isMobile={isMobile} />
+          {/* Monitoring Presensi GURU */}
+          <GuruBelumInputTable
+            guruData={guruBelumInputPresensiGuru}
+            isMobile={isMobile}
+          />
 
-          {/* Siswa Bermasalah */}
-          <SiswaBermasalahTable
-            siswaData={siswaBermasalah}
+          {/* 🔥 MONITORING PRESENSI SISWA (GANTI DARI SISWA BERMASALAH) */}
+          <MonitoringPresensiSiswaTable
+            guruData={guruBelumInputPresensiSiswa}
             isMobile={isMobile}
           />
         </div>

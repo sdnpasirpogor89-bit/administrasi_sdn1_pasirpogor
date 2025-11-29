@@ -1,6 +1,4 @@
 // attendance-teacher/LocationValidator.js - FIXED FOR SD
-// Utility untuk validasi lokasi guru saat presensi manual
-
 import { supabase } from "../supabaseClient";
 
 // ========================================

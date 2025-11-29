@@ -80,7 +80,8 @@ const PerformanceMonitor = () => {
         const { data, error } = await supabase
           .from(table.name)
           .select("*")
-          .limit(100);
+          .limit(20) // ✅ Kurangi dari 100 ke 20
+          .range(0, 19); // ✅ Pagination
 
         const endTime = performance.now();
         const duration = endTime - startTime;

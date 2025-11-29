@@ -1,4 +1,4 @@
-// src/attendance-teacher/reports/ExportExcel.js
+// src/attendance-teacher/reports/ExportExcel.js - FIXED WITH WEEKEND & HOLIDAY
 import React, { useState } from "react";
 import { X, Download, FileSpreadsheet } from "lucide-react";
 import ExcelJS from "exceljs";
@@ -13,20 +13,55 @@ const ExportExcel = ({
 }) => {
   const [exporting, setExporting] = useState(false);
 
+  // ========================================
+  // 🗓️ LIBUR NASIONAL 2025
+  // ========================================
+  const nationalHolidays2025 = {
+    "2025-01-01": "Tahun Baru Masehi",
+    "2025-01-25": "Tahun Baru Imlek 2576",
+    "2025-03-02": "Isra Miraj Nabi Muhammad SAW",
+    "2025-03-12": "Hari Raya Nyepi (Tahun Baru Saka 1947)",
+    "2025-03-31": "Idul Fitri 1446 H",
+    "2025-04-01": "Idul Fitri 1446 H",
+    "2025-04-18": "Wafat Yesus Kristus (Jumat Agung)",
+    "2025-05-01": "Hari Buruh Internasional",
+    "2025-05-29": "Kenaikan Yesus Kristus",
+    "2025-06-07": "Idul Adha 1446 H",
+    "2025-06-28": "Tahun Baru Islam 1447 H",
+    "2025-08-17": "Hari Kemerdekaan RI",
+    "2025-09-05": "Maulid Nabi Muhammad SAW",
+    "2025-12-25": "Hari Raya Natal",
+  };
+
+  // Helper: Check if date is national holiday
+  const isNationalHoliday = (dateStr) => {
+    return nationalHolidays2025[dateStr] || null;
+  };
+
+  // Helper: Check if day is weekend (Saturday = 6, Sunday = 0)
+  const isWeekend = (year, month, day) => {
+    const date = new Date(year, month, day);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+  };
+
   const getDaysInMonth = () => {
     return new Date(year, month + 1, 0).getDate();
   };
 
   const getAttendanceForDay = (teacherId, day) => {
-    const dateStr = new Date(year, month, day).toISOString().split("T")[0];
+    const year_str = year.toString();
+    const month_str = String(month + 1).padStart(2, "0");
+    const day_str = String(day).padStart(2, "0");
+    const dateStr = `${year_str}-${month_str}-${day_str}`;
+
     return attendances.find(
       (att) => att.teacher_id === teacherId && att.attendance_date === dateStr
     );
   };
 
-  // Replace function getStatusLabel (line ~23-32)
+  // 🔥 FIXED: Lowercase comparison
   const getStatusLabel = (status) => {
-    // Normalize to lowercase for comparison
     const normalizedStatus = status?.toLowerCase();
 
     const labels = {
@@ -34,19 +69,18 @@ const ExportExcel = ({
       izin: "I",
       sakit: "S",
       alpa: "A",
-      alpha: "A", // Support both spellings
+      alpha: "A",
     };
 
     return labels[normalizedStatus] || "-";
   };
 
-  // Replace function calculateTeacherStats (line ~34-56)
+  // 🔥 FIXED: Lowercase comparison
   const calculateTeacherStats = (teacherId) => {
     const teacherAttendances = attendances.filter(
       (att) => att.teacher_id === teacherId
     );
 
-    // FIXED: Use lowercase comparison
     const hadir = teacherAttendances.filter(
       (a) => a.status?.toLowerCase() === "hadir"
     ).length;
@@ -73,51 +107,6 @@ const ExportExcel = ({
   const handleExport = async () => {
     setExporting(true);
 
-    // ========================================
-    // 🔍 DEBUG LOGGING - CEK DI CONSOLE (F12)
-    // ========================================
-    console.log("========================================");
-    console.log("🔍 DEBUG EXPORT EXCEL");
-    console.log("========================================");
-    console.log("📅 Month:", month, "Year:", year, "MonthName:", monthName);
-    console.log("👥 Total Teachers:", teachers.length);
-    console.log("📋 Total Attendances:", attendances.length);
-    console.log("");
-    console.log("🔹 Sample Teacher (first):", teachers[0]);
-    console.log("🔹 Sample Attendance (first):", attendances[0]);
-    console.log("");
-
-    // Check specific date
-    const targetDate = "2025-11-26";
-    const attendancesOnDate = attendances.filter(
-      (a) => a.attendance_date === targetDate
-    );
-    console.log(`📆 Attendances on ${targetDate}:`, attendancesOnDate.length);
-    attendancesOnDate.forEach((att) => {
-      console.log(`  - Teacher: ${att.teacher_id}, Status: ${att.status}`);
-    });
-    console.log("");
-
-    // Check ELAN JAELANI specifically
-    const elanTeacher = teachers.find((t) => t.full_name?.includes("ELAN"));
-    if (elanTeacher) {
-      console.log("🎯 ELAN JAELANI Found:");
-      console.log("  - Full Name:", elanTeacher.full_name);
-      console.log("  - Teacher ID:", elanTeacher.teacher_id);
-      console.log("  - User ID:", elanTeacher.id);
-
-      const elanAttendances = attendances.filter(
-        (a) =>
-          a.teacher_id === elanTeacher.teacher_id ||
-          a.teacher_id === elanTeacher.id
-      );
-      console.log("  - Total Attendances:", elanAttendances.length);
-      console.log("  - Attendances:", elanAttendances);
-    } else {
-      console.log("❌ ELAN JAELANI NOT FOUND in teachers array");
-    }
-    console.log("========================================");
-
     try {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet(`Presensi ${monthName} ${year}`);
@@ -125,11 +114,10 @@ const ExportExcel = ({
       const daysInMonth = getDaysInMonth();
       const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-      // Calculate total columns dynamically
-      // No (1) + Nama (1) + Days (30) + H (1) + I (1) + S (1) + A (1) + Total (1) + % (1) = 38 columns for 30 days
-      const totalColumns = 2 + daysInMonth + 6; // 2 (No+Nama) + days + 6 (stats)
+      // Calculate total columns
+      const totalColumns = 2 + daysInMonth + 6;
 
-      // Helper function to get Excel column letter (A, B, C, ... Z, AA, AB, ...)
+      // Helper function to get Excel column letter
       const getColumnLetter = (colNumber) => {
         let letter = "";
         while (colNumber > 0) {
@@ -142,14 +130,9 @@ const ExportExcel = ({
 
       const lastColumnLetter = getColumnLetter(totalColumns);
 
-      console.log("📊 Excel Info:");
-      console.log("  Days in month:", daysInMonth);
-      console.log("  Total columns:", totalColumns);
-      console.log("  Last column letter:", lastColumnLetter);
-
       // Header Info - Nama Sekolah
       worksheet.mergeCells(`A1:${lastColumnLetter}1`);
-      worksheet.getCell("A1").value = "SDN 1 PASIRPOGOR";
+      worksheet.getCell("A1").value = "SMP MUSLIMIN CILILIN";
       worksheet.getCell("A1").font = { bold: true, size: 16 };
       worksheet.getCell("A1").alignment = {
         horizontal: "center",
@@ -158,7 +141,7 @@ const ExportExcel = ({
 
       // Header Info - Judul Daftar Hadir
       worksheet.mergeCells(`A2:${lastColumnLetter}2`);
-      worksheet.getCell("A2").value = "DAFTAR HADIR GURU";
+      worksheet.getCell("A2").value = "DAFTAR HADIR GURU/STAFF";
       worksheet.getCell("A2").font = { bold: true, size: 14 };
       worksheet.getCell("A2").alignment = {
         horizontal: "center",
@@ -176,7 +159,7 @@ const ExportExcel = ({
         vertical: "middle",
       };
 
-      // Kosong 2 baris
+      // Empty rows
       worksheet.addRow([]);
       worksheet.addRow([]);
 
@@ -194,13 +177,44 @@ const ExportExcel = ({
       ]);
 
       // Style header
-      headerRow.eachCell((cell) => {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF4472C4" },
-        };
-        cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      headerRow.eachCell((cell, colNumber) => {
+        // 🔥 Check if this day column is weekend or holiday
+        if (colNumber > 2 && colNumber <= 2 + daysInMonth) {
+          const day = colNumber - 2;
+          const dateStr = `${year}-${String(month + 1).padStart(
+            2,
+            "0"
+          )}-${String(day).padStart(2, "0")}`;
+          const weekend = isWeekend(year, month, day);
+          const holiday = isNationalHoliday(dateStr);
+
+          if (weekend || holiday) {
+            // Weekend/Holiday header - Different color
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: holiday ? "FFFF6B6B" : "FFB0B0B0" }, // Red for holiday, Gray for weekend
+            };
+            cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          } else {
+            // Regular day header
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "FF4472C4" },
+            };
+            cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          }
+        } else {
+          // No, Nama, Stats columns
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF4472C4" },
+          };
+          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        }
+
         cell.alignment = { horizontal: "center", vertical: "middle" };
         cell.border = {
           top: { style: "thin" },
@@ -212,15 +226,7 @@ const ExportExcel = ({
 
       // Data Rows
       teachers.forEach((teacher, index) => {
-        // DEBUG: Log setiap teacher yang diproses
-        console.log(
-          `Processing Teacher ${index + 1}: ${teacher.full_name} (ID: ${
-            teacher.teacher_id || teacher.id
-          })`
-        );
-
-        const stats = calculateTeacherStats(teacher.teacher_id || teacher.id); // Try both fields
-        console.log(`  Stats:`, stats);
+        const stats = calculateTeacherStats(teacher.teacher_id || teacher.id);
 
         const rowData = [
           index + 1,
@@ -229,15 +235,20 @@ const ExportExcel = ({
             const attendance = getAttendanceForDay(
               teacher.teacher_id || teacher.id,
               day
-            ); // Try both fields
-            const label = attendance ? getStatusLabel(attendance.status) : "-";
+            );
 
-            // DEBUG: Log attendance for day 26
-            if (day === 26 && attendance) {
-              console.log(`  ✅ Day 26 - Attendance found:`, attendance);
-            }
+            // Check if weekend or holiday
+            const dateStr = `${year}-${String(month + 1).padStart(
+              2,
+              "0"
+            )}-${String(day).padStart(2, "0")}`;
+            const weekend = isWeekend(year, month, day);
+            const holiday = isNationalHoliday(dateStr);
 
-            return label;
+            // 🔥 Return appropriate label
+            if (weekend) return "L"; // Libur (Weekend)
+            if (holiday) return "🎉"; // Libur Nasional
+            return attendance ? getStatusLabel(attendance.status) : "-";
           }),
           stats.hadir,
           stats.izin,
@@ -262,10 +273,33 @@ const ExportExcel = ({
             right: { style: "thin" },
           };
 
-          // Color coding untuk status
+          // Color coding untuk day columns
           if (colNumber > 2 && colNumber <= 2 + daysInMonth) {
+            const day = colNumber - 2;
+            const dateStr = `${year}-${String(month + 1).padStart(
+              2,
+              "0"
+            )}-${String(day).padStart(2, "0")}`;
+            const weekend = isWeekend(year, month, day);
+            const holiday = isNationalHoliday(dateStr);
             const value = cell.value;
-            if (value === "H") {
+
+            // 🔥 Weekend/Holiday styling
+            if (weekend) {
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFD3D3D3" }, // Light gray
+              };
+              cell.font = { bold: true, color: { argb: "FF666666" } };
+            } else if (holiday) {
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFFFCCCC" }, // Light red/pink
+              };
+              cell.font = { bold: true, color: { argb: "FFCC0000" } };
+            } else if (value === "H") {
               cell.fill = {
                 type: "pattern",
                 pattern: "solid",
@@ -296,7 +330,7 @@ const ExportExcel = ({
             }
           }
 
-          // Bold stats columns (H, I, S, A, Total, %)
+          // Bold stats columns
           if (colNumber > 2 + daysInMonth) {
             cell.font = { bold: true };
           }
@@ -332,6 +366,8 @@ const ExportExcel = ({
         ["S", "Sakit"],
         ["A", "Alpha"],
         ["-", "Belum Absen"],
+        ["L", "Libur (Weekend)"], // 🔥 NEW
+        ["🎉", "Libur Nasional"], // 🔥 NEW
       ];
 
       legends.forEach(([code, label]) => {
@@ -390,6 +426,9 @@ const ExportExcel = ({
           </p>
           <p className="text-xs text-blue-600 mt-2">
             Data: {teachers.length} guru, {attendances.length} presensi
+          </p>
+          <p className="text-xs text-green-600 mt-2 font-semibold">
+            ✓ Weekend & Libur Nasional ditandai otomatis
           </p>
         </div>
 

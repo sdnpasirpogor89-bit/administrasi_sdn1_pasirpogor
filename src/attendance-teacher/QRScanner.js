@@ -473,7 +473,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             <Clock className="text-amber-600 flex-shrink-0" size={20} />
             <p className="text-sm text-amber-800">
               <strong>⏰ Jam Operasional:</strong> Presensi hanya dapat
-              dilakukan pada pukul 07:00 - 14:00 WIB
+              dilakukan pada pukul 07:00 - 13:00 WIB
             </p>
           </div>
         )}
