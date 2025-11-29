@@ -915,13 +915,18 @@ const TeacherDashboard = ({ userData }) => {
   const renderGuruKelasDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL */}
+        {/* 🎯 HEADER SELAMAT DATANG - INLINE BLOCK APPROACH */}
         <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
           <div>
-            <h1 className="text-xl sm:text-xl font-semibold text-slate-800 mb-3 sm:mb-2">
-              Selamat Datang, {userData?.full_name || userData?.username}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="sm:whitespace-nowrap">
+              <span className="text-xl font-semibold text-slate-800 block sm:inline-block">
+                Selamat Datang,
+              </span>{" "}
+              <span className="text-lg sm:text-xl font-bold text-slate-900 block sm:inline-block mt-0.5 sm:mt-0 break-words">
+                {userData?.full_name || userData?.username}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
               <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 text-blue-700 border border-blue-200/50">
                 Guru Kelas {userData.kelas}
               </span>
@@ -1077,21 +1082,22 @@ const TeacherDashboard = ({ userData }) => {
 
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL */}
-        <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 rounded-xl shadow-sm border border-green-100 p-4 sm:p-6 lg:p-8">
+        {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL - FIXED */}
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-2">
-              Selamat Datang, {userData?.full_name || userData?.username}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-green-100/80 text-green-700 border border-green-200/50">
-                Guru Mata Pelajaran
+            {/* MOBILE: 2 BARIS, DESKTOP: 1 BARIS */}
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
+              <h1 className="text-xl font-semibold text-slate-800">
+                Selamat Datang,
+              </h1>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-1 sm:mt-0 break-words">
+                {userData?.full_name || userData?.username}
+              </h2>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 text-blue-700 border border-blue-200/50">
+                Guru Kelas {userData.kelas}
               </span>
-              {userData.mata_pelajaran && (
-                <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-emerald-100/80 text-emerald-700 border border-emerald-200/50">
-                  {userData.mata_pelajaran}
-                </span>
-              )}
             </div>
           </div>
         </div>
