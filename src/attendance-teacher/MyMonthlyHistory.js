@@ -1,4 +1,4 @@
-// src/attendance-teacher/MyMonthlyHistory.js - FIXED
+// src/attendance-teacher/MyMonthlyHistory.js - COMPLETE FIXED VERSION
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -13,6 +13,12 @@ import {
   Clock,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
+
+// 🔥 HELPER: Format status untuk display UI (hadir -> Hadir)
+const formatStatusDisplay = (status) => {
+  if (!status) return "-";
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+};
 
 const MyMonthlyHistory = ({ currentUser }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -85,7 +91,6 @@ const MyMonthlyHistory = ({ currentUser }) => {
     return dayOfWeek === 0 || dayOfWeek === 6;
   };
 
-  // ✅ FIXED: Ganti currentUser.teacher_id jadi currentUser.id
   useEffect(() => {
     if (currentUser?.id) {
       fetchMyMonthlyData();
@@ -105,7 +110,6 @@ const MyMonthlyHistory = ({ currentUser }) => {
         "0"
       )}-${lastDay}`;
 
-      // ✅ FIXED: Pake currentUser.id langsung (bukan currentUser.teacher_id)
       const { data, error } = await supabase
         .from("teacher_attendance")
         .select("*")
@@ -140,35 +144,52 @@ const MyMonthlyHistory = ({ currentUser }) => {
     return attendances.find((att) => att.attendance_date === dateStr);
   };
 
+  // 🔥 FIXED: Case-insensitive comparison
   const calculateStats = () => {
     return {
-      hadir: attendances.filter((a) => a.status === "Hadir").length,
-      izin: attendances.filter((a) => a.status === "Izin").length,
-      sakit: attendances.filter((a) => a.status === "Sakit").length,
-      alpa: attendances.filter((a) => a.status === "Alpa").length,
+      hadir: attendances.filter((a) => a.status?.toLowerCase() === "hadir")
+        .length,
+      izin: attendances.filter((a) => a.status?.toLowerCase() === "izin")
+        .length,
+      sakit: attendances.filter((a) => a.status?.toLowerCase() === "sakit")
+        .length,
+      alpa: attendances.filter(
+        (a) =>
+          a.status?.toLowerCase() === "alpa" ||
+          a.status?.toLowerCase() === "alpha"
+      ).length,
       total: attendances.length,
     };
   };
 
+  // 🔥 FIXED: Lowercase keys untuk comparison
   const getStatusColor = (status) => {
+    const normalizedStatus = status?.toLowerCase();
+
     const colors = {
-      Hadir: "bg-green-500 text-white",
-      Izin: "bg-blue-500 text-white",
-      Sakit: "bg-yellow-500 text-white",
-      Alpa: "bg-red-500 text-white",
+      hadir: "bg-green-500 text-white",
+      izin: "bg-blue-500 text-white",
+      sakit: "bg-yellow-500 text-white",
+      alpa: "bg-red-500 text-white",
+      alpha: "bg-red-500 text-white",
     };
-    return colors[status] || "bg-gray-200 text-gray-600";
+
+    return colors[normalizedStatus] || "bg-gray-200 text-gray-600";
   };
 
+  // 🔥 FIXED: Lowercase switch cases
   const getStatusIcon = (status) => {
-    switch (status) {
-      case "Hadir":
+    const normalizedStatus = status?.toLowerCase();
+
+    switch (normalizedStatus) {
+      case "hadir":
         return <CheckCircle size={16} />;
-      case "Izin":
+      case "izin":
         return <AlertCircle size={16} />;
-      case "Sakit":
+      case "sakit":
         return <AlertCircle size={16} />;
-      case "Alpa":
+      case "alpa":
+      case "alpha":
         return <XCircle size={16} />;
       default:
         return null;
@@ -341,7 +362,10 @@ const MyMonthlyHistory = ({ currentUser }) => {
                       att.status
                     )}`}>
                     {getStatusIcon(att.status)}
-                    <span className="text-sm">{att.status}</span>
+                    {/* 🔥 FIXED: Display dengan Title Case */}
+                    <span className="text-sm">
+                      {formatStatusDisplay(att.status)}
+                    </span>
                   </div>
                 </div>
               ))
@@ -422,9 +446,9 @@ const MyMonthlyHistory = ({ currentUser }) => {
                       `}
                       title={
                         attendance
-                          ? `${attendance.status} - ${formatTime(
-                              attendance.clock_in
-                            )}`
+                          ? `${formatStatusDisplay(
+                              attendance.status
+                            )} - ${formatTime(attendance.clock_in)}`
                           : holiday
                           ? `🎉 ${holiday}`
                           : weekend

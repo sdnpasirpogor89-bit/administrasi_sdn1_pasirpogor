@@ -64,6 +64,9 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
     );
   }
 
+  // 🔥 FIXED: Case-insensitive status matching for MyAttendanceStatus
+
+  // Replace function getStatusConfig (line ~67-133)
   const getStatusConfig = () => {
     if (!todayAttendance) {
       return {
@@ -78,8 +81,11 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
       };
     }
 
+    // 🔥 FIXED: Normalize status to lowercase
+    const normalizedStatus = todayAttendance.status?.toLowerCase();
+
     const statusMap = {
-      Hadir: {
+      hadir: {
         icon: CheckCircle,
         color: "bg-green-500",
         textColor: "text-green-600",
@@ -88,7 +94,7 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
         title: "Hadir",
         message: "Anda sudah absen hari ini",
       },
-      Izin: {
+      izin: {
         icon: AlertCircle,
         color: "bg-yellow-500",
         textColor: "text-yellow-600",
@@ -97,7 +103,7 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
         title: "Izin",
         message: "Status presensi: Izin",
       },
-      Sakit: {
+      sakit: {
         icon: AlertCircle,
         color: "bg-orange-500",
         textColor: "text-orange-600",
@@ -106,7 +112,16 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
         title: "Sakit",
         message: "Status presensi: Sakit",
       },
-      Alpa: {
+      alpa: {
+        icon: XCircle,
+        color: "bg-red-500",
+        textColor: "text-red-600",
+        bgLight: "bg-red-50",
+        borderColor: "border-red-300",
+        title: "Alpha",
+        message: "Status presensi: Alpha",
+      },
+      alpha: {
         icon: XCircle,
         color: "bg-red-500",
         textColor: "text-red-600",
@@ -117,7 +132,8 @@ const MyAttendanceStatus = ({ currentUser, refreshTrigger }) => {
       },
     };
 
-    return statusMap[todayAttendance.status] || statusMap.Hadir;
+    // 🔥 FIXED: Use normalized status for lookup
+    return statusMap[normalizedStatus] || statusMap.hadir;
   };
 
   const config = getStatusConfig();

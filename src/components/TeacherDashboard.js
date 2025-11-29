@@ -918,7 +918,7 @@ const TeacherDashboard = ({ userData }) => {
         {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL */}
         <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-2">
+            <h1 className="text-xl sm:text-xl font-semibold text-slate-800 mb-3 sm:mb-2">
               Selamat Datang, {userData?.full_name || userData?.username}
             </h1>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
