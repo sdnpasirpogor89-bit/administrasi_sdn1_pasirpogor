@@ -18,7 +18,7 @@ const SCHOOL_RADIUS = 100; // 300 meter radius
 const DEBUG_MODE = true;
 
 // 🚀 DEVELOPMENT MODE - Set true untuk bypass validasi waktu (untuk testing)
-const DEV_MODE = true; // ⬅️ SET FALSE SAAT PRODUCTION!
+const DEV_MODE = false; // ⬅️ SET FALSE SAAT PRODUCTION!
 
 // ========================================
 // ⏰ TIME WINDOW untuk Input Presensi (Manual & QR)

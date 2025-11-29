@@ -1,4 +1,4 @@
-// src/attendance-teacher/QRScanner.js - FIXED QR CODE VALIDATION
+// src/attendance-teacher/QRScanner.js - SD WITH MASTER VALIDATOR
 import React, { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
@@ -8,9 +8,10 @@ import {
   AlertCircle,
   Clock,
   Shield,
+  MapPin,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import LocationValidator from "./LocationValidator"; // ✅ IMPORT DARI LOCATIONVALIDATOR
+import { validateAttendance } from "./LocationValidator"; // 🎯 MASTER VALIDATOR
 
 const QRScanner = ({ currentUser, onSuccess }) => {
   const [scanning, setScanning] = useState(false);
@@ -141,7 +142,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
   const onScanSuccess = async (decodedText) => {
     console.log("📷 QR Detected:", decodedText);
 
-    // ✅ FIXED: Validasi QR Code untuk SDN 1 PASIRPOGOR
+    // Validasi QR Code untuk SDN 1 PASIRPOGOR
     const validQRCodes = ["QR_PRESENSI_GURU_SDN1_PASIRPOGOR"];
 
     if (!validQRCodes.includes(decodedText)) {
@@ -172,6 +173,60 @@ const QRScanner = ({ currentUser, onSuccess }) => {
     setShowTeacherSelect(false);
 
     try {
+      // ========================================
+      // 🎯 VALIDASI MENGGUNAKAN MASTER VALIDATOR
+      // ========================================
+
+      // Admin bypass validasi
+      if (!isAdmin) {
+        const validation = await validateAttendance({
+          method: "qr",
+          userId: currentUser.id,
+        });
+
+        // ❌ Kalau ada error yang blocking
+        if (!validation.isValid) {
+          const errorMessages = validation.errors
+            .map((err) => `• ${err.message}`)
+            .join("\n");
+
+          // Cek apakah ada help text untuk GPS error
+          const gpsError = validation.errors.find((err) => err.help);
+          const helpText = gpsError?.help
+            ? `\n\n📱 Panduan:\n${gpsError.help}`
+            : "";
+
+          setMessage({
+            type: "error",
+            text: `❌ Presensi tidak dapat dilakukan:\n\n${errorMessages}${helpText}\n\n💡 Jika ada kendala, hubungi Admin untuk bantuan.`,
+          });
+          setLoading(false);
+          return;
+        }
+
+        // ⚠️ Tampilkan warning jika ada (jadwal terlambat)
+        if (validation.data.warnings && validation.data.warnings.length > 0) {
+          const warningMessages = validation.data.warnings
+            .map((warn) => warn.message)
+            .join("\n\n");
+
+          const confirmMessage = `⚠️ Perhatian!\n\n${warningMessages}\n\nTetap lanjutkan presensi?`;
+          const confirmed = window.confirm(confirmMessage);
+
+          if (!confirmed) {
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Log validation success
+        console.log("✅ Validation passed:", validation.data);
+      }
+
+      // ========================================
+      // PROSES SUBMIT ATTENDANCE
+      // ========================================
+
       const jakartaDate = new Date(
         new Date().toLocaleString("en-US", {
           timeZone: "Asia/Jakarta",
@@ -193,39 +248,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
 
       console.log("📅 Date:", today, "Time:", clockInTime);
 
-      // ✅ VALIDASI JAM OPERASIONAL - PAKAI FUNCTION DARI LOCATIONVALIDATOR
-      if (!isAdmin) {
-        const timeCheck = LocationValidator.validateManualInputTime();
-
-        if (!timeCheck.allowed) {
-          const currentTime = new Date().toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Asia/Jakarta",
-            hour12: false,
-          });
-
-          setMessage({
-            type: "error",
-            text: `⏰ Presensi hanya dapat dilakukan pada jam ${String(
-              LocationValidator.MANUAL_INPUT_ALLOWED.startHour
-            ).padStart(2, "0")}:${String(
-              LocationValidator.MANUAL_INPUT_ALLOWED.startMinute
-            ).padStart(2, "0")} - ${String(
-              LocationValidator.MANUAL_INPUT_ALLOWED.endHour
-            ).padStart(2, "0")}:${String(
-              LocationValidator.MANUAL_INPUT_ALLOWED.endMinute
-            ).padStart(
-              2,
-              "0"
-            )} WIB.\n\nWaktu saat ini: ${currentTime} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
-          });
-          setLoading(false);
-          return;
-        }
-      }
-
-      // ✅ FIXED: Ambil teacher_id (sebenarnya UUID dari users.id)
+      // Ambil teacher_id (UUID dari users.id)
       let targetTeacherId;
       let targetTeacherName;
 
@@ -237,7 +260,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         );
         targetTeacherName = teacher?.full_name || "Unknown";
       } else {
-        // ✅ Guru scan sendiri - LANGSUNG PAKAI currentUser.id
+        // Guru scan sendiri - LANGSUNG PAKAI currentUser.id
         targetTeacherId = currentUser.id;
         targetTeacherName = currentUser.full_name;
       }
@@ -285,6 +308,22 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         attendanceData.admin_info = `Scan QR oleh admin: ${
           currentUser.full_name
         } pada ${new Date().toLocaleString("id-ID")}`;
+      }
+
+      // 🎯 Tambahkan GPS metadata dari validation (non-admin only)
+      if (!isAdmin) {
+        const validation = await validateAttendance({
+          method: "qr",
+          userId: currentUser.id,
+        });
+
+        if (validation.isValid && validation.data.location) {
+          const locationData = validation.data.location;
+
+          if (locationData.allowed && locationData.coords) {
+            attendanceData.gps_location = `${locationData.coords.lat},${locationData.coords.lng}`;
+          }
+        }
       }
 
       console.log("💾 Inserting attendance...");
@@ -485,30 +524,14 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         {!isAdmin && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
             <Clock className="text-amber-600 flex-shrink-0" size={20} />
-            <div>
+            <div className="space-y-2">
               <p className="text-sm text-amber-800">
                 <strong>⏰ Jam Operasional:</strong> Presensi hanya dapat
-                dilakukan pada pukul{" "}
-                {String(
-                  LocationValidator.MANUAL_INPUT_ALLOWED.startHour
-                ).padStart(2, "0")}
-                :
-                {String(
-                  LocationValidator.MANUAL_INPUT_ALLOWED.startMinute
-                ).padStart(2, "0")}{" "}
-                -{" "}
-                {String(
-                  LocationValidator.MANUAL_INPUT_ALLOWED.endHour
-                ).padStart(2, "0")}
-                :
-                {String(
-                  LocationValidator.MANUAL_INPUT_ALLOWED.endMinute
-                ).padStart(2, "0")}{" "}
-                WIB
+                dilakukan pada pukul 07:00 - 13:00 WIB
               </p>
-              <p className="text-xs text-amber-700 mt-1">
-                🔧 Setting dapat diubah di LocationValidator.js
-                (MANUAL_INPUT_ALLOWED)
+              <p className="text-sm text-amber-800">
+                <strong>📍 Validasi Lokasi:</strong> Pastikan GPS aktif dan Anda
+                berada dalam radius 300m dari sekolah
               </p>
             </div>
           </div>
@@ -519,7 +542,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             <Shield className="text-blue-600 flex-shrink-0" size={20} />
             <p className="text-sm text-blue-800">
               <strong>Admin Mode:</strong> Anda dapat scan QR kapan saja tanpa
-              batasan waktu untuk input presensi guru lain
+              batasan waktu dan lokasi untuk input presensi guru lain
             </p>
           </div>
         )}
