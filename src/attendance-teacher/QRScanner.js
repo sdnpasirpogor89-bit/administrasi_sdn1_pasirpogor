@@ -1,4 +1,4 @@
-// src/attendance-teacher/QRScanner.js - FIXED QR CODE VALIDATION
+// src/attendance-teacher/QRScanner.js - FIXED QR CODE VALIDATION + TIME RESTRICTION
 import React, { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
@@ -10,6 +10,7 @@ import {
   Shield,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { validateManualInputTime } from "./LocationValidator"; // ✅ IMPORT INI
 
 const QRScanner = ({ currentUser, onSuccess }) => {
   const [scanning, setScanning] = useState(false);
@@ -66,11 +67,12 @@ const QRScanner = ({ currentUser, onSuccess }) => {
       console.error("Error checking admin status:", error);
     }
   };
+
   const loadTeachers = async () => {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select("id, full_name, username") // ✅ Gak perlu kelas
+        .select("id, full_name, username")
         .in("role", ["guru_kelas", "guru_mapel"])
         .eq("is_active", true)
         .order("full_name");
@@ -140,9 +142,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
     console.log("📷 QR Detected:", decodedText);
 
     // ✅ FIXED: Validasi QR Code untuk SDN 1 PASIRPOGOR
-    const validQRCodes = [
-      "QR_PRESENSI_GURU_SDN1_PASIRPOGOR", // ✅ Kode yang benar
-    ];
+    const validQRCodes = ["QR_PRESENSI_GURU_SDN1_PASIRPOGOR"];
 
     if (!validQRCodes.includes(decodedText)) {
       console.log("❌ Invalid QR Code");
@@ -192,23 +192,16 @@ const QRScanner = ({ currentUser, onSuccess }) => {
 
       console.log("📅 Date:", today, "Time:", clockInTime);
 
-      // ✅ VALIDASI JAM OPERASIONAL
-      if (!isAdmin) {
-        const currentTimeInMinutes = hour * 60 + minute;
-        const startTime = 0 * 60;
-        const endTime = 23 * 60 + 59;
+      // ✅ VALIDASI JAM OPERASIONAL - DENGAN ADMIN EXCEPTION
+      const timeCheck = await validateManualInputTime(currentUser.id);
 
-        if (
-          currentTimeInMinutes < startTime ||
-          currentTimeInMinutes > endTime
-        ) {
-          setMessage({
-            type: "error",
-            text: `⏰ Presensi hanya dapat dilakukan pada jam 00:00 - 23:59 WIB. Waktu saat ini: ${hourStr}:${minuteStr} WIB`,
-          });
-          setLoading(false);
-          return;
-        }
+      if (!timeCheck.allowed) {
+        setMessage({
+          type: "error",
+          text: `⏰ Presensi hanya dapat dilakukan pada jam 07:00 - 13:00 WIB.\nWaktu saat ini: ${hourStr}:${minuteStr} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
+        });
+        setLoading(false);
+        return;
       }
 
       // ✅ FIXED: Ambil teacher_id (sebenarnya UUID dari users.id)
@@ -260,9 +253,9 @@ const QRScanner = ({ currentUser, onSuccess }) => {
       const attendanceData = {
         teacher_id: targetTeacherId,
         attendance_date: today,
-        status: "hadir", // ✅ LOWERCASE, bukan "Hadir"
+        status: "hadir",
         clock_in: clockInTime,
-        check_in_method: "Manual",
+        check_in_method: "QR Code", // ✅ Sesuai ENUM
         full_name: targetTeacherName,
         notes: null,
       };
@@ -374,7 +367,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             <AlertCircle className="text-yellow-600 flex-shrink-0" size={24} />
           )}
           <p
-            className={`text-sm font-medium ${
+            className={`text-sm font-medium whitespace-pre-line ${
               message.type === "success"
                 ? "text-green-800"
                 : message.type === "error"
@@ -400,7 +393,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             <option value="">Pilih Guru</option>
             {teachersList.map((teacher) => (
               <option key={teacher.id} value={teacher.id}>
-                {teacher.full_name} {/* ✅ NAMA AJA, SAMA KAYAK MANUAL */}
+                {teacher.full_name}
               </option>
             ))}
           </select>
@@ -473,7 +466,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             <Clock className="text-amber-600 flex-shrink-0" size={20} />
             <p className="text-sm text-amber-800">
               <strong>⏰ Jam Operasional:</strong> Presensi hanya dapat
-              dilakukan pada pukul 07:00 - 14:00 WIB
+              dilakukan pada pukul 07:00 - 13:00 WIB
             </p>
           </div>
         )}

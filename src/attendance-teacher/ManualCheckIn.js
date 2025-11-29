@@ -109,7 +109,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
     try {
       // VALIDASI WAKTU - HANYA UNTUK GURU BIASA (BUKAN ADMIN)
       if (!isAdmin) {
-        const timeCheck = validateManualInputTime();
+        const timeCheck = await validateManualInputTime(currentUser.id);
         if (!timeCheck.allowed) {
           const currentTime = new Date().toLocaleTimeString("id-ID", {
             hour: "2-digit",
@@ -120,7 +120,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
           setMessage({
             type: "error",
-            text: `⏰ Presensi hanya dapat dilakukan pada jam 07:00 - 14:00 WIB.\nWaktu saat ini: ${currentTime} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
+            text: `⏰ Presensi hanya dapat dilakukan pada jam 07:00 - 13:00 WIB.\nWaktu saat ini: ${currentTime} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
           });
           setLoading(false);
           return;
