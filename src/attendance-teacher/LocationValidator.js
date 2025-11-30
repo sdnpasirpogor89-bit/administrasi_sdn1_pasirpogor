@@ -12,13 +12,13 @@ const SCHOOL_COORDS = {
   lng: 107.399172,
 };
 
-const SCHOOL_RADIUS = 100; // 300 meter radius
+const SCHOOL_RADIUS = 200; // 200 meter radius
 
 // Debug mode - set true untuk lihat detail GPS di console
 const DEBUG_MODE = true;
 
 // 🚀 DEVELOPMENT MODE - Set true untuk bypass validasi waktu (untuk testing)
-const DEV_MODE = true; // ⬅️ SET FALSE SAAT PRODUCTION!
+const DEV_MODE = false; // ⬅️ SET FALSE SAAT PRODUCTION!
 
 // ========================================
 // ⏰ TIME WINDOW untuk Input Presensi (Manual & QR)
@@ -26,7 +26,7 @@ const DEV_MODE = true; // ⬅️ SET FALSE SAAT PRODUCTION!
 const OPERATIONAL_HOURS = {
   startHour: 7,
   startMinute: 0,
-  endHour: 23,
+  endHour: 13,
   endMinute: 0,
 };
 
