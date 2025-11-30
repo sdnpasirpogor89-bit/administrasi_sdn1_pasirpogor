@@ -529,10 +529,6 @@ const QRScanner = ({ currentUser, onSuccess }) => {
                 <strong>⏰ Jam Operasional:</strong> Presensi hanya dapat
                 dilakukan pada pukul 07:00 - 13:00 WIB
               </p>
-              <p className="text-sm text-amber-800">
-                <strong>📍 Validasi Lokasi:</strong> Pastikan GPS aktif dan Anda
-                berada dalam radius 200m dari sekolah
-              </p>
             </div>
           </div>
         )}
