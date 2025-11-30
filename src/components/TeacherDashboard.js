@@ -766,12 +766,14 @@ const TeacherDashboard = ({ userData }) => {
         todayAttendanceData?.filter(
           (record) => record.status.toLowerCase() !== "hadir"
         ) || [];
-
       const todayPresentCount = totalClassStudents - absentStudents.length;
       const attendanceRate =
         totalClassStudents > 0
           ? Math.round((todayPresentCount / totalClassStudents) * 100)
           : 0;
+
+      // ✅ FIX: Hitung total record presensi hari ini (bukan yang hadir, tapi yang udah di-input)
+      const totalAttendanceRecords = todayAttendanceData?.length || 0;
 
       // Transform data untuk table
       const transformedAbsentStudents = absentStudents.map((record) => ({
@@ -780,11 +782,10 @@ const TeacherDashboard = ({ userData }) => {
         kelas: record.kelas,
         status: record.status,
       }));
-
       setDashboardData((prev) => ({
         ...prev,
         totalStudents: totalClassStudents,
-        todayAttendance: todayPresentCount,
+        todayAttendance: totalAttendanceRecords,
         attendanceRate: attendanceRate,
         totalClasses: 1,
         tidakHadir: absentStudents.length,
@@ -838,12 +839,15 @@ const TeacherDashboard = ({ userData }) => {
           ? Math.round((todayPresentCount / totalStudentsCount) * 100)
           : 0;
 
+      // ✅ FIX: Hitung total record presensi hari ini
+      const totalAttendanceRecords = todayAttendanceData?.length || 0;
+
       const tidakHadirCount = absentStudents.length;
 
       setDashboardData((prev) => ({
         ...prev,
         totalStudents: totalStudentsCount,
-        todayAttendance: todayPresentCount,
+        todayAttendance: totalAttendanceRecords,
         attendanceRate: attendanceRate,
         totalClasses: allClasses.length,
         tidakHadir: tidakHadirCount,
