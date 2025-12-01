@@ -80,14 +80,13 @@ export const validateAttendance = async (options = {}) => {
     });
   }
 
-  // ========================================
-  // STEP 3: Validasi Jadwal Guru (Optional Warning)
-  // ========================================
-  if (userId) {
+  // STEP 3: Validasi Jadwal Guru (DISABLED - Semua guru pasti ada jadwal Senin-Jumat)
+  // Skip validasi jadwal karena semua guru SD pasti ngajar setiap hari kerja
+  if (userId && false) {
+    // ✅ DISABLED dengan && false
     const scheduleValidation = await validateTeacherSchedule(userId);
     validationData.schedule = scheduleValidation;
 
-    // Ini cuma warning, bukan blocking
     if (scheduleValidation.suspicious) {
       validationData.warnings = validationData.warnings || [];
       validationData.warnings.push({

@@ -55,7 +55,7 @@ const TeacherAttendance = ({ userData }) => {
       // ⏰ Reminder only shows between 07:00 - 14:00
       const currentTimeInMinutes = currentHour * 60 + currentMinute;
       const reminderStartTime = 7 * 60; // 07:00
-      const reminderEndTime = 14 * 60; // 14:00
+      const reminderEndTime = 13 * 60; // 13:00
 
       if (
         currentTimeInMinutes < reminderStartTime ||

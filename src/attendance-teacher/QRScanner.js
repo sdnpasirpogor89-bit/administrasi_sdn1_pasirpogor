@@ -101,7 +101,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
+          qrbox: { width: 300, height: 350 }, // ✅ Lebar 300, Tinggi 350
         },
         onScanSuccess,
         onScanError
