@@ -8,11 +8,12 @@ import { supabase } from "../supabaseClient";
 // ========================================
 
 const SCHOOL_COORDS = {
-  lat: -6.987732, // Koordinat sekolah
-  lng: 107.399172,
+  lat: -6.982349, // Koordinat sekolah
+  lng: 107.393952,
 };
 
 const SCHOOL_RADIUS = 10000; // 200 meter radius
+// Quality Excellent - bisa pakai radius 150-200m
 
 // Debug mode - set true untuk lihat detail GPS di console
 const DEBUG_MODE = true;
