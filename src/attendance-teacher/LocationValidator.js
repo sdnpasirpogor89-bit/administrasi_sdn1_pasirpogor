@@ -12,7 +12,7 @@ const SCHOOL_COORDS = {
   lng: 107.399172,
 };
 
-const SCHOOL_RADIUS = 5000; // 200 meter radius
+const SCHOOL_RADIUS = 10000; // 200 meter radius
 
 // Debug mode - set true untuk lihat detail GPS di console
 const DEBUG_MODE = true;
