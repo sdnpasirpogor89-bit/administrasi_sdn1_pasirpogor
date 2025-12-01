@@ -1,76 +1,8 @@
-// AttendanceExport.js - FIXED DUPLICATE FUNCTION
+// AttendanceExport.js - COMPLETE FILE WITH SEMESTER EXPORT ✅
 import ExcelJS from "exceljs";
-
-// ========================================
-// 🗓️ LIBUR NASIONAL 2025-2026
-// ========================================
-const nationalHolidays = {
-  // 2025
-  "2025-01-01": "Tahun Baru Masehi",
-  "2025-01-25": "Tahun Baru Imlek 2576",
-  "2025-03-02": "Isra Miraj Nabi Muhammad SAW",
-  "2025-03-12": "Hari Raya Nyepi (Tahun Baru Saka 1947)",
-  "2025-03-31": "Idul Fitri 1446 H",
-  "2025-04-01": "Idul Fitri 1446 H",
-  "2025-04-18": "Wafat Yesus Kristus (Jumat Agung)",
-  "2025-05-01": "Hari Buruh Internasional",
-  "2025-05-29": "Kenaikan Yesus Kristus",
-  "2025-06-07": "Idul Adha 1446 H",
-  "2025-06-28": "Tahun Baru Islam 1447 H",
-  "2025-08-17": "Hari Kemerdekaan RI",
-  "2025-09-05": "Maulid Nabi Muhammad SAW",
-  "2025-12-25": "Hari Raya Natal",
-
-  // 2026
-  "2026-01-01": "Tahun Baru Masehi",
-  "2026-01-16": "Isra Mi’raj Nabi Muhammad SAW",
-  "2026-02-17": "Tahun Baru Imlek 2577",
-  "2026-03-19": "Hari Suci Nyepi (Tahun Baru Saka 1948)",
-  "2026-03-21": "Idul Fitri 1447 H",
-  "2026-03-22": "Idul Fitri 1447 H",
-  "2026-04-03": "Wafat Yesus Kristus (Jumat Agung)",
-  "2026-04-05": "Hari Paskah",
-  "2026-05-01": "Hari Buruh Internasional",
-  "2026-05-14": "Kenaikan Yesus Kristus",
-  "2026-05-27": "Idul Adha 1447 H",
-  "2026-05-31": "Hari Raya Waisak 2570 BE",
-  "2026-06-01": "Hari Lahir Pancasila",
-  "2026-06-16": "Tahun Baru Islam 1448 H",
-  "2026-08-17": "Hari Kemerdekaan RI",
-  "2026-08-25": "Maulid Nabi Muhammad SAW",
-  "2026-12-25": "Hari Raya Natal",
-};
-
-// Helper: Check if date is national holiday
-const isNationalHoliday = (dateStr) => {
-  return nationalHolidays[dateStr] || null;
-};
-
-// Helper: Check if day is weekend (Saturday = 6, Sunday = 0)
-const isWeekend = (year, month, day) => {
-  const date = new Date(year, month - 1, day);
-  const dayOfWeek = date.getDay();
-  return dayOfWeek === 0 || dayOfWeek === 6;
-};
-
-// 🔥 FIXED: Lowercase comparison for status
-const getStatusLabel = (status) => {
-  const normalizedStatus = status?.toLowerCase();
-
-  const labels = {
-    hadir: "H",
-    izin: "I",
-    sakit: "S",
-    alpa: "A",
-    alpha: "A",
-  };
-
-  return labels[normalizedStatus] || "-";
-};
 
 /**
  * Export attendance data to Excel with professional formatting (MONTHLY)
- * WITH GURU-STYLE DATE COLUMNS (weekend/holiday marked)
  */
 export const exportAttendanceToExcel = async ({
   kelas,
@@ -103,11 +35,15 @@ export const exportAttendanceToExcel = async ({
     ];
     const monthName = monthNames[parseInt(bulan)];
 
-    // Get days in month
-    const daysInMonth = new Date(tahun, bulan, 0).getDate();
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const uniqueDates = [
+      ...new Set(attendanceRecords.map((record) => record.tanggal)),
+    ]
+      .sort()
+      .map((date) => {
+        const [year, month, day] = date.split("-");
+        return `${day}-${month}`;
+      });
 
-    // Build student matrix
     const studentMatrix = {};
 
     studentsData.forEach((student) => {
@@ -141,11 +77,10 @@ export const exportAttendanceToExcel = async ({
     });
 
     const baseCols = 2;
-    const dateCols = daysInMonth;
+    const dateCols = uniqueDates.length;
     const summaryCols = 6;
     const totalCols = baseCols + dateCols + summaryCols;
 
-    // ===== HEADERS =====
     worksheet.mergeCells(1, 1, 1, totalCols);
     const schoolCell = worksheet.getCell(1, 1);
     schoolCell.value = namaSekolah;
@@ -170,17 +105,15 @@ export const exportAttendanceToExcel = async ({
     worksheet.getRow(4).height = 15;
     worksheet.getRow(5).height = 15;
 
-    // ===== TABLE HEADER (WITH GURU-STYLE DATE COLUMNS) =====
     const headerRow = 6;
     let colIndex = 1;
 
     worksheet.getCell(headerRow, colIndex++).value = "No.";
     worksheet.getCell(headerRow, colIndex++).value = "Nama Siswa";
 
-    // DATE COLUMNS (1, 2, 3, ...) - SAME AS GURU
     const dateStartCol = colIndex;
-    days.forEach((day) => {
-      worksheet.getCell(headerRow, colIndex++).value = day;
+    uniqueDates.forEach((date) => {
+      worksheet.getCell(headerRow, colIndex++).value = date;
     });
 
     worksheet.getCell(headerRow, colIndex++).value = "Hadir";
@@ -190,13 +123,16 @@ export const exportAttendanceToExcel = async ({
     worksheet.getCell(headerRow, colIndex++).value = "Total";
     worksheet.getCell(headerRow, colIndex++).value = "Persentase";
 
-    // STYLE HEADER ROW (WITH WEEKEND/HOLIDAY COLORS)
     const headerRowObj = worksheet.getRow(headerRow);
     headerRowObj.height = 25;
-
     for (let col = 1; col <= totalCols; col++) {
       const cell = worksheet.getCell(headerRow, col);
       cell.font = { name: "Arial", size: 10, bold: true };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE6E6E6" },
+      };
       cell.alignment = { horizontal: "center", vertical: "middle" };
       cell.border = {
         top: { style: "thin" },
@@ -204,50 +140,8 @@ export const exportAttendanceToExcel = async ({
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
-
-      // DATE COLUMNS: Apply weekend/holiday colors
-      if (col >= dateStartCol && col < dateStartCol + dateCols) {
-        const day = col - dateStartCol + 1;
-        const dateStr = `${tahun}-${String(bulan).padStart(2, "0")}-${String(
-          day
-        ).padStart(2, "0")}`;
-        const weekend = isWeekend(tahun, bulan, day);
-        const holiday = isNationalHoliday(dateStr);
-
-        if (holiday) {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFFF6B6B" }, // Red for holiday
-          };
-          cell.font = { ...cell.font, color: { argb: "FFFFFFFF" } };
-        } else if (weekend) {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFB0B0B0" }, // Gray for weekend
-          };
-          cell.font = { ...cell.font, color: { argb: "FFFFFFFF" } };
-        } else {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FF4472C4" }, // Blue for regular days
-          };
-          cell.font = { ...cell.font, color: { argb: "FFFFFFFF" } };
-        }
-      } else {
-        // NON-DATE COLUMNS
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF4472C4" }, // Blue
-        };
-        cell.font = { ...cell.font, color: { argb: "FFFFFFFF" } };
-      }
     }
 
-    // ===== DATA ROWS =====
     let rowIndex = headerRow + 1;
     studentsData.forEach((student, index) => {
       const studentData = studentMatrix[student.nisn];
@@ -256,27 +150,11 @@ export const exportAttendanceToExcel = async ({
       worksheet.getCell(rowIndex, colIndex++).value = index + 1;
       worksheet.getCell(rowIndex, colIndex++).value = studentData.name;
 
-      // DATE CELLS (with weekend/holiday detection)
-      days.forEach((day) => {
-        const dateKey = `${String(day).padStart(2, "0")}-${String(
-          bulan
-        ).padStart(2, "0")}`;
-        const status = studentData.dates[dateKey] || "";
-
-        const dateStr = `${tahun}-${String(bulan).padStart(2, "0")}-${String(
-          day
-        ).padStart(2, "0")}`;
-        const weekend = isWeekend(tahun, bulan, day);
-        const holiday = isNationalHoliday(dateStr);
-
-        let displayStatus = status;
-        if (weekend) displayStatus = "L";
-        if (holiday) displayStatus = "🎉";
-
-        worksheet.getCell(rowIndex, colIndex++).value = displayStatus;
+      uniqueDates.forEach((date) => {
+        const status = studentData.dates[date] || "";
+        worksheet.getCell(rowIndex, colIndex++).value = status;
       });
 
-      // SUMMARY COLUMNS
       const summary = studentData.summary;
       worksheet.getCell(rowIndex, colIndex++).value = summary.hadir;
       worksheet.getCell(rowIndex, colIndex++).value = summary.izin;
@@ -290,10 +168,8 @@ export const exportAttendanceToExcel = async ({
         total > 0 ? Math.round((summary.hadir / total) * 100) : 100;
       worksheet.getCell(rowIndex, colIndex++).value = `${percentage}%`;
 
-      // STYLE DATA ROW
       const rowObj = worksheet.getRow(rowIndex);
       rowObj.height = 20;
-
       for (let col = 1; col <= totalCols; col++) {
         const cell = worksheet.getCell(rowIndex, col);
         cell.font = { name: "Arial", size: 9 };
@@ -310,99 +186,39 @@ export const exportAttendanceToExcel = async ({
           cell.alignment = { horizontal: "left", vertical: "middle" };
         } else if (col >= dateStartCol && col < dateStartCol + dateCols) {
           cell.alignment = { horizontal: "center", vertical: "middle" };
-
-          const day = col - dateStartCol + 1;
-          const dateStr = `${tahun}-${String(bulan).padStart(2, "0")}-${String(
-            day
-          ).padStart(2, "0")}`;
-          const weekend = isWeekend(tahun, bulan, day);
-          const holiday = isNationalHoliday(dateStr);
-          const value = cell.value;
-
-          // WEEKEND/HOLIDAY STYLING (SAME AS GURU)
-          if (weekend) {
+          if (cell.value === "H") {
             cell.fill = {
               type: "pattern",
               pattern: "solid",
-              fgColor: { argb: "FFD3D3D3" }, // Light gray
+              fgColor: { argb: "FFD4F1D4" },
             };
-            cell.font = { bold: true, color: { argb: "FF666666" } };
-          } else if (holiday) {
+          } else if (cell.value === "S") {
             cell.fill = {
               type: "pattern",
               pattern: "solid",
-              fgColor: { argb: "FFFFCCCC" }, // Light red/pink
+              fgColor: { argb: "FFFFF4CD" },
             };
-            cell.font = { bold: true, color: { argb: "FFCC0000" } };
-          } else if (value === "H") {
+          } else if (cell.value === "I") {
             cell.fill = {
               type: "pattern",
               pattern: "solid",
-              fgColor: { argb: "FFC6EFCE" }, // HIJAU MUDA (soft green)
+              fgColor: { argb: "FFCDE4FF" },
             };
-            cell.font = { bold: true, color: { argb: "FF007F00" } }; // teks hijau tua
-          } else if (value === "I") {
+          } else if (cell.value === "A") {
             cell.fill = {
               type: "pattern",
               pattern: "solid",
-              fgColor: { argb: "FFDDEBF7" }, // BIRU MUDA
+              fgColor: { argb: "FFFFD4D4" },
             };
-            cell.font = { bold: true, color: { argb: "FF2E75B5" } };
-          } else if (value === "S") {
-            cell.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "FFFFF2CC" }, // KUNING MUDA
-            };
-            cell.font = { bold: true, color: { argb: "FFBF9000" } };
-          } else if (value === "A") {
-            cell.fill = {
-              type: "pattern",
-              pattern: "solid",
-              fgColor: { argb: "FFF2DCDB" }, // MERAH MUDA
-            };
-            cell.font = { bold: true, color: { argb: "FFC00000" } };
           }
         } else {
-          // KOLOM SUMMARY (Hadir, Izin, Sakit, Alpa, Total, Persentase)
           cell.alignment = { horizontal: "center", vertical: "middle" };
-
-          // Bold untuk kolom summary
-          if (col >= dateStartCol + dateCols) {
-            cell.font = { bold: true };
-          }
         }
       }
 
       rowIndex++;
     });
 
-    // ===== LEGEND (SAME AS GURU) =====
-    rowIndex += 2;
-    worksheet.mergeCells(rowIndex, 1, rowIndex, 3);
-    worksheet.getCell(rowIndex, 1).value = "Keterangan:";
-    worksheet.getCell(rowIndex, 1).font = { bold: true };
-    rowIndex++;
-
-    const legends = [
-      ["H", "Hadir"],
-      ["I", "Izin"],
-      ["S", "Sakit"],
-      ["A", "Alpha"],
-      ["-", "Belum Absen"],
-      ["L", "Libur (Weekend)"],
-      ["🎉", "Libur Nasional"],
-    ];
-
-    legends.forEach(([code, label]) => {
-      worksheet.getCell(rowIndex, 1).value = code;
-      worksheet.getCell(rowIndex, 2).value = label;
-      worksheet.getCell(rowIndex, 1).alignment = { horizontal: "center" };
-      worksheet.getCell(rowIndex, 1).font = { bold: true };
-      rowIndex++;
-    });
-
-    // ===== FOOTER =====
     rowIndex += 2;
     const footerCol = totalCols - 2;
 
@@ -442,12 +258,11 @@ export const exportAttendanceToExcel = async ({
       };
     }
 
-    // ===== COLUMN WIDTHS =====
     worksheet.getColumn(1).width = 5;
     worksheet.getColumn(2).width = 35;
 
     for (let i = 0; i < dateCols; i++) {
-      worksheet.getColumn(dateStartCol + i).width = 4; // Same as guru (narrow)
+      worksheet.getColumn(dateStartCol + i).width = 6;
     }
 
     const summaryStartCol = dateStartCol + dateCols;
@@ -458,7 +273,6 @@ export const exportAttendanceToExcel = async ({
     worksheet.getColumn(summaryStartCol + 4).width = 8;
     worksheet.getColumn(summaryStartCol + 5).width = 12;
 
-    // ===== EXPORT =====
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -561,7 +375,7 @@ export const exportSemesterRecapToExcel = async ({
   tahun,
   studentsData,
   attendanceRecords,
-  namaSekolah = "SD NEGERI 1 PASIRPOGOR",
+  namaSekolah = "SD NEGERI 1 PASIRPOGOR", // ✅ DEFAULT VALUE
   namaGuru = "",
 }) => {
   try {
@@ -608,7 +422,7 @@ export const exportSemesterRecapToExcel = async ({
 
     const totalCols = 10;
 
-    // SCHOOL NAME HEADER
+    // ✅ ADD: SCHOOL NAME HEADER (sama seperti bulanan)
     worksheet.mergeCells(1, 1, 1, totalCols);
     const schoolCell = worksheet.getCell(1, 1);
     schoolCell.value = namaSekolah;
@@ -616,7 +430,7 @@ export const exportSemesterRecapToExcel = async ({
     schoolCell.alignment = { horizontal: "center", vertical: "middle" };
     worksheet.getRow(1).height = 25;
 
-    // Title row
+    // ✅ UPDATE: Title row menjadi row 2
     worksheet.mergeCells(2, 1, 2, totalCols);
     const titleCell = worksheet.getCell(2, 1);
     titleCell.value = `Rekap Presensi - Kelas ${kelas}`;
@@ -624,7 +438,7 @@ export const exportSemesterRecapToExcel = async ({
     titleCell.alignment = { horizontal: "center", vertical: "middle" };
     worksheet.getRow(2).height = 20;
 
-    // Subtitle row
+    // ✅ UPDATE: Subtitle row menjadi row 3
     worksheet.mergeCells(3, 1, 3, totalCols);
     const subtitleCell = worksheet.getCell(3, 1);
     subtitleCell.value = `Laporan Kehadiran Siswa Semester ${semesterText} ${tahun}`;
@@ -634,7 +448,7 @@ export const exportSemesterRecapToExcel = async ({
 
     worksheet.getRow(4).height = 15;
 
-    // Header row
+    // ✅ UPDATE: Header row menjadi row 5
     const headerRow = 5;
     const headers = [
       "No",
@@ -807,6 +621,7 @@ export const exportSemesterRecapToExcel = async ({
 
 /**
  * Integration function for semester export - FIXED WITH PAGINATION
+ * REPLACE function exportSemesterRecapFromComponent di AttendanceExport.js
  */
 export const exportSemesterRecapFromComponent = async (
   supabase,
@@ -826,6 +641,7 @@ export const exportSemesterRecapFromComponent = async (
       };
     }
 
+    // Convert year to number
     const yearNum = parseInt(year);
     const semesterType = semester === 1 ? "Ganjil" : "Genap";
     const academicYear =
@@ -835,7 +651,21 @@ export const exportSemesterRecapFromComponent = async (
 
     const months = semester === 1 ? [7, 8, 9, 10, 11, 12] : [1, 2, 3, 4, 5, 6];
 
-    // Fetch with pagination
+    console.log("=== EXPORT SEMESTER DATA ===");
+    console.log(
+      "Kelas:",
+      activeClass,
+      "Academic Year:",
+      academicYear,
+      "Semester:",
+      semesterType,
+      "Months:",
+      months
+    );
+
+    // ✅ FIX: FETCH DENGAN PAGINATION (sama seperti di handleRekapRefresh)
+    console.log("🔍 Fetching semester data with pagination for export...");
+
     let allRecords = [];
     let page = 0;
     const pageSize = 1000;
@@ -850,18 +680,31 @@ export const exportSemesterRecapFromComponent = async (
         .order("tanggal", { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Query error on page", page + 1, ":", error);
+        throw error;
+      }
 
       if (data && data.length > 0) {
         allRecords = [...allRecords, ...data];
-        if (data.length < pageSize) hasMore = false;
-        else page++;
+        console.log(
+          `📄 Export Page ${page + 1}: ${data.length} records (Total so far: ${
+            allRecords.length
+          })`
+        );
+
+        if (data.length < pageSize) {
+          hasMore = false;
+        } else {
+          page++;
+        }
       } else {
         hasMore = false;
       }
     }
 
     const attendanceData = allRecords;
+    console.log("✅ Total data fetched for export:", attendanceData.length);
 
     if (!attendanceData || attendanceData.length === 0) {
       return {
@@ -871,11 +714,19 @@ export const exportSemesterRecapFromComponent = async (
     }
 
     // Filter by month
+    console.log("=== FILTER BULAN ===");
     const filteredData = attendanceData.filter((r) => {
       const parts = r.tanggal.split("-");
       const month = parseInt(parts[1], 10);
       return months.includes(month);
     });
+
+    console.log("Data setelah filter bulan:", filteredData.length);
+
+    // Hitung hari efektif
+    const uniqueDates = [...new Set(filteredData.map((r) => r.tanggal))];
+    const totalHariEfektif = uniqueDates.length;
+    console.log("🎯 HARI EFEKTIF untuk export:", totalHariEfektif);
 
     if (filteredData.length === 0) {
       return {

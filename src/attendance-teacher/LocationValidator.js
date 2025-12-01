@@ -27,7 +27,7 @@ const DEV_MODE = false; // ⬅️ SET FALSE SAAT PRODUCTION!
 const OPERATIONAL_HOURS = {
   startHour: 7,
   startMinute: 0,
-  endHour: 15,
+  endHour: 13,
   endMinute: 0,
 };
 

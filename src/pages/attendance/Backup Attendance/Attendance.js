@@ -831,18 +831,27 @@ const Attendance = ({
 
         if (isOnline) {
           try {
-            const { error: deleteError } = await supabase
+            console.log("🗑️ Attempting to delete old data:", {
+              date,
+              classNum,
+              guru: currentUser.username,
+            });
+
+            const { data: deletedData, error: deleteError } = await supabase
               .from("attendance")
               .delete()
               .eq("tanggal", date)
               .eq("kelas", classNum)
-              .eq("guru_input", currentUser.username);
+              .eq("guru_input", currentUser.username)
+              .select(); // ✅ Tambah .select() buat tau berapa yang kehapus
 
             if (deleteError) {
-              console.warn("Warning delete old data:", deleteError);
+              console.error("❌ Delete error:", deleteError);
+            } else {
+              console.log("✅ Deleted rows:", deletedData?.length || 0);
             }
           } catch (err) {
-            console.warn("Warning delete old data:", err);
+            console.error("❌ Delete exception:", err);
           }
         }
 
@@ -937,6 +946,12 @@ const Attendance = ({
 
   const saveAttendance = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
+
+    // ✅ TAMBAH: Block multiple clicks
+    if (saving) {
+      console.log("⚠️ Saving in progress, please wait...");
+      return;
+    }
 
     if (!attendanceDate) {
       showToast("Pilih tanggal terlebih dahulu!", "error");

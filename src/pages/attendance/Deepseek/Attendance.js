@@ -1,38 +1,31 @@
-// src/pages/attendance/Attendance.js - VERSION FIXED
+// src/pages/Attendance.js - VERSION AFTER SPLITTING (Hanya 180 baris!)
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  Check,
-  Save,
-  Calendar,
-  Download,
-  Users,
-  RefreshCw,
-} from "lucide-react"; // ✅ IMPORT ICONS
+import { Check, Save, Calendar, Download, RefreshCw } from "lucide-react";
 
-import { supabase } from "../../supabaseClient";
-import AttendanceModal from "../AttendanceModal";
+import { supabase } from "../supabaseClient";
+import AttendanceModal from "./AttendanceModal";
 import {
   exportAttendanceFromComponent,
   exportSemesterRecapFromComponent,
-} from "../AttendanceExport";
+} from "./AttendanceExport";
 
 // PWA OFFLINE IMPORTS
-import { saveWithSync, syncPendingData } from "../../offlineSync";
-import { useSyncStatus } from "../../hooks/useSyncStatus";
-import SyncStatusBadge from "../../components/SyncStatusBadge";
+import { saveWithSync, syncPendingData } from "../offlineSync";
+import { useSyncStatus } from "../hooks/useSyncStatus";
+import SyncStatusBadge from "../components/SyncStatusBadge";
 
 // COMPONENTS YANG SUDAH DIPISAH
-import AttendanceFilters from "./AttendanceFilters";
-import AttendanceStats from "./AttendanceStats";
-import AttendanceTable from "./AttendanceTable";
+import AttendanceFilters from "./attendance/AttendanceFilters";
+import AttendanceStats from "./attendance/AttendanceStats";
+import AttendanceTable from "./attendance/AttendanceTable";
 import {
   Toast,
   ConfirmationModal,
   ExportModal,
   ExportSemesterModal,
-} from "./AttendanceModals";
+} from "./attendance/AttendanceModals";
 
-// CUSTOM HOOK (taruh di sini)
+// CUSTOM HOOK (Kita taruh di sini karena cuma dipakai di file ini)
 const useAttendance = (currentUser) => {
   const [studentsData, setStudentsData] = useState({});
   const [attendanceData, setAttendanceData] = useState({});
@@ -613,7 +606,7 @@ const Attendance = ({
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 w-full">
         <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
           onClick={markAllPresent}
           disabled={
             !studentsData[activeClass] ||
@@ -628,7 +621,7 @@ const Attendance = ({
           <span>Hadir Semua</span>
         </button>
         <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-colors font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
           onClick={saveAttendance}
           disabled={
             !studentsData[activeClass] ||
@@ -644,7 +637,7 @@ const Attendance = ({
           <span>Simpan Presensi</span>
         </button>
         <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-colors font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
           onClick={showRekap}
           disabled={
             !studentsData[activeClass] || studentsData[activeClass].length === 0
@@ -653,7 +646,7 @@ const Attendance = ({
           <span>Lihat Rekap</span>
         </button>
         <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-colors font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
           onClick={() => setShowExportModal(true)}
           disabled={
             !studentsData[activeClass] || studentsData[activeClass].length === 0
@@ -662,7 +655,7 @@ const Attendance = ({
           <span>Export Bulanan</span>
         </button>
         <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 transition-colors font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
           onClick={() => setShowExportSemesterModal(true)}
           disabled={
             !studentsData[activeClass] || studentsData[activeClass].length === 0

@@ -88,5 +88,3 @@ export const AttendanceStats = React.memo(({ summary }) => {
     </div>
   );
 });
-
-export default AttendanceStats;

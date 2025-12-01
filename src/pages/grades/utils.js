@@ -1,0 +1,473 @@
+// ========================================
+// utils.js - Helper Functions untuk Katrol Nilai
+// ========================================
+
+import ExcelJS from "exceljs";
+
+// ========================================
+// 1. GET KKM BERDASARKAN MAPEL
+// ========================================
+/**
+ * Menentukan KKM berdasarkan mata pelajaran
+ * @param {string} mapel - Nama mata pelajaran
+ * @returns {number} - KKM (70 atau 75)
+ */
+export const getKKM = (mapel) => {
+  // Mapel dengan KKM 70
+  const mapelKKM70 = ["Matematika", "IPAS", "Bahasa Inggris"];
+
+  return mapelKKM70.includes(mapel) ? 70 : 75;
+};
+
+// ========================================
+// 2. GROUP DATA BY NISN
+// ========================================
+/**
+ * Mengubah data flat dari Supabase menjadi grouped per siswa
+ * Input: Array flat dari Supabase
+ * Output: Array siswa dengan nilai per jenis
+ *
+ * @param {Array} rawData - Data dari Supabase
+ * @returns {Array} - Data grouped by NISN
+ *
+ * Example Input:
+ * [
+ *   { nisn: '001', nama_siswa: 'AHMAD', jenis_nilai: 'NH1', nilai: 75 },
+ *   { nisn: '001', nama_siswa: 'AHMAD', jenis_nilai: 'NH2', nilai: 80 },
+ *   { nisn: '002', nama_siswa: 'SITI', jenis_nilai: 'NH1', nilai: 65 }
+ * ]
+ *
+ * Example Output:
+ * [
+ *   {
+ *     nisn: '001',
+ *     nama_siswa: 'AHMAD',
+ *     nilai: { NH1: 75, NH2: 80 }
+ *   },
+ *   {
+ *     nisn: '002',
+ *     nama_siswa: 'SITI',
+ *     nilai: { NH1: 65 }
+ *   }
+ * ]
+ */
+export const groupDataByNISN = (rawData) => {
+  const grouped = {};
+
+  rawData.forEach((item) => {
+    if (!grouped[item.nisn]) {
+      grouped[item.nisn] = {
+        nisn: item.nisn,
+        nama_siswa: item.nama_siswa,
+        nilai: {},
+        nilai_katrol: {},
+      };
+    }
+
+    // Simpan nilai asli
+    grouped[item.nisn].nilai[item.jenis_nilai] = item.nilai;
+  });
+
+  return Object.values(grouped);
+};
+
+// ========================================
+// 3. KATROL NILAI PER JENIS
+// ========================================
+/**
+ * Melakukan katrol nilai untuk satu jenis nilai (NH1/NH2/UTS/dll)
+ * menggunakan interpolasi linear
+ *
+ * Formula:
+ * nilai_katrol = KKM + ((nilai_asli - nilai_min) / (nilai_max - nilai_min)) * (max_nilai - KKM)
+ *
+ * @param {Array} dataSiswa - Array siswa dengan nilai
+ * @param {string} jenisNilai - Jenis nilai yang mau dikatrol (NH1/NH2/UTS/dll)
+ * @param {number} kkm - KKM mapel
+ * @param {number} maxNilai - Nilai maksimal katrol (default: 90)
+ * @returns {Array} - Data siswa dengan nilai_katrol ditambahkan
+ */
+export const katrolNilaiPerJenis = (
+  dataSiswa,
+  jenisNilai,
+  kkm,
+  maxNilai = 90
+) => {
+  // Ambil semua nilai untuk jenis ini (filter yang ada nilainya)
+  const nilaiArray = dataSiswa
+    .map((siswa) => siswa.nilai[jenisNilai])
+    .filter((n) => n !== undefined && n !== null && !isNaN(n));
+
+  // Kalau ga ada data, return as is
+  if (nilaiArray.length === 0) {
+    return dataSiswa;
+  }
+
+  // Cari nilai max dan min
+  const nilaiMax = Math.max(...nilaiArray);
+  const nilaiMin = Math.min(...nilaiArray);
+
+  // Gap untuk interpolasi
+  const gap = maxNilai - kkm;
+
+  // Katrol setiap siswa
+  return dataSiswa.map((siswa) => {
+    const nilaiAsli = siswa.nilai[jenisNilai];
+
+    // Skip kalau ga ada nilai
+    if (nilaiAsli === undefined || nilaiAsli === null || isNaN(nilaiAsli)) {
+      return siswa;
+    }
+
+    let nilaiKatrol;
+
+    // Jika nilai tertinggi, langsung dapat max
+    if (nilaiAsli >= nilaiMax) {
+      nilaiKatrol = maxNilai;
+    }
+    // Jika nilai terendah, dapat KKM
+    else if (nilaiAsli <= nilaiMin) {
+      nilaiKatrol = kkm;
+    }
+    // Interpolasi linear
+    else {
+      const range = nilaiMax - nilaiMin;
+      const posisi = (nilaiAsli - nilaiMin) / range;
+      nilaiKatrol = kkm + posisi * gap;
+    }
+
+    // Return siswa dengan nilai_katrol ditambahkan
+    return {
+      ...siswa,
+      nilai_katrol: {
+        ...siswa.nilai_katrol,
+        [jenisNilai]: Math.round(nilaiKatrol * 100) / 100, // Round 2 desimal
+      },
+    };
+  });
+};
+
+// ========================================
+// 4. PROSES KATROL SEMUA JENIS NILAI
+// ========================================
+/**
+ * Melakukan katrol untuk semua jenis nilai yang ada
+ * @param {Array} dataSiswa - Data siswa yang sudah di-group
+ * @param {number} kkm - KKM mapel
+ * @returns {Array} - Data siswa dengan semua nilai sudah dikatrol
+ */
+export const prosesKatrolSemua = (dataSiswa, kkm) => {
+  // Daftar jenis nilai yang perlu dikatrol
+  const jenisNilai = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
+
+  let hasil = [...dataSiswa];
+
+  // Katrol satu per satu
+  jenisNilai.forEach((jenis) => {
+    hasil = katrolNilaiPerJenis(hasil, jenis, kkm);
+  });
+
+  return hasil;
+};
+
+// ========================================
+// 5. HITUNG NILAI AKHIR
+// ========================================
+/**
+ * Menghitung nilai akhir berdasarkan rumus:
+ * Nilai Akhir = 40% Rata-rata NH + 30% UTS + 30% UAS
+ *
+ * @param {Array} dataSiswa - Data siswa yang sudah dikatrol
+ * @returns {Array} - Data siswa dengan nilai akhir
+ */
+export const hitungNilaiAkhir = (dataSiswa) => {
+  return dataSiswa.map((siswa) => {
+    // Ambil semua NH yang ada (NH1-NH5)
+    const jenisNH = ["NH1", "NH2", "NH3", "NH4", "NH5"];
+
+    // Nilai NH Asli
+    const nilaiNH_asli = jenisNH
+      .map((jenis) => siswa.nilai[jenis])
+      .filter((n) => n !== undefined && n !== null && !isNaN(n));
+
+    // Nilai NH Katrol
+    const nilaiNH_katrol = jenisNH
+      .map((jenis) => siswa.nilai_katrol?.[jenis])
+      .filter((n) => n !== undefined && n !== null && !isNaN(n));
+
+    // Hitung rata-rata NH
+    const rataNH_asli =
+      nilaiNH_asli.length > 0
+        ? nilaiNH_asli.reduce((sum, n) => sum + n, 0) / nilaiNH_asli.length
+        : 0;
+
+    const rataNH_katrol =
+      nilaiNH_katrol.length > 0
+        ? nilaiNH_katrol.reduce((sum, n) => sum + n, 0) / nilaiNH_katrol.length
+        : 0;
+
+    // Nilai UTS & UAS
+    const uts_asli = siswa.nilai.UTS || 0;
+    const uas_asli = siswa.nilai.UAS || 0;
+    const uts_katrol = siswa.nilai_katrol?.UTS || 0;
+    const uas_katrol = siswa.nilai_katrol?.UAS || 0;
+
+    // Hitung Nilai Akhir
+    // Rumus: 40% NH + 30% UTS + 30% UAS
+    const nilaiAkhirAsli = 0.4 * rataNH_asli + 0.3 * uts_asli + 0.3 * uas_asli;
+    const nilaiAkhirKatrol =
+      0.4 * rataNH_katrol + 0.3 * uts_katrol + 0.3 * uas_katrol;
+
+    return {
+      ...siswa,
+      rata_NH_asli: Math.round(rataNH_asli * 100) / 100,
+      rata_NH_katrol: Math.round(rataNH_katrol * 100) / 100,
+      nilai_akhir_asli: Math.round(nilaiAkhirAsli * 100) / 100,
+      nilai_akhir_katrol: Math.round(nilaiAkhirKatrol * 100) / 100,
+    };
+  });
+};
+
+// ========================================
+// 6. EXPORT TO EXCEL (ExcelJS)
+// ========================================
+/**
+ * Export data katrol ke Excel
+ * @param {Array} data - Data hasil katrol
+ * @param {string} mapel - Nama mata pelajaran
+ * @param {string} kelas - Kelas
+ * @param {string} type - 'lengkap' atau 'ringkas'
+ */
+export const exportToExcel = async (data, mapel, kelas, type = "lengkap") => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Katrol Nilai");
+
+  // Metadata
+  worksheet.getCell("A1").value = `Hasil Katrol Nilai - ${mapel}`;
+  worksheet.getCell("A2").value = `Kelas ${kelas}`;
+  worksheet.getCell("A3").value = `Tanggal: ${new Date().toLocaleDateString(
+    "id-ID"
+  )}`;
+
+  // Merge cells untuk header
+  worksheet.mergeCells("A1:E1");
+  worksheet.mergeCells("A2:E2");
+  worksheet.mergeCells("A3:E3");
+
+  // Style header
+  ["A1", "A2", "A3"].forEach((cell) => {
+    worksheet.getCell(cell).font = { bold: true };
+    worksheet.getCell(cell).alignment = { horizontal: "center" };
+  });
+
+  // Start row untuk tabel
+  const startRow = 5;
+
+  if (type === "lengkap") {
+    // ===== FORMAT LENGKAP (19 KOLOM) =====
+    worksheet.getRow(startRow).values = [
+      "No",
+      "NISN",
+      "Nama Siswa",
+      "NH1",
+      "NH1-K",
+      "NH2",
+      "NH2-K",
+      "NH3",
+      "NH3-K",
+      "NH4",
+      "NH4-K",
+      "NH5",
+      "NH5-K",
+      "UTS",
+      "UTS-K",
+      "UAS",
+      "UAS-K",
+      "Rata NH",
+      "Rata NH-K",
+      "Nilai Akhir",
+      "Nilai Akhir-K",
+    ];
+
+    // Style header tabel
+    worksheet.getRow(startRow).font = { bold: true };
+    worksheet.getRow(startRow).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+    worksheet.getRow(startRow).alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 5 }, // No
+      { width: 15 }, // NISN
+      { width: 30 }, // Nama
+      { width: 8 }, // NH1
+      { width: 8 }, // NH1-K
+      { width: 8 }, // NH2
+      { width: 8 }, // NH2-K
+      { width: 8 }, // NH3
+      { width: 8 }, // NH3-K
+      { width: 8 }, // NH4
+      { width: 8 }, // NH4-K
+      { width: 8 }, // NH5
+      { width: 8 }, // NH5-K
+      { width: 8 }, // UTS
+      { width: 8 }, // UTS-K
+      { width: 8 }, // UAS
+      { width: 8 }, // UAS-K
+      { width: 10 }, // Rata NH
+      { width: 10 }, // Rata NH-K
+      { width: 12 }, // Nilai Akhir
+      { width: 12 }, // Nilai Akhir-K
+    ];
+
+    // Isi data
+    data.forEach((siswa, index) => {
+      const row = worksheet.getRow(startRow + index + 1);
+      row.values = [
+        index + 1,
+        siswa.nisn,
+        siswa.nama_siswa,
+        siswa.nilai.NH1 || "",
+        siswa.nilai_katrol?.NH1 || "",
+        siswa.nilai.NH2 || "",
+        siswa.nilai_katrol?.NH2 || "",
+        siswa.nilai.NH3 || "",
+        siswa.nilai_katrol?.NH3 || "",
+        siswa.nilai.NH4 || "",
+        siswa.nilai_katrol?.NH4 || "",
+        siswa.nilai.NH5 || "",
+        siswa.nilai_katrol?.NH5 || "",
+        siswa.nilai.UTS || "",
+        siswa.nilai_katrol?.UTS || "",
+        siswa.nilai.UAS || "",
+        siswa.nilai_katrol?.UAS || "",
+        siswa.rata_NH_asli || "",
+        siswa.rata_NH_katrol || "",
+        siswa.nilai_akhir_asli || "",
+        siswa.nilai_akhir_katrol || "",
+      ];
+
+      // Alignment
+      row.alignment = { vertical: "middle" };
+      row.getCell(3).alignment = { horizontal: "left", vertical: "middle" }; // Nama
+
+      // Alternating row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF5F5F5" },
+        };
+      }
+    });
+  } else {
+    // ===== FORMAT RINGKAS (10 KOLOM) =====
+    worksheet.getRow(startRow).values = [
+      "No",
+      "NISN",
+      "Nama Siswa",
+      "NH1-K",
+      "NH2-K",
+      "NH3-K",
+      "NH4-K",
+      "NH5-K",
+      "UTS-K",
+      "UAS-K",
+      "Nilai Akhir-K",
+    ];
+
+    // Style header tabel
+    worksheet.getRow(startRow).font = { bold: true };
+    worksheet.getRow(startRow).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE0E0E0" },
+    };
+    worksheet.getRow(startRow).alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 5 }, // No
+      { width: 15 }, // NISN
+      { width: 30 }, // Nama
+      { width: 8 }, // NH1-K
+      { width: 8 }, // NH2-K
+      { width: 8 }, // NH3-K
+      { width: 8 }, // NH4-K
+      { width: 8 }, // NH5-K
+      { width: 8 }, // UTS-K
+      { width: 8 }, // UAS-K
+      { width: 12 }, // Nilai Akhir-K
+    ];
+
+    // Isi data
+    data.forEach((siswa, index) => {
+      const row = worksheet.getRow(startRow + index + 1);
+      row.values = [
+        index + 1,
+        siswa.nisn,
+        siswa.nama_siswa,
+        siswa.nilai_katrol?.NH1 || "",
+        siswa.nilai_katrol?.NH2 || "",
+        siswa.nilai_katrol?.NH3 || "",
+        siswa.nilai_katrol?.NH4 || "",
+        siswa.nilai_katrol?.NH5 || "",
+        siswa.nilai_katrol?.UTS || "",
+        siswa.nilai_katrol?.UAS || "",
+        siswa.nilai_akhir_katrol || "",
+      ];
+
+      // Alignment
+      row.alignment = { vertical: "middle" };
+      row.getCell(3).alignment = { horizontal: "left", vertical: "middle" }; // Nama
+
+      // Alternating row colors
+      if (index % 2 === 0) {
+        row.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF5F5F5" },
+        };
+      }
+    });
+  }
+
+  // Add borders to all cells
+  const lastRow = startRow + data.length;
+  const lastCol = type === "lengkap" ? 21 : 11;
+
+  for (let row = startRow; row <= lastRow; row++) {
+    for (let col = 1; col <= lastCol; col++) {
+      const cell = worksheet.getRow(row).getCell(col);
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    }
+  }
+
+  // Download file
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Katrol_${mapel}_Kelas${kelas}_${type}_${new Date().getTime()}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+};
