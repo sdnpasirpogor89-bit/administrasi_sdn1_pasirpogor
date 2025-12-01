@@ -288,7 +288,7 @@ const DailySummary = ({ refreshTrigger }) => {
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full border ${getStatusBadge(
+                        className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full border capitalize ${getStatusBadge(
                           item.status
                         )}`}>
                         {item.status}
