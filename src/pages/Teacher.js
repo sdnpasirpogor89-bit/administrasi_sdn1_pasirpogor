@@ -6,11 +6,11 @@ import {
   School,
   BookOpen,
   Search,
-  Filter,
+  Filter, // unused, but kept for context
   MoreVertical,
 } from "lucide-react";
 
-// Compact Stats Card Component - RESPONSIVE
+// Compact Stats Card Component - RESPONSIVE (No changes needed)
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
     blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
@@ -47,7 +47,7 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
   );
 };
 
-// Status Badge Component - RESPONSIVE
+// Status Badge Component - RESPONSIVE (No changes needed)
 const StatusBadge = ({ isActive }) => {
   return (
     <span
@@ -61,7 +61,7 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
-// Teacher Card Component - FULLY RESPONSIVE
+// Teacher Card Component - FULLY RESPONSIVE (No changes needed)
 const TeacherCard = ({ teacher, index }) => {
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
@@ -130,14 +130,25 @@ const TeacherCard = ({ teacher, index }) => {
   );
 };
 
-// Main Teacher Component - FULLY RESPONSIVE
+// Main Teacher Component - EFFICIENTLY RESPONSIVE
 const Teacher = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [isMobile, setIsMobile] = useState(false);
+  // --- REVISI PRO: Hapus state isMobile dan logic useEffect terkait ---
+  // const [isMobile, setIsMobile] = useState(false);
+  // useEffect(() => {
+  //   const checkDevice = () => {
+  //     setIsMobile(window.innerWidth < 1024);
+  //   };
+  //   checkDevice();
+  //   window.addEventListener("resize", checkDevice);
+  //   return () => window.removeEventListener("resize", checkDevice);
+  // }, []);
+  // -------------------------------------------------------------------
+
   const [stats, setStats] = useState({
     totalGuru: 0,
     guruAktif: 0,
@@ -145,18 +156,7 @@ const Teacher = () => {
     guruMapel: 0,
   });
 
-  // Cek device type - UPDATE BREAKPOINT
-  useEffect(() => {
-    const checkDevice = () => {
-      setIsMobile(window.innerWidth < 1024); // Changed from 768 to 1024
-    };
-
-    checkDevice();
-    window.addEventListener("resize", checkDevice);
-    return () => window.removeEventListener("resize", checkDevice);
-  }, []);
-
-  // Fungsi untuk mengurutkan guru
+  // Fungsi untuk mengurutkan guru (No changes)
   const sortTeachers = (teachersArray) => {
     return teachersArray.sort((a, b) => {
       if (
@@ -189,7 +189,7 @@ const Teacher = () => {
     });
   };
 
-  // Filter teachers
+  // Filter teachers (No changes)
   useEffect(() => {
     let result = teachers;
 
@@ -208,7 +208,7 @@ const Teacher = () => {
     setFilteredTeachers(result);
   }, [teachers, searchTerm, statusFilter]);
 
-  // Fetch data guru dari database
+  // Fetch data guru dari database (No changes)
   const fetchTeachers = async () => {
     try {
       setLoading(true);
@@ -284,7 +284,7 @@ const Teacher = () => {
     }
   };
 
-  // Format tampilan tugas/kelas
+  // Format tampilan tugas/kelas (No changes)
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
       return "Kepala Sekolah";
@@ -319,7 +319,7 @@ const Teacher = () => {
 
   return (
     <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
-      {/* Compact Stats Cards - RESPONSIVE GRID */}
+      {/* Compact Stats Cards - RESPONSIVE GRID (No changes) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <StatsCard
           icon={Users}
@@ -347,7 +347,7 @@ const Teacher = () => {
         />
       </div>
 
-      {/* Filter Section - FULLY RESPONSIVE */}
+      {/* Filter Section - FULLY RESPONSIVE (No changes) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4">
           {/* Search Input */}
@@ -379,7 +379,7 @@ const Teacher = () => {
         </div>
       </div>
 
-      {/* Tabel Data Guru - RESPONSIVE LAYOUT */}
+      {/* Tabel Data Guru - RESPONSIVE LAYOUT - REVISI PRO */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-4 sm:p-5 lg:p-6 border-b border-gray-100">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
@@ -390,93 +390,91 @@ const Teacher = () => {
           </p>
         </div>
 
-        {isMobile ? (
-          /* Mobile/Tablet Card View (< 1024px) */
-          <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-            {filteredTeachers.length > 0 ? (
-              filteredTeachers.map((teacher, index) => (
-                <TeacherCard key={teacher.id} teacher={teacher} index={index} />
-              ))
-            ) : (
-              <div className="text-center py-12 sm:py-16">
-                <Users
-                  size={40}
-                  className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3 sm:mb-4"
-                />
-                <p className="text-sm sm:text-base text-gray-500 font-medium">
-                  Tidak ada data guru yang cocok
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Desktop Table View (>= 1024px) */
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    No.
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Nama Guru
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Tugas/Kelas
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Jumlah Siswa
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredTeachers.length > 0 ? (
-                  filteredTeachers.map((teacher, index) => (
-                    <tr
-                      key={teacher.id}
-                      className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {teacher.full_name}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-700 font-medium">
-                          {formatTeachingArea(teacher)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        {teacher.studentCount} siswa
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge isActive={teacher.is_active} />
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Users size={48} className="text-gray-300" />
-                        <div>
-                          <p className="text-gray-500 font-medium">
-                            Tidak ada data guru yang cocok
-                          </p>
-                        </div>
-                      </div>
+        {/* Card View (Mobile-First: Default, Sembunyikan di Large/Desktop) */}
+        <div className="lg:hidden p-3 sm:p-4 space-y-3 sm:space-y-4">
+          {filteredTeachers.length > 0 ? (
+            filteredTeachers.map((teacher, index) => (
+              <TeacherCard key={teacher.id} teacher={teacher} index={index} />
+            ))
+          ) : (
+            <div className="text-center py-12 sm:py-16">
+              <Users
+                size={40}
+                className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3 sm:mb-4"
+              />
+              <p className="text-sm sm:text-base text-gray-500 font-medium">
+                Tidak ada data guru yang cocok
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View (Sembunyikan di Mobile/Tablet, Tampilkan di Large/Desktop) */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  No.
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Nama Guru
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Tugas/Kelas
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Jumlah Siswa
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredTeachers.length > 0 ? (
+                filteredTeachers.map((teacher, index) => (
+                  <tr
+                    key={teacher.id}
+                    className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {teacher.full_name}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-700 font-medium">
+                        {formatTeachingArea(teacher)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                      {teacher.studentCount} siswa
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge isActive={teacher.is_active} />
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Users size={48} className="text-gray-300" />
+                      <div>
+                        <p className="text-gray-500 font-medium">
+                          Tidak ada data guru yang cocok
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

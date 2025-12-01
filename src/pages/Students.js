@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
-// Compact Stats Card Component
+// Compact Stats Card Component - RESPONSIVE (No changes)
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
     blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
@@ -46,6 +46,7 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
             {label}
           </p>
         </div>
+        {/* Responsive icon display */}
         <Icon
           size={24}
           className={`${iconColorClasses[color]} hidden sm:block`}
@@ -56,7 +57,7 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
   );
 };
 
-// Status Badge Component
+// Status Badge Component (No changes)
 const StatusBadge = ({ isActive }) => {
   return (
     <span
@@ -70,7 +71,7 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
-// Action Button Component
+// Action Button Component (No changes)
 const ActionButton = ({
   icon: Icon,
   label,
@@ -96,7 +97,7 @@ const ActionButton = ({
   );
 };
 
-// Toast Notification Component
+// Toast Notification Component (No changes)
 const Toast = ({ message, type = "success", onClose }) => {
   const bgColor =
     type === "success"
@@ -119,7 +120,7 @@ const Toast = ({ message, type = "success", onClose }) => {
   );
 };
 
-// Mobile Student Card Component
+// Mobile Student Card Component (No changes)
 const StudentCard = ({ student, index, onEdit, onDelete }) => {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm">
@@ -170,7 +171,7 @@ const StudentCard = ({ student, index, onEdit, onDelete }) => {
   );
 };
 
-// Student Form Modal Component
+// Student Form Modal Component (No changes)
 const StudentFormModal = ({ show, onClose, student, onSave }) => {
   const [formData, setFormData] = useState({
     nisn: "",
@@ -222,6 +223,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
   if (!show) return null;
 
   return (
+    // Responsive modal sizing (Max-w-md on all screens)
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
@@ -268,6 +270,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
             />
           </div>
 
+          {/* Responsive form grid (2 cols on all sizes, good for mobile) */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -341,7 +344,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
   );
 };
 
-// Import Modal Component
+// Import Modal Component (No changes)
 const ImportModal = ({ show, onClose, onImport }) => {
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
@@ -425,6 +428,7 @@ const ImportModal = ({ show, onClose, onImport }) => {
   if (!show) return null;
 
   return (
+    // Responsive modal sizing (Max-w-4xl for table preview)
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full max-w-4xl p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
@@ -533,7 +537,7 @@ const ImportModal = ({ show, onClose, onImport }) => {
   );
 };
 
-// Delete Confirmation Modal
+// Delete Confirmation Modal (No changes)
 const DeleteModal = ({ show, onClose, student, onConfirm }) => {
   const [loading, setLoading] = useState(false);
 
@@ -596,7 +600,7 @@ const DeleteModal = ({ show, onClose, student, onConfirm }) => {
   );
 };
 
-// Mobile Filter Modal
+// Mobile Filter Modal (No changes, modal is inherently responsive due to fixed position and max-width)
 const FilterModal = ({
   show,
   onClose,
@@ -679,7 +683,7 @@ const FilterModal = ({
   );
 };
 
-// Main Students Component - PRODUCTION READY
+// Main Students Component - PRODUCTION READY (REVISED FOR EFFICIENCY)
 const Students = ({ userData }) => {
   // All hooks must be called first
   const [students, setStudents] = useState([]);
@@ -693,7 +697,17 @@ const Students = ({ userData }) => {
     lakiLaki: 0,
     perempuan: 0,
   });
-  const [isMobile, setIsMobile] = useState(false);
+  // --- REVISI PRO: Hapus state isMobile dan logic useEffect terkait ---
+  // const [isMobile, setIsMobile] = useState(false);
+  // useEffect(() => {
+  //   const checkDevice = () => {
+  //     setIsMobile(window.innerWidth < 768);
+  //   };
+  //   checkDevice();
+  //   window.addEventListener("resize", checkDevice);
+  //   return () => window.removeEventListener("resize", checkDevice);
+  // }, []);
+  // -------------------------------------------------------------------
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -701,18 +715,7 @@ const Students = ({ userData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Device detection
-  useEffect(() => {
-    const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkDevice();
-    window.addEventListener("resize", checkDevice);
-    return () => window.removeEventListener("resize", checkDevice);
-  }, []);
-
-  // Auto hide toast
+  // Auto hide toast (No changes)
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => {
@@ -722,7 +725,7 @@ const Students = ({ userData }) => {
     }
   }, [toast]);
 
-  // Fetch students data from Supabase
+  // Fetch students data from Supabase (No changes)
   const fetchStudents = async () => {
     try {
       setLoading(true);
@@ -777,12 +780,12 @@ const Students = ({ userData }) => {
     }
   }, [userData]);
 
-  // Show toast notification
+  // Show toast notification (No changes)
   const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
 
-  // Export to Excel
+  // Export to Excel (No changes)
   const handleExport = () => {
     try {
       const dataToExport = filteredStudents.map((student) => ({
@@ -809,7 +812,7 @@ const Students = ({ userData }) => {
     }
   };
 
-  // Import from Excel
+  // Import from Excel (No changes)
   const handleImport = async (importData) => {
     try {
       setLoading(true);
@@ -849,7 +852,7 @@ const Students = ({ userData }) => {
     }
   };
 
-  // Save student (create or update)
+  // Save student (create or update) (No changes)
   const handleSaveStudent = async (studentData) => {
     try {
       if (studentData.id) {
@@ -891,7 +894,7 @@ const Students = ({ userData }) => {
     }
   };
 
-  // Delete student (hard delete)
+  // Delete student (hard delete) (No changes)
   const handleDeleteStudent = async (student) => {
     try {
       const { error } = await supabase
@@ -909,25 +912,25 @@ const Students = ({ userData }) => {
       throw error;
     }
   };
-  // Open edit modal
+  // Open edit modal (No changes)
   const handleEdit = (student) => {
     setSelectedStudent(student);
     setShowFormModal(true);
   };
 
-  // Open delete modal
+  // Open delete modal (No changes)
   const handleDelete = (student) => {
     setSelectedStudent(student);
     setShowDeleteModal(true);
   };
 
-  // Open add modal
+  // Open add modal (No changes)
   const handleAdd = () => {
     setSelectedStudent(null);
     setShowFormModal(true);
   };
 
-  // Validation after hooks
+  // Validation after hooks (No changes)
   if (!userData) {
     return (
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -957,7 +960,7 @@ const Students = ({ userData }) => {
     );
   }
 
-  // Filter students based on search and filters
+  // Filter students based on search and filters (No changes)
   const filteredStudents = students.filter((student) => {
     if (
       (userData.role === "admin" || userData.role === "guru_mapel") &&
@@ -982,7 +985,7 @@ const Students = ({ userData }) => {
     return true;
   });
 
-  // Active filters count for badge
+  // Active filters count for badge (No changes)
   const activeFiltersCount = [selectedClass, genderFilter].filter(
     Boolean
   ).length;
@@ -1037,7 +1040,7 @@ const Students = ({ userData }) => {
         />
       </div>
 
-      {/* Optimized Filter & Action Section */}
+      {/* Optimized Filter & Action Section - REVISED FOR PURE CSS RESPONSIVENESS */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search Input - Full width on mobile */}
@@ -1055,114 +1058,112 @@ const Students = ({ userData }) => {
             />
           </div>
 
-          {/* Mobile Layout */}
-          {isMobile ? (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowFilterModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium min-h-[44px] flex-1">
-                <Filter size={16} />
-                Filter
-                {activeFiltersCount > 0 && (
-                  <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
+          {/* Mobile Layout: Filter Button + Action Menu (Hidden on Large screens) */}
+          <div className="flex gap-2 lg:hidden">
+            <button
+              onClick={() => setShowFilterModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium min-h-[44px] flex-1">
+              <Filter size={16} />
+              Filter
+              {activeFiltersCount > 0 && (
+                <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
 
-              {/* Mobile Action Menu */}
-              <div className="relative">
-                <select
-                  onChange={(e) => {
-                    const action = e.target.value;
-                    if (action === "add") handleAdd();
-                    if (action === "export") handleExport();
-                    if (action === "import") setShowImportModal(true);
-                    e.target.value = "";
-                  }}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none bg-white min-w-[120px]">
-                  <option value="">Action...</option>
-                  <option value="add">Tambah Siswa</option>
-                  <option value="export">Export</option>
-                  <option value="import">Import</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
+            {/* Mobile Action Menu (using select for compactness) */}
+            <div className="relative">
+              <select
+                onChange={(e) => {
+                  const action = e.target.value;
+                  if (action === "add") handleAdd();
+                  if (action === "export") handleExport();
+                  if (action === "import") setShowImportModal(true);
+                  e.target.value = "";
+                }}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none bg-white min-w-[120px]">
+                <option value="">Action...</option>
+                <option value="add">Tambah Siswa</option>
+                <option value="export">Export</option>
+                <option value="import">Import</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </div>
             </div>
-          ) : (
-            /* Desktop Layout: Search | Filter | Action Buttons */
-            <div className="flex gap-3 flex-1 sm:flex-initial">
-              {/* Desktop Filters */}
-              <div className="flex gap-3 flex-1">
-                {/* Class Filter */}
-                {userData.role !== "guru_kelas" ? (
-                  <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm min-h-[44px]">
-                    <option value="">Semua Kelas</option>
-                    {[1, 2, 3, 4, 5, 6].map((kelas) => (
-                      <option key={kelas} value={kelas}>
-                        Kelas {kelas}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="flex-1 px-3 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm min-h-[44px] flex items-center">
-                    Kelas {userData.kelas}
-                  </div>
-                )}
+          </div>
 
-                {/* Gender Filter */}
+          {/* Desktop Layout: Filters + Action Buttons (Hidden on Mobile/Tablet, displayed on Large screens) */}
+          <div className="hidden lg:flex gap-3 flex-1 sm:flex-initial">
+            {/* Desktop Filters */}
+            <div className="flex gap-3 flex-1">
+              {/* Class Filter */}
+              {userData.role !== "guru_kelas" ? (
                 <select
-                  value={genderFilter}
-                  onChange={(e) => setGenderFilter(e.target.value)}
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
                   className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm min-h-[44px]">
-                  <option value="">Semua Jenis Kelamin</option>
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
+                  <option value="">Semua Kelas</option>
+                  {[1, 2, 3, 4, 5, 6].map((kelas) => (
+                    <option key={kelas} value={kelas}>
+                      Kelas {kelas}
+                    </option>
+                  ))}
                 </select>
-              </div>
+              ) : (
+                <div className="flex-1 px-3 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm min-h-[44px] flex items-center">
+                  Kelas {userData.kelas}
+                </div>
+              )}
 
-              {/* Action Buttons for Desktop - Paling Kanan */}
-              <div className="flex gap-2">
-                <ActionButton
-                  icon={Plus}
-                  label="Tambah Siswa"
-                  onClick={handleAdd}
-                  variant="primary"
-                />
-                <ActionButton
-                  icon={Download}
-                  label="Export"
-                  onClick={handleExport}
-                  variant="secondary"
-                />
-                <ActionButton
-                  icon={Upload}
-                  label="Import"
-                  onClick={() => setShowImportModal(true)}
-                  variant="secondary"
-                />
-              </div>
+              {/* Gender Filter */}
+              <select
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+                className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm min-h-[44px]">
+                <option value="">Semua Jenis Kelamin</option>
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+              </select>
             </div>
-          )}
+
+            {/* Action Buttons for Desktop - Paling Kanan */}
+            <div className="flex gap-2 flex-shrink-0">
+              <ActionButton
+                icon={Plus}
+                label="Tambah Siswa"
+                onClick={handleAdd}
+                variant="primary"
+              />
+              <ActionButton
+                icon={Download}
+                label="Export"
+                onClick={handleExport}
+                variant="secondary"
+              />
+              <ActionButton
+                icon={Upload}
+                label="Import"
+                onClick={() => setShowImportModal(true)}
+                variant="secondary"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Active Filters Indicator */}
+        {/* Active Filters Indicator (No changes) */}
         {(selectedClass || genderFilter) && (
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <span className="text-xs text-gray-500">Filter aktif:</span>
@@ -1190,7 +1191,7 @@ const Students = ({ userData }) => {
         )}
       </div>
 
-      {/* Results Header */}
+      {/* Results Header (No changes) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -1201,151 +1202,151 @@ const Students = ({ userData }) => {
               Menampilkan {filteredStudents.length} dari {students.length} siswa
             </p>
           </div>
-          {isMobile && (selectedClass || genderFilter) && (
+          {/* Show clear filter button on mobile if filters are active */}
+          {(selectedClass || genderFilter) && (
             <button
               onClick={() => {
                 setSelectedClass("");
                 setGenderFilter("");
               }}
-              className="mt-2 sm:mt-0 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
+              className="mt-2 sm:mt-0 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium lg:hidden">
               Hapus Filter
             </button>
           )}
         </div>
       </div>
 
-      {/* Students List - Responsive View */}
-      {isMobile ? (
-        // MOBILE CARD VIEW
-        <div className="space-y-3">
-          {filteredStudents.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-              <div className="flex flex-col items-center gap-3 text-center">
-                <Users size={48} className="text-gray-300" />
-                <div>
-                  <p className="text-gray-500 font-medium text-sm">
-                    Tidak ada data siswa yang ditemukan
-                  </p>
-                  <p className="text-gray-400 text-xs mt-1">
-                    Coba ubah kata kunci pencarian atau filter
-                  </p>
-                </div>
+      {/* Students List - Responsive View - REVISED FOR PURE CSS RESPONSIVENESS */}
+
+      {/* MOBILE CARD VIEW (Default, Hidden on Large screens) */}
+      <div className="space-y-3 lg:hidden">
+        {filteredStudents.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <Users size={48} className="text-gray-300" />
+              <div>
+                <p className="text-gray-500 font-medium text-sm">
+                  Tidak ada data siswa yang ditemukan
+                </p>
+                <p className="text-gray-400 text-xs mt-1">
+                  Coba ubah kata kunci pencarian atau filter
+                </p>
               </div>
             </div>
-          ) : (
-            filteredStudents.map((student, index) => (
-              <StudentCard
-                key={student.id}
-                student={student}
-                index={index}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))
-          )}
-        </div>
-      ) : (
-        // DESKTOP TABLE VIEW
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100 border-b border-gray-200">
+          </div>
+        ) : (
+          filteredStudents.map((student, index) => (
+            <StudentCard
+              key={student.id}
+              student={student}
+              index={index}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+      {/* DESKTOP TABLE VIEW (Hidden by default, displayed on Large screens) */}
+      <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-100 border-b border-gray-200">
+              <tr>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-12">
+                  No.
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-24">
+                  NISN
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Nama Siswa
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
+                  Jenis Kelamin
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Kelas
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-20">
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredStudents.length === 0 ? (
                 <tr>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-12">
-                    No.
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-24">
-                    NISN
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Nama Siswa
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
-                    Jenis Kelamin
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Kelas
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-20">
-                    Aksi
-                  </th>
+                  <td colSpan="7" className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Users size={48} className="text-gray-300" />
+                      <div>
+                        <p className="text-gray-500 font-medium">
+                          Tidak ada data siswa yang ditemukan
+                        </p>
+                        <p className="text-gray-400 text-sm mt-1">
+                          Coba ubah kata kunci pencarian atau filter
+                        </p>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Users size={48} className="text-gray-300" />
-                        <div>
-                          <p className="text-gray-500 font-medium">
-                            Tidak ada data siswa yang ditemukan
-                          </p>
-                          <p className="text-gray-400 text-sm mt-1">
-                            Coba ubah kata kunci pencarian atau filter
-                          </p>
-                        </div>
+              ) : (
+                filteredStudents.map((student, index) => (
+                  <tr
+                    key={student.id}
+                    className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-900 font-medium">
+                      {index + 1}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 text-sm font-mono text-gray-600">
+                      {student.nisn}
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {student.nama_siswa}
+                      </p>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
+                      <span className="text-sm text-gray-700 font-medium">
+                        {student.jenis_kelamin}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <span className="text-sm text-gray-700 font-medium">
+                        Kelas {student.kelas}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <StatusBadge isActive={student.is_active} />
+                    </td>
+                    <td className="px-4 sm:px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(student)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit">
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(student)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Hapus">
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
-                ) : (
-                  filteredStudents.map((student, index) => (
-                    <tr
-                      key={student.id}
-                      className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 sm:px-6 py-4 text-sm text-gray-900 font-medium">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 text-sm font-mono text-gray-600">
-                        {student.nisn}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {student.nama_siswa}
-                        </p>
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                        <span className="text-sm text-gray-700 font-medium">
-                          {student.jenis_kelamin}
-                        </span>
-                      </td>
-                      <td className="px-4 sm:px-6 py-4">
-                        <span className="text-sm text-gray-700 font-medium">
-                          Kelas {student.kelas}
-                        </span>
-                      </td>
-                      <td className="px-4 sm:px-6 py-4">
-                        <StatusBadge isActive={student.is_active} />
-                      </td>
-                      <td className="px-4 sm:px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(student)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit">
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(student)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Hapus">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
-      {/* Modals */}
+      {/* Modals (No changes) */}
       <FilterModal
         show={showFilterModal}
         onClose={() => setShowFilterModal(false)}

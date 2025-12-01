@@ -99,18 +99,14 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
     });
   };
 
-  // 🔥 FUNGSI GROUPING: Gabung jadwal yang mapel sama + waktu nyambung
   const groupSchedule = (scheduleData) => {
     if (!scheduleData || scheduleData.length === 0) return [];
 
-    // 1. Sort dulu by start_time
     const sorted = [...scheduleData].sort((a, b) => {
       const timeA = (a.start_time || a.jam_mulai || "00:00:00").toString();
       const timeB = (b.start_time || b.jam_mulai || "00:00:00").toString();
       return timeA.localeCompare(timeB);
     });
-
-    console.log("📋 Sorted schedule:", sorted);
 
     const grouped = [];
     let sessionNumber = 1;
@@ -130,7 +126,6 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
         ""
       ).toString();
 
-      // Cek apakah bisa digabung dengan item berikutnya
       let sessions = [current];
       let finalEndTime = endTime;
       let j = i + 1;
@@ -142,7 +137,6 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
         const nextStart = (next.start_time || next.jam_mulai || "").toString();
         const nextEnd = (next.end_time || next.jam_selesai || "").toString();
 
-        // Cek: mapel sama, kelas sama, waktu nyambung
         if (
           nextMapel === mapel &&
           nextKelas === kelas &&
@@ -156,7 +150,6 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
         }
       }
 
-      // Bikin grup
       const sessionCount = sessions.length;
       const endSession = sessionNumber + sessionCount - 1;
 
@@ -171,19 +164,16 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
         sessions: sessions,
       });
 
-      // Skip items yang udah digabung
       i = j - 1;
       sessionNumber = endSession + 1;
     }
 
-    console.log("✅ Grouped schedule:", grouped);
     return grouped;
   };
 
   const todayDay = getDayName();
   const isWeekend = todayDay === "Sabtu" || todayDay === "Minggu";
 
-  // Group schedule sebelum di-render
   const groupedSchedule = groupSchedule(schedule);
 
   if (!schedule || schedule.length === 0) {
@@ -237,13 +227,10 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
 
       <div className="space-y-3 max-h-80 overflow-y-auto">
         {groupedSchedule.map((group, index) => {
-          // Label jam pelajaran
           const sessionLabel =
             group.sessionCount === 1
               ? `Jam ke-${group.startSession}`
               : `Jam ke-${group.startSession}-${group.endSession}`;
-
-          console.log(`🎯 Rendering group ${index + 1}:`, group);
 
           return (
             <div
@@ -279,7 +266,7 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
   );
 };
 
-// Absent Students Table Component
+// Absent Students Table Component - FIXED VERSION
 const AbsentStudentsTable = ({
   absentStudents,
   isMobile,
@@ -287,8 +274,9 @@ const AbsentStudentsTable = ({
   allClasses,
   selectedKelas,
   onKelasChange,
-  // 🔥 FIX 1: Tambahkan prop todayAttendance
   todayAttendance,
+  totalAttendanceRecords,
+  attendanceByClass = {},
 }) => {
   const getStatusBadge = (status) => {
     const badges = {
@@ -351,9 +339,7 @@ const AbsentStudentsTable = ({
         </div>
       </div>
 
-      {/* 🔥 FIX 2: Ganti dashboardData.todayAttendance menjadi todayAttendance (prop) */}
-      {filteredStudents.length === 0 && todayAttendance === 0 ? (
-        /* BELUM INPUT PRESENSI SAMA SEKALI */
+      {totalAttendanceRecords === 0 ? (
         <div className="text-center py-12">
           <UserCheck size={64} className="mx-auto text-yellow-400 mb-4" />
           <p className="text-xl font-bold text-gray-900 mb-2">
@@ -364,7 +350,6 @@ const AbsentStudentsTable = ({
           </p>
         </div>
       ) : filteredStudents.length === 0 ? (
-        /* SUDAH INPUT PRESENSI & SEMUA HADIR */
         <div className="text-center py-12">
           <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
           <p className="text-xl font-bold text-gray-900 mb-2">
@@ -373,7 +358,6 @@ const AbsentStudentsTable = ({
           <p className="text-sm text-gray-500">Kehadiran 100% - Luar biasa!</p>
         </div>
       ) : (
-        /* ADA YANG TIDAK HADIR */
         <>
           {!isMobile ? (
             <div className="overflow-x-auto">
@@ -478,119 +462,121 @@ const AbsentStudentsTable = ({
 };
 
 // Quick Actions Component untuk Mobile
-const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => (
-  <div className="mb-6">
-    <h2 className="text-lg font-semibold text-slate-800 mb-3">Aksi Cepat</h2>
+const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
+  return (
+    <div className="mb-6">
+      <h2 className="text-lg font-semibold text-slate-800 mb-3">Aksi Cepat</h2>
 
-    {/* Baris 1 */}
-    <div className="grid grid-cols-3 gap-2 mb-3">
-      <button
-        onClick={() => handleNavigation("/attendance")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👨‍🎓</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Presensi Siswa
-        </span>
-      </button>
+      {/* Baris 1 */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <button
+          onClick={() => handleNavigation("/attendance")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">👨‍🎓</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Presensi Siswa
+          </span>
+        </button>
 
-      <button
-        onClick={() => handleNavigation("/teacher-attendance")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👨‍🏫</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Presensi Guru
-        </span>
-      </button>
+        <button
+          onClick={() => handleNavigation("/teacher-attendance")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">👨‍🏫</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Presensi Guru
+          </span>
+        </button>
 
-      <button
-        onClick={() => handleNavigation("/grades")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📊</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Nilai Siswa
-        </span>
-      </button>
+        <button
+          onClick={() => handleNavigation("/grades")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">📊</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Nilai Siswa
+          </span>
+        </button>
+      </div>
+
+      {/* Baris 2 */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <button
+          onClick={() => handleNavigation("/teachers")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">👥</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Data Guru
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleNavigation("/classes")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">🏫</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Data Kelas
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleNavigation("/students")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-pink-50 hover:border-pink-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">👤</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Data Siswa
+          </span>
+        </button>
+      </div>
+
+      {/* Baris 3 */}
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          onClick={() => handleNavigation("/catatan-siswa")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">📝</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Catatan Siswa
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleNavigation("/schedule")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">📅</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Jadwal Saya
+          </span>
+        </button>
+
+        <button
+          onClick={() => handleNavigation("/reports")}
+          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+            <span className="text-white text-lg">📄</span>
+          </div>
+          <span className="text-xs font-medium text-slate-800 text-center">
+            Laporan
+          </span>
+        </button>
+      </div>
     </div>
-
-    {/* Baris 2 */}
-    <div className="grid grid-cols-3 gap-2 mb-3">
-      <button
-        onClick={() => handleNavigation("/teachers")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👥</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Data Guru
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/classes")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">🏫</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Data Kelas
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/students")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-pink-50 hover:border-pink-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">👤</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Data Siswa
-        </span>
-      </button>
-    </div>
-
-    {/* Baris 3 */}
-    <div className="grid grid-cols-3 gap-2">
-      <button
-        onClick={() => handleNavigation("/student-notes")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📝</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Catatan Siswa
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/my-schedule")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📅</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Jadwal Saya
-        </span>
-      </button>
-
-      <button
-        onClick={() => handleNavigation("/reports")}
-        className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm">
-        <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
-          <span className="text-white text-lg">📄</span>
-        </div>
-        <span className="text-xs font-medium text-slate-800 text-center">
-          Laporan
-        </span>
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 const TeacherDashboard = ({ userData }) => {
   const [loading, setLoading] = useState(true);
@@ -599,13 +585,15 @@ const TeacherDashboard = ({ userData }) => {
   const [selectedKelas, setSelectedKelas] = useState("");
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
-    todayAttendance: 0, // Nilai ini yang diperlukan di AbsentStudentsTable
+    todayAttendance: 0,
+    totalAttendanceRecords: 0,
     attendanceRate: 0,
     totalClasses: 0,
     tidakHadir: 0,
     todaySchedule: [],
     absentStudents: [],
     allClasses: [],
+    attendanceByClass: {},
   });
 
   const navigate = useNavigate();
@@ -623,7 +611,12 @@ const TeacherDashboard = ({ userData }) => {
   }, []);
 
   const getTodayDate = () => {
-    return new Date().toISOString().split("T")[0];
+    // Get local date in YYYY-MM-DD format (Indonesia timezone)
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const getTodayDayName = () => {
@@ -645,13 +638,9 @@ const TeacherDashboard = ({ userData }) => {
       const todayDay = getTodayDayName();
 
       if (todayDay === "Sabtu" || todayDay === "Minggu") {
-        console.log("🏖️ Weekend - No schedule");
         return [];
       }
 
-      console.log("📅 Fetching schedule for:", todayDay);
-
-      // Query ke tabel class_schedules
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("class_schedules")
         .select(
@@ -673,29 +662,18 @@ const TeacherDashboard = ({ userData }) => {
         throw scheduleError;
       }
 
-      console.log("✅ Schedule data fetched:", scheduleData);
-
-      // Filter berdasarkan role
       let filteredSchedule = scheduleData || [];
 
       if (isGuruKelas && userData.kelas) {
-        // Guru Kelas: tampilkan jadwal kelasnya saja
         filteredSchedule = scheduleData.filter(
           (item) => item.class_id === userData.kelas
         );
-        console.log(
-          `👨‍🏫 Guru Kelas ${userData.kelas} schedule:`,
-          filteredSchedule
-        );
       } else if (isGuruMapel && userData.id) {
-        // Guru Mapel: tampilkan jadwal yang dia ajar
         filteredSchedule = scheduleData.filter(
           (item) => item.teacher_id === userData.id
         );
-        console.log(`📚 Guru Mapel schedule:`, filteredSchedule);
       }
 
-      // Transform data untuk tampilan (sesuaikan dengan struktur lama)
       const transformedSchedule = filteredSchedule.map((item) => ({
         kelas: item.class_id,
         class_name: item.class_id,
@@ -720,6 +698,7 @@ const TeacherDashboard = ({ userData }) => {
     navigate(path);
   };
 
+  // 🔥 FIXED: Fetch data untuk Guru Kelas
   const fetchGuruKelasDashboardData = async () => {
     try {
       const today = getTodayDate();
@@ -740,6 +719,7 @@ const TeacherDashboard = ({ userData }) => {
           ...prev,
           totalStudents: 0,
           todayAttendance: 0,
+          totalAttendanceRecords: 0,
           attendanceRate: 0,
           totalClasses: 1,
           tidakHadir: 0,
@@ -750,42 +730,46 @@ const TeacherDashboard = ({ userData }) => {
         return;
       }
 
+      // ✅ FIX: FILTER BY GURU_INPUT!
       const { data: todayAttendanceData, error: todayError } = await supabase
         .from("attendance")
-        .select("nisn, nama_siswa, kelas, status, tanggal")
+        .select("nisn, nama_siswa, kelas, status, tanggal, guru_input")
         .eq("tanggal", today)
-        .eq("kelas", userKelas);
+        .eq("kelas", userKelas)
+        .eq("guru_input", userData.username);
 
       if (todayError) throw todayError;
 
-      // 🔥 LOGIC BARU: Default semua HADIR, yang ditampilkan cuma yang TIDAK HADIR
       const totalClassStudents = classStudents.length;
+      const totalAttendanceRecords = todayAttendanceData?.length || 0;
 
-      // Hitung yang sudah di-mark tidak hadir
+      const hadirCount =
+        todayAttendanceData?.filter(
+          (record) => record.status.toLowerCase() === "hadir"
+        ).length || 0;
+
       const absentStudents =
         todayAttendanceData?.filter(
           (record) => record.status.toLowerCase() !== "hadir"
         ) || [];
-      const todayPresentCount = totalClassStudents - absentStudents.length;
+
       const attendanceRate =
         totalClassStudents > 0
-          ? Math.round((todayPresentCount / totalClassStudents) * 100)
+          ? Math.round((hadirCount / totalClassStudents) * 100)
           : 0;
 
-      // ✅ FIX: Hitung total record presensi hari ini (bukan yang hadir, tapi yang udah di-input)
-      const totalAttendanceRecords = todayAttendanceData?.length || 0;
-
-      // Transform data untuk table
       const transformedAbsentStudents = absentStudents.map((record) => ({
         nisn: record.nisn,
         nama_siswa: record.nama_siswa,
-        kelas: record.kelas,
+        kelas: String(record.kelas), // ✅ CONVERT KE STRING
         status: record.status,
       }));
+
       setDashboardData((prev) => ({
         ...prev,
         totalStudents: totalClassStudents,
-        todayAttendance: totalAttendanceRecords,
+        todayAttendance: hadirCount,
+        totalAttendanceRecords: totalAttendanceRecords,
         attendanceRate: attendanceRate,
         totalClasses: 1,
         tidakHadir: absentStudents.length,
@@ -801,7 +785,6 @@ const TeacherDashboard = ({ userData }) => {
   const fetchGuruMapelDashboardData = async () => {
     try {
       const today = getTodayDate();
-
       const todaySchedule = await fetchTodaySchedule();
 
       const { data: studentsData, error: studentsError } = await supabase
@@ -813,47 +796,101 @@ const TeacherDashboard = ({ userData }) => {
 
       const { data: todayAttendanceData, error: todayError } = await supabase
         .from("attendance")
-        .select("nisn, nama_siswa, kelas, status, tanggal")
-        .eq("tanggal", today);
+        .select("nisn, nama_siswa, kelas, status, tanggal, guru_input")
+        .eq("tanggal", today)
+        .eq("guru_input", userData.username);
 
       if (todayError) throw todayError;
 
       const allClasses = [...new Set(studentsData.map((s) => s.kelas))].sort();
 
+      const currentSelectedKelas =
+        selectedKelas || (allClasses.length > 0 ? allClasses[0] : "");
+
       if (!selectedKelas && allClasses.length > 0) {
         setSelectedKelas(allClasses[0]);
       }
 
-      // 🔥 LOGIC BARU: Default semua HADIR
       const totalStudentsCount = studentsData.length;
+      const totalAttendanceRecords = todayAttendanceData?.length || 0;
 
-      // Yang ditampilkan cuma yang TIDAK HADIR
+      const hadirCount =
+        todayAttendanceData?.filter(
+          (record) => record.status.toLowerCase() === "hadir"
+        ).length || 0;
+
       const absentStudents =
         todayAttendanceData?.filter(
           (record) => record.status.toLowerCase() !== "hadir"
         ) || [];
 
-      const todayPresentCount = totalStudentsCount - absentStudents.length;
       const attendanceRate =
         totalStudentsCount > 0
-          ? Math.round((todayPresentCount / totalStudentsCount) * 100)
+          ? Math.round((hadirCount / totalStudentsCount) * 100)
           : 0;
 
-      // ✅ FIX: Hitung total record presensi hari ini
-      const totalAttendanceRecords = todayAttendanceData?.length || 0;
-
       const tidakHadirCount = absentStudents.length;
+
+      const calculateBestClass = () => {
+        if (!todayAttendanceData || todayAttendanceData.length === 0)
+          return "Belum ada presensi";
+
+        const classStats = {};
+
+        allClasses.forEach((kelas) => {
+          const kelasRecords = todayAttendanceData.filter(
+            (record) => record.kelas === kelas
+          );
+          if (kelasRecords.length > 0) {
+            const hadirCount = kelasRecords.filter(
+              (r) => r.status.toLowerCase() === "hadir"
+            ).length;
+            const attendanceRate = Math.round(
+              (hadirCount / kelasRecords.length) * 100
+            );
+            classStats[kelas] = attendanceRate;
+          }
+        });
+
+        if (Object.keys(classStats).length === 0) {
+          return "Tidak ada data";
+        }
+
+        return Object.keys(classStats).reduce((best, current) =>
+          classStats[current] > classStats[best] ? current : best
+        );
+      };
+
+      const bestClass = calculateBestClass();
+
+      const transformedAbsentStudents = absentStudents.map((record) => ({
+        nisn: record.nisn,
+        nama_siswa: record.nama_siswa,
+        kelas: String(record.kelas),
+        status: record.status,
+      }));
+
+      const attendanceByClass = {};
+      allClasses.forEach((kelas) => {
+        const count =
+          todayAttendanceData?.filter((r) => String(r.kelas) === kelas)
+            .length || 0;
+        attendanceByClass[kelas] = count;
+      });
 
       setDashboardData((prev) => ({
         ...prev,
         totalStudents: totalStudentsCount,
-        todayAttendance: totalAttendanceRecords,
+        todayAttendance: hadirCount,
+        totalAttendanceRecords: totalAttendanceRecords,
         attendanceRate: attendanceRate,
         totalClasses: allClasses.length,
         tidakHadir: tidakHadirCount,
         todaySchedule: todaySchedule,
-        absentStudents: absentStudents,
+        absentStudents: transformedAbsentStudents,
         allClasses: allClasses,
+        bestClass: bestClass,
+        attendanceByClass: attendanceByClass,
       }));
     } catch (error) {
       console.error("Error fetching guru mapel dashboard data:", error);
@@ -902,7 +939,7 @@ const TeacherDashboard = ({ userData }) => {
   const renderGuruKelasDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG - INLINE BLOCK APPROACH */}
+        {/* 🎯 HEADER SELAMAT DATANG */}
         <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
           <div>
             <div className="sm:whitespace-nowrap">
@@ -952,7 +989,7 @@ const TeacherDashboard = ({ userData }) => {
           <StatsCard
             title="Hadir Hari Ini"
             value={dashboardData.todayAttendance}
-            subtitle={`Dari ${dashboardData.totalStudents} siswa`}
+            subtitle={`${dashboardData.totalAttendanceRecords} siswa sudah dipresensi`}
             icon={UserCheck}
             color="green"
           />
@@ -976,21 +1013,21 @@ const TeacherDashboard = ({ userData }) => {
           <AbsentStudentsTable
             absentStudents={dashboardData.absentStudents}
             isMobile={isMobile}
-            isGuruMapel={false}
-            allClasses={[]}
-            selectedKelas=""
-            onKelasChange={() => {}}
-            // 🔥 FIX 3a: Melewatkan prop todayAttendance
+            isGuruMapel={true}
+            allClasses={dashboardData.allClasses}
+            selectedKelas={selectedKelas}
+            onKelasChange={setSelectedKelas}
             todayAttendance={dashboardData.todayAttendance}
+            totalAttendanceRecords={dashboardData.totalAttendanceRecords}
+            attendanceByClass={dashboardData.attendanceByClass}
           />
-
           <TodayScheduleCard
             schedule={dashboardData.todaySchedule}
             isMobile={isMobile}
           />
         </div>
 
-        {/* Aksi Cepat Desktop - Muncul hanya di Desktop/Tablet */}
+        {/* Aksi Cepat Desktop */}
         {!isMobile && (
           <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
@@ -1054,27 +1091,11 @@ const TeacherDashboard = ({ userData }) => {
   };
 
   const renderGuruMapelDashboard = () => {
-    const bestClass =
-      dashboardData.allClasses.length > 0
-        ? dashboardData.allClasses.reduce(
-            (best, kelas) => {
-              const kelasStudents = dashboardData.absentStudents.filter(
-                (s) => s.kelas === kelas
-              );
-              return kelasStudents.length < best.count
-                ? { kelas, count: kelasStudents.length }
-                : best;
-            },
-            { kelas: dashboardData.allClasses[0], count: Infinity }
-          )
-        : null;
-
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG DENGAN WARNA PASTEL - FIXED */}
+        {/* 🎯 HEADER SELAMAT DATANG */}
         <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
           <div>
-            {/* MOBILE: 2 BARIS, DESKTOP: 1 BARIS */}
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
               <h1 className="text-xl font-semibold text-slate-800">
                 Selamat Datang,
@@ -1135,7 +1156,7 @@ const TeacherDashboard = ({ userData }) => {
           />
           <StatsCard
             title="Kelas Terbaik"
-            value={bestClass ? bestClass.kelas : "N/A"}
+            value={dashboardData.bestClass || "N/A"}
             subtitle="Kehadiran tertinggi"
             icon={TrendingUp}
             color="orange"
@@ -1150,17 +1171,16 @@ const TeacherDashboard = ({ userData }) => {
             allClasses={dashboardData.allClasses}
             selectedKelas={selectedKelas}
             onKelasChange={setSelectedKelas}
-            // 🔥 FIX 3b: Melewatkan prop todayAttendance
-            todayAttendance={dashboardData.todayAttendance}
+            todayAttendance={dashboardData.todayAttendance} // ✅ FIX!
+            totalAttendanceRecords={dashboardData.totalAttendanceRecords}
           />
-
           <TodayScheduleCard
             schedule={dashboardData.todaySchedule}
             isMobile={isMobile}
           />
         </div>
 
-        {/* Aksi Cepat Desktop - Muncul hanya di Desktop/Tablet */}
+        {/* Aksi Cepat Desktop */}
         {!isMobile && (
           <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">

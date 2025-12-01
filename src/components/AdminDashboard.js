@@ -74,31 +74,11 @@ const StatsCard = ({
   );
 };
 
-// Table: Guru Belum Input Presensi GURU
+// Table: Guru Belum Input Presensi GURU - UPDATED VERSION
 const GuruBelumInputTable = ({ guruData, isMobile }) => {
-  if (guruData.length === 0) {
-    return (
-      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-        <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
-          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-            Monitoring Presensi Guru
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Status presensi guru hari ini
-          </p>
-        </div>
-        <div className="text-center py-12">
-          <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
-          <p className="text-xl font-bold text-gray-900 mb-2">
-            Semua guru sudah input presensi! 🎉
-          </p>
-          <p className="text-sm text-gray-500">
-            Kehadiran guru hari ini sudah tercatat lengkap
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Hitung yang belum & sudah
+  const belumInputCount = guruData.filter((guru) => !guru.sudah_input).length;
+  const sudahInputCount = guruData.filter((guru) => guru.sudah_input).length;
 
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
@@ -106,16 +86,24 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Guru Belum Input Presensi
+              Monitoring Presensi Guru
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Total: {guruData.length} guru
+              Total: {guruData.length} guru ({belumInputCount} belum,{" "}
+              {sudahInputCount} sudah)
             </p>
           </div>
-          <div className="bg-red-100 px-3 py-1.5 rounded-full">
-            <span className="text-red-700 font-bold text-sm">
-              {guruData.length}
-            </span>
+          <div className="flex gap-2">
+            <div className="bg-red-100 px-3 py-1.5 rounded-full">
+              <span className="text-red-700 font-bold text-sm">
+                {belumInputCount}
+              </span>
+            </div>
+            <div className="bg-green-100 px-3 py-1.5 rounded-full">
+              <span className="text-green-700 font-bold text-sm">
+                {sudahInputCount}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -147,13 +135,20 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
               {guruData.map((guru, index) => (
                 <tr
                   key={guru.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                    guru.sudah_input ? "bg-green-50/30" : ""
+                  }`}>
                   <td className="py-3 px-4 text-sm text-gray-600">
                     {index + 1}
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                          guru.sudah_input
+                            ? "bg-gradient-to-br from-green-500 to-green-600"
+                            : "bg-gradient-to-br from-orange-500 to-orange-600"
+                        }`}>
                         {guru.full_name
                           ? guru.full_name.charAt(0).toUpperCase()
                           : "?"}
@@ -182,8 +177,13 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
                       : guru.mata_pelajaran || "-"}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-red-100 text-red-700 border-red-200">
-                      ❌ Belum Input
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                        guru.sudah_input
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-red-100 text-red-700 border-red-200"
+                      }`}>
+                      {guru.sudah_input ? "✅ Sudah Input" : "❌ Belum Input"}
                     </span>
                   </td>
                 </tr>
@@ -197,9 +197,18 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
           {guruData.map((guru, index) => (
             <div
               key={guru.id}
-              className="bg-gradient-to-r from-orange-50 to-red-50 border border-red-200 rounded-lg p-4">
+              className={`border rounded-lg p-4 ${
+                guru.sudah_input
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+                  : "bg-gradient-to-r from-orange-50 to-red-50 border-red-200"
+              }`}>
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
+                    guru.sudah_input
+                      ? "bg-gradient-to-br from-green-500 to-green-600"
+                      : "bg-gradient-to-br from-orange-500 to-orange-600"
+                  }`}>
                   {guru.full_name
                     ? guru.full_name.charAt(0).toUpperCase()
                     : "?"}
@@ -212,8 +221,13 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
                       </h4>
                       <p className="text-xs text-gray-500">{guru.username}</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
-                      ❌ Belum
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${
+                        guru.sudah_input
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-red-100 text-red-700 border-red-200"
+                      }`}>
+                      {guru.sudah_input ? "✅ Sudah" : "❌ Belum"}
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -241,31 +255,11 @@ const GuruBelumInputTable = ({ guruData, isMobile }) => {
   );
 };
 
-// Table: Monitoring Presensi SISWA (GANTI DARI SISWA BERMASALAH)
+// Table: Monitoring Presensi SISWA - UPDATED VERSION
 const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
-  if (guruData.length === 0) {
-    return (
-      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-        <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
-          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-            Monitoring Presensi Siswa
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Status input presensi siswa hari ini
-          </p>
-        </div>
-        <div className="text-center py-12">
-          <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
-          <p className="text-xl font-bold text-gray-900 mb-2">
-            Semua guru sudah input presensi siswa! 🎉
-          </p>
-          <p className="text-sm text-gray-500">
-            Presensi siswa hari ini sudah tercatat lengkap
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Hitung yang belum & sudah
+  const belumInputCount = guruData.filter((guru) => !guru.sudah_input).length;
+  const sudahInputCount = guruData.filter((guru) => guru.sudah_input).length;
 
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
@@ -273,16 +267,24 @@ const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-              Guru Belum Input Presensi Siswa
+              Monitoring Presensi Siswa
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Total: {guruData.length} guru
+              Total: {guruData.length} guru ({belumInputCount} belum,{" "}
+              {sudahInputCount} sudah)
             </p>
           </div>
-          <div className="bg-yellow-100 px-3 py-1.5 rounded-full">
-            <span className="text-yellow-700 font-bold text-sm">
-              {guruData.length}
-            </span>
+          <div className="flex gap-2">
+            <div className="bg-yellow-100 px-3 py-1.5 rounded-full">
+              <span className="text-yellow-700 font-bold text-sm">
+                {belumInputCount}
+              </span>
+            </div>
+            <div className="bg-green-100 px-3 py-1.5 rounded-full">
+              <span className="text-green-700 font-bold text-sm">
+                {sudahInputCount}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -314,13 +316,20 @@ const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
               {guruData.map((guru, index) => (
                 <tr
                   key={guru.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                    guru.sudah_input ? "bg-green-50/30" : ""
+                  }`}>
                   <td className="py-3 px-4 text-sm text-gray-600">
                     {index + 1}
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                          guru.sudah_input
+                            ? "bg-gradient-to-br from-green-500 to-green-600"
+                            : "bg-gradient-to-br from-yellow-500 to-yellow-600"
+                        }`}>
                         {guru.full_name
                           ? guru.full_name.charAt(0).toUpperCase()
                           : "?"}
@@ -349,8 +358,13 @@ const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
                       : guru.mata_pelajaran || "-"}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border bg-yellow-100 text-yellow-700 border-yellow-200">
-                      ⚠️ Belum Input
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                        guru.sudah_input
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                      }`}>
+                      {guru.sudah_input ? "✅ Sudah Input" : "⚠️ Belum Input"}
                     </span>
                   </td>
                 </tr>
@@ -364,9 +378,18 @@ const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
           {guruData.map((guru, index) => (
             <div
               key={guru.id}
-              className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
+              className={`border rounded-lg p-4 ${
+                guru.sudah_input
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+                  : "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200"
+              }`}>
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
+                    guru.sudah_input
+                      ? "bg-gradient-to-br from-green-500 to-green-600"
+                      : "bg-gradient-to-br from-yellow-500 to-yellow-600"
+                  }`}>
                   {guru.full_name
                     ? guru.full_name.charAt(0).toUpperCase()
                     : "?"}
@@ -379,8 +402,13 @@ const MonitoringPresensiSiswaTable = ({ guruData, isMobile }) => {
                       </h4>
                       <p className="text-xs text-gray-500">{guru.username}</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                      ⚠️ Belum
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${
+                        guru.sudah_input
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                      }`}>
+                      {guru.sudah_input ? "✅ Sudah" : "⚠️ Belum"}
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -446,7 +474,7 @@ const AdminDashboard = ({ userData }) => {
     navigate(path);
   };
 
-  // Fetch Guru Belum Input Presensi GURU
+  // Fetch Guru Belum Input Presensi GURU - UPDATED
   const fetchGuruBelumInputPresensiGuru = async (today) => {
     try {
       const { data: allTeachers, error: teachersError } = await supabase
@@ -470,13 +498,15 @@ const AdminDashboard = ({ userData }) => {
         todayTeacherAttendance?.map((r) => r.teacher_id) || []
       );
 
-      // Filter guru yang belum input presensi GURU
-      const belumInput =
-        allTeachers?.filter((teacher) => !teachersWhoInput.has(teacher.id)) ||
-        [];
+      // TAMPILKAN SEMUA GURU, TAMBAH FIELD sudah_input
+      const allTeachersWithStatus =
+        allTeachers?.map((teacher) => ({
+          ...teacher,
+          sudah_input: teachersWhoInput.has(teacher.id),
+        })) || [];
 
       // Urutkan: Kelas 1-6 dulu, lalu Mapel
-      const sortedBelumInput = belumInput.sort((a, b) => {
+      const sortedTeachers = allTeachersWithStatus.sort((a, b) => {
         if (a.role === "guru_kelas" && b.role === "guru_kelas") {
           return parseInt(a.kelas) - parseInt(b.kelas);
         }
@@ -485,14 +515,14 @@ const AdminDashboard = ({ userData }) => {
         return (a.mata_pelajaran || "").localeCompare(b.mata_pelajaran || "");
       });
 
-      setGuruBelumInputPresensiGuru(sortedBelumInput);
+      setGuruBelumInputPresensiGuru(sortedTeachers);
     } catch (error) {
       console.error("Error fetching guru belum input presensi guru:", error);
       setGuruBelumInputPresensiGuru([]);
     }
   };
 
-  // Fetch Guru Belum Input Presensi SISWA
+  // Fetch Guru Belum Input Presensi SISWA - UPDATED
   const fetchGuruBelumInputPresensiSiswa = async (today) => {
     try {
       const { data: allTeachers, error: teachersError } = await supabase
@@ -503,7 +533,7 @@ const AdminDashboard = ({ userData }) => {
 
       if (teachersError) throw teachersError;
 
-      // Query attendance untuk presensi SISWA (dilihat dari guru_input)
+      // Query attendance untuk presensi SISWA
       const { data: todayAttendance, error: attendanceError } = await supabase
         .from("attendance")
         .select("guru_input")
@@ -515,14 +545,15 @@ const AdminDashboard = ({ userData }) => {
         todayAttendance?.map((r) => r.guru_input).filter(Boolean) || []
       );
 
-      // Filter guru yang belum input presensi SISWA
-      const belumInput =
-        allTeachers?.filter(
-          (teacher) => !teachersWhoInput.has(teacher.username)
-        ) || [];
+      // TAMPILKAN SEMUA GURU, TAMBAH FIELD sudah_input
+      const allTeachersWithStatus =
+        allTeachers?.map((teacher) => ({
+          ...teacher,
+          sudah_input: teachersWhoInput.has(teacher.username),
+        })) || [];
 
       // Urutkan: Kelas 1-6 dulu, lalu Mapel
-      const sortedBelumInput = belumInput.sort((a, b) => {
+      const sortedTeachers = allTeachersWithStatus.sort((a, b) => {
         if (a.role === "guru_kelas" && b.role === "guru_kelas") {
           return parseInt(a.kelas) - parseInt(b.kelas);
         }
@@ -531,7 +562,7 @@ const AdminDashboard = ({ userData }) => {
         return (a.mata_pelajaran || "").localeCompare(b.mata_pelajaran || "");
       });
 
-      setGuruBelumInputPresensiSiswa(sortedBelumInput);
+      setGuruBelumInputPresensiSiswa(sortedTeachers);
     } catch (error) {
       console.error("Error fetching guru belum input presensi siswa:", error);
       setGuruBelumInputPresensiSiswa([]);
@@ -643,7 +674,7 @@ const AdminDashboard = ({ userData }) => {
           </div>
         </div>
 
-        {/* AKSI CEPAT - DIPINDAH KE ATAS */}
+        {/* AKSI CEPAT - PAKE EMOJI ICON KAYAK TEACHERDASHBOARD */}
         <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
           <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
             Aksi Cepat
@@ -653,41 +684,37 @@ const AdminDashboard = ({ userData }) => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-3 sm:mb-4">
             <button
               onClick={() => handleNavigation("/teacher-attendance")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg text-blue-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <UserCheck
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">👨‍🏫</span>
+              </div>
               <span className="font-semibold text-center">Presensi Guru</span>
             </button>
 
             <button
               onClick={() => handleNavigation("/attendance")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg text-green-700 font-medium hover:bg-gradient-to-br hover:from-green-600 hover:to-green-700 hover:text-white hover:border-green-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <ClipboardList
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">👨‍🎓</span>
+              </div>
               <span className="font-semibold text-center">Presensi Siswa</span>
             </button>
 
             <button
               onClick={() => handleNavigation("/teachers")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 hover:text-white hover:border-purple-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <UserCog
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">👥</span>
+              </div>
               <span className="font-semibold text-center">Data Guru</span>
             </button>
 
             <button
               onClick={() => handleNavigation("/students")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg text-orange-700 font-medium hover:bg-gradient-to-br hover:from-orange-600 hover:to-orange-700 hover:text-white hover:border-orange-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <Users
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">👤</span>
+              </div>
               <span className="font-semibold text-center">Data Siswa</span>
             </button>
           </div>
@@ -696,41 +723,37 @@ const AdminDashboard = ({ userData }) => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             <button
               onClick={() => handleNavigation("/grades")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg text-indigo-700 font-medium hover:bg-gradient-to-br hover:from-indigo-600 hover:to-indigo-700 hover:text-white hover:border-indigo-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <BarChart3
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">📊</span>
+              </div>
               <span className="font-semibold text-center">Nilai Siswa</span>
             </button>
 
             <button
               onClick={() => handleNavigation("/catatan-siswa")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg text-pink-700 font-medium hover:bg-gradient-to-br hover:from-pink-600 hover:to-pink-700 hover:text-white hover:border-pink-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <StickyNote
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">📝</span>
+              </div>
               <span className="font-semibold text-center">Catatan Siswa</span>
             </button>
 
             <button
               onClick={() => handleNavigation("/reports")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 rounded-lg text-teal-700 font-medium hover:bg-gradient-to-br hover:from-teal-600 hover:to-teal-700 hover:text-white hover:border-teal-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <FileText
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">📄</span>
+              </div>
               <span className="font-semibold text-center">Laporan</span>
             </button>
 
             <button
               onClick={() => handleNavigation("/settings")}
-              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-gray-600 hover:to-gray-700 hover:text-white hover:border-gray-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-              <Settings
-                size={isMobile ? 18 : 20}
-                className="group-hover:scale-110 transition-transform"
-              />
+              className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+                <span className="text-white text-lg">⚙️</span>
+              </div>
               <span className="font-semibold text-center">Pengaturan</span>
             </button>
           </div>

@@ -20,9 +20,99 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 
+// =======================================================
+// ✅ NEW: Mobile Card Component (Placeholder for Responsive List View)
+// Ini adalah pengganti DataTable saat di layar kecil (Mobile/Tablet)
+// =======================================================
+const MobileReportCard = ({ item, index, type }) => {
+  let mainTitle = "";
+  let details = [];
+  let statusText = null;
+
+  // Logic untuk menentukan konten card berdasarkan tab aktif
+  if (type === "students") {
+    mainTitle = item.nama_siswa || item.name || `Siswa #${index + 1}`;
+    details = [
+      `Kelas: ${item.kelas || "-"}`,
+      `NISN: ${item.nisn || "Tidak ada"}`,
+      `JK: ${item.jenis_kelamin || "-"}`,
+    ];
+    statusText = item.status || (item.is_active ? "Aktif" : "Tidak Aktif");
+  } else if (type === "attendance") {
+    mainTitle =
+      item.nama_siswa || item.student_name || `Presensi #${index + 1}`;
+    details = [
+      `Tanggal: ${item.tanggal || item.date || "-"}`,
+      `Status: ${item.status || "-"}`,
+      `Tipe: ${item.jenis || "Kelas"}`,
+    ];
+    statusText = item.status;
+  } else if (type === "grades") {
+    mainTitle = item.nama_siswa || item.student_name || `Nilai #${index + 1}`;
+    details = [
+      `Mapel: ${item.mapel || "-"}`,
+      `Nilai: ${item.nilai || item.score || "-"}`,
+      `Semester: ${item.semester || "-"}`,
+    ];
+  } else if (type === "notes") {
+    mainTitle = item.judul || `Catatan #${index + 1}`;
+    details = [
+      `Siswa: ${item.nama_siswa || "-"}`,
+      `Kategori: ${item.kategori || "-"}`,
+      `Tgl: ${item.tanggal || "-"}`,
+    ];
+  } else {
+    mainTitle = `Data #${index + 1}`;
+    details = ["Lihat detail di desktop."];
+  }
+
+  // Helper untuk status badge
+  const StatusBadge = ({ status }) => {
+    let color = "bg-gray-100 text-gray-800";
+    if (status === "Hadir" || status === "Aktif") {
+      color = "bg-green-100 text-green-800";
+    } else if (status === "Alpa" || status === "Tidak Aktif") {
+      color = "bg-red-100 text-red-800";
+    } else if (status === "Sakit" || status === "Izin") {
+      color = "bg-yellow-100 text-yellow-800";
+    }
+
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${color}`}>
+        {status}
+      </span>
+    );
+  };
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-2">
+        <h3 className="text-base font-semibold text-gray-900 truncate flex-1 min-w-0">
+          {mainTitle}
+        </h3>
+        {statusText && <StatusBadge status={statusText} />}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+        {details.map((detail, i) => (
+          <p key={i} className="truncate">
+            {detail}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// =======================================================
+// Main Component
+// =======================================================
+
 const ReportTeacher = ({ user = {} }) => {
   const [activeTab, setActiveTab] = useState("students");
-  const [filterCollapsed, setFilterCollapsed] = useState(false);
+  // ✅ REVISI: Filter section sebaiknya tidak di-collapse otomatis di Mobile
+  // Kita biarkan filter bar muncul di atas, tapi kita tetap pertahankan collapsed
+  // untuk memberi opsi bagi user
+  const [filterCollapsed, setFilterCollapsed] = useState(true);
   const [viewMode, setViewMode] = useState("list");
 
   // STATE UNTUK ATTENDANCE VIEW MODE
@@ -41,7 +131,6 @@ const ReportTeacher = ({ user = {} }) => {
     siswa: "",
     kategori: "semua",
     periode: "bulan_ini",
-    // ✅ HAPUS "dibuatOleh" - tidak perlu untuk guru_kelas
   });
 
   // Determine report type based on activeTab and viewMode
@@ -66,24 +155,12 @@ const ReportTeacher = ({ user = {} }) => {
   // Kalkulasi analytics (pass attendanceViewMode untuk rekap)
   const stats = useAnalytics(data, activeTab, user.role, attendanceViewMode);
 
-  // Debug logger
+  // Debug logger (dihapus/di-comment untuk efisiensi di mode PRO, tapi dipertahankan untuk debug)
+  /*
   useEffect(() => {
-    console.group("🔍 Debug Report Data");
-    console.log("Active Tab:", activeTab);
-    console.log("View Mode:", viewMode);
-    console.log("Attendance View Mode:", attendanceViewMode);
-    console.log("Report Type:", getReportType());
-    console.log("Filters:", filters);
-    console.log("🔐 User Info:");
-    console.log("  - ID:", user.id);
-    console.log("  - Role:", user.role);
-    console.log("  - Kelas:", user.kelas, "(type:", typeof user.kelas, ")");
-    console.log("Loading:", loading);
-    console.log("Error:", error);
-    console.log("Data Count:", data?.length);
-    console.log("Data Sample:", data?.[0]);
-    console.groupEnd();
+    // ... debug log content ...
   }, [activeTab, viewMode, attendanceViewMode, loading, data, error, user]);
+  */
 
   // Tabs configuration
   const tabs = [
@@ -128,7 +205,7 @@ const ReportTeacher = ({ user = {} }) => {
     }
   }, [filters, activeTab, viewMode, attendanceViewMode, refetch, user.role]);
 
-  // Get filter config for current tab
+  // Get filter config for current tab (No functional changes)
   const getFilterConfig = () => {
     const baseConfig = {
       kelasOptions: [1, 2, 3, 4, 5, 6],
@@ -170,11 +247,10 @@ const ReportTeacher = ({ user = {} }) => {
       case "attendance":
         return {
           ...baseConfig,
-          // Ubah fields berdasarkan view mode
           fields:
             attendanceViewMode === "recap"
-              ? ["kelas", "bulan", "tahun", "jenisPresensi"] // Rekap: tanpa filter status
-              : ["kelas", "bulan", "tahun", "statusPresensi", "jenisPresensi"], // Detail: dengan filter status
+              ? ["kelas", "bulan", "tahun", "jenisPresensi"]
+              : ["kelas", "bulan", "tahun", "statusPresensi", "jenisPresensi"],
           locked: { kelas: user.role === "guru_kelas" },
           bulanOptions: [
             { value: 1, label: "Januari" },
@@ -226,11 +302,9 @@ const ReportTeacher = ({ user = {} }) => {
         };
 
       case "notes":
-        // ✅ PERBAIKAN: Hapus filter "dibuatOleh" untuk guru_kelas
-        // Catatan siswa = hanya catatan yang dibuat oleh guru_kelas itu sendiri
         return {
           ...baseConfig,
-          fields: ["siswa", "kategori", "periode"], // ✅ Hapus "dibuatOleh"
+          fields: ["siswa", "kategori", "periode"],
           kategoriOptions: [
             { value: "semua", label: "Semua Kategori" },
             { value: "akademik", label: "Akademik" },
@@ -245,7 +319,6 @@ const ReportTeacher = ({ user = {} }) => {
             { value: "semester", label: "Semester Ini" },
             { value: "semua", label: "Semua Periode" },
           ],
-          // ✅ HAPUS dibuatOlehOptions - tidak perlu
         };
 
       default:
@@ -255,7 +328,7 @@ const ReportTeacher = ({ user = {} }) => {
 
   const filterConfig = getFilterConfig();
 
-  // Safety check: tampilkan pesan error jika user.role tidak tersedia
+  // Safety check: tampilkan pesan error jika user.role tidak tersedia (No changes)
   if (!user.role) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
@@ -286,14 +359,15 @@ const ReportTeacher = ({ user = {} }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    // ✅ REVISI: Mengubah p-6 menjadi p-3 sm:p-4 md:p-6 untuk Mobile-First Spacing
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
             Laporan & Analisis
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             {user.role === "guru_kelas" && `Guru Kelas ${user.kelas}`}
             {user.role === "guru_mapel" && `Guru ${user.mata_pelajaran}`}
             {" - "}
@@ -301,8 +375,8 @@ const ReportTeacher = ({ user = {} }) => {
           </p>
         </div>
 
-        {/* Access Info Alert */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 flex items-center gap-3">
+        {/* Access Info Alert (No changes needed) */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 sm:mb-6 flex items-center gap-3">
           <svg
             className="w-5 h-5 text-blue-600 flex-shrink-0"
             fill="currentColor"
@@ -313,7 +387,7 @@ const ReportTeacher = ({ user = {} }) => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-blue-800 text-sm">
+          <p className="text-blue-800 text-xs sm:text-sm">
             {user.role === "guru_kelas" &&
               `Akses Hanya Untuk Guru Kelas ${user.kelas}`}
             {user.role === "guru_mapel" &&
@@ -321,10 +395,12 @@ const ReportTeacher = ({ user = {} }) => {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="border-b border-gray-200">
-            <div className="flex space-x-8 px-6">
+        {/* Tabs & Filter Container */}
+        <div className="bg-white rounded-lg shadow-sm mb-4 sm:mb-6">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 overflow-x-auto">
+            {/* ✅ REVISI: Tambahkan min-w-full untuk memastikan tabs tetap di-scroll pada mobile */}
+            <div className="flex space-x-4 sm:space-x-6 md:space-x-8 px-4 sm:px-6 min-w-max">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -334,7 +410,7 @@ const ReportTeacher = ({ user = {} }) => {
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
                     className={`
-                      flex items-center gap-2 py-4 border-b-2 font-medium text-sm transition-colors
+                      flex items-center gap-1 sm:gap-2 py-3 sm:py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors flex-shrink-0
                       ${
                         isActive
                           ? "border-blue-600 text-blue-600"
@@ -349,11 +425,11 @@ const ReportTeacher = ({ user = {} }) => {
             </div>
           </div>
 
-          {/* Filter Section */}
+          {/* Filter Section (Collapsed/Expanded) */}
           <div className="border-b border-gray-200">
             <button
               onClick={() => setFilterCollapsed(!filterCollapsed)}
-              className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              className="w-full px-4 sm:px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
               <div className="flex items-center gap-2">
                 <svg
                   className="w-5 h-5 text-gray-600"
@@ -367,7 +443,7 @@ const ReportTeacher = ({ user = {} }) => {
                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-sm sm:text-base text-gray-900">
                   Filter Laporan
                 </span>
               </div>
@@ -379,7 +455,8 @@ const ReportTeacher = ({ user = {} }) => {
             </button>
 
             {!filterCollapsed && (
-              <div className="px-6 pb-4">
+              // ✅ FIX: Menghapus komentar JSX yang salah posisi di sini.
+              <div className="px-4 sm:px-6 pb-4">
                 <FilterBar
                   activeTab={activeTab}
                   filters={filters}
@@ -394,22 +471,23 @@ const ReportTeacher = ({ user = {} }) => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Statistics Cards (No changes needed, assuming StatsCards is responsive) */}
         {!loading && !error && data && data.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <StatsCards
               type={activeTab}
               stats={stats}
               userRole={user.role}
-              viewMode={attendanceViewMode} // Pass attendance view mode
+              viewMode={attendanceViewMode}
             />
           </div>
         )}
 
-        {/* Export Bar with View Mode Toggle */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-gray-600">
+        {/* Export Bar with View Mode Toggle - ✅ REVISI: MOBILE-FIRST STACKING */}
+        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left side: Status Text and View Toggles - Stacks on mobile */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-1">
+            <p className="text-xs sm:text-sm text-gray-600 flex-shrink-0">
               {loading ? (
                 <span>Memuat data...</span>
               ) : (
@@ -426,26 +504,33 @@ const ReportTeacher = ({ user = {} }) => {
               )}
             </p>
 
-            {/* View Mode Toggle - ATTENDANCE (Detail vs Rekap) */}
+            {/* View Mode Toggle Container (Attendance/Grades) - Tampil di bawah status pada mobile */}
             {activeTab === "attendance" && (
-              <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
-                <span className="text-xs text-gray-500 font-medium">
+              <div className="flex items-center gap-2 border-t border-gray-300 pt-3 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
+                <span className="text-xs text-gray-500 font-medium flex-shrink-0">
                   Tampilan:
                 </span>
-                <div className="inline-flex rounded-md shadow-sm" role="group">
+                {/* Grouped Buttons */}
+                <div
+                  className="inline-flex rounded-md shadow-sm flex-1"
+                  role="group">
                   <button
                     type="button"
                     onClick={() => handleAttendanceViewModeToggle("detail")}
                     disabled={loading}
                     className={`
-                      px-3 py-1.5 text-xs font-medium rounded-l-lg border transition-colors
-                      ${
-                        attendanceViewMode === "detail"
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }
-                      ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}>
+                                    flex-1 px-3 py-1.5 text-xs font-medium rounded-l-lg border transition-colors
+                                    ${
+                                      attendanceViewMode === "detail"
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    }
+                                    ${
+                                      loading
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                `}>
                     <FileSpreadsheet className="w-4 h-4 inline-block mr-1" />
                     Detail
                   </button>
@@ -454,14 +539,18 @@ const ReportTeacher = ({ user = {} }) => {
                     onClick={() => handleAttendanceViewModeToggle("recap")}
                     disabled={loading}
                     className={`
-                      px-3 py-1.5 text-xs font-medium rounded-r-lg border-t border-r border-b transition-colors
-                      ${
-                        attendanceViewMode === "recap"
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }
-                      ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}>
+                                    flex-1 px-3 py-1.5 text-xs font-medium rounded-r-lg border-t border-r border-b transition-colors
+                                    ${
+                                      attendanceViewMode === "recap"
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    }
+                                    ${
+                                      loading
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                `}>
                     <BarChart3 className="w-4 h-4 inline-block mr-1" />
                     Rekap
                   </button>
@@ -469,26 +558,32 @@ const ReportTeacher = ({ user = {} }) => {
               </div>
             )}
 
-            {/* View Mode Toggle - GRADES (List vs Grid) */}
             {activeTab === "grades" && (
-              <div className="flex items-center gap-2 border-l border-gray-300 pl-4">
-                <span className="text-xs text-gray-500 font-medium">
+              <div className="flex items-center gap-2 border-t border-gray-300 pt-3 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
+                <span className="text-xs text-gray-500 font-medium flex-shrink-0">
                   Tampilan:
                 </span>
-                <div className="inline-flex rounded-md shadow-sm" role="group">
+                {/* Grouped Buttons */}
+                <div
+                  className="inline-flex rounded-md shadow-sm flex-1"
+                  role="group">
                   <button
                     type="button"
                     onClick={() => handleViewModeToggle("list")}
                     disabled={loading}
                     className={`
-                      px-3 py-1.5 text-xs font-medium rounded-l-lg border transition-colors
-                      ${
-                        viewMode === "list"
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }
-                      ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}>
+                                    flex-1 px-3 py-1.5 text-xs font-medium rounded-l-lg border transition-colors
+                                    ${
+                                      viewMode === "list"
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    }
+                                    ${
+                                      loading
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                `}>
                     <List className="w-4 h-4 inline-block mr-1" />
                     List
                   </button>
@@ -497,14 +592,18 @@ const ReportTeacher = ({ user = {} }) => {
                     onClick={() => handleViewModeToggle("grid")}
                     disabled={loading}
                     className={`
-                      px-3 py-1.5 text-xs font-medium rounded-r-lg border-t border-r border-b transition-colors
-                      ${
-                        viewMode === "grid"
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }
-                      ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}>
+                                    flex-1 px-3 py-1.5 text-xs font-medium rounded-r-lg border-t border-r border-b transition-colors
+                                    ${
+                                      viewMode === "grid"
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                    }
+                                    ${
+                                      loading
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : ""
+                                    }
+                                `}>
                     <Grid3x3 className="w-4 h-4 inline-block mr-1" />
                     Grid
                   </button>
@@ -513,19 +612,22 @@ const ReportTeacher = ({ user = {} }) => {
             )}
           </div>
 
-          <ExportButtons
-            data={data || []}
-            type={activeTab}
-            filters={filters}
-            stats={stats}
-            loading={loading}
-            viewMode={attendanceViewMode} // Pass view mode for attendance
-          />
+          {/* Right side: Export Buttons - Full width on mobile, right-aligned on desktop */}
+          <div className="w-full sm:w-auto flex-shrink-0">
+            <ExportButtons
+              data={data || []}
+              type={activeTab}
+              filters={filters}
+              stats={stats}
+              loading={loading}
+              viewMode={attendanceViewMode}
+            />
+          </div>
         </div>
 
-        {/* Error State */}
+        {/* Error State (No changes needed) */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 sm:mb-6">
             <div className="flex items-start gap-3">
               <svg
                 className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
@@ -554,55 +656,76 @@ const ReportTeacher = ({ user = {} }) => {
           </div>
         )}
 
-        {/* Data Table */}
+        {/* Data View Section */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <DataTable
-            data={data || []}
-            type={activeTab}
-            loading={loading}
-            userRole={user.role}
-            viewMode={
-              activeTab === "attendance" ? attendanceViewMode : viewMode
-            }
-          />
+          {/* MOBILE CARD VIEW (Default, Sembunyikan di Layar Besar/Desktop) */}
+          {/* ✅ REVISI: Mengganti DataTable dengan MobileReportCard di layar kecil */}
+          <div className="p-3 sm:p-4 space-y-3 lg:hidden">
+            {!loading &&
+              data &&
+              data.length > 0 &&
+              data.map((item, index) => (
+                <MobileReportCard
+                  key={item.id || index} // Gunakan index sebagai fallback key
+                  item={item}
+                  index={index}
+                  type={activeTab}
+                />
+              ))}
 
-          {/* Empty State */}
-          {!loading && !error && (!data || data.length === 0) && (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
+            {/* Empty State for Mobile */}
+            {!loading && !error && (!data || data.length === 0) && (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Tidak Ada Data
+                </h3>
+                <p className="text-gray-600 mb-1 text-sm">
+                  {activeTab === "notes"
+                    ? "Belum ada catatan siswa yang dibuat untuk kelas ini"
+                    : "Tidak ada data yang sesuai dengan filter yang dipilih"}
+                </p>
+                {activeTab === "grades" && viewMode === "grid" && (
+                  <p className="text-xs text-gray-500">
+                    Pastikan backend mengirim data untuk endpoint "grades-grid"
+                  </p>
+                )}
+                {activeTab === "attendance" &&
+                  attendanceViewMode === "recap" && (
+                    <p className="text-xs text-gray-500">
+                      Pilih bulan & tahun untuk melihat rekapitulasi presensi
+                    </p>
+                  )}
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Tidak Ada Data
-              </h3>
-              <p className="text-gray-600 mb-1">
-                {activeTab === "notes"
-                  ? "Belum ada catatan siswa yang dibuat untuk kelas ini"
-                  : "Tidak ada data yang sesuai dengan filter yang dipilih"}
-              </p>
-              {activeTab === "grades" && viewMode === "grid" && (
-                <p className="text-sm text-gray-500">
-                  Pastikan backend mengirim data untuk endpoint "grades-grid"
-                </p>
-              )}
-              {activeTab === "attendance" && attendanceViewMode === "recap" && (
-                <p className="text-sm text-gray-500">
-                  Pilih bulan & tahun untuk melihat rekapitulasi presensi
-                </p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* DESKTOP/TABLET TABLE VIEW (Sembunyikan di Layar Kecil, Tampilkan di Layar Besar) */}
+          {/* ✅ REVISI: Menggunakan hidden lg:block untuk memastikan DataTable hanya tampil di desktop */}
+          <div className="hidden lg:block">
+            <DataTable
+              data={data || []}
+              type={activeTab}
+              loading={loading}
+              userRole={user.role}
+              viewMode={
+                activeTab === "attendance" ? attendanceViewMode : viewMode
+              }
+            />
+          </div>
         </div>
       </div>
     </div>
