@@ -299,7 +299,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         attendance_date: today,
         status: "hadir",
         clock_in: clockInTime,
-        check_in_method: "Manual",
+        check_in_method: "Scan QR",
         full_name: targetTeacherName,
         notes: null,
       };
