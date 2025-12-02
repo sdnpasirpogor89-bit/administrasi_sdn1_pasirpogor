@@ -181,11 +181,16 @@ export const prosesKatrolSemua = (dataSiswa, kkm, maxNilai = 90) => {
 };
 
 // ========================================
-// 5. HITUNG NILAI AKHIR
+// 5. HITUNG NILAI AKHIR (REVISED - DENGAN PEMBULATAN)
 // ========================================
 /**
  * Menghitung nilai akhir berdasarkan rumus:
  * Nilai Akhir = 40% Rata-rata NH + 30% UTS + 30% UAS
+ *
+ * NILAI AKHIR DIBULATKAN ke angka bulat terdekat:
+ * - 72.35 → 72.00
+ * - 72.74 → 73.00
+ * - 85.50 → 86.00
  *
  * @param {Array} dataSiswa - Data siswa yang sudah dikatrol
  * @returns {Array} - Data siswa dengan nilai akhir
@@ -205,7 +210,7 @@ export const hitungNilaiAkhir = (dataSiswa) => {
       .map((jenis) => siswa.nilai_katrol?.[jenis])
       .filter((n) => n !== undefined && n !== null && !isNaN(n));
 
-    // Hitung rata-rata NH
+    // Hitung rata-rata NH (tetap pakai desimal untuk akurasi)
     const rataNH_asli =
       nilaiNH_asli.length > 0
         ? nilaiNH_asli.reduce((sum, n) => sum + n, 0) / nilaiNH_asli.length
@@ -216,13 +221,13 @@ export const hitungNilaiAkhir = (dataSiswa) => {
         ? nilaiNH_katrol.reduce((sum, n) => sum + n, 0) / nilaiNH_katrol.length
         : 0;
 
-    // Nilai UTS & UAS
+    // Nilai UTS & UAS (tetap pakai desimal)
     const uts_asli = siswa.nilai.UTS || 0;
     const uas_asli = siswa.nilai.UAS || 0;
     const uts_katrol = siswa.nilai_katrol?.UTS || 0;
     const uas_katrol = siswa.nilai_katrol?.UAS || 0;
 
-    // Hitung Nilai Akhir
+    // Hitung Nilai Akhir (dengan desimal penuh dulu)
     // Rumus: 40% NH + 30% UTS + 30% UAS
     const nilaiAkhirAsli = 0.4 * rataNH_asli + 0.3 * uts_asli + 0.3 * uas_asli;
     const nilaiAkhirKatrol =
@@ -230,10 +235,10 @@ export const hitungNilaiAkhir = (dataSiswa) => {
 
     return {
       ...siswa,
-      rata_NH_asli: Math.round(rataNH_asli * 100) / 100,
-      rata_NH_katrol: Math.round(rataNH_katrol * 100) / 100,
-      nilai_akhir_asli: Math.round(nilaiAkhirAsli * 100) / 100,
-      nilai_akhir_katrol: Math.round(nilaiAkhirKatrol * 100) / 100,
+      rata_NH_asli: Math.round(rataNH_asli * 100) / 100, // Rata-rata NH tetap 2 desimal
+      rata_NH_katrol: Math.round(rataNH_katrol * 100) / 100, // Rata-rata NH tetap 2 desimal
+      nilai_akhir_asli: Math.round(nilaiAkhirAsli), // 🔥 NILAI AKHIR DIBULATKAN
+      nilai_akhir_katrol: Math.round(nilaiAkhirKatrol), // 🔥 NILAI AKHIR DIBULATKAN
     };
   });
 };
@@ -247,8 +252,15 @@ export const hitungNilaiAkhir = (dataSiswa) => {
  * @param {string} mapel - Nama mata pelajaran
  * @param {string} kelas - Kelas
  * @param {string} type - 'lengkap' atau 'ringkas'
+ * @param {Object} userData - Data user dari database {role, name, username}
  */
-export const exportToExcel = async (data, mapel, kelas, type = "lengkap") => {
+export const exportToExcel = async (
+  data,
+  mapel,
+  kelas,
+  type = "lengkap",
+  userData = {}
+) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Nilai Katrol");
 
@@ -407,7 +419,14 @@ export const exportToExcel = async (data, mapel, kelas, type = "lengkap") => {
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          cell.numFmt = "0.00";
+
+          // Format number: Nilai Akhir (kolom 20-21) pakai "0" (bulat), sisanya "0.00"
+          if (colNumber === 20 || colNumber === 21) {
+            cell.numFmt = "0"; // 🔥 Format angka bulat untuk Nilai Akhir
+          } else {
+            cell.numFmt = "0.00"; // Format 2 desimal untuk nilai lainnya
+          }
+
           if (colNumber === numColumns) {
             cell.font = { bold: true };
           }
@@ -514,7 +533,14 @@ export const exportToExcel = async (data, mapel, kelas, type = "lengkap") => {
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          cell.numFmt = "0.00";
+
+          // Format number: Nilai Akhir (kolom 11) pakai "0" (bulat), sisanya "0.00"
+          if (colNumber === 11) {
+            cell.numFmt = "0"; // 🔥 Format angka bulat untuk Nilai Akhir
+          } else {
+            cell.numFmt = "0.00"; // Format 2 desimal untuk nilai lainnya
+          }
+
           if (colNumber === numColumns) {
             cell.font = { bold: true };
           }
@@ -545,19 +571,23 @@ export const exportToExcel = async (data, mapel, kelas, type = "lengkap") => {
   currentRow += 2;
   const startCol = 8; // Kolom H
 
-  const signRow1 = worksheet.getRow(currentRow);
+  const signRow1 = worksheet.getRow(currentRow + 0);
   signRow1.getCell(startCol).value = "Mengetahui,";
   signRow1.getCell(startCol).font = { bold: true };
-  signRow1.getCell(startCol).alignment = { horizontal: "center" };
 
   const signRow2 = worksheet.getRow(currentRow + 1);
-  signRow2.getCell(startCol).value = "Guru Kelas";
+  signRow2.getCell(startCol).value =
+    userData.role === "guru_kelas" ? "Wali Kelas" : "Guru Mata Pelajaran";
   signRow2.getCell(startCol).font = { bold: true };
-  signRow2.getCell(startCol).alignment = { horizontal: "center" };
 
-  const signRow3 = worksheet.getRow(currentRow + 5);
-  signRow3.getCell(startCol).value = "___________________";
-  signRow3.getCell(startCol).alignment = { horizontal: "center" };
+  const signRow3 = worksheet.getRow(currentRow + 4);
+  signRow3.getCell(startCol).value =
+    userData.name || userData.username || "___________________";
+  signRow3.getCell(startCol).font = { bold: true, underline: true };
+
+  [signRow1, signRow2, signRow3].forEach((row) => {
+    row.getCell(startCol).alignment = { horizontal: "center" };
+  });
 
   // ========================================
   // DOWNLOAD FILE

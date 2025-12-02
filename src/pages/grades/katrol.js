@@ -291,7 +291,14 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setExporting(true);
     try {
-      await exportToExcel(hasilKatrol, selectedSubject, selectedClass, type);
+      // 🔥 Pass userData ke fungsi exportToExcel
+      await exportToExcel(
+        hasilKatrol,
+        selectedSubject,
+        selectedClass,
+        type,
+        userData // userData sudah ada dari props/state
+      );
       showMessage(`Berhasil export format ${type}`, "success");
     } catch (error) {
       console.error("Error exporting:", error);
