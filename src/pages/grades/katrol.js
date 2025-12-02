@@ -8,10 +8,10 @@ import {
   Loader,
   TrendingUp,
   Eye,
+  Settings,
 } from "lucide-react";
 import KatrolTable from "./KatrolTable";
 import {
-  getKKM,
   groupDataByNISN,
   prosesKatrolSemua,
   hitungNilaiAkhir,
@@ -29,7 +29,9 @@ const Katrol = ({ userData: initialUserData }) => {
   const [dataGrouped, setDataGrouped] = useState([]);
   const [hasilKatrol, setHasilKatrol] = useState([]);
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [kkm, setKkm] = useState(null);
+  const [kkm, setKkm] = useState(75);
+  const [nilaiMaksimal, setNilaiMaksimal] = useState(95);
+  const [loadingSettings, setLoadingSettings] = useState(false);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -42,6 +44,8 @@ const Katrol = ({ userData: initialUserData }) => {
     "IPAS",
     "Pendidikan Pancasila",
     "Seni Budaya",
+    "Pendidikan Agama dan Budi Pekerti (PABP)",
+    "Pendidikan Jasmani Olahraga Kesehatan",
   ];
 
   useEffect(() => {
@@ -89,14 +93,69 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   }, [userData]);
 
+  // Fetch KKM dan Nilai Maksimal dari database
+  useEffect(() => {
+    const fetchNilaiSettings = async () => {
+      if (!selectedSubject) return;
+
+      setLoadingSettings(true);
+      try {
+        const { data, error } = await supabase
+          .from("nilai_settings")
+          .select("kkm, nilai_maksimal")
+          .eq("mata_pelajaran", selectedSubject)
+          .single();
+
+        if (error) {
+          console.error("Error fetching settings:", error);
+          setKkm(75);
+          setNilaiMaksimal(95);
+          return;
+        }
+
+        if (data) {
+          setKkm(data.kkm);
+          setNilaiMaksimal(data.nilai_maksimal);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setKkm(75);
+        setNilaiMaksimal(95);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+
+    fetchNilaiSettings();
+  }, [selectedSubject]);
+
   const showMessage = (text, type) => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: "", type: "" }), 5000);
   };
 
+  const handleKkmChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    if (numValue >= 0 && numValue <= 100) {
+      setKkm(numValue);
+    }
+  };
+
+  const handleNilaiMaksimalChange = (value) => {
+    const numValue = parseInt(value) || 0;
+    if (numValue >= 0 && numValue <= 100) {
+      setNilaiMaksimal(numValue);
+    }
+  };
+
   const fetchDataNilai = async () => {
     if (!selectedClass || !selectedSubject) {
       showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
+      return;
+    }
+
+    if (kkm > nilaiMaksimal) {
+      showMessage("KKM tidak boleh lebih besar dari Nilai Maksimal!", "error");
       return;
     }
 
@@ -121,16 +180,10 @@ const Katrol = ({ userData: initialUserData }) => {
       }
 
       setDataNilai(data);
-
-      // Group by NISN untuk preview
       const grouped = groupDataByNISN(data);
       setDataGrouped(grouped);
       setShowPreview(true);
       setHasilKatrol([]);
-
-      // Set KKM
-      const kkmValue = getKKM(selectedSubject);
-      setKkm(kkmValue);
 
       showMessage(
         `Berhasil memuat ${data.length} data nilai dari ${grouped.length} siswa`,
@@ -150,9 +203,14 @@ const Katrol = ({ userData: initialUserData }) => {
       return;
     }
 
+    if (kkm > nilaiMaksimal) {
+      showMessage("KKM tidak boleh lebih besar dari Nilai Maksimal!", "error");
+      return;
+    }
+
     setProcessing(true);
     try {
-      const katrol = prosesKatrolSemua(dataGrouped, kkm);
+      const katrol = prosesKatrolSemua(dataGrouped, kkm, nilaiMaksimal);
       const hasil = hitungNilaiAkhir(katrol);
       hasil.sort((a, b) => a.nama_siswa.localeCompare(b.nama_siswa));
 
@@ -189,14 +247,17 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <Calculator className="w-8 h-8" />
-            <h1 className="text-2xl md:text-3xl font-bold">Katrol Nilai</h1>
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 sm:p-6 text-white">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <Calculator className="w-6 h-6 sm:w-8 sm:h-8" />
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+              Katrol Nilai
+            </h1>
           </div>
-          <p className="text-blue-100">
+          <p className="text-sm sm:text-base text-blue-100">
             {userData?.role === "guru_kelas"
               ? `Guru Kelas ${selectedClass || userData?.kelas}`
               : `Guru ${userData?.mata_pelajaran}`}
@@ -204,20 +265,23 @@ const Katrol = ({ userData: initialUserData }) => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
+      {/* Filter Section */}
+      <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             Filter Data
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Single Row Filter - Mobile First */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+            {/* Kelas */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Kelas
               </label>
               {userData?.role === "guru_kelas" ? (
-                <div className="bg-gray-100 px-4 py-2 rounded-lg border border-gray-300">
+                <div className="bg-gray-100 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 text-sm sm:text-base">
                   <span className="font-semibold">Kelas {selectedClass}</span>
                 </div>
               ) : (
@@ -230,7 +294,7 @@ const Katrol = ({ userData: initialUserData }) => {
                     setDataGrouped([]);
                     setShowPreview(false);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <option value="">Pilih Kelas</option>
                   {availableClasses.map((kelas) => (
                     <option key={kelas} value={kelas}>
@@ -241,12 +305,13 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </div>
 
+            {/* Mata Pelajaran */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Mata Pelajaran
               </label>
               {userData?.role === "guru_mapel" ? (
-                <div className="bg-gray-100 px-4 py-2 rounded-lg border border-gray-300">
+                <div className="bg-gray-100 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 text-sm sm:text-base">
                   <span className="font-semibold">{selectedSubject}</span>
                 </div>
               ) : (
@@ -259,7 +324,7 @@ const Katrol = ({ userData: initialUserData }) => {
                     setDataGrouped([]);
                     setShowPreview(false);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <option value="">Pilih Mata Pelajaran</option>
                   {availableSubjects.map((mapel) => (
                     <option key={mapel} value={mapel}>
@@ -269,21 +334,69 @@ const Katrol = ({ userData: initialUserData }) => {
                 </select>
               )}
             </div>
+
+            {/* KKM */}
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                KKM
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={kkm}
+                onChange={(e) => handleKkmChange(e.target.value)}
+                disabled={!selectedSubject || loadingSettings}
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                placeholder="KKM"
+              />
+            </div>
+
+            {/* Nilai Maksimal */}
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                Nilai Maksimal
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={nilaiMaksimal}
+                onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
+                disabled={!selectedSubject || loadingSettings}
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                placeholder="Nilai Max"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          {/* Warning KKM > Nilai Maksimal */}
+          {kkm > nilaiMaksimal && selectedSubject && (
+            <div className="mb-4 flex items-center gap-2 text-red-600 text-xs sm:text-sm bg-red-50 p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>KKM tidak boleh lebih besar dari Nilai Maksimal!</span>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               onClick={fetchDataNilai}
-              disabled={!selectedClass || !selectedSubject || loading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              disabled={
+                !selectedClass ||
+                !selectedSubject ||
+                loading ||
+                kkm > nilaiMaksimal
+              }
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
               {loading ? (
                 <>
-                  <Loader className="w-5 h-5 animate-spin" />
+                  <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                   <span>Memuat Data...</span>
                 </>
               ) : (
                 <>
-                  <Eye className="w-5 h-5" />
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Muat Data</span>
                 </>
               )}
@@ -291,16 +404,18 @@ const Katrol = ({ userData: initialUserData }) => {
 
             <button
               onClick={prosesKatrol}
-              disabled={dataGrouped.length === 0 || processing}
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              disabled={
+                dataGrouped.length === 0 || processing || kkm > nilaiMaksimal
+              }
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
               {processing ? (
                 <>
-                  <Loader className="w-5 h-5 animate-spin" />
+                  <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                   <span>Memproses...</span>
                 </>
               ) : (
                 <>
-                  <Calculator className="w-5 h-5" />
+                  <Calculator className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Proses Katrol</span>
                 </>
               )}
@@ -309,127 +424,139 @@ const Katrol = ({ userData: initialUserData }) => {
         </div>
       </div>
 
+      {/* Message Alert */}
       {message.text && (
-        <div className="max-w-7xl mx-auto mb-6">
+        <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
           <div
-            className={`flex items-center gap-3 p-4 rounded-lg ${
+            className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
               message.type === "success"
                 ? "bg-green-100 text-green-800"
                 : "bg-red-100 text-red-800"
             }`}>
             {message.type === "success" ? (
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 sm:mt-0" />
             ) : (
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 sm:mt-0" />
             )}
             <span>{message.text}</span>
           </div>
         </div>
       )}
 
+      {/* Preview Data */}
       {showPreview && dataGrouped.length > 0 && (
-        <div className="max-w-7xl mx-auto mb-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Preview Data Nilai</h2>
-              <span className="text-sm text-gray-600">
-                KKM: {kkm} | Total: {dataGrouped.length} siswa
+        <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+              <h2 className="text-base sm:text-lg font-semibold">
+                Preview Data Nilai
+              </h2>
+              <span className="text-xs sm:text-sm text-gray-600">
+                KKM: {kkm} | Max: {nilaiMaksimal} | Siswa: {dataGrouped.length}
               </span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">
-                      No
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">
-                      NISN
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">
-                      Nama
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      NH1
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      NH2
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      NH3
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      NH4
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      NH5
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      UTS
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">
-                      UAS
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {dataGrouped.map((siswa, idx) => (
-                    <tr
-                      key={siswa.nisn}
-                      className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="px-4 py-3 text-sm">{idx + 1}</td>
-                      <td className="px-4 py-3 text-sm">{siswa.nisn}</td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {siswa.nama_siswa}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.NH1 || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.NH2 || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.NH3 || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.NH4 || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.NH5 || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.UTS || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {siswa.nilai.UAS || "-"}
-                      </td>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-700 uppercase sticky left-0 bg-gray-100 z-10">
+                        No
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-700 uppercase sticky left-8 sm:left-12 bg-gray-100 z-10">
+                        Nama
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        NH1
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        NH2
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        NH3
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        NH4
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        NH5
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        UTS
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 uppercase">
+                        UAS
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {dataGrouped.map((siswa, idx) => (
+                      <tr
+                        key={siswa.nisn}
+                        className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm sticky left-0 bg-inherit z-10">
+                          {idx + 1}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium sticky left-8 sm:left-12 bg-inherit z-10 whitespace-nowrap">
+                          {siswa.nama_siswa}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.NH1 || "-"}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.NH2 || "-"}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.NH3 || "-"}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.NH4 || "-"}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.NH5 || "-"}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.UTS || "-"}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center">
+                          {siswa.nilai.UAS || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Hasil Katrol */}
       {hasilKatrol.length > 0 && (
         <>
-          <div className="max-w-7xl mx-auto mb-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">KKM</p>
-                  <p className="text-2xl font-bold text-blue-600">{kkm}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Rentang Katrol</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {kkm} - 90
+          {/* Summary Cards */}
+          <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">KKM</p>
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                    {kkm}
                   </p>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Total Siswa</p>
-                  <p className="text-2xl font-bold text-purple-600">
+                <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                    Rentang Katrol
+                  </p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">
+                    {kkm} - {nilaiMaksimal}
+                  </p>
+                </div>
+                <div className="bg-purple-50 p-3 sm:p-4 rounded-lg">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                    Total Siswa
+                  </p>
+                  <p className="text-xl sm:text-2xl font-bold text-purple-600">
                     {hasilKatrol.length}
                   </p>
                 </div>
@@ -437,30 +564,36 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto mb-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Hasil Katrol</h2>
+          {/* Tabel Hasil */}
+          <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold mb-4">
+                Hasil Katrol
+              </h2>
               <KatrolTable data={hasilKatrol} kkm={kkm} />
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Export Data</h2>
-              <div className="flex flex-wrap gap-3">
+          {/* Export Buttons */}
+          <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
+                Export Data
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={() => handleExport("lengkap")}
                   disabled={exporting}
-                  className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                  <Download className="w-5 h-5" />
+                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Export Lengkap (21 Kolom)</span>
                 </button>
 
                 <button
                   onClick={() => handleExport("ringkas")}
                   disabled={exporting}
-                  className="flex items-center gap-2 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                  <Download className="w-5 h-5" />
+                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Export Ringkas (11 Kolom)</span>
                 </button>
               </div>
