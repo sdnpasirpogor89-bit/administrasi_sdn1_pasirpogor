@@ -32,6 +32,10 @@ const Katrol = ({ userData: initialUserData }) => {
   const [kkm, setKkm] = useState(75);
   const [nilaiMaksimal, setNilaiMaksimal] = useState(95);
   const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsChanged, setSettingsChanged] = useState(false);
+  const [originalKkm, setOriginalKkm] = useState(75);
+  const [originalNilaiMaksimal, setOriginalNilaiMaksimal] = useState(95);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -93,16 +97,17 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   }, [userData]);
 
-  // Fetch KKM dan Nilai Maksimal dari database
+  // Fetch KKM dan Nilai Maksimal dari database berdasarkan kelas + mapel
   useEffect(() => {
     const fetchNilaiSettings = async () => {
-      if (!selectedSubject) return;
+      if (!selectedSubject || !selectedClass) return;
 
       setLoadingSettings(true);
       try {
         const { data, error } = await supabase
           .from("nilai_settings")
           .select("kkm, nilai_maksimal")
+          .eq("kelas", selectedClass)
           .eq("mata_pelajaran", selectedSubject)
           .single();
 
@@ -110,24 +115,31 @@ const Katrol = ({ userData: initialUserData }) => {
           console.error("Error fetching settings:", error);
           setKkm(75);
           setNilaiMaksimal(95);
+          setOriginalKkm(75);
+          setOriginalNilaiMaksimal(95);
           return;
         }
 
         if (data) {
           setKkm(data.kkm);
           setNilaiMaksimal(data.nilai_maksimal);
+          setOriginalKkm(data.kkm);
+          setOriginalNilaiMaksimal(data.nilai_maksimal);
+          setSettingsChanged(false);
         }
       } catch (error) {
         console.error("Error:", error);
         setKkm(75);
         setNilaiMaksimal(95);
+        setOriginalKkm(75);
+        setOriginalNilaiMaksimal(95);
       } finally {
         setLoadingSettings(false);
       }
     };
 
     fetchNilaiSettings();
-  }, [selectedSubject]);
+  }, [selectedSubject, selectedClass]);
 
   const showMessage = (text, type) => {
     setMessage({ text, type });
@@ -138,6 +150,9 @@ const Katrol = ({ userData: initialUserData }) => {
     const numValue = parseInt(value) || 0;
     if (numValue >= 0 && numValue <= 100) {
       setKkm(numValue);
+      setSettingsChanged(
+        numValue !== originalKkm || nilaiMaksimal !== originalNilaiMaksimal
+      );
     }
   };
 
@@ -145,6 +160,46 @@ const Katrol = ({ userData: initialUserData }) => {
     const numValue = parseInt(value) || 0;
     if (numValue >= 0 && numValue <= 100) {
       setNilaiMaksimal(numValue);
+      setSettingsChanged(
+        kkm !== originalKkm || numValue !== originalNilaiMaksimal
+      );
+    }
+  };
+
+  const saveSettings = async () => {
+    if (!selectedClass || !selectedSubject) {
+      showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
+      return;
+    }
+
+    if (kkm > nilaiMaksimal) {
+      showMessage("KKM tidak boleh lebih besar dari Nilai Maksimal!", "error");
+      return;
+    }
+
+    setSavingSettings(true);
+    try {
+      const { error } = await supabase
+        .from("nilai_settings")
+        .update({
+          kkm: kkm,
+          nilai_maksimal: nilaiMaksimal,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("kelas", selectedClass)
+        .eq("mata_pelajaran", selectedSubject);
+
+      if (error) throw error;
+
+      setOriginalKkm(kkm);
+      setOriginalNilaiMaksimal(nilaiMaksimal);
+      setSettingsChanged(false);
+      showMessage("Pengaturan berhasil disimpan!", "success");
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      showMessage("Gagal menyimpan pengaturan", "error");
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -378,8 +433,28 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Status Settings */}
+          {selectedClass && selectedSubject && (
+            <div className="mb-4">
+              {settingsChanged && (
+                <span className="text-xs text-orange-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Pengaturan KKM/Nilai Maksimal Belum Tersimpan
+                </span>
+              )}
+              {!settingsChanged && !loadingSettings && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Pengaturan KKM: {originalKkm} & Nilai Maksimal:{" "}
+                  {originalNilaiMaksimal} Tersimpan
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons: Muat Data - Proses Katrol - Simpan Pengaturan KKM */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {/* Tombol Muat Data */}
             <button
               onClick={fetchDataNilai}
               disabled={
@@ -402,6 +477,7 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
+            {/* Tombol Proses Katrol */}
             <button
               onClick={prosesKatrol}
               disabled={
@@ -420,6 +496,28 @@ const Katrol = ({ userData: initialUserData }) => {
                 </>
               )}
             </button>
+
+            {/* Tombol Simpan Settings - Muncul kalau ada kelas & mapel */}
+            {selectedClass && selectedSubject && (
+              <button
+                onClick={saveSettings}
+                disabled={
+                  savingSettings || kkm > nilaiMaksimal || !settingsChanged
+                }
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                {savingSettings ? (
+                  <>
+                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Simpan Pengaturan KKM</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
