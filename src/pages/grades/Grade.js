@@ -819,7 +819,9 @@ const Grade = ({ userData: initialUserData }) => {
           </div>
         )}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* ✅ PERUBAHAN: Mengganti lg:grid-cols-4 menjadi lg:grid-cols-5 untuk menampung 5 tombol aksi */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {/* 1. LIHAT REKAP */}
           <button
             onClick={loadRekapNilai}
             disabled={loadingRekap || !selectedClass || !selectedSubject}
@@ -832,6 +834,7 @@ const Grade = ({ userData: initialUserData }) => {
             {loadingRekap ? "Memuat..." : "Lihat Rekap"}
           </button>
 
+          {/* 2. SIMPAN NILAI */}
           <button
             onClick={saveGrades}
             disabled={saving || isSyncing || students.length === 0 || showRekap}
@@ -851,6 +854,7 @@ const Grade = ({ userData: initialUserData }) => {
             {saving || isSyncing ? "Menyimpan..." : "Simpan Nilai"}
           </button>
 
+          {/* 3. EXPORT EXCEL */}
           <button
             onClick={handleExportToExcel}
             disabled={exporting || !selectedClass || !selectedSubject}
@@ -863,6 +867,7 @@ const Grade = ({ userData: initialUserData }) => {
             {exporting ? "Mengekspor..." : "Export Excel"}
           </button>
 
+          {/* 4. IMPORT NILAI */}
           <button
             onClick={() => setShowImportModal(true)}
             disabled={!selectedClass || !selectedSubject}
@@ -871,7 +876,7 @@ const Grade = ({ userData: initialUserData }) => {
             Import Nilai
           </button>
 
-          {/* ✅ TAMBAH TOMBOL KATROL NILAI */}
+          {/* 5. KATROL NILAI - Sekarang sejajar dengan yang lainnya */}
           <Link
             to="/grades/katrol"
             state={{

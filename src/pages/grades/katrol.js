@@ -452,8 +452,8 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           )}
 
-          {/* Action Buttons: Muat Data - Proses Katrol - Simpan Pengaturan KKM */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          {/* Action Buttons: Muat Data - Proses Katrol - Simpan Pengaturan KKM - Export Buttons */}
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
             {/* Tombol Muat Data */}
             <button
               onClick={fetchDataNilai}
@@ -497,7 +497,7 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
-            {/* Tombol Simpan Settings - Muncul kalau ada kelas & mapel */}
+            {/* Tombol Simpan Settings */}
             {selectedClass && selectedSubject && (
               <button
                 onClick={saveSettings}
@@ -517,6 +517,27 @@ const Katrol = ({ userData: initialUserData }) => {
                   </>
                 )}
               </button>
+            )}
+
+            {/* Export Buttons - Dipindahkan ke sini */}
+            {hasilKatrol.length > 0 && (
+              <>
+                <button
+                  onClick={() => handleExport("lengkap")}
+                  disabled={exporting}
+                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Export Lengkap</span>
+                </button>
+
+                <button
+                  onClick={() => handleExport("ringkas")}
+                  disabled={exporting}
+                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Export Ringkas</span>
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -672,31 +693,17 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           </div>
 
-          {/* Export Buttons */}
-          <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+          {/* Export Buttons Section - Dihapus karena sudah dipindah ke atas */}
+          {/* <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
             <div className="bg-white rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
                 Export Data
               </h2>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <button
-                  onClick={() => handleExport("lengkap")}
-                  disabled={exporting}
-                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Export Lengkap (21 Kolom)</span>
-                </button>
-
-                <button
-                  onClick={() => handleExport("ringkas")}
-                  disabled={exporting}
-                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Export Ringkas (11 Kolom)</span>
-                </button>
+                ... (Buttons removed)
               </div>
             </div>
-          </div>
+          </div> */}
         </>
       )}
     </div>
