@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../supabaseClient";
+import { Link } from "react-router-dom";
 import {
   Save,
   Download,
@@ -15,16 +16,16 @@ import {
   WifiOff,
   RefreshCw,
 } from "lucide-react";
-import { ImportModal, exportToExcel } from "./GradesExport";
+import { ImportModal, exportToExcel } from "./GradeExport"; // ✅ PERBAIKI IMPORT
 
 // ===== PWA OFFLINE IMPORTS =====
 import {
   saveWithSync,
   syncPendingData,
   getDataWithFallback,
-} from "../offlineSync";
-import { useSyncStatus } from "../hooks/useSyncStatus";
-import SyncStatusBadge from "../components/SyncStatusBadge";
+} from "../../offlineSync";
+import { useSyncStatus } from "../../hooks/useSyncStatus";
+import SyncStatusBadge from "../../components/SyncStatusBadge";
 // ===============================
 
 // Compact Stats Card Component
@@ -177,7 +178,7 @@ const RekapGradeCard = ({ student, index }) => {
   );
 };
 
-const Grades = ({ userData: initialUserData }) => {
+const Grade = ({ userData: initialUserData }) => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [userData, setUserData] = useState(initialUserData);
   const [selectedClass, setSelectedClass] = useState("");
@@ -869,6 +870,21 @@ const Grades = ({ userData: initialUserData }) => {
             <Upload size={18} />
             Import Nilai
           </button>
+
+          {/* ✅ TAMBAH TOMBOL KATROL NILAI */}
+          <Link
+            to="/grades/katrol"
+            state={{
+              userData,
+              selectedClass:
+                selectedClass ||
+                (userData?.role === "guru_kelas" ? String(userData.kelas) : ""),
+              selectedSubject: selectedSubject || "",
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-all duration-200 font-medium text-sm sm:text-base">
+            <Calculator size={18} />
+            Katrol Nilai
+          </Link>
         </div>
       </div>
 
@@ -1138,4 +1154,4 @@ const Grades = ({ userData: initialUserData }) => {
   );
 };
 
-export default Grades;
+export default Grade;

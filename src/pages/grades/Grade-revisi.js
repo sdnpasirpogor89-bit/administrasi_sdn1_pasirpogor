@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { ImportModal, exportToExcel } from "./GradesExport";
+import { Link } from "react-router-dom"; // ✅ TAMBAH IMPORT INI
 
 // ===== PWA OFFLINE IMPORTS =====
 import {
@@ -869,6 +870,21 @@ const Grades = ({ userData: initialUserData }) => {
             <Upload size={18} />
             Import Nilai
           </button>
+
+          {/* ✅ TAMBAH TOMBOL KATROL NILAI DI SINI */}
+          <Link
+            to="/grades/katrol"
+            state={{
+              userData,
+              selectedClass:
+                selectedClass ||
+                (userData?.role === "guru_kelas" ? String(userData.kelas) : ""),
+              selectedSubject: selectedSubject || "",
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-all duration-200 font-medium text-sm sm:text-base">
+            <Calculator size={18} />
+            Katrol Nilai
+          </Link>
         </div>
       </div>
 
@@ -1138,4 +1154,4 @@ const Grades = ({ userData: initialUserData }) => {
   );
 };
 
-export default Grades;
+export default Grade;

@@ -18,7 +18,8 @@ import TeacherDashboard from "./components/TeacherDashboard";
 import Students from "./pages/Students";
 import Attendance from "./pages/Attendance";
 import Teacher from "./pages/Teacher";
-import Grades from "./pages/Grades";
+import Grade from "./pages/grades/Grade";
+import Katrol from "./pages/grades/Katrol";
 import CatatanSiswa from "./pages/CatatanSiswa";
 import TeacherSchedule from "./pages/TeacherSchedule";
 import Classes from "./pages/Classes";
@@ -59,7 +60,7 @@ const AttendanceWithNavigation = ({ currentUser }) => {
 const GradesWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <Grades userData={userData} onNavigate={navigate} />,
+    () => <Grade userData={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -429,7 +430,6 @@ function App() {
               )
             }
           />
-
           {/* 🔥 PROTECTED ROUTES - CEK MAINTENANCE + WHITELIST */}
           <Route
             path="/dashboard"
@@ -447,7 +447,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/students"
             element={
@@ -464,7 +463,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/classes"
             element={
@@ -481,7 +479,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/attendance"
             element={
@@ -498,7 +495,6 @@ function App() {
               )
             }
           />
-
           {/* 🔥 ROUTE BARU: PRESENSI GURU */}
           <Route
             path="/teacher-attendance"
@@ -516,7 +512,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/teachers"
             element={
@@ -533,14 +528,13 @@ function App() {
               )
             }
           />
-
           <Route
             path="/grades"
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
                   <Layout userData={user} onLogout={handleLogout}>
-                    <GradesWithNavigation userData={user} />
+                    <Grade userData={user} /> {/* ✅ GANTI JADI Grade */}
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />
@@ -550,7 +544,22 @@ function App() {
               )
             }
           />
-
+          <Route
+            path="/grades/katrol"
+            element={
+              user ? (
+                canAccessDuringMaintenance(user) ? (
+                  <Layout userData={user} onLogout={handleLogout}>
+                    <Katrol userData={user} />
+                  </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
+                )
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
           <Route
             path="/catatan-siswa"
             element={
@@ -567,7 +576,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/schedule"
             element={
@@ -584,7 +592,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/spmb"
             element={
@@ -601,7 +608,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/reports"
             element={
@@ -618,7 +624,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/settings"
             element={
@@ -635,7 +640,6 @@ function App() {
               )
             }
           />
-
           <Route
             path="/monitor-sistem"
             element={
@@ -652,13 +656,11 @@ function App() {
               )
             }
           />
-
           {/* DEFAULT ROUTES */}
           <Route
             path="/"
             element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
           />
-
           <Route
             path="*"
             element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
