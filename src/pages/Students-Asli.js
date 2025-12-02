@@ -8,21 +8,18 @@ import {
   User,
   Filter,
   X,
-  Download, // DIPERLUKAN UNTUK StudentsExcelActions
-  Upload, // DIPERLUKAN UNTUK StudentsExcelActions
+  Download,
+  Upload,
   Plus,
   Edit,
   Trash2,
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
-// WAJIB: Import komponen action dari StudentsExcel.js
-import { StudentsExcelActions } from "./StudentsExcel"; // <--- SUDAH DIAKTIFKAN
-
-// Compact Stats Card Component (No changes)
+// Compact Stats Card Component - RESPONSIVE (No changes)
 const StatsCard = ({ icon: Icon, number, label, color }) => {
-  // ... (Kode StatsCard)
   const colorClasses = {
     blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
     green: "border-l-green-500 bg-gradient-to-r from-green-50 to-white",
@@ -74,7 +71,7 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
-// Action Button Component (No changes - JANGAN DIHAPUS, DIPAKAI OLEH STUDENTS.JS)
+// Action Button Component (No changes)
 const ActionButton = ({
   icon: Icon,
   label,
@@ -125,7 +122,6 @@ const Toast = ({ message, type = "success", onClose }) => {
 
 // Mobile Student Card Component (No changes)
 const StudentCard = ({ student, index, onEdit, onDelete }) => {
-  // ... (Kode StudentCard)
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm">
       <div className="flex justify-between items-start">
@@ -177,7 +173,6 @@ const StudentCard = ({ student, index, onEdit, onDelete }) => {
 
 // Student Form Modal Component (No changes)
 const StudentFormModal = ({ show, onClose, student, onSave }) => {
-  // ... (Kode StudentFormModal)
   const [formData, setFormData] = useState({
     nisn: "",
     nama_siswa: "",
@@ -349,9 +344,201 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
   );
 };
 
+// Import Modal Component (No changes)
+const ImportModal = ({ show, onClose, onImport }) => {
+  const [file, setFile] = useState(null);
+  const [previewData, setPreviewData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    if (
+      !selectedFile.name.endsWith(".xlsx") &&
+      !selectedFile.name.endsWith(".xls")
+    ) {
+      setError("Hanya file Excel (.xlsx, .xls) yang didukung");
+      return;
+    }
+
+    setFile(selectedFile);
+    setError("");
+
+    // Read and preview the Excel file
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        if (jsonData.length === 0) {
+          setError("File Excel kosong");
+          return;
+        }
+
+        setPreviewData(jsonData.slice(0, 5)); // Show first 5 rows as preview
+      } catch (err) {
+        setError("Gagal membaca file Excel");
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(selectedFile);
+  };
+
+  const handleImport = async () => {
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+        await onImport(jsonData);
+        onClose();
+        resetForm();
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      setError("Gagal mengimport data");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFile(null);
+    setPreviewData([]);
+    setError("");
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  if (!show) return null;
+
+  return (
+    // Responsive modal sizing (Max-w-4xl for table preview)
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-4xl p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Import Data Siswa dari Excel
+          </h3>
+          <button
+            onClick={handleClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* File Upload Area */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <Upload size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-sm text-gray-600 mb-2">
+              Drag & drop file Excel di sini atau klik untuk memilih
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              Format yang didukung: .xlsx, .xls
+            </p>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="file-upload"
+            />
+            <label
+              htmlFor="file-upload"
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer text-sm font-medium">
+              Pilih File
+            </label>
+            {file && (
+              <p className="text-sm text-gray-700 mt-2">
+                File terpilih: <span className="font-medium">{file.name}</span>
+              </p>
+            )}
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertCircle size={16} />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Preview Table */}
+          {previewData.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">
+                Preview Data (5 baris pertama):
+              </h4>
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {Object.keys(previewData[0]).map((key) => (
+                        <th
+                          key={key}
+                          className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                          {key}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {previewData.map((row, index) => (
+                      <tr key={index}>
+                        {Object.values(row).map((value, cellIndex) => (
+                          <td
+                            key={cellIndex}
+                            className="px-3 py-2 text-gray-700">
+                            {String(value)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={handleClose}
+              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+              Batal
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={!file || loading}
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm disabled:opacity-50">
+              {loading ? "Mengimport..." : "Import Data"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Delete Confirmation Modal (No changes)
 const DeleteModal = ({ show, onClose, student, onConfirm }) => {
-  // ... (Kode DeleteModal)
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -413,9 +600,8 @@ const DeleteModal = ({ show, onClose, student, onConfirm }) => {
   );
 };
 
-// Mobile Filter Modal (No changes)
+// Mobile Filter Modal (No changes, modal is inherently responsive due to fixed position and max-width)
 const FilterModal = ({
-  // ... (Kode FilterModal)
   show,
   onClose,
   selectedClass,
@@ -499,7 +685,6 @@ const FilterModal = ({
 
 // Main Students Component - PRODUCTION READY (REVISED FOR EFFICIENCY)
 const Students = ({ userData }) => {
-  // ... (Kode Students)
   // All hooks must be called first
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -512,8 +697,20 @@ const Students = ({ userData }) => {
     lakiLaki: 0,
     perempuan: 0,
   });
+  // --- REVISI PRO: Hapus state isMobile dan logic useEffect terkait ---
+  // const [isMobile, setIsMobile] = useState(false);
+  // useEffect(() => {
+  //   const checkDevice = () => {
+  //     setIsMobile(window.innerWidth < 768);
+  //   };
+  //   checkDevice();
+  //   window.addEventListener("resize", checkDevice);
+  //   return () => window.removeEventListener("resize", checkDevice);
+  // }, []);
+  // -------------------------------------------------------------------
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [toast, setToast] = useState(null);
@@ -588,7 +785,72 @@ const Students = ({ userData }) => {
     setToast({ message, type });
   };
 
-  // Hapus Fungsi handleImport - Dipindah ke StudentsExcel.js
+  // Export to Excel (No changes)
+  const handleExport = () => {
+    try {
+      const dataToExport = filteredStudents.map((student) => ({
+        NISN: student.nisn,
+        "Nama Siswa": student.nama_siswa,
+        Kelas: student.kelas,
+        "Jenis Kelamin": student.jenis_kelamin,
+        Status: student.is_active ? "Aktif" : "Nonaktif",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `data-siswa-${timestamp}.xlsx`;
+
+      XLSX.writeFile(workbook, filename);
+      showToast("Data berhasil diexport ke Excel");
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      showToast("Gagal mengexport data", "error");
+    }
+  };
+
+  // Import from Excel (No changes)
+  const handleImport = async (importData) => {
+    try {
+      setLoading(true);
+
+      // Validate and transform import data
+      const transformedData = importData
+        .map((row) => ({
+          nisn: String(row.NISN || row.nisn || ""),
+          nama_siswa: String(row["Nama Siswa"] || row.nama_siswa || ""),
+          kelas: parseInt(row.Kelas || row.kelas || "1"),
+          jenis_kelamin: String(
+            row["Jenis Kelamin"] || row.jenis_kelamin || "Laki-laki"
+          ),
+          is_active: true,
+        }))
+        .filter((row) => row.nisn && row.nama_siswa); // Filter out incomplete rows
+
+      if (transformedData.length === 0) {
+        showToast("Tidak ada data valid untuk diimport", "error");
+        return;
+      }
+
+      // Insert data to Supabase
+      const { error } = await supabase
+        .from("students")
+        .upsert(transformedData, { onConflict: "nisn" });
+
+      if (error) throw error;
+
+      showToast(`Berhasil mengimport ${transformedData.length} data siswa`);
+      fetchStudents(); // Refresh data
+    } catch (error) {
+      console.error("Error importing data:", error);
+      showToast("Gagal mengimport data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Save student (create or update) (No changes)
   const handleSaveStudent = async (studentData) => {
@@ -650,7 +912,6 @@ const Students = ({ userData }) => {
       throw error;
     }
   };
-
   // Open edit modal (No changes)
   const handleEdit = (student) => {
     setSelectedStudent(student);
@@ -740,10 +1001,6 @@ const Students = ({ userData }) => {
     );
   }
 
-  // =================================================================
-  // !!! PENTING: KODE PLACEHOLDER StudentsExcelActions DI SINI DIHAPUS !!!
-  // =================================================================
-
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
       {/* Toast Notification */}
@@ -815,16 +1072,22 @@ const Students = ({ userData }) => {
               )}
             </button>
 
-            {/* Mobile Action Menu (memanggil StudentsExcelActions dari file terpisah) */}
-            <div className="relative flex-1">
-              <StudentsExcelActions
-                students={students}
-                showToast={showToast}
-                fetchStudents={fetchStudents}
-                onAdd={handleAdd}
-                isMobile={true}
-                userData={userData} // <--- PASTIKAN ADA
-              />
+            {/* Mobile Action Menu (using select for compactness) */}
+            <div className="relative">
+              <select
+                onChange={(e) => {
+                  const action = e.target.value;
+                  if (action === "add") handleAdd();
+                  if (action === "export") handleExport();
+                  if (action === "import") setShowImportModal(true);
+                  e.target.value = "";
+                }}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none bg-white min-w-[120px]">
+                <option value="">Action...</option>
+                <option value="add">Tambah Siswa</option>
+                <option value="export">Export</option>
+                <option value="import">Import</option>
+              </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <svg
                   className="h-4 w-4"
@@ -876,15 +1139,27 @@ const Students = ({ userData }) => {
               </select>
             </div>
 
-            {/* Action Buttons for Desktop - Memanggil StudentsExcelActions dari file terpisah */}
-            <StudentsExcelActions
-              students={students}
-              showToast={showToast}
-              fetchStudents={fetchStudents}
-              onAdd={handleAdd}
-              isMobile={false}
-              userData={userData} // <--- PASTIKAN ADA
-            />
+            {/* Action Buttons for Desktop - Paling Kanan */}
+            <div className="flex gap-2 flex-shrink-0">
+              <ActionButton
+                icon={Plus}
+                label="Tambah Siswa"
+                onClick={handleAdd}
+                variant="primary"
+              />
+              <ActionButton
+                icon={Download}
+                label="Export"
+                onClick={handleExport}
+                variant="secondary"
+              />
+              <ActionButton
+                icon={Upload}
+                label="Import"
+                onClick={() => setShowImportModal(true)}
+                variant="secondary"
+              />
+            </div>
           </div>
         </div>
 
@@ -1087,6 +1362,12 @@ const Students = ({ userData }) => {
         onClose={() => setShowFormModal(false)}
         student={selectedStudent}
         onSave={handleSaveStudent}
+      />
+
+      <ImportModal
+        show={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImport}
       />
 
       <DeleteModal
