@@ -29,13 +29,13 @@ const Katrol = ({ userData: initialUserData }) => {
   const [dataGrouped, setDataGrouped] = useState([]);
   const [hasilKatrol, setHasilKatrol] = useState([]);
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [kkm, setKkm] = useState(75);
-  const [nilaiMaksimal, setNilaiMaksimal] = useState(95);
+  const [kkm, setKkm] = useState(70);
+  const [nilaiMaksimal, setNilaiMaksimal] = useState(90);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsChanged, setSettingsChanged] = useState(false);
-  const [originalKkm, setOriginalKkm] = useState(75);
-  const [originalNilaiMaksimal, setOriginalNilaiMaksimal] = useState(95);
+  const [originalKkm, setOriginalKkm] = useState(70);
+  const [originalNilaiMaksimal, setOriginalNilaiMaksimal] = useState(90);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -113,10 +113,10 @@ const Katrol = ({ userData: initialUserData }) => {
 
         if (error) {
           console.error("Error fetching settings:", error);
-          setKkm(75);
-          setNilaiMaksimal(95);
-          setOriginalKkm(75);
-          setOriginalNilaiMaksimal(95);
+          setKkm(70);
+          setNilaiMaksimal(90);
+          setOriginalKkm(70);
+          setOriginalNilaiMaksimal(90);
           return;
         }
 
@@ -129,10 +129,10 @@ const Katrol = ({ userData: initialUserData }) => {
         }
       } catch (error) {
         console.error("Error:", error);
-        setKkm(75);
-        setNilaiMaksimal(95);
-        setOriginalKkm(75);
-        setOriginalNilaiMaksimal(95);
+        setKkm(70);
+        setNilaiMaksimal(90);
+        setOriginalKkm(70);
+        setOriginalNilaiMaksimal(90);
       } finally {
         setLoadingSettings(false);
       }
