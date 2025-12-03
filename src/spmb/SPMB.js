@@ -1,17 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabaseClient';
-import StudentForm from './StudentForm';
-import StudentList from './StudentList';
-import Statistics from './Statistics';
+import React, { useState, useEffect, useCallback } from "react";
+import { supabase } from "../supabaseClient";
+import StudentForm from "./StudentForm";
+import StudentList from "./StudentList";
+import Statistics from "./Statistics";
 
 // Custom hook untuk toast notifications
 const useToast = () => {
-  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "info",
+  });
 
-  const showToast = useCallback((message, type = 'info') => {
+  const showToast = useCallback((message, type = "info") => {
     setToast({ show: true, message, type });
     setTimeout(() => {
-      setToast({ show: false, message: '', type: 'info' });
+      setToast({ show: false, message: "", type: "info" });
     }, 3000);
   }, []);
 
@@ -24,7 +28,7 @@ const useAcademicYear = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
-    
+
     // ✅ Generate tahun ajaran untuk siswa baru (tahun depan)
     if (currentMonth >= 7) {
       return `${currentYear + 1}/${currentYear + 2}`;
@@ -40,11 +44,11 @@ const useAcademicYear = () => {
 const useDateFormatter = () => {
   const convertDateFormat = useCallback((dateString) => {
     if (!dateString) return null;
-    
+
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       return dateString;
     }
-    
+
     if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(dateString)) {
       const parts = dateString.split(/[-/]/);
       const day = parts[0];
@@ -52,13 +56,13 @@ const useDateFormatter = () => {
       const year = parts[2];
       return `${year}-${month}-${day}`;
     }
-    
+
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return null;
-      return date.toISOString().split('T')[0];
+      return date.toISOString().split("T")[0];
     } catch (e) {
-      console.warn('Cannot parse date:', dateString);
+      console.warn("Cannot parse date:", dateString);
       return null;
     }
   }, []);
@@ -77,159 +81,183 @@ const useStudentsData = (userData, showToast) => {
   const { convertDateFormat } = useDateFormatter();
 
   // Load students data dengan PAGINATION
-  const loadStudents = useCallback(async (page = 1, search = '') => {
-    setIsLoading(true);
-    try {
-      const rowsPerPage = 20;
-      const from = (page - 1) * rowsPerPage;
-      const to = from + rowsPerPage - 1;
+  const loadStudents = useCallback(
+    async (page = 1, search = "") => {
+      setIsLoading(true);
+      try {
+        const rowsPerPage = 20;
+        const from = (page - 1) * rowsPerPage;
+        const to = from + rowsPerPage - 1;
 
-      console.log('📂 Loading students:', { page, from, to, search });
+        console.log("📂 Loading students:", { page, from, to, search });
 
-      let query = supabase
-        .from('siswa_baru')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        let query = supabase
+          .from("siswa_baru")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .range(from, to);
 
-      if (search.trim()) {
-        query = query.or(`nama_lengkap.ilike.%${search}%,asal_tk.ilike.%${search}%,nama_ayah.ilike.%${search}%,nama_ibu.ilike.%${search}%`);
-      }
+        if (search.trim()) {
+          query = query.or(
+            `nama_lengkap.ilike.%${search}%,asal_tk.ilike.%${search}%,nama_ayah.ilike.%${search}%,nama_ibu.ilike.%${search}%`
+          );
+        }
 
-      const { data, count, error } = await query;
-      
-      if (error) {
-        console.error('Query error:', error);
+        const { data, count, error } = await query;
+
+        if (error) {
+          console.error("Query error:", error);
+          throw error;
+        }
+
+        const calculatedTotalPages = Math.ceil((count || 0) / rowsPerPage);
+
+        console.log("📊 DEBUG PAGINATION SPMB:", {
+          dataLength: data?.length,
+          count: count,
+          from: from,
+          to: to,
+          rowsPerPage: rowsPerPage,
+          calculatedTotalPages: calculatedTotalPages,
+          currentPage: page,
+        });
+
+        setTotalStudents(count || 0);
+        setStudents(data || []);
+
+        // Load all students hanya jika tidak ada search dan data belum ada
+        if (!search.trim() && allStudents.length === 0) {
+          console.log("🔥 Loading all students for statistics...");
+          const { data: allData } = await supabase
+            .from("siswa_baru")
+            .select("*")
+            .order("created_at", { ascending: false });
+          setAllStudents(allData || []);
+        } else if (search.trim()) {
+          setAllStudents(data || []);
+        }
+
+        return {
+          data: data || [],
+          totalPages: calculatedTotalPages,
+          totalStudents: count || 0,
+        };
+      } catch (error) {
+        console.error("Error loading students:", error);
+        showToast("Gagal memuat data siswa", "error");
         throw error;
+      } finally {
+        setIsLoading(false);
       }
-
-      const calculatedTotalPages = Math.ceil((count || 0) / rowsPerPage);
-      
-      console.log('📊 DEBUG PAGINATION SPMB:', {
-        dataLength: data?.length,
-        count: count,
-        from: from,
-        to: to,
-        rowsPerPage: rowsPerPage,
-        calculatedTotalPages: calculatedTotalPages,
-        currentPage: page
-      });
-
-      setTotalStudents(count || 0);
-      setStudents(data || []);
-
-      // Load all students hanya jika tidak ada search dan data belum ada
-      if (!search.trim() && allStudents.length === 0) {
-        console.log('🔥 Loading all students for statistics...');
-        const { data: allData } = await supabase
-          .from('siswa_baru')
-          .select('*')
-          .order('created_at', { ascending: false });
-        setAllStudents(allData || []);
-      } else if (search.trim()) {
-        setAllStudents(data || []);
-      }
-
-      return { 
-        data: data || [], 
-        totalPages: calculatedTotalPages,
-        totalStudents: count || 0
-      };
-    } catch (error) {
-      console.error('Error loading students:', error);
-      showToast('Gagal memuat data siswa', 'error');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [allStudents.length, showToast]);
+    },
+    [allStudents.length, showToast]
+  );
 
   // ✅ SAVE STUDENT WITH AUTO-ACCEPT
-  const saveStudent = useCallback(async ({ studentData, parentData, isEdit, editingStudent }) => {
-    setIsLoading(true);
-    try {
-      const combinedData = {
-        nama_lengkap: studentData.nama,
-        jenis_kelamin: studentData.jenis_kelamin,
-        tempat_lahir: studentData.tempat_lahir,
-        tanggal_lahir: convertDateFormat(studentData.tanggal_lahir),
-        asal_tk: studentData.asal_sekolah,
-        nisn: studentData.nisn,
-        academic_year: getCurrentAcademicYear(),
-        status: 'Aktif',
-        tanggal_daftar: convertDateFormat(studentData.tanggal_daftar),
-        nama_ayah: parentData.nama_ayah,
-        pekerjaan_ayah: parentData.pekerjaan_ayah,
-        pendidikan_ayah: parentData.pendidikan_ayah,
-        nama_ibu: parentData.nama_ibu,
-        pekerjaan_ibu: parentData.pekerjaan_ibu,
-        pendidikan_ibu: parentData.pendidikan_ibu,
-        no_hp: parentData.no_hp,
-        alamat: parentData.alamat,
-        user_id: userData?.id || null,
-        // 🆕 AUTO-ACCEPT!
-        is_accepted: true,
-        sudah_masuk: false,
-        keterangan: isEdit ? editingStudent?.keterangan : 'Diterima otomatis saat pendaftaran'
-      };
+  const saveStudent = useCallback(
+    async ({ studentData, isEdit, editingStudent }) => {
+      setIsLoading(true);
+      try {
+        console.log("📦 Received studentData:", studentData);
 
-      let result;
-      if (isEdit && editingStudent) {
-        result = await supabase
-          .from('siswa_baru')
-          .update(combinedData)
-          .eq('id', editingStudent.id);
-      } else {
-        result = await supabase
-          .from('siswa_baru')
-          .insert([combinedData]);
+        // ✅ Validasi data dulu
+        if (!studentData) {
+          throw new Error("Data siswa tidak lengkap");
+        }
+
+        const combinedData = {
+          nama_lengkap: studentData.nama_lengkap || "",
+          jenis_kelamin: studentData.jenis_kelamin || "",
+          tempat_lahir: studentData.tempat_lahir || "",
+          tanggal_lahir: convertDateFormat(studentData.tanggal_lahir),
+          asal_tk: studentData.asal_tk || "",
+          nisn: studentData.nisn || "-",
+          academic_year: studentData.academic_year || getCurrentAcademicYear(),
+          status: "Aktif",
+          tanggal_daftar: convertDateFormat(studentData.tanggal_daftar),
+
+          // ✅ Data orang tua langsung dari studentData
+          nama_ayah: studentData.nama_ayah || "",
+          pekerjaan_ayah: studentData.pekerjaan_ayah || "",
+          pendidikan_ayah: studentData.pendidikan_ayah || "",
+          nama_ibu: studentData.nama_ibu || "",
+          pekerjaan_ibu: studentData.pekerjaan_ibu || "",
+          pendidikan_ibu: studentData.pendidikan_ibu || "",
+          no_hp: studentData.no_hp || "",
+          alamat: studentData.alamat || "",
+
+          user_id: userData?.id || null,
+          is_accepted: true,
+          sudah_masuk: false,
+          keterangan: isEdit
+            ? editingStudent?.keterangan
+            : "Diterima otomatis saat pendaftaran",
+        };
+
+        console.log("💾 Data yang akan disimpan:", combinedData);
+
+        let result;
+        if (isEdit && editingStudent) {
+          result = await supabase
+            .from("siswa_baru")
+            .update(combinedData)
+            .eq("id", editingStudent.id);
+        } else {
+          result = await supabase.from("siswa_baru").insert([combinedData]);
+        }
+
+        if (result.error) throw result.error;
+
+        showToast(
+          `✅ Data siswa berhasil ${
+            isEdit ? "diupdate" : "didaftarkan dan diterima"
+          }!`,
+          "success"
+        );
+
+        return true;
+      } catch (error) {
+        console.error("Error saving student:", error);
+        showToast(
+          `Gagal ${isEdit ? "mengupdate" : "menyimpan"} data: ${error.message}`,
+          "error"
+        );
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-
-      if (result.error) throw result.error;
-
-      showToast(
-        `✅ Data siswa berhasil ${isEdit ? 'diupdate' : 'didaftarkan dan diterima'}!`,
-        'success'
-      );
-      
-      return true;
-    } catch (error) {
-      console.error('Error saving student:', error);
-      showToast(
-        `Gagal ${isEdit ? 'mengupdate' : 'menyimpan'} data: ${error.message}`,
-        'error'
-      );
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [convertDateFormat, getCurrentAcademicYear, showToast, userData]);
+    },
+    [convertDateFormat, getCurrentAcademicYear, showToast, userData]
+  );
 
   // Delete student
-  const deleteStudent = useCallback(async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-      return false;
-    }
+  const deleteStudent = useCallback(
+    async (id) => {
+      if (!window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+        return false;
+      }
 
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('siswa_baru')
-        .delete()
-        .eq('id', id);
+      setIsLoading(true);
+      try {
+        const { error } = await supabase
+          .from("siswa_baru")
+          .delete()
+          .eq("id", id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      showToast('Data siswa berhasil dihapus!', 'success');
-      return true;
-    } catch (error) {
-      console.error('Error deleting student:', error);
-      showToast('Gagal menghapus data: ' + error.message, 'error');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showToast]);
+        showToast("Data siswa berhasil dihapus!", "success");
+        return true;
+      } catch (error) {
+        console.error("Error deleting student:", error);
+        showToast("Gagal menghapus data: " + error.message, "error");
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [showToast]
+  );
 
   return {
     students,
@@ -239,16 +267,16 @@ const useStudentsData = (userData, showToast) => {
     loadStudents,
     saveStudent,
     deleteStudent,
-    setIsLoading
+    setIsLoading,
   };
 };
 
 // Main SPMB Component
 const SPMB = ({ userData }) => {
-  const [activeTab, setActiveTab] = useState('form');
+  const [activeTab, setActiveTab] = useState("form");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingStudent, setEditingStudent] = useState(null);
 
   const { toast, showToast } = useToast();
@@ -260,26 +288,26 @@ const SPMB = ({ userData }) => {
     isLoading,
     loadStudents,
     saveStudent,
-    deleteStudent
+    deleteStudent,
   } = useStudentsData(userData, showToast);
 
   // Initial load students
   useEffect(() => {
     const initializeData = async () => {
-      const result = await loadStudents(1, '');
+      const result = await loadStudents(1, "");
       if (result && result.totalPages) {
         setTotalPages(result.totalPages);
       }
     };
-    
+
     initializeData();
   }, [loadStudents]);
 
   // Handle search dengan debounce effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log('🔍 Searching:', searchTerm);
-      loadStudents(1, searchTerm).then(result => {
+      console.log("🔍 Searching:", searchTerm);
+      loadStudents(1, searchTerm).then((result) => {
         if (result && result.totalPages) {
           setTotalPages(result.totalPages);
           setCurrentPage(1);
@@ -291,54 +319,63 @@ const SPMB = ({ userData }) => {
   }, [searchTerm, loadStudents]);
 
   // Handle page change
-  const handlePageChange = useCallback(async (page) => {
-    console.log('📄 Changing to page:', page);
-    setCurrentPage(page);
-    const result = await loadStudents(page, searchTerm);
-    if (result && result.totalPages) {
-      setTotalPages(result.totalPages);
-    }
-  }, [searchTerm, loadStudents]);
+  const handlePageChange = useCallback(
+    async (page) => {
+      console.log("📄 Changing to page:", page);
+      setCurrentPage(page);
+      const result = await loadStudents(page, searchTerm);
+      if (result && result.totalPages) {
+        setTotalPages(result.totalPages);
+      }
+    },
+    [searchTerm, loadStudents]
+  );
 
   // Handle edit student
   const handleEditStudent = useCallback((student) => {
     setEditingStudent(student);
-    setActiveTab('form');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setActiveTab("form");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   // Handle form submission
-  const handleSaveStudent = useCallback(async (formData) => {
-    const success = await saveStudent({
-      ...formData,
-      editingStudent
-    });
-    
-    if (success) {
-      setEditingStudent(null);
-      const result = await loadStudents(currentPage, searchTerm);
-      if (result && result.totalPages) {
-        setTotalPages(result.totalPages);
+  const handleSaveStudent = useCallback(
+    async (formData) => {
+      const success = await saveStudent({
+        ...formData,
+        editingStudent,
+      });
+
+      if (success) {
+        setEditingStudent(null);
+        const result = await loadStudents(currentPage, searchTerm);
+        if (result && result.totalPages) {
+          setTotalPages(result.totalPages);
+        }
       }
-    }
-    
-    return success;
-  }, [saveStudent, editingStudent, loadStudents, currentPage, searchTerm]);
+
+      return success;
+    },
+    [saveStudent, editingStudent, loadStudents, currentPage, searchTerm]
+  );
 
   // Handle delete student
-  const handleDeleteStudent = useCallback(async (id) => {
-    const success = await deleteStudent(id);
-    if (success) {
-      const result = await loadStudents(currentPage, searchTerm);
-      if (result && result.totalPages) {
-        setTotalPages(result.totalPages);
+  const handleDeleteStudent = useCallback(
+    async (id) => {
+      const success = await deleteStudent(id);
+      if (success) {
+        const result = await loadStudents(currentPage, searchTerm);
+        if (result && result.totalPages) {
+          setTotalPages(result.totalPages);
+        }
       }
-    }
-  }, [deleteStudent, loadStudents, currentPage, searchTerm]);
+    },
+    [deleteStudent, loadStudents, currentPage, searchTerm]
+  );
 
   // Handle refresh data
   const handleRefreshData = useCallback(async () => {
-    console.log('🔄 Refreshing data...');
+    console.log("🔄 Refreshing data...");
     const result = await loadStudents(currentPage, searchTerm);
     if (result && result.totalPages) {
       setTotalPages(result.totalPages);
@@ -346,16 +383,32 @@ const SPMB = ({ userData }) => {
   }, [loadStudents, currentPage, searchTerm]);
 
   // Calculate statistics
-  const maleStudents = allStudents.filter(s => s.jenis_kelamin === 'Laki-laki').length;
-  const femaleStudents = allStudents.filter(s => s.jenis_kelamin === 'Perempuan').length;
+  const maleStudents = allStudents.filter(
+    (s) => s.jenis_kelamin === "Laki-laki"
+  ).length;
+  const femaleStudents = allStudents.filter(
+    (s) => s.jenis_kelamin === "Perempuan"
+  ).length;
   // ✅ Count accepted students
-  const acceptedStudents = allStudents.filter(s => s.is_accepted === true).length;
+  const acceptedStudents = allStudents.filter(
+    (s) => s.is_accepted === true
+  ).length;
 
   // Mobile bottom navigation items
   const navItems = [
-    { key: 'form', icon: 'fa-file-alt', label: 'Form', fullLabel: 'Form Pendaftaran' },
-    { key: 'list', icon: 'fa-list', label: 'Data', fullLabel: 'Data Siswa' },
-    { key: 'stats', icon: 'fa-chart-bar', label: 'Stats', fullLabel: 'Statistik' }
+    {
+      key: "form",
+      icon: "fa-file-alt",
+      label: "Form",
+      fullLabel: "Form Pendaftaran",
+    },
+    { key: "list", icon: "fa-list", label: "Data", fullLabel: "Data Siswa" },
+    {
+      key: "stats",
+      icon: "fa-chart-bar",
+      label: "Stats",
+      fullLabel: "Statistik",
+    },
   ];
 
   return (
@@ -363,17 +416,23 @@ const SPMB = ({ userData }) => {
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Toast Notification */}
         {toast.show && (
-          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 animate-slide-down max-w-sm ${
-            toast.type === 'success' ? 'bg-green-50 border-green-400 text-green-800' :
-            toast.type === 'error' ? 'bg-red-50 border-red-400 text-red-800' :
-            'bg-blue-50 border-blue-400 text-blue-800'
-          }`}>
+          <div
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 animate-slide-down max-w-sm ${
+              toast.type === "success"
+                ? "bg-green-50 border-green-400 text-green-800"
+                : toast.type === "error"
+                ? "bg-red-50 border-red-400 text-red-800"
+                : "bg-blue-50 border-blue-400 text-blue-800"
+            }`}>
             <div className="flex items-center gap-2">
-              <i className={`fas ${
-                toast.type === 'success' ? 'fa-check-circle' :
-                toast.type === 'error' ? 'fa-exclamation-circle' :
-                'fa-info-circle'
-              }`}></i>
+              <i
+                className={`fas ${
+                  toast.type === "success"
+                    ? "fa-check-circle"
+                    : toast.type === "error"
+                    ? "fa-exclamation-circle"
+                    : "fa-info-circle"
+                }`}></i>
               <span className="text-sm">{toast.message}</span>
             </div>
           </div>
@@ -386,7 +445,9 @@ const SPMB = ({ userData }) => {
               Sistem Penerimaan Murid Baru (SPMB)
             </h1>
             <div className="w-20 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500 mx-auto"></div>
-            <p className="text-gray-700 text-base sm:text-lg">SDN 1 PASIR POGOR</p>
+            <p className="text-gray-700 text-base sm:text-lg">
+              SDN 1 PASIR POGOR
+            </p>
             <p className="text-blue-600 font-medium bg-white/60 px-4 py-2 rounded-full inline-block text-sm sm:text-base">
               Pendaftaran Siswa Baru Tahun Ajaran {getCurrentAcademicYear()}
             </p>
@@ -402,10 +463,9 @@ const SPMB = ({ userData }) => {
                 onClick={() => setActiveTab(item.key)}
                 className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
                   activeTab === item.key
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
+                    ? "bg-blue-500 text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}>
                 <i className={`fas ${item.icon}`}></i>
                 <span>{item.fullLabel}</span>
               </button>
@@ -415,7 +475,7 @@ const SPMB = ({ userData }) => {
 
         {/* Tab Content */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-          {activeTab === 'form' && (
+          {activeTab === "form" && (
             <StudentForm
               editingStudent={editingStudent}
               setEditingStudent={setEditingStudent}
@@ -425,7 +485,7 @@ const SPMB = ({ userData }) => {
             />
           )}
 
-          {activeTab === 'list' && (
+          {activeTab === "list" && (
             <StudentList
               students={students}
               allStudents={allStudents}
@@ -444,7 +504,7 @@ const SPMB = ({ userData }) => {
             />
           )}
 
-          {activeTab === 'stats' && (
+          {activeTab === "stats" && (
             <Statistics
               students={allStudents}
               totalStudents={totalStudents}
@@ -466,10 +526,9 @@ const SPMB = ({ userData }) => {
               onClick={() => setActiveTab(item.key)}
               className={`flex-1 p-3 font-medium transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                 activeTab === item.key
-                  ? 'text-blue-500 bg-blue-50'
-                  : 'text-gray-600'
-              }`}
-            >
+                  ? "text-blue-500 bg-blue-50"
+                  : "text-gray-600"
+              }`}>
               <i className={`fas ${item.icon} text-lg`}></i>
               <span className="text-xs">{item.label}</span>
             </button>

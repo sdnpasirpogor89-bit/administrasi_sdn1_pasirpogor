@@ -1,201 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../supabaseClient";
+import { Link } from "react-router-dom";
 import {
   Save,
-  Download,
+  Users,
   BookOpen,
+  Calculator,
+  Eye,
+  BarChart3,
+  Calendar,
+  GraduationCap,
+  Download,
+  Upload,
   AlertCircle,
   CheckCircle,
   Loader,
-  Users,
-  FileText,
-  Calculator,
   Search,
-  Upload,
   WifiOff,
-  RefreshCw,
 } from "lucide-react";
-import { ImportModal, exportToExcel } from "./GradesExport";
-import { Link } from "react-router-dom"; // ✅ TAMBAH IMPORT INI
-
-// ===== PWA OFFLINE IMPORTS =====
+import { ImportModal, exportToExcel } from "./GradeExport";
 import {
   saveWithSync,
   syncPendingData,
   getDataWithFallback,
-} from "../offlineSync";
-import { useSyncStatus } from "../hooks/useSyncStatus";
-import SyncStatusBadge from "../components/SyncStatusBadge";
-// ===============================
+} from "../../offlineSync";
+import { useSyncStatus } from "../../hooks/useSyncStatus";
+import SyncStatusBadge from "../../components/SyncStatusBadge";
 
-// Compact Stats Card Component
-const StatsCard = ({ icon: Icon, number, label, color }) => {
-  const colorClasses = {
-    blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
-    green: "border-l-green-500 bg-gradient-to-r from-green-50 to-white",
-    purple: "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white",
-    orange: "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white",
-  };
-
-  const iconColorClasses = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    purple: "text-purple-600",
-    orange: "text-orange-600",
-  };
-
-  return (
-    <div
-      className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-2xl font-bold text-gray-900">{number}</p>
-          <p className="text-sm font-medium text-gray-600">{label}</p>
-        </div>
-        <Icon size={28} className={iconColorClasses[color]} />
-      </div>
-    </div>
-  );
-};
-
-// Mobile Student Card Component untuk Input Nilai
-const StudentGradeCard = ({
-  student,
-  index,
-  selectedType,
-  value,
-  onChange,
-  disabled,
-}) => {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-sm">
-                {index + 1}
-              </span>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base">
-                {student.nama_siswa}
-              </h3>
-              <p className="text-sm text-gray-600">NISN: {student.nisn}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-2">
-            Nilai {selectedType}
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={value}
-            onChange={(e) => onChange(student.nisn, e.target.value)}
-            disabled={disabled}
-            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            placeholder="0-100"
-          />
-        </div>
-
-        {student.isExisting && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-            <p className="text-green-700 text-xs font-medium text-center">
-              ✓ Nilai sudah tersimpan
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// Mobile Rekap Card Component
-const RekapGradeCard = ({ student, index }) => {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 font-bold text-sm">
-                {index + 1}
-              </span>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 text-base">
-                {student.nama_siswa}
-              </h3>
-              <p className="text-sm text-gray-600">NISN: {student.nisn}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="text-center p-2 bg-blue-50 rounded-lg">
-          <p className="text-xs text-gray-600">NH-1</p>
-          <p className="font-bold text-gray-900">{student.nh1 || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-blue-50 rounded-lg">
-          <p className="text-xs text-gray-600">NH-2</p>
-          <p className="font-bold text-gray-900">{student.nh2 || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-blue-50 rounded-lg">
-          <p className="text-xs text-gray-600">NH-3</p>
-          <p className="font-bold text-gray-900">{student.nh3 || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-blue-50 rounded-lg">
-          <p className="text-xs text-gray-600">NH-4</p>
-          <p className="font-bold text-gray-900">{student.nh4 || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-blue-50 rounded-lg">
-          <p className="text-xs text-gray-600">NH-5</p>
-          <p className="font-bold text-gray-900">{student.nh5 || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-orange-50 rounded-lg">
-          <p className="text-xs text-gray-600">UTS</p>
-          <p className="font-bold text-gray-900">{student.uts || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-orange-50 rounded-lg">
-          <p className="text-xs text-gray-600">UAS</p>
-          <p className="font-bold text-gray-900">{student.uas || "-"}</p>
-        </div>
-        <div className="text-center p-2 bg-green-50 rounded-lg col-span-2">
-          <p className="text-xs text-gray-600">Nilai Akhir</p>
-          <p className="font-bold text-green-700 text-lg">
-            {student.nilai_akhir || "-"}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Grades = ({ userData: initialUserData }) => {
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [userData, setUserData] = useState(initialUserData);
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedType, setSelectedType] = useState("");
-  const [students, setStudents] = useState([]);
-  const [grades, setGrades] = useState([]);
-  const [showRekap, setShowRekap] = useState(false);
-  const [rekapData, setRekapData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingRekap, setLoadingRekap] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [message, setMessage] = useState({ text: "", type: "" });
-  const [isMobile, setIsMobile] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-
+const Grade = ({ userData: initialUserData }) => {
   // ===== PWA: Sync Status Hook =====
   const { isOnline, pendingCount, isSyncing } = useSyncStatus();
 
@@ -212,16 +44,48 @@ const Grades = ({ userData: initialUserData }) => {
     }
   }, [isOnline, pendingCount]);
 
-  useEffect(() => {
-    const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+  // States - DIUBAH: hapus selectedType
+  const [userData, setUserData] = useState(initialUserData);
+  const [selectedClass, setSelectedClass] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [students, setStudents] = useState([]); // Format baru: { nisn, nama_siswa, grades: { NH1: "", NH2: "", ... }, na }
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showImportModal, setShowImportModal] = useState(false);
 
-    checkDevice();
-    window.addEventListener("resize", checkDevice);
-    return () => window.removeEventListener("resize", checkDevice);
-  }, []);
+  // Assignment types untuk SD - SEMUA SEKALIGUS
+  const assignmentTypes = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
+  const assignmentLabels = {
+    NH1: "NH1",
+    NH2: "NH2",
+    NH3: "NH3",
+    NH4: "NH4",
+    NH5: "NH5",
+    UTS: "UTS",
+    UAS: "UAS",
+  };
 
+  // Mata pelajaran
+  const mataPelajaran = {
+    guru_kelas: [
+      "Bahasa Indonesia",
+      "Bahasa Inggris",
+      "Bahasa Sunda",
+      "Matematika",
+      "IPAS",
+      "Pendidikan Pancasila",
+      "Seni Budaya",
+    ],
+    guru_mapel: {
+      acengmudrikah: ["PABP"],
+      yosefedi: ["PJOK"],
+    },
+  };
+
+  // Fetch user data lengkap
   useEffect(() => {
     const fetchCompleteUserData = async () => {
       if (!userData?.kelas && userData?.username) {
@@ -251,38 +115,14 @@ const Grades = ({ userData: initialUserData }) => {
     fetchCompleteUserData();
   }, [userData?.username]);
 
+  // Auto-set kelas untuk guru_kelas
   useEffect(() => {
     if (userData?.role === "guru_kelas" && userData?.kelas && !selectedClass) {
       setSelectedClass(String(userData.kelas));
     }
   }, [userData?.role, userData?.kelas]);
 
-  const mataPelajaran = {
-    guru_kelas: [
-      "Bahasa Indonesia",
-      "Bahasa Inggris",
-      "Bahasa Sunda",
-      "Matematika",
-      "IPAS",
-      "Pendidikan Pancasila",
-      "Seni Budaya",
-    ],
-    guru_mapel: {
-      acengmudrikah: ["PABP"],
-      yosefedi: ["PJOK"],
-    },
-  };
-
-  const jenisNilai = [
-    { value: "NH1", label: "NH1 - Nilai Harian 1" },
-    { value: "NH2", label: "NH2 - Nilai Harian 2" },
-    { value: "NH3", label: "NH3 - Nilai Harian 3" },
-    { value: "NH4", label: "NH4 - Nilai Harian 4" },
-    { value: "NH5", label: "NH5 - Nilai Harian 5" },
-    { value: "UTS", label: "UTS - Ulangan Tengah Semester" },
-    { value: "UAS", label: "UAS - Ulangan Akhir Semester" },
-  ];
-
+  // Helper functions
   const getAvailableClasses = () => {
     if (userData.role === "admin") {
       return ["1", "2", "3", "4", "5", "6"];
@@ -330,19 +170,8 @@ const Grades = ({ userData: initialUserData }) => {
     setTimeout(() => setMessage({ text: "", type: "" }), 5000);
   };
 
-  const filteredStudents = students.filter(
-    (student) =>
-      student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.nisn.includes(searchTerm)
-  );
-
-  const filteredRekapData = rekapData.filter(
-    (student) =>
-      student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.nisn.includes(searchTerm)
-  );
-
-  const loadRekapNilai = async () => {
+  // ===== FUNGSI BARU: Load SEMUA nilai sekaligus =====
+  const loadAllGrades = async () => {
     if (!selectedClass || !selectedSubject) {
       showMessage("Pilih kelas dan mata pelajaran terlebih dahulu!", "error");
       return;
@@ -356,8 +185,9 @@ const Grades = ({ userData: initialUserData }) => {
       return;
     }
 
-    setLoadingRekap(true);
+    setLoading(true);
     try {
+      // 1. Fetch students
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
         .select("nisn, nama_siswa, kelas")
@@ -369,284 +199,360 @@ const Grades = ({ userData: initialUserData }) => {
 
       if (!studentsData || studentsData.length === 0) {
         showMessage("Tidak ada siswa di kelas ini", "error");
-        setRekapData([]);
-        setShowRekap(false);
+        setStudents([]);
         return;
       }
 
-      // ===== PWA: Load dengan Fallback =====
-      const allGrades = await getDataWithFallback("grades", (query) =>
+      // 2. Fetch SEMUA nilai untuk mapel ini - ⚠️ GUNAKAN "nilai" bukan "grades"
+      const allGrades = await getDataWithFallback("nilai", (query) =>
         query
           .eq("kelas", parseInt(selectedClass))
           .eq("mata_pelajaran", selectedSubject)
       );
 
-      const gradeTypes = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
+      console.log("📊 Students loaded:", studentsData.length);
+      console.log("📊 Nilai loaded:", allGrades?.length || 0);
+      console.log("🔍 Sample grade record:", allGrades?.[0]);
 
-      const processedData = studentsData.map((student, index) => {
-        const studentGrades = {};
+      // 3. Process data: gabung student dengan semua jenis nilai
+      const processedStudents = studentsData.map((student, index) => {
+        // Default grades object
+        const grades = {};
         const nhGrades = [];
 
-        gradeTypes.forEach((type) => {
+        // Isi grades dari data yang ada
+        assignmentTypes.forEach((type) => {
           const grade = allGrades?.find(
             (g) => g.nisn === student.nisn && g.jenis_nilai === type
           );
-          studentGrades[type] = grade ? grade.nilai : "";
 
-          if (type.startsWith("NH") && grade && grade.nilai) {
-            nhGrades.push(parseFloat(grade.nilai));
+          // Pastikan nilai ada dan valid
+          if (grade && grade.nilai !== null && grade.nilai !== undefined) {
+            console.log(`✅ Found ${type} for ${student.nisn}:`, grade);
+            grades[type] = grade.nilai.toString();
+            grades[`${type}_id`] = grade.id || null;
+
+            if (type.startsWith("NH")) {
+              const numValue = parseFloat(grade.nilai);
+              if (!isNaN(numValue)) {
+                nhGrades.push(numValue);
+              }
+            }
+          } else {
+            grades[type] = "";
+            grades[`${type}_id`] = null;
           }
         });
 
-        let nilaiAkhir = "";
-        const utsGrade = studentGrades["UTS"]
-          ? parseFloat(studentGrades["UTS"])
-          : 0;
-        const uasGrade = studentGrades["UAS"]
-          ? parseFloat(studentGrades["UAS"])
-          : 0;
+        // Hitung NA hanya jika ada nilai
+        let na = "";
 
-        if (nhGrades.length > 0 || utsGrade > 0 || uasGrade > 0) {
+        // Parse UTS dan UAS values
+        const utsValue = grades["UTS"] ? parseFloat(grades["UTS"]) : 0;
+        const uasValue = grades["UAS"] ? parseFloat(grades["UAS"]) : 0;
+
+        if (nhGrades.length > 0 || utsValue > 0 || uasValue > 0) {
           const avgNH =
             nhGrades.length > 0
               ? nhGrades.reduce((a, b) => a + b, 0) / nhGrades.length
               : 0;
-          nilaiAkhir = (avgNH * 0.4 + utsGrade * 0.3 + uasGrade * 0.3).toFixed(
-            1
-          );
+          na = (avgNH * 0.4 + utsValue * 0.3 + uasValue * 0.3).toFixed(1);
+        }
+
+        // Check if has any grade (exclude the _id fields)
+        let hasAnyGrade = false;
+        for (const type of assignmentTypes) {
+          if (grades[type] && grades[type] !== "") {
+            hasAnyGrade = true;
+            break;
+          }
         }
 
         return {
           no: index + 1,
           nisn: student.nisn,
           nama_siswa: student.nama_siswa,
-          nh1: studentGrades["NH1"],
-          nh2: studentGrades["NH2"],
-          nh3: studentGrades["NH3"],
-          nh4: studentGrades["NH4"],
-          nh5: studentGrades["NH5"],
-          uts: studentGrades["UTS"],
-          uas: studentGrades["UAS"],
-          nilai_akhir: nilaiAkhir,
+          grades: grades,
+          na: na,
+          hasAnyGrade: hasAnyGrade,
         };
       });
 
-      setRekapData(processedData);
-      setShowRekap(true);
-      setStudents([]);
+      setStudents(processedStudents);
       showMessage(
-        `Rekap nilai ${selectedSubject} kelas ${selectedClass} berhasil dimuat!`
+        `Data nilai ${selectedSubject} kelas ${selectedClass} berhasil dimuat!`
       );
     } catch (error) {
-      console.error("Error loading rekap:", error);
-      showMessage("Error memuat rekap: " + error.message, "error");
-    } finally {
-      setLoadingRekap(false);
-    }
-  };
-
-  // ===== PWA: Load Students dengan Fallback =====
-  const loadStudents = async (showNotification = true) => {
-    if (!selectedClass || !selectedSubject || !selectedType) {
-      if (showNotification) {
-        showMessage(
-          "Pilih kelas, mata pelajaran, dan jenis nilai terlebih dahulu!",
-          "error"
-        );
-      }
-      return;
-    }
-
-    if (!checkAccess(selectedClass, selectedSubject)) {
-      showMessage(
-        "Anda Tidak Memiliki Akses Untuk Kelas dan Mata Pelajaran Pada Kelas ini!",
-        "error"
-      );
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data: studentsData, error: studentsError } = await supabase
-        .from("students")
-        .select("nisn, nama_siswa, kelas")
-        .eq("kelas", parseInt(selectedClass))
-        .eq("is_active", true)
-        .order("nama_siswa");
-
-      if (studentsError) throw studentsError;
-
-      if (!studentsData || studentsData.length === 0) {
-        if (showNotification) {
-          showMessage("Tidak ada siswa di kelas ini", "error");
-        }
-        setStudents([]);
-        setGrades([]);
-        return;
-      }
-
-      // Load grades dengan fallback
-      const gradesData = await getDataWithFallback("grades", (query) =>
-        query
-          .eq("kelas", parseInt(selectedClass))
-          .eq("mata_pelajaran", selectedSubject)
-          .eq("jenis_nilai", selectedType)
-      );
-
-      const combinedData = studentsData.map((student) => {
-        const existingGrade = gradesData?.find(
-          (grade) =>
-            grade.nisn === student.nisn &&
-            grade.mata_pelajaran === selectedSubject &&
-            grade.jenis_nilai === selectedType
-        );
-
-        return {
-          ...student,
-          nilai: existingGrade ? existingGrade.nilai : "",
-          isExisting: !!existingGrade,
-        };
-      });
-
-      setStudents(combinedData);
-      if (showNotification) {
-        showMessage(
-          `Data nilai ${selectedType} ${selectedSubject} kelas ${selectedClass} berhasil dimuat!`
-        );
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("Error loading all grades:", error);
       showMessage("Error memuat data: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (selectedClass && selectedSubject && selectedType) {
-      loadStudents();
-      setShowRekap(false);
-    } else {
-      setStudents([]);
-      setShowRekap(false);
-    }
-  }, [selectedClass, selectedSubject, selectedType]);
+  // ===== FUNGSI BARU: Update grade di state =====
+  const updateGrade = (nisn, type, value) => {
+    // Validate input
+    if (value === "" || (parseFloat(value) >= 0 && parseFloat(value) <= 100)) {
+      setStudents((prev) =>
+        prev.map((student) => {
+          if (student.nisn === nisn) {
+            const updatedGrades = { ...student.grades, [type]: value };
 
-  // ===== PWA: FIXED SAVE FUNCTION =====
-  const saveGrades = async () => {
+            // Recalculate NA
+            const nhGrades = [];
+            assignmentTypes.forEach((t) => {
+              if (
+                t.startsWith("NH") &&
+                updatedGrades[t] &&
+                !isNaN(parseFloat(updatedGrades[t]))
+              ) {
+                nhGrades.push(parseFloat(updatedGrades[t]));
+              }
+            });
+
+            const utsGrade =
+              updatedGrades["UTS"] && !isNaN(parseFloat(updatedGrades["UTS"]))
+                ? parseFloat(updatedGrades["UTS"])
+                : 0;
+            const uasGrade =
+              updatedGrades["UAS"] && !isNaN(parseFloat(updatedGrades["UAS"]))
+                ? parseFloat(updatedGrades["UAS"])
+                : 0;
+
+            let newNA = "";
+            if (nhGrades.length > 0 || utsGrade > 0 || uasGrade > 0) {
+              const avgNH =
+                nhGrades.length > 0
+                  ? nhGrades.reduce((a, b) => a + b, 0) / nhGrades.length
+                  : 0;
+              newNA = (avgNH * 0.4 + utsGrade * 0.3 + uasGrade * 0.3).toFixed(
+                1
+              );
+            }
+
+            // Check if has any grade
+            let hasAnyGrade = false;
+            for (const t of assignmentTypes) {
+              if (updatedGrades[t] && updatedGrades[t] !== "") {
+                hasAnyGrade = true;
+                break;
+              }
+            }
+
+            return {
+              ...student,
+              grades: updatedGrades,
+              na: newNA,
+              hasAnyGrade: hasAnyGrade,
+            };
+          }
+          return student;
+        })
+      );
+    }
+  };
+
+  // ===== FUNGSI BARU: Save ALL grades =====
+  const saveAllGrades = async () => {
     if (students.length === 0) {
       showMessage("Tidak ada data untuk disimpan!", "error");
       return;
     }
 
-    const dataToSave = students.filter((student) => {
-      const nilai = student.nilai;
-      return nilai !== "" && !isNaN(nilai);
+    // Collect semua data yang ada nilai
+    const allDataToSave = [];
+    students.forEach((student) => {
+      assignmentTypes.forEach((type) => {
+        const nilai = student.grades[type];
+        if (nilai !== "" && !isNaN(parseFloat(nilai))) {
+          allDataToSave.push({
+            nisn: student.nisn,
+            nama_siswa: student.nama_siswa,
+            kelas: parseInt(selectedClass),
+            mata_pelajaran: selectedSubject,
+            jenis_nilai: type,
+            nilai: parseFloat(nilai),
+            guru_input: userData.name || userData.username,
+            tanggal: new Date().toISOString().split("T")[0],
+            existingId: student.grades[`${type}_id`],
+          });
+        }
+      });
     });
 
-    if (dataToSave.length === 0) {
+    if (allDataToSave.length === 0) {
       showMessage("Masukkan minimal satu nilai untuk disimpan!", "error");
       return;
     }
 
-    // Skip confirmation jika offline
+    // Confirmation
     if (isOnline) {
       const isConfirmed = window.confirm(
-        `Apakah Anda yakin ingin menyimpan ${dataToSave.length} nilai siswa?\n\n` +
+        `Apakah Anda yakin ingin menyimpan ${allDataToSave.length} nilai siswa?\n\n` +
           `Kelas: ${selectedClass}\n` +
-          `Mata Pelajaran: ${selectedSubject}\n` +
-          `Jenis Nilai: ${selectedType}`
+          `Mata Pelajaran: ${selectedSubject}`
       );
 
-      if (!isConfirmed) {
-        return;
-      }
+      if (!isConfirmed) return;
     }
 
     setSaving(true);
     try {
-      const finalData = dataToSave.map((student) => {
-        return {
-          nisn: student.nisn,
-          nama_siswa: student.nama_siswa,
-          kelas: parseInt(selectedClass),
-          mata_pelajaran: selectedSubject,
-          jenis_nilai: selectedType,
-          nilai: parseFloat(student.nilai),
-          guru_input: userData.name || userData.username,
-          tanggal: new Date().toISOString().split("T")[0],
-        };
+      // Pisahkan data baru vs update
+      const newData = [];
+      const updateData = [];
+
+      allDataToSave.forEach((data) => {
+        if (
+          data.existingId &&
+          data.existingId !== null &&
+          data.existingId !== undefined &&
+          data.existingId !== ""
+        ) {
+          updateData.push(data);
+        } else {
+          const { existingId, ...newRecord } = data;
+          newData.push(newRecord);
+        }
       });
 
-      console.log("📤 Saving grades data:", finalData);
+      console.log(`📊 New: ${newData.length}, Update: ${updateData.length}`);
 
-      // ✅ FIXED: Gunakan saveWithSync yang auto-detect array
-      const result = await saveWithSync("grades", finalData);
+      let successCount = 0;
+      let failCount = 0;
 
-      console.log("📊 Save result:", result);
+      // INSERT new data - ⚠️ GUNAKAN "nilai"
+      if (newData.length > 0) {
+        try {
+          const { data: inserted, error } = await supabase
+            .from("nilai")
+            .insert(newData)
+            .select();
 
-      // ✅ FIXED: Handle result dengan benar
-      if (result.success) {
-        if (result.batch) {
-          // Batch save result
-          if (result.synced) {
-            // Semua berhasil sync
-            showMessage(
-              `✅ ${result.syncedCount} nilai berhasil disimpan dan disinkronkan ke server!`,
-              "success"
-            );
-          } else if (result.syncedCount > 0) {
-            // Sebagian synced
-            showMessage(
-              `⚠️ ${result.syncedCount} nilai tersinkron, ${result.pendingCount} akan disinkronkan saat online.`,
-              "warning"
-            );
+          if (error) {
+            console.error("Insert error:", error);
+            // Fallback ke offlineSync
+            const insertResult = await saveWithSync("nilai", newData);
+            if (insertResult.success) {
+              successCount += insertResult.syncedCount || newData.length;
+            } else {
+              failCount += newData.length;
+            }
           } else {
-            // Semua pending
-            if (result.online) {
-              showMessage(
-                `⚠️ ${result.success} nilai tersimpan lokal, gagal sync ke server. Akan dicoba lagi nanti.`,
-                "warning"
-              );
-            } else {
-              showMessage(
-                `💾 ${result.success} nilai disimpan offline. Akan disinkronkan saat online.`,
-                "offline"
-              );
-            }
+            successCount += inserted?.length || newData.length;
           }
+        } catch (insertError) {
+          console.error("Insert failed:", insertError);
+          failCount += newData.length;
+        }
+      }
 
-          if (result.failed > 0) {
-            console.error("Failed items:", result.errors);
-            showMessage(`❌ ${result.failed} nilai gagal disimpan!`, "error");
-          }
-        } else {
-          // Single save result (fallback)
-          if (result.synced) {
-            showMessage(
-              "✅ Nilai berhasil disimpan dan disinkronkan!",
-              "success"
-            );
-          } else if (result.success) {
-            if (result.online) {
-              showMessage(
-                "⚠️ Nilai tersimpan lokal, gagal sync ke server. Akan dicoba lagi nanti.",
-                "warning"
+      // UPDATE existing data - ⚠️ GUNAKAN "nilai"
+      if (updateData.length > 0) {
+        for (const data of updateData) {
+          try {
+            // Coba update dengan composite key
+            const { data: updated, error } = await supabase
+              .from("nilai")
+              .update({
+                nilai: data.nilai,
+                guru_input: data.guru_input,
+                tanggal: data.tanggal,
+                updated_at: new Date().toISOString(),
+              })
+              .match({
+                nisn: data.nisn,
+                kelas: data.kelas,
+                mata_pelajaran: data.mata_pelajaran,
+                jenis_nilai: data.jenis_nilai,
+              })
+              .select();
+
+            if (error) {
+              console.error(
+                `Update error for ${data.nisn} - ${data.jenis_nilai}:`,
+                error
               );
+
+              // Fallback: coba pake existingId
+              if (data.existingId) {
+                const { data: updated2, error: error2 } = await supabase
+                  .from("nilai")
+                  .update({
+                    nilai: data.nilai,
+                    guru_input: data.guru_input,
+                    tanggal: data.tanggal,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", data.existingId)
+                  .select();
+
+                if (error2) {
+                  throw error2;
+                }
+                if (updated2 && updated2.length > 0) {
+                  successCount++;
+                } else {
+                  failCount++;
+                }
+              } else {
+                failCount++;
+              }
+            } else if (updated && updated.length > 0) {
+              successCount++;
             } else {
-              showMessage(
-                "💾 Nilai disimpan offline. Akan disinkronkan saat online.",
-                "offline"
+              // Jika update ga nemu data, insert baru
+              console.warn(
+                `⚠️ No record found for update, trying insert: ${data.nama_siswa} - ${data.jenis_nilai}`
               );
+
+              const { data: inserted, error: insertError } = await supabase
+                .from("nilai")
+                .insert([
+                  {
+                    nisn: data.nisn,
+                    nama_siswa: data.nama_siswa,
+                    kelas: data.kelas,
+                    mata_pelajaran: data.mata_pelajaran,
+                    jenis_nilai: data.jenis_nilai,
+                    nilai: data.nilai,
+                    guru_input: data.guru_input,
+                    tanggal: data.tanggal,
+                  },
+                ])
+                .select();
+
+              if (insertError) {
+                failCount++;
+              } else {
+                successCount++;
+              }
             }
+          } catch (error) {
+            console.error(
+              `Update failed for ${data.nama_siswa} - ${data.jenis_nilai}:`,
+              error
+            );
+            failCount++;
           }
         }
-
-        // Refresh data setelah save
-        await loadStudents(false);
-      } else {
-        throw new Error(result.error || "Gagal menyimpan data");
       }
+
+      // Show result
+      if (successCount > 0 && failCount === 0) {
+        showMessage(`✅ ${successCount} nilai berhasil disimpan!`, "success");
+      } else if (successCount > 0 && failCount > 0) {
+        showMessage(
+          `⚠️ ${successCount} berhasil, ${failCount} gagal disimpan!`,
+          "warning"
+        );
+      } else {
+        showMessage(`❌ Gagal menyimpan ${failCount} nilai!`, "error");
+      }
+
+      // Refresh data
+      await loadAllGrades();
     } catch (error) {
       console.error("Error saving grades:", error);
       showMessage("Error menyimpan data: " + error.message, "error");
@@ -656,486 +562,562 @@ const Grades = ({ userData: initialUserData }) => {
   };
 
   const handleExportToExcel = async () => {
+    // ⚠️ STRICT VALIDATION: Hanya export jika ada data nilai
+    if (students.length === 0) {
+      showMessage("Tidak ada data siswa untuk diexport!", "error");
+      return;
+    }
+
+    // Cek apakah ada minimal satu nilai yang sudah diisi
+    const hasAnyGrade = students.some((student) =>
+      assignmentTypes.some(
+        (type) =>
+          student.grades[type] &&
+          student.grades[type] !== "" &&
+          student.grades[type] !== null
+      )
+    );
+
+    if (!hasAnyGrade) {
+      showMessage(
+        "Data nilai masih kosong, silakan input nilai terlebih dahulu!",
+        "error"
+      );
+      return;
+    }
+
     setExporting(true);
     try {
+      // Panggil fungsi export dengan data yang ada
       await exportToExcel({
         selectedClass,
         selectedSubject,
         userData,
         showMessage,
         checkAccess,
+        students,
+        assignmentTypes,
       });
     } catch (error) {
       console.error("Export error:", error);
+      showMessage("Error mengekspor data: " + error.message, "error");
     } finally {
       setExporting(false);
     }
   };
 
-  const handleInputChange = (nisn, value) => {
-    if (value === "" || (parseFloat(value) >= 0 && parseFloat(value) <= 100)) {
-      setStudents((prev) =>
-        prev.map((student) =>
-          student.nisn === nisn ? { ...student, nilai: value } : student
-        )
-      );
+  // Auto load ketika filter berubah
+  useEffect(() => {
+    if (selectedClass && selectedSubject) {
+      loadAllGrades();
+    } else {
+      setStudents([]);
     }
+  }, [selectedClass, selectedSubject]);
+
+  // Calculate stats
+  const getGradeStats = () => {
+    const total = students.length;
+    const completed = students.filter((s) => s.hasAnyGrade === true).length;
+
+    const naValues = students
+      .filter((s) => s.na && s.na !== "" && !isNaN(parseFloat(s.na)))
+      .map((s) => parseFloat(s.na));
+
+    const average =
+      naValues.length > 0
+        ? (naValues.reduce((a, b) => a + b, 0) / naValues.length).toFixed(2)
+        : "0.00";
+
+    const tuntas = students.filter(
+      (s) => s.na && !isNaN(parseFloat(s.na)) && parseFloat(s.na) >= 70
+    ).length;
+
+    const remedial = students.filter(
+      (s) => s.na && !isNaN(parseFloat(s.na)) && parseFloat(s.na) < 70
+    ).length;
+
+    return { total, completed, average, tuntas, remedial };
   };
 
+  const stats = getGradeStats();
+  const filteredStudents = students.filter(
+    (student) =>
+      student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.nisn.includes(searchTerm)
+  );
+
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
-      {/* ===== PWA: Sync Status Badge ===== */}
-      <SyncStatusBadge />
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Sync Status Badge */}
+        <SyncStatusBadge />
 
-      {message.text && (
-        <div
-          className={`p-4 rounded-lg ${
-            message.type === "error"
-              ? "bg-red-50 border border-red-200 text-red-700"
-              : message.type === "offline" || message.type === "warning"
-              ? "bg-orange-50 border border-orange-200 text-orange-700"
-              : "bg-green-50 border border-green-200 text-green-700"
-          }`}>
-          <div className="flex items-center gap-2">
-            {message.type === "error" ? (
-              <AlertCircle size={20} />
-            ) : message.type === "offline" || message.type === "warning" ? (
-              <WifiOff size={20} />
-            ) : (
-              <CheckCircle size={20} />
-            )}
-            {message.text}
-          </div>
-        </div>
-      )}
-
-      {showRekap && rekapData.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            icon={Users}
-            number={rekapData.length}
-            label="Total Siswa"
-            color="blue"
-          />
-          <StatsCard
-            icon={FileText}
-            number={
-              rekapData.filter((s) => s.nilai_akhir && s.nilai_akhir > 0).length
-            }
-            label="Nilai Terisi"
-            color="green"
-          />
-          <StatsCard
-            icon={Calculator}
-            number={
-              rekapData.filter((s) => s.nilai_akhir && s.nilai_akhir >= 70)
-                .length
-            }
-            label="Tuntas"
-            color="purple"
-          />
-          <StatsCard
-            icon={BookOpen}
-            number={
-              rekapData.filter((s) => s.nilai_akhir && s.nilai_akhir < 70)
-                .length
-            }
-            label="Remedial"
-            color="orange"
-          />
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {userData?.role === "guru_kelas" ? "Kelas Anda" : "Pilih Kelas"}
-            </label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm sm:text-base"
-              disabled={userData?.role === "guru_kelas"}>
-              <option value="">Pilih Kelas</option>
-              {getAvailableClasses().map((kelas) => (
-                <option key={kelas} value={kelas}>
-                  Kelas {kelas}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mata Pelajaran
-            </label>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base">
-              <option value="">Pilih Mata Pelajaran</option>
-              {getAvailableSubjects().map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Jenis Nilai
-            </label>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base">
-              <option value="">Pilih Jenis Nilai</option>
-              {jenisNilai.map((jenis) => (
-                <option key={jenis.value} value={jenis.value}>
-                  {jenis.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {(students.length > 0 || rekapData.length > 0) && (
-          <div className="mb-4">
-            <div className="relative">
-              <Search
-                size={18}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Cari nama siswa atau NISN..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-medium text-sm sm:text-base"
-              />
+        {/* Message */}
+        {message.text && (
+          <div
+            className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
+              message.type === "error"
+                ? "bg-red-100 text-red-700 border border-red-300"
+                : message.type === "warning" || message.type === "offline"
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            }`}>
+            <div className="flex items-center gap-2">
+              {message.type === "error" ? (
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : message.type === "warning" || message.type === "offline" ? (
+                <WifiOff className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
+              {message.text}
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <button
-            onClick={loadRekapNilai}
-            disabled={loadingRekap || !selectedClass || !selectedSubject}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base">
-            {loadingRekap ? (
-              <Loader className="animate-spin" size={18} />
-            ) : (
-              <BookOpen size={18} />
-            )}
-            {loadingRekap ? "Memuat..." : "Lihat Rekap"}
-          </button>
-
-          <button
-            onClick={saveGrades}
-            disabled={saving || isSyncing || students.length === 0 || showRekap}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base"
-            title={
-              showRekap
-                ? "Pilih jenis nilai untuk input & simpan"
-                : students.length === 0
-                ? "Pilih kelas, mata pelajaran, dan jenis nilai"
-                : "Simpan nilai siswa"
-            }>
-            {saving || isSyncing ? (
-              <Loader className="animate-spin" size={18} />
-            ) : (
-              <Save size={18} />
-            )}
-            {saving || isSyncing ? "Menyimpan..." : "Simpan Nilai"}
-          </button>
-
-          <button
-            onClick={handleExportToExcel}
-            disabled={exporting || !selectedClass || !selectedSubject}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base">
-            {exporting ? (
-              <Loader className="animate-spin" size={18} />
-            ) : (
-              <Download size={18} />
-            )}
-            {exporting ? "Mengekspor..." : "Export Excel"}
-          </button>
-
-          <button
-            onClick={() => setShowImportModal(true)}
-            disabled={!selectedClass || !selectedSubject}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm sm:text-base">
-            <Upload size={18} />
-            Import Nilai
-          </button>
-
-          {/* ✅ TAMBAH TOMBOL KATROL NILAI DI SINI */}
-          <Link
-            to="/grades/katrol"
-            state={{
-              userData,
-              selectedClass:
-                selectedClass ||
-                (userData?.role === "guru_kelas" ? String(userData.kelas) : ""),
-              selectedSubject: selectedSubject || "",
-            }}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-all duration-200 font-medium text-sm sm:text-base">
-            <Calculator size={18} />
-            Katrol Nilai
-          </Link>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {showRekap
-              ? `Rekap Nilai - ${selectedSubject} - Kelas ${selectedClass}`
-              : selectedSubject && selectedType && selectedClass
-              ? `Nilai ${selectedType} - ${selectedSubject} - Kelas ${selectedClass}`
-              : "Daftar Nilai Siswa"}
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {loading || loadingRekap
-              ? "Memuat data..."
-              : showRekap
-              ? `Menampilkan ${filteredRekapData.length} dari ${rekapData.length} siswa`
-              : `Menampilkan ${filteredStudents.length} dari ${students.length} siswa`}
-          </p>
-        </div>
-
-        {loading || loadingRekap ? (
-          <div className="text-center py-12">
-            <Loader
-              className="animate-spin mx-auto mb-4 text-blue-600"
-              size={48}
-            />
-            <p className="text-gray-500 font-medium">Memuat data nilai...</p>
+        {/* Header - SAMA KAYAK SMP */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <Calculator className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+                  Input Nilai Siswa SD
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-slate-600">
+                Kelola Nilai Siswa Untuk Mata Pelajaran
+              </p>
+            </div>
           </div>
-        ) : isMobile ? (
-          <div className="p-4 space-y-4">
-            {showRekap ? (
-              filteredRekapData.length > 0 ? (
-                filteredRekapData.map((student, index) => (
-                  <RekapGradeCard
-                    key={student.nisn}
-                    student={student}
-                    index={index}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <BookOpen size={48} className="text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 font-medium">
-                    {searchTerm
-                      ? "Tidak ada siswa yang cocok dengan pencarian"
-                      : "Tidak ada data rekap nilai"}
+
+          {/* Filters - 2 KOLOM SAJA (GAK ADA JENIS NILAI) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
+            {/* Kelas */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 inline mr-2" />
+                {userData?.role === "guru_kelas" ? "Kelas Anda" : "Kelas"}
+              </label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={userData?.role === "guru_kelas" || loading}
+                style={{ minHeight: "44px" }}>
+                <option value="">Pilih Kelas</option>
+                {getAvailableClasses().map((kelas) => (
+                  <option key={kelas} value={kelas}>
+                    Kelas {kelas}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Mata Pelajaran */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 inline mr-2" />
+                Mata Pelajaran
+              </label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={loading}
+                style={{ minHeight: "44px" }}>
+                <option value="">Pilih Mata Pelajaran</option>
+                {getAvailableSubjects().map((subject) => (
+                  <option key={subject} value={subject}>
+                    {subject}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          {students.length > 0 && (
+            <div className="mt-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+                <input
+                  type="text"
+                  placeholder="Cari nama siswa atau NISN..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm sm:text-base"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Stats Cards - SAMA KAYAK SMP */}
+        {students.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="bg-blue-100 p-2.5 sm:p-3 rounded-lg">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800">
+                    {stats.total}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    Total Siswa
                   </p>
                 </div>
-              )
-            ) : filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => (
-                <StudentGradeCard
-                  key={student.nisn}
-                  student={student}
-                  index={index}
-                  selectedType={selectedType}
-                  value={student.nilai}
-                  onChange={handleInputChange}
-                  disabled={saving}
-                />
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <Users size={48} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">
-                  {searchTerm
-                    ? "Tidak ada siswa yang cocok dengan pencarian"
-                    : selectedClass && selectedSubject && selectedType
-                    ? "Tidak ada siswa di kelas ini"
-                    : "Pilih kelas, mata pelajaran, dan jenis nilai"}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="bg-green-100 p-2.5 sm:p-3 rounded-lg">
+                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800">
+                    {stats.completed}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    Sudah Dinilai
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="bg-purple-100 p-2.5 sm:p-3 rounded-lg">
+                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800">
+                    {stats.average}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    Rata-rata NA
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tabel Nilai - SAMA KAYAK SMP TAPI DENGAN 9 KOLOM */}
+        {selectedClass && selectedSubject && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-slate-200">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
+                <div>
+                  <h2 className="text-base sm:text-lg font-semibold text-slate-800">
+                    Daftar Nilai - Kelas {selectedClass}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                    {selectedSubject} • NA = Rata-rata NH (40%) + UTS (30%) +
+                    UAS (30%)
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <button
+                    onClick={saveAllGrades}
+                    disabled={saving || isSyncing || students.length === 0}
+                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
+                    style={{ minHeight: "44px" }}>
+                    {saving || isSyncing ? (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {saving || isSyncing ? "Menyimpan..." : "Simpan Nilai"}
+                  </button>
+
+                  <button
+                    onClick={handleExportToExcel}
+                    disabled={
+                      exporting ||
+                      students.length === 0 ||
+                      !students.some((student) =>
+                        assignmentTypes.some(
+                          (type) =>
+                            student.grades[type] &&
+                            student.grades[type] !== "" &&
+                            student.grades[type] !== null
+                        )
+                      )
+                    }
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
+                    style={{ minHeight: "44px" }}
+                    title={
+                      students.length === 0
+                        ? "Tidak ada data siswa"
+                        : !students.some((student) =>
+                            assignmentTypes.some(
+                              (type) =>
+                                student.grades[type] &&
+                                student.grades[type] !== "" &&
+                                student.grades[type] !== null
+                            )
+                          )
+                        ? "Data nilai masih kosong"
+                        : "Export data nilai ke Excel"
+                    }>
+                    {exporting ? (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    {exporting ? "Mengekspor..." : "Export Excel"}
+                  </button>
+
+                  <button
+                    onClick={() => setShowImportModal(true)}
+                    disabled={!selectedClass || !selectedSubject}
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
+                    style={{ minHeight: "44px" }}>
+                    <Upload className="w-4 h-4" />
+                    Import Excel
+                  </button>
+
+                  {/* Katrol Nilai tetap ada */}
+                  <Link
+                    to="/grades/katrol"
+                    state={{
+                      userData,
+                      selectedClass:
+                        selectedClass ||
+                        (userData?.role === "guru_kelas"
+                          ? String(userData.kelas)
+                          : ""),
+                      selectedSubject: selectedSubject || "",
+                    }}
+                    className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-center text-sm sm:text-base"
+                    style={{ minHeight: "44px" }}>
+                    <Calculator className="w-4 h-4" />
+                    Katrol Nilai
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="p-12 text-center">
+                <Loader className="w-12 h-12 sm:w-16 sm:h-16 text-indigo-600 mx-auto mb-4 animate-spin" />
+                <p className="text-slate-600 text-sm sm:text-base">
+                  Memuat data nilai...
                 </p>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                {showRekap ? (
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      No
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NISN
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Nama Siswa
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NH-1
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NH-2
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NH-3
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NH-4
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NH-5
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      UTS
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      UAS
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Nilai Akhir
-                    </th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      No
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      NISN
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Nama Siswa
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      {selectedType || "Nilai"}
-                    </th>
-                  </tr>
-                )}
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {showRekap ? (
-                  filteredRekapData.length > 0 ? (
-                    filteredRekapData.map((student) => (
-                      <tr
-                        key={student.nisn}
-                        className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                          {student.no}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {student.nisn}
-                        </td>
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                          {student.nama_siswa}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.nh1 || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.nh2 || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.nh3 || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.nh4 || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.nh5 || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.uts || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-medium">
-                          {student.uas || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-center text-sm font-bold text-blue-600">
-                          {student.nilai_akhir || "-"}
-                        </td>
+            ) : (
+              <>
+                {/* Desktop Table - 9 KOLOM */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          No
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          NISN
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Nama Siswa
+                        </th>
+                        {assignmentTypes.map((type) => (
+                          <th
+                            key={type}
+                            className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+                            {assignmentLabels[type]}
+                          </th>
+                        ))}
+                        <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider bg-indigo-50">
+                          NA
+                        </th>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="11" className="px-6 py-16 text-center">
-                        <div className="flex flex-col items-center gap-3">
-                          <BookOpen size={48} className="text-gray-300" />
-                          <div>
-                            <p className="text-gray-500 font-medium">
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {filteredStudents.length > 0 ? (
+                        filteredStudents.map((student) => (
+                          <tr key={student.nisn} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 text-sm text-slate-900">
+                              {student.no}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-900 whitespace-nowrap">
+                              {student.nisn}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                              {student.nama_siswa}
+                            </td>
+
+                            {/* Input fields untuk setiap jenis nilai */}
+                            {assignmentTypes.map((type) => (
+                              <td key={type} className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  value={student.grades[type] || ""}
+                                  onChange={(e) =>
+                                    updateGrade(
+                                      student.nisn,
+                                      type,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-20 p-2 text-center text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  placeholder="0-100"
+                                  disabled={saving}
+                                />
+                              </td>
+                            ))}
+
+                            {/* Nilai Akhir */}
+                            <td className="px-4 py-3">
+                              <div className="text-center font-bold text-indigo-600 bg-indigo-50 rounded px-3 py-2">
+                                {student.na || "0.0"}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="10" className="px-4 py-8 text-center">
+                            <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                            <p className="text-slate-500">
                               {searchTerm
                                 ? "Tidak ada siswa yang cocok dengan pencarian"
-                                : "Tidak ada data rekap nilai"}
+                                : "Tidak ada siswa di kelas ini"}
                             </p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="block lg:hidden">
+                  {filteredStudents.length > 0 ? (
+                    filteredStudents.map((student) => (
+                      <div
+                        key={student.nisn}
+                        className="border-b border-slate-100 p-4">
+                        <div className="mb-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <div className="font-medium text-slate-900 text-sm">
+                                {student.no}. {student.nama_siswa}
+                              </div>
+                              <div className="text-xs text-slate-600">
+                                NISN: {student.nisn}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-slate-600 mb-1">
+                                Nilai Akhir
+                              </div>
+                              <div className="font-bold text-lg text-indigo-600 bg-indigo-50 rounded px-3 py-1">
+                                {student.na || "0.0"}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </td>
-                    </tr>
-                  )
-                ) : filteredStudents.length > 0 ? (
-                  filteredStudents.map((student, index) => (
-                    <tr
-                      key={student.nisn}
-                      className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {student.nisn}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        {student.nama_siswa}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={student.nilai}
-                          onChange={(e) =>
-                            handleInputChange(student.nisn, e.target.value)
-                          }
-                          className="w-20 px-3 py-2 border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
-                          placeholder="0-100"
-                          disabled={saving}
-                        />
-                        {student.isExisting && (
-                          <div className="mt-1">
-                            <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                              tersimpan
-                            </span>
+
+                        {/* Grid input untuk mobile */}
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-3 gap-2">
+                            {["NH1", "NH2", "NH3"].map((type) => (
+                              <div key={type}>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">
+                                  {type}
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  value={student.grades[type] || ""}
+                                  onChange={(e) =>
+                                    updateGrade(
+                                      student.nisn,
+                                      type,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full p-2.5 text-sm text-center border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  placeholder="0"
+                                  disabled={saving}
+                                />
+                              </div>
+                            ))}
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Users size={48} className="text-gray-300" />
-                        <div>
-                          <p className="text-gray-500 font-medium">
-                            {searchTerm
-                              ? "Tidak ada siswa yang cocok dengan pencarian"
-                              : selectedClass && selectedSubject && selectedType
-                              ? "Tidak ada siswa di kelas ini"
-                              : "Pilih kelas, mata pelajaran, dan jenis nilai"}
-                          </p>
+
+                          <div className="grid grid-cols-4 gap-2">
+                            {["NH4", "NH5", "UTS", "UAS"].map((type) => (
+                              <div key={type}>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">
+                                  {type}
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.1"
+                                  value={student.grades[type] || ""}
+                                  onChange={(e) =>
+                                    updateGrade(
+                                      student.nisn,
+                                      type,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full p-2.5 text-sm text-center border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                  placeholder="0"
+                                  disabled={saving}
+                                />
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center">
+                      <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">
+                        {searchTerm
+                          ? "Tidak ada siswa yang cocok dengan pencarian"
+                          : "Tidak ada siswa di kelas ini"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {(!selectedClass || !selectedSubject) && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <Calculator className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-500 mb-2">
+              Pilih Filter
+            </h3>
+            <p className="text-slate-400">
+              Silakan pilih kelas dan mata pelajaran untuk mulai input nilai
+            </p>
           </div>
         )}
       </div>
 
+      {/* Import Modal */}
       <ImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
@@ -1143,11 +1125,7 @@ const Grades = ({ userData: initialUserData }) => {
         selectedSubject={selectedSubject}
         userData={userData}
         onImportSuccess={() => {
-          if (showRekap) {
-            loadRekapNilai();
-          } else if (selectedType) {
-            loadStudents(false);
-          }
+          loadAllGrades();
         }}
       />
     </div>

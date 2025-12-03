@@ -1,4 +1,3 @@
-//[file content begin]
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
 const StudentForm = ({
@@ -14,43 +13,13 @@ const StudentForm = ({
   const [pendingDuplicateCallback, setPendingDuplicateCallback] =
     useState(null);
   const [currentStep, setCurrentStep] = useState(1);
-
-  // Daftar pekerjaan standar
-  const pekerjaanListAyah = [
-    "PNS/TNI/Polri",
-    "Karyawan Swasta",
-    "Wiraswasta/Pedagang",
-    "Petani",
-    "Buruh",
-    "Guru/Dosen",
-    "Dokter/Tenaga Kesehatan",
-    "Sopir/Driver",
-    "Pensiunan",
-    "Tidak Bekerja",
-    "Lainnya",
-  ];
-
-  const pekerjaanListIbu = [
-    "Ibu Rumah Tangga",
-    "PNS/TNI/Polri",
-    "Karyawan Swasta",
-    "Wiraswasta/Pedagang",
-    "Petani",
-    "Buruh",
-    "Guru/Dosen",
-    "Dokter/Tenaga Kesehatan",
-    "Pensiunan",
-    "Tidak Bekerja",
-    "Lainnya",
-  ];
-
   const [formData, setFormData] = useState({
-    // Data siswa - sesuai dengan nama kolom di database
-    nama_lengkap: "",
+    // Data siswa
+    nama: "",
     jenis_kelamin: "",
     tempat_lahir: "",
     tanggal_lahir: "",
-    asal_tk: "",
+    asal_sekolah: "",
     nisn: "",
 
     // Data ortu (untuk parents table)
@@ -62,14 +31,11 @@ const StudentForm = ({
     pendidikan_ibu: "",
     no_hp: "",
     alamat: "",
-
-    // Field tambahan sesuai database
-    academic_year: "",
   });
 
   // Refs untuk form inputs
   const refs = {
-    nama_lengkap: useRef(),
+    nama: useRef(),
     jenis_kelamin: useRef(),
     tempat_lahir: useRef(),
     tanggal_lahir: useRef(),
@@ -77,7 +43,7 @@ const StudentForm = ({
     nama_ibu: useRef(),
     no_hp: useRef(),
     alamat: useRef(),
-    asal_tk: useRef(),
+    asal_sekolah: useRef(),
     nisn: useRef(),
   };
 
@@ -127,11 +93,12 @@ const StudentForm = ({
   useEffect(() => {
     if (editingStudent) {
       setFormData({
-        nama_lengkap: editingStudent.nama_lengkap || "",
+        nama: editingStudent.nama_lengkap || editingStudent.nama || "",
         jenis_kelamin: editingStudent.jenis_kelamin || "",
         tempat_lahir: editingStudent.tempat_lahir || "",
         tanggal_lahir: convertDateToDisplay(editingStudent.tanggal_lahir) || "",
-        asal_tk: editingStudent.asal_tk || "",
+        asal_sekolah:
+          editingStudent.asal_tk || editingStudent.asal_sekolah || "",
         nisn: editingStudent.nisn === "-" ? "" : editingStudent.nisn || "",
 
         // Data ortu dari database
@@ -143,18 +110,15 @@ const StudentForm = ({
         pendidikan_ibu: editingStudent.pendidikan_ibu || "",
         no_hp: editingStudent.no_hp || "",
         alamat: editingStudent.alamat || "",
-
-        // Field tambahan
-        academic_year: editingStudent.academic_year || "",
       });
       setCurrentStep(1);
     } else {
       setFormData({
-        nama_lengkap: "",
+        nama: "",
         jenis_kelamin: "",
         tempat_lahir: "",
         tanggal_lahir: "",
-        asal_tk: "",
+        asal_sekolah: "",
         nisn: "",
         nama_ayah: "",
         pekerjaan_ayah: "",
@@ -164,19 +128,10 @@ const StudentForm = ({
         pendidikan_ibu: "",
         no_hp: "",
         alamat: "",
-        academic_year: getCurrentAcademicYear(), // Set tahun ajaran otomatis
       });
       setCurrentStep(1);
     }
   }, [editingStudent, convertDateToDisplay]);
-
-  // Helper function untuk mendapatkan tahun ajaran saat ini (format: 2024/2025)
-  const getCurrentAcademicYear = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const nextYear = currentYear + 1;
-    return `${currentYear}/${nextYear}`;
-  };
 
   // Validation functions
   const validateDateFormat = useCallback(
@@ -188,13 +143,13 @@ const StudentForm = ({
     const errors = [];
 
     // Name validation
-    const nameWords = student.nama_lengkap
+    const nameWords = student.nama
       .trim()
       .split(" ")
       .filter((word) => word.length > 0);
     if (nameWords.length < 2)
       errors.push("Nama harus terdiri dari minimal 2 kata");
-    if (!/^[a-zA-Z\s]+$/.test(student.nama_lengkap))
+    if (!/^[a-zA-Z\s]+$/.test(student.nama))
       errors.push("Nama hanya boleh mengandung huruf dan spasi");
 
     // Phone validation
@@ -253,7 +208,10 @@ const StudentForm = ({
         .filter((student) => student.id !== excludeId)
         .map((student) => ({
           student,
-          similarity: calculateSimilarity(newName, student.nama_lengkap || ""),
+          similarity: calculateSimilarity(
+            newName,
+            student.nama_lengkap || student.nama || ""
+          ),
         }))
         .filter((item) => item.similarity >= 0.8)
         .sort((a, b) => b.similarity - a.similarity);
@@ -264,20 +222,19 @@ const StudentForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Gabungkan semua data menjadi satu object sesuai struktur database
-    const completeData = {
-      // Data siswa
-      nama_lengkap: formData.nama_lengkap,
+    const studentData = {
+      nama: formData.nama,
       jenis_kelamin: formData.jenis_kelamin,
       tempat_lahir: formData.tempat_lahir,
-      tanggal_lahir: convertDateToISO(formData.tanggal_lahir),
-      asal_tk: formData.asal_tk,
+      tanggal_lahir: convertDateToISO(formData.tanggal_lahir), // FIXED: Convert to ISO format
+      asal_sekolah: formData.asal_sekolah,
       nisn: formData.nisn || "-",
       tanggal_daftar: editingStudent
         ? convertDateToISO(editingStudent.tanggal_daftar)
-        : new Date().toISOString().split("T")[0],
+        : new Date().toISOString().split("T")[0], // FIXED: Use ISO format YYYY-MM-DD
+    };
 
-      // Data orang tua
+    const parentData = {
       nama_ayah: formData.nama_ayah,
       pekerjaan_ayah: formData.pekerjaan_ayah,
       pendidikan_ayah: formData.pendidikan_ayah,
@@ -286,30 +243,17 @@ const StudentForm = ({
       pendidikan_ibu: formData.pendidikan_ibu,
       no_hp: formData.no_hp,
       alamat: formData.alamat,
-
-      // Field tambahan
-      academic_year: formData.academic_year || getCurrentAcademicYear(),
-
-      // Field dengan nilai default
-      is_accepted: true,
-      sudah_masuk: false,
-      status: "pending",
     };
 
-    // Jika edit, tambahkan ID
-    if (editingStudent) {
-      completeData.id = editingStudent.id;
-    }
-
     // Debug logging
-    console.log("Data yang akan dikirim:", completeData);
     console.log("Original tanggal_lahir:", formData.tanggal_lahir);
-    console.log("Converted tanggal_lahir:", completeData.tanggal_lahir);
-    console.log("tanggal_daftar:", completeData.tanggal_daftar);
+    console.log("Converted tanggal_lahir:", studentData.tanggal_lahir);
+    console.log("tanggal_daftar:", studentData.tanggal_daftar);
 
-    // Gabung untuk validation
+    // Gabung untuk validation (masih pakai format lama untuk compatibility)
     const studentForValidation = {
-      ...completeData,
+      ...studentData,
+      no_hp: parentData.no_hp,
       tanggal_lahir: formData.tanggal_lahir, // Use display format for validation
     };
 
@@ -325,25 +269,26 @@ const StudentForm = ({
     }
 
     const duplicates = checkForDuplicates(
-      completeData.nama_lengkap,
+      studentData.nama,
       students,
       editingStudent?.id || null
     );
     if (duplicates.length > 0 && !pendingDuplicateCallback) {
       setDuplicateInfo(duplicates[0]);
       setShowDuplicateWarning(true);
-      setPendingDuplicateCallback(() => () => proceedWithSave(completeData));
+      setPendingDuplicateCallback(
+        () => () => proceedWithSave({ studentData, parentData })
+      );
       return;
     }
 
-    proceedWithSave(completeData);
+    proceedWithSave({ studentData, parentData });
   };
 
-  const proceedWithSave = async (studentData) => {
-    console.log("Proceed with save:", studentData);
-
+  const proceedWithSave = async ({ studentData, parentData }) => {
     const success = await onSaveStudent({
-      studentData: studentData,
+      studentData,
+      parentData,
       isEdit: !!editingStudent,
     });
 
@@ -363,11 +308,11 @@ const StudentForm = ({
 
   const resetForm = useCallback(() => {
     setFormData({
-      nama_lengkap: "",
+      nama: "",
       jenis_kelamin: "",
       tempat_lahir: "",
       tanggal_lahir: "",
-      asal_tk: "",
+      asal_sekolah: "",
       nisn: "",
       nama_ayah: "",
       pekerjaan_ayah: "",
@@ -377,7 +322,6 @@ const StudentForm = ({
       pendidikan_ibu: "",
       no_hp: "",
       alamat: "",
-      academic_year: getCurrentAcademicYear(),
     });
     setEditingStudent(null);
     setShowDuplicateWarning(false);
@@ -392,8 +336,13 @@ const StudentForm = ({
   const viewDuplicate = useCallback(() => {
     if (duplicateInfo) {
       const studentName =
-        duplicateInfo.student.nama_lengkap || "Tidak diketahui";
-      const studentSchool = duplicateInfo.student.asal_tk || "Tidak diketahui";
+        duplicateInfo.student.nama_lengkap ||
+        duplicateInfo.student.nama ||
+        "Tidak diketahui";
+      const studentSchool =
+        duplicateInfo.student.asal_tk ||
+        duplicateInfo.student.asal_sekolah ||
+        "Tidak diketahui";
       alert(`Data ditemukan: ${studentName} dari ${studentSchool}`);
       setShowDuplicateWarning(false);
     }
@@ -406,7 +355,7 @@ const StudentForm = ({
   const nextStep = useCallback(() => {
     // Validasi step 1 sebelum lanjut
     if (currentStep === 1) {
-      if (!formData.nama_lengkap.trim()) {
+      if (!formData.nama.trim()) {
         alert("Nama lengkap harus diisi!");
         return;
       }
@@ -462,8 +411,10 @@ const StudentForm = ({
         <div className="bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-300 rounded-xl p-4 mb-6 flex items-center gap-3 animate-slide-down">
           <i className="fas fa-exclamation-triangle text-yellow-600"></i>
           <span className="text-yellow-800 flex-1">
-            Nama serupa "{duplicateInfo.student.nama_lengkap}" sudah terdaftar!
-            ({Math.round(duplicateInfo.similarity * 100)}% kemiripan)
+            Nama serupa "
+            {duplicateInfo.student.nama_lengkap || duplicateInfo.student.nama}"
+            sudah terdaftar! ({Math.round(duplicateInfo.similarity * 100)}%
+            kemiripan)
           </span>
           <button
             className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
@@ -487,7 +438,7 @@ const StudentForm = ({
         <i className={`fas ${editingStudent ? "fa-edit" : "fa-plus"}`}></i>
         Mode:{" "}
         {editingStudent
-          ? `Edit Data - ${editingStudent.nama_lengkap}`
+          ? `Edit Data - ${editingStudent.nama_lengkap || editingStudent.nama}`
           : "Tambah Data Baru"}
       </div>
 
@@ -535,10 +486,8 @@ const StudentForm = ({
                 </label>
                 <input
                   type="text"
-                  value={formData.nama_lengkap}
-                  onChange={(e) =>
-                    updateFormData("nama_lengkap", e.target.value)
-                  }
+                  value={formData.nama}
+                  onChange={(e) => updateFormData("nama", e.target.value)}
                   className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
                   placeholder="Masukkan nama lengkap sesuai akta kelahiran"
                   required
@@ -629,8 +578,10 @@ const StudentForm = ({
                 </label>
                 <input
                   type="text"
-                  value={formData.asal_tk}
-                  onChange={(e) => updateFormData("asal_tk", e.target.value)}
+                  value={formData.asal_sekolah}
+                  onChange={(e) =>
+                    updateFormData("asal_sekolah", e.target.value)
+                  }
                   className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
                   placeholder="Nama TK/PAUD asal (kosongkan jika tidak ada)"
                 />
@@ -683,38 +634,30 @@ const StudentForm = ({
                   <label className="block text-gray-700 font-semibold mb-2">
                     Pekerjaan Ayah
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={formData.pekerjaan_ayah}
                     onChange={(e) =>
                       updateFormData("pekerjaan_ayah", e.target.value)
                     }
-                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1">
-                    <option value="">Pilih Pekerjaan</option>
-                    {pekerjaanListAyah.map((pekerjaan, index) => (
-                      <option key={index} value={pekerjaan}>
-                        {pekerjaan}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Pekerjaan ayah"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">
                     Pekerjaan Ibu
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={formData.pekerjaan_ibu}
                     onChange={(e) =>
                       updateFormData("pekerjaan_ibu", e.target.value)
                     }
-                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1">
-                    <option value="">Pilih Pekerjaan</option>
-                    {pekerjaanListIbu.map((pekerjaan, index) => (
-                      <option key={index} value={pekerjaan}>
-                        {pekerjaan}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1"
+                    placeholder="Pekerjaan ibu"
+                  />
                 </div>
               </div>
 

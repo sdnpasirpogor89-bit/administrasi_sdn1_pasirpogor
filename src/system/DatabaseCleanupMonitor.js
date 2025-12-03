@@ -9,6 +9,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Info,
+  RefreshCw,
 } from "lucide-react";
 
 const DatabaseCleanupMonitor = () => {
@@ -18,7 +19,7 @@ const DatabaseCleanupMonitor = () => {
   const [autoCleanup, setAutoCleanup] = useState({
     enabled: true,
     healthLogsRetention: 7,
-    attendanceRetention: 365, // 1 tahun ajaran aja cukup
+    attendanceRetention: 365,
   });
 
   // Fetch database statistics
@@ -65,6 +66,47 @@ const DatabaseCleanupMonitor = () => {
     }
   };
 
+  // Preview cleanup - cek berapa data yang akan dihapus
+  const previewCleanup = async () => {
+    try {
+      const cutoffHealthLogs = new Date();
+      cutoffHealthLogs.setDate(
+        cutoffHealthLogs.getDate() - autoCleanup.healthLogsRetention
+      );
+
+      const cutoffAttendance = new Date();
+      cutoffAttendance.setDate(
+        cutoffAttendance.getDate() - autoCleanup.attendanceRetention
+      );
+
+      // Count health logs yang akan dihapus
+      const { count: healthCount } = await supabase
+        .from("system_health_logs")
+        .select("*", { count: "exact", head: true })
+        .lt("created_at", cutoffHealthLogs.toISOString());
+
+      // Count attendance yang akan dihapus - FIXED: pake "tanggal" bukan "date"
+      const { count: attendanceCount } = await supabase
+        .from("attendance")
+        .select("*", { count: "exact", head: true })
+        .lt("tanggal", cutoffAttendance.toISOString().split("T")[0]);
+
+      return {
+        healthLogs: healthCount || 0,
+        attendances: attendanceCount || 0,
+        totalToDelete: (healthCount || 0) + (attendanceCount || 0),
+      };
+    } catch (error) {
+      console.error("Preview error:", error);
+      return {
+        healthLogs: 0,
+        attendances: 0,
+        totalToDelete: 0,
+        error: error.message,
+      };
+    }
+  };
+
   // Cleanup health logs
   const cleanupHealthLogs = async (retentionDays) => {
     try {
@@ -89,20 +131,21 @@ const DatabaseCleanupMonitor = () => {
         success: false,
         error: error.message,
         table: "system_health_logs",
+        deletedCount: 0,
       };
     }
   };
 
-  // Cleanup old attendances
+  // Cleanup old attendances - FIXED: pake "tanggal" bukan "date"
   const cleanupOldAttendances = async (retentionDays) => {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
       const { data, error } = await supabase
-        .from("attendances")
+        .from("attendance")
         .delete()
-        .lt("date", cutoffDate.toISOString().split("T")[0])
+        .lt("tanggal", cutoffDate.toISOString().split("T")[0])
         .select("id");
 
       if (error) throw error;
@@ -110,27 +153,59 @@ const DatabaseCleanupMonitor = () => {
       return {
         success: true,
         deletedCount: data?.length || 0,
-        table: "attendances",
+        table: "attendance",
       };
     } catch (error) {
-      return { success: false, error: error.message, table: "attendances" };
+      return {
+        success: false,
+        error: error.message,
+        table: "attendance",
+        deletedCount: 0,
+      };
     }
   };
 
-  // Run manual cleanup
+  // Run manual cleanup dengan preview
   const runManualCleanup = async () => {
-    if (
-      !window.confirm(
-        "Yakin mau jalankan cleanup? Data lama akan dihapus permanent!"
-      )
-    ) {
-      return;
-    }
-
     setLoading(true);
-    const results = [];
 
     try {
+      // Preview dulu berapa data yang akan dihapus
+      const preview = await previewCleanup();
+
+      if (preview.error) {
+        alert("❌ Error saat preview: " + preview.error);
+        setLoading(false);
+        return;
+      }
+
+      if (preview.totalToDelete === 0) {
+        alert("✅ Tidak ada data yang perlu dihapus!");
+        setLoading(false);
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `⚠️ KONFIRMASI CLEANUP\n\n` +
+          `Data yang akan dihapus:\n` +
+          `• Health Logs (>${
+            autoCleanup.healthLogsRetention
+          } hari): ${preview.healthLogs.toLocaleString()} records\n` +
+          `• Attendance (>${
+            autoCleanup.attendanceRetention
+          } hari): ${preview.attendances.toLocaleString()} records\n` +
+          `• Total: ${preview.totalToDelete.toLocaleString()} records\n\n` +
+          `⚠️ Data akan dihapus PERMANENT dan tidak bisa dikembalikan!\n\n` +
+          `Lanjutkan cleanup?`
+      );
+
+      if (!confirmed) {
+        setLoading(false);
+        return;
+      }
+
+      const results = [];
+
       // Cleanup health logs
       const healthResult = await cleanupHealthLogs(
         autoCleanup.healthLogsRetention
@@ -154,13 +229,49 @@ const DatabaseCleanupMonitor = () => {
       await fetchStats();
       await fetchCleanupHistory();
 
-      alert("✅ Cleanup berhasil dijalankan!");
+      const totalDeleted = results.reduce(
+        (sum, r) => sum + (r.deletedCount || 0),
+        0
+      );
+      const successCount = results.filter((r) => r.success).length;
+
+      alert(
+        `✅ Cleanup berhasil!\n\n` +
+          `${successCount}/${results.length} tables berhasil dibersihkan\n` +
+          `Total ${totalDeleted.toLocaleString()} records dihapus\n\n` +
+          `🔄 Auto-vacuum akan optimasi database dalam 1-2 menit.`
+      );
     } catch (error) {
       console.error("Cleanup error:", error);
       alert("❌ Cleanup gagal: " + error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Preview button handler
+  const handlePreview = async () => {
+    setLoading(true);
+    const preview = await previewCleanup();
+    setLoading(false);
+
+    if (preview.error) {
+      alert("❌ Error: " + preview.error);
+      return;
+    }
+
+    alert(
+      `📊 PREVIEW CLEANUP\n\n` +
+        `Data yang akan dihapus jika cleanup dijalankan:\n\n` +
+        `• Health Logs (>${
+          autoCleanup.healthLogsRetention
+        } hari):\n  ${preview.healthLogs.toLocaleString()} records\n\n` +
+        `• Attendance (>${
+          autoCleanup.attendanceRetention
+        } hari):\n  ${preview.attendances.toLocaleString()} records\n\n` +
+        `TOTAL: ${preview.totalToDelete.toLocaleString()} records\n\n` +
+        `💡 Gunakan button "Run Cleanup" untuk menghapus data.`
+    );
   };
 
   // Fetch cleanup history
@@ -196,7 +307,6 @@ const DatabaseCleanupMonitor = () => {
     if (!results) return [];
     if (Array.isArray(results)) return results;
 
-    // If it's a string, try to parse it
     if (typeof results === "string") {
       try {
         const parsed = JSON.parse(results);
@@ -206,7 +316,6 @@ const DatabaseCleanupMonitor = () => {
       }
     }
 
-    // If it's an object with tables_cleaned property
     if (results.tables_cleaned && Array.isArray(results.tables_cleaned)) {
       return results.tables_cleaned;
     }
@@ -227,13 +336,26 @@ const DatabaseCleanupMonitor = () => {
             Monitor dan kelola penggunaan database
           </p>
         </div>
-        <button
-          onClick={runManualCleanup}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
-          <Play className="w-5 h-5" />
-          {loading ? "Running..." : "Run Cleanup"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePreview}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+            <Info className="w-5 h-5" />
+            {loading ? "Loading..." : "Preview"}
+          </button>
+          <button
+            onClick={runManualCleanup}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+            {loading ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <Play className="w-5 h-5" />
+            )}
+            {loading ? "Running..." : "Run Cleanup"}
+          </button>
+        </div>
       </div>
 
       {/* Database Usage Overview */}
@@ -357,7 +479,7 @@ const DatabaseCleanupMonitor = () => {
                   healthLogsRetention: parseInt(e.target.value),
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               min="1"
               max="90"
             />
@@ -379,7 +501,7 @@ const DatabaseCleanupMonitor = () => {
                   attendanceRetention: parseInt(e.target.value),
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               min="180"
               max="1095"
             />
@@ -475,12 +597,34 @@ const DatabaseCleanupMonitor = () => {
                 berjalan
               </li>
               <li>Backup data ke Excel sebelum cleanup permanent</li>
+              <li>
+                Setelah cleanup, jalankan VACUUM ANALYZE untuk optimasi database
+              </li>
               {parseFloat(stats.percentUsed) > 60 && (
                 <li className="text-red-600 font-semibold">
                   ⚠️ Storage usage tinggi! Consider cleanup segera
                 </li>
               )}
             </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* SQL Command Helper */}
+      <div className="bg-gray-50 border-l-4 border-gray-500 p-4 rounded">
+        <div className="flex items-start gap-3">
+          <Database className="w-5 h-5 text-gray-600 mt-0.5" />
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-2">
+              Manual VACUUM (Jalankan di Supabase SQL Editor):
+            </h4>
+            <div className="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm">
+              <div>VACUUM ANALYZE attendance;</div>
+              <div>VACUUM ANALYZE system_health_logs;</div>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              💡 Jalankan setelah cleanup untuk optimasi performa database
+            </p>
           </div>
         </div>
       </div>

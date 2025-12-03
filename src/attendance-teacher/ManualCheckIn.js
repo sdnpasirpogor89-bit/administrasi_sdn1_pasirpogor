@@ -181,7 +181,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
             setMessage({
               type: "error",
-              text: `⏰ Presensi hanya dapat dilakukan pada jam 07:00 - 13:00 WIB.\nWaktu saat ini: ${currentTime} WIB\n\n💡 Jika lupa input presensi, hubungi Admin untuk bantuan.`,
+              text: `⏰ Presensi Hanya Dapat Dilakukan Pada Jam 07:00 - 13:00 WIB.\nWaktu Saat Ini: ${currentTime} WIB\n\n💡 Jika Lupa Input Presensi, Hubungi Admin Untuk Bantuan.`,
             });
             setLoading(false);
             return;
@@ -373,7 +373,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
               <Shield size={18} className="text-blue-600" />
-              Pilih Guru
+              Pilih Guru (Opsional)
             </label>
             <select
               value={formData.teacherId || ""}
@@ -381,7 +381,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 handleChange("teacherId", e.target.value || null)
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Nama Guru</option>
+              <option value="">-- Pilih Guru --</option>
               {teachersList.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
                   {teacher.full_name}
@@ -389,7 +389,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              * Pilih guru yang akan diinputkan presensinya
+              * Pilih Guru Yang Akan Diinputkan Presensinya
             </p>
           </div>
         )}
