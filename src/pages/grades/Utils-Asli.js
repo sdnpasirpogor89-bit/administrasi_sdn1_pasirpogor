@@ -5,6 +5,21 @@
 import ExcelJS from "exceljs";
 
 // ========================================
+// 1. GET KKM BERDASARKAN MAPEL
+// ========================================
+/**
+ * Menentukan KKM berdasarkan mata pelajaran
+ * @param {string} mapel - Nama mata pelajaran
+ * @returns {number} - KKM (70 atau 75)
+ */
+export const getKKM = (mapel) => {
+  // Mapel dengan KKM 70
+  const mapelKKM70 = ["Matematika", "IPAS", "Bahasa Inggris"];
+
+  return mapelKKM70.includes(mapel) ? 70 : 75;
+};
+
+// ========================================
 // 2. GROUP DATA BY NISN
 // ========================================
 /**
