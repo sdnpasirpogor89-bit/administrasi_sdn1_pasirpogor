@@ -8,8 +8,6 @@ import {
   RefreshCw,
   UserPlus,
   Users,
-  Zap,
-  BarChart3,
 } from "lucide-react";
 
 const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
@@ -23,8 +21,6 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
     newYear: "",
     inProgress: false,
   });
-  const [simulationResult, setSimulationResult] = useState(null);
-  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     loadSchoolData();
@@ -34,6 +30,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
     try {
       setLoading(true);
 
+      // Load school settings for academic year
       const { data: settingsData, error: settingsError } = await supabase
         .from("school_settings")
         .select("setting_key, setting_value")
@@ -43,6 +40,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
       const academicYear = settingsData?.[0]?.setting_value || "2025/2026";
 
+      // Load students
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
         .select("id, nisn, nama_siswa, jenis_kelamin, kelas, is_active")
@@ -51,6 +49,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
       if (studentsError) throw studentsError;
 
+      // Group students by class
       const studentsByClass = {};
       studentsData?.forEach((student) => {
         const kelas = student.kelas || "unassigned";
@@ -84,6 +83,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
       const promotionPlan = {};
       const graduatingStudents = [];
 
+      // Process existing students
       Object.entries(studentsByClass).forEach(([kelas, students]) => {
         const grade = parseInt(kelas);
 
@@ -98,6 +98,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
         }
       });
 
+      // 🆕 LOAD SISWA BARU DARI SPMB
       const { data: siswaBaruData, error: siswaBaruError } = await supabase
         .from("siswa_baru")
         .select("*")
@@ -109,6 +110,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
         console.warn("Error loading siswa baru:", siswaBaruError);
       }
 
+      // 🆕 CHECK NISN CONFLICTS
       const { data: existingStudents } = await supabase
         .from("students")
         .select("nisn");
@@ -142,9 +144,6 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
         inProgress: false,
       });
 
-      // Reset simulation when new preview is generated
-      setSimulationResult(null);
-
       if (conflictedNISN.length > 0) {
         showToast(
           `⚠️ ${conflictedNISN.length} siswa baru memiliki NISN yang sudah terdaftar!`,
@@ -159,175 +158,22 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
     }
   };
 
-  // 🆕 SIMULATION FUNCTION - READ ONLY, NO DATABASE CHANGES!
-  const simulateYearTransition = async () => {
-    if (!yearTransition.preview) {
-      showToast("Generate preview terlebih dahulu!", "error");
-      return;
-    }
-
-    try {
-      setIsSimulating(true);
-      const { preview } = yearTransition;
-
-      // Simulate data yang akan masuk ke students table
-      const simulatedStudentsAfterTransition = [];
-
-      // 1️⃣ Siswa existing yang naik kelas
-      for (const [newGrade, students] of Object.entries(preview.promotions)) {
-        students.forEach((student) => {
-          simulatedStudentsAfterTransition.push({
-            ...student,
-            kelas: newGrade,
-            status: "promoted",
-            oldKelas: student.kelas,
-          });
-        });
-      }
-
-      // 2️⃣ Siswa baru yang akan masuk kelas 1
-      const simulatedNewStudents = preview.newStudents.map((siswa) => ({
-        nisn: siswa.nisn,
-        nama_siswa: siswa.nama_lengkap,
-        jenis_kelamin: siswa.jenis_kelamin,
-        kelas: "1",
-        is_active: true,
-        status: "new_student",
-        source: "SPMB",
-      }));
-
-      // 3️⃣ Siswa yang lulus
-      const simulatedGraduates = preview.graduating.map((student) => ({
-        ...student,
-        status: "graduated",
-        oldKelas: student.kelas,
-        newKelas: "lulus",
-        is_active: false,
-      }));
-
-      // Hitung statistik
-      const totalPromoted = Object.values(preview.promotions).flat().length;
-      const totalNewStudents = preview.newStudents.length;
-      const totalGraduated = preview.graduating.length;
-      const totalActiveAfter = totalPromoted + totalNewStudents;
-
-      // Group students by new class
-      const studentsByNewClass = {};
-      simulatedStudentsAfterTransition.forEach((s) => {
-        if (!studentsByNewClass[s.kelas]) {
-          studentsByNewClass[s.kelas] = [];
-        }
-        studentsByNewClass[s.kelas].push(s);
-      });
-
-      // Add new students to class 1
-      if (!studentsByNewClass["1"]) {
-        studentsByNewClass["1"] = [];
-      }
-      studentsByNewClass["1"].push(...simulatedNewStudents);
-
-      // Validasi potential issues
-      const warnings = [];
-
-      // Check if any class will be too large
-      Object.entries(studentsByNewClass).forEach(([kelas, students]) => {
-        if (students.length > 50) {
-          warnings.push(
-            `⚠️ Kelas ${kelas} akan memiliki ${students.length} siswa (melebihi kapasitas ideal 50)`
-          );
-        }
-      });
-
-      // Check if any class will be too small
-      Object.entries(studentsByNewClass).forEach(([kelas, students]) => {
-        if (students.length < 20) {
-          warnings.push(
-            `⚠️ Kelas ${kelas} hanya akan memiliki ${students.length} siswa (di bawah ideal 20)`
-          );
-        }
-      });
-
-      const simulationData = {
-        timestamp: new Date().toISOString(),
-        summary: {
-          totalPromoted,
-          totalNewStudents,
-          totalGraduated,
-          totalActiveBefore: schoolStats.total_students,
-          totalActiveAfter,
-          netChange: totalActiveAfter - schoolStats.total_students,
-        },
-        detailedChanges: {
-          promotions: preview.promotions,
-          newStudents: simulatedNewStudents,
-          graduates: simulatedGraduates,
-          studentsByNewClass,
-        },
-        warnings,
-        isValid:
-          warnings.length === 0 || warnings.every((w) => !w.includes("NISN")),
-        academicYearChange: {
-          from: preview.currentYear,
-          to: preview.newYear,
-        },
-      };
-
-      setSimulationResult(simulationData);
-
-      showToast(
-        `✅ Simulasi selesai! ${totalPromoted} naik kelas, ${totalNewStudents} siswa baru, ${totalGraduated} lulus`,
-        "success"
-      );
-    } catch (error) {
-      console.error("Error simulating transition:", error);
-      showToast("Error saat simulasi: " + error.message, "error");
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
   const executeYearTransition = async () => {
     const { preview } = yearTransition;
 
-    // Extra validation if simulation hasn't been run
-    if (!simulationResult) {
-      const runSimulationFirst = window.confirm(
-        "⚠️ REKOMENDASI: Jalankan SIMULASI terlebih dahulu sebelum execute!\n\n" +
-          "Simulasi akan menampilkan detail lengkap perubahan tanpa mengubah database.\n\n" +
-          "Apakah Anda yakin ingin langsung execute tanpa simulasi?"
-      );
-
-      if (!runSimulationFirst) return;
-    }
-
     const confirmed = window.confirm(
-      `🚨 PERINGATAN FINAL: Tindakan ini PERMANENT dan TIDAK DAPAT DIBATALKAN!\n\n` +
-        `Perubahan yang akan terjadi:\n\n` +
-        `1. ✅ ${
+      `PERINGATAN: Tindakan ini akan:\n\n` +
+        `1. Menaikkan ${
           Object.values(preview.promotions).flat().length
-        } siswa naik kelas\n` +
-        `2. 🎓 ${preview.graduating.length} siswa kelas 6 lulus\n` +
-        `3. 🆕 ${preview.newStudents.length} siswa baru masuk kelas 1\n` +
-        `4. 📅 Tahun ajaran: ${yearTransition.preview.currentYear} → ${yearTransition.newYear}\n` +
-        `5. 👨‍🏫 Reset assignment guru\n\n` +
-        `${
-          simulationResult
-            ? "✅ Simulasi telah dijalankan dan valid\n\n"
-            : "⚠️ Simulasi belum dijalankan!\n\n"
-        }` +
-        `Ketik "EXECUTE" untuk melanjutkan:`
+        } siswa ke kelas berikutnya\n` +
+        `2. Meluluskan ${preview.graduating.length} siswa kelas 6\n` +
+        `3. Memasukkan ${preview.newStudents.length} siswa baru ke kelas 1\n` +
+        `4. Mengubah tahun ajaran menjadi ${yearTransition.newYear}\n` +
+        `5. Mereset assignment guru\n\n` +
+        `Tindakan ini TIDAK DAPAT DIBATALKAN. Apakah Anda yakin?`
     );
 
     if (!confirmed) return;
-
-    // Double confirmation
-    const finalConfirm = prompt(
-      'Ketik "EXECUTE" (huruf besar semua) untuk konfirmasi:'
-    );
-    if (finalConfirm !== "EXECUTE") {
-      showToast("Transisi dibatalkan", "info");
-      return;
-    }
 
     try {
       setLoading(true);
@@ -357,7 +203,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
         if (promoteError) throw promoteError;
       }
 
-      // 3️⃣ TRANSFER SISWA BARU KE STUDENTS (KELAS 1)
+      // 3️⃣ 🆕 TRANSFER SISWA BARU KE STUDENTS (KELAS 1)
       if (preview.newStudents.length > 0) {
         const newStudentsData = preview.newStudents.map((siswa) => ({
           nisn: siswa.nisn,
@@ -373,7 +219,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
         if (insertError) throw insertError;
 
-        // 4️⃣ UPDATE FLAG SUDAH_MASUK DI SISWA_BARU
+        // 4️⃣ 🆕 UPDATE FLAG SUDAH_MASUK DI SISWA_BARU
         const siswaBaruIds = preview.newStudents.map((s) => s.id);
 
         const { error: updateSiswaBaruError } = await supabase
@@ -421,7 +267,6 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
       await loadSchoolData();
       setYearTransition({ preview: null, newYear: "", inProgress: false });
-      setSimulationResult(null);
     } catch (error) {
       console.error("Error executing year transition:", error);
       showToast("Error starting new academic year: " + error.message, "error");
@@ -514,7 +359,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                 </div>
               </div>
 
-              {/* NEW STUDENTS FROM SPMB */}
+              {/* 🆕 NEW STUDENTS FROM SPMB */}
               <div>
                 <h5 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
                   <UserPlus size={16} className="text-green-600" />
@@ -581,7 +426,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
               </div>
             </div>
 
-            {/* NISN CONFLICT WARNING */}
+            {/* 🆕 NISN CONFLICT WARNING */}
             {yearTransition.preview.conflictedNISN?.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                 <div className="flex items-start gap-3">
@@ -653,181 +498,6 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
               </div>
             </div>
 
-            {/* 🆕 SIMULATION SECTION */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="text-purple-600" size={20} />
-                  <h5 className="font-medium text-purple-900">
-                    Testing & Validation
-                  </h5>
-                </div>
-                <button
-                  onClick={simulateYearTransition}
-                  disabled={isSimulating || loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                  {isSimulating ? (
-                    <>
-                      <RefreshCw className="animate-spin" size={16} />
-                      Simulating...
-                    </>
-                  ) : (
-                    <>
-                      <BarChart3 size={16} />
-                      🔍 Simulate Transisi
-                    </>
-                  )}
-                </button>
-              </div>
-              <p className="text-purple-700 text-sm mb-2">
-                Jalankan simulasi untuk melihat detail lengkap hasil transisi
-                tanpa mengubah database.
-                <strong> Database tetap AMAN!</strong>
-              </p>
-              {!simulationResult && (
-                <div className="bg-purple-100 rounded p-2 text-xs text-purple-800">
-                  💡 <strong>Rekomendasi:</strong> Jalankan simulasi terlebih
-                  dahulu sebelum execute untuk memastikan semua data valid!
-                </div>
-              )}
-            </div>
-
-            {/* 🆕 SIMULATION RESULTS */}
-            {simulationResult && (
-              <div className="bg-white border-2 border-purple-300 rounded-lg p-4 mb-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle className="text-purple-600" size={20} />
-                  <h5 className="font-semibold text-purple-900">
-                    📊 Hasil Simulasi
-                  </h5>
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                    {new Date(simulationResult.timestamp).toLocaleString(
-                      "id-ID"
-                    )}
-                  </span>
-                </div>
-
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-600 mb-1">Naik Kelas</p>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {simulationResult.summary.totalPromoted}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
-                    <p className="text-xs text-green-600 mb-1">Siswa Baru</p>
-                    <p className="text-2xl font-bold text-green-700">
-                      {simulationResult.summary.totalNewStudents}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
-                    <p className="text-xs text-purple-600 mb-1">Lulus</p>
-                    <p className="text-2xl font-bold text-purple-700">
-                      {simulationResult.summary.totalGraduated}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
-                    <p className="text-xs text-orange-600 mb-1">Total Aktif</p>
-                    <p className="text-2xl font-bold text-orange-700">
-                      {simulationResult.summary.totalActiveAfter}
-                    </p>
-                    <p className="text-xs mt-1">
-                      {simulationResult.summary.netChange > 0 ? "+" : ""}
-                      {simulationResult.summary.netChange} dari sebelumnya
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
-                    <p className="text-xs text-gray-600 mb-1">Status</p>
-                    <p
-                      className={`text-lg font-bold ${
-                        simulationResult.isValid
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}>
-                      {simulationResult.isValid ? "✅ VALID" : "⚠️ PERHATIAN"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Distribution by Class */}
-                <div className="mb-4">
-                  <h6 className="font-medium text-gray-800 mb-2">
-                    📈 Distribusi per Kelas Setelah Transisi:
-                  </h6>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                    {Object.entries(
-                      simulationResult.detailedChanges.studentsByNewClass
-                    )
-                      .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                      .map(([kelas, students]) => (
-                        <div
-                          key={kelas}
-                          className="bg-white p-3 rounded border">
-                          <p className="font-bold text-center text-blue-700">
-                            Kelas {kelas}
-                          </p>
-                          <p className="text-2xl font-bold text-center">
-                            {students.length}
-                          </p>
-                          <p className="text-xs text-gray-500 text-center">
-                            siswa
-                          </p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Warnings */}
-                {simulationResult.warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle
-                        className="text-yellow-600 flex-shrink-0 mt-0.5"
-                        size={16}
-                      />
-                      <div className="flex-1">
-                        <p className="text-yellow-800 font-medium mb-2">
-                          ⚠️ Peringatan dari Sistem:
-                        </p>
-                        <ul className="text-yellow-700 text-sm space-y-1 list-disc list-inside max-h-32 overflow-y-auto">
-                          {simulationResult.warnings.map((warning, idx) => (
-                            <li key={idx}>{warning}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Simulation Status */}
-                <div
-                  className={`p-3 rounded-lg mb-4 ${
-                    simulationResult.isValid
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-red-50 border border-red-200"
-                  }`}>
-                  <div className="flex items-center gap-2">
-                    {simulationResult.isValid ? (
-                      <CheckCircle className="text-green-600" size={20} />
-                    ) : (
-                      <AlertTriangle className="text-red-600" size={20} />
-                    )}
-                    <p
-                      className={`font-medium ${
-                        simulationResult.isValid
-                          ? "text-green-800"
-                          : "text-red-800"
-                      }`}>
-                      {simulationResult.isValid
-                        ? "✅ Simulasi menunjukkan transisi dapat dilakukan dengan aman."
-                        : "⚠️ Ada masalah yang perlu diperhatikan sebelum execute!"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Execute Button */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
@@ -871,14 +541,13 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                     </button>
 
                     <button
-                      onClick={() => {
+                      onClick={() =>
                         setYearTransition({
                           preview: null,
                           newYear: "",
                           inProgress: false,
-                        });
-                        setSimulationResult(null);
-                      }}
+                        })
+                      }
                       disabled={yearTransition.inProgress}
                       className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50">
                       Batal

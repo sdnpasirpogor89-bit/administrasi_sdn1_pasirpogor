@@ -728,34 +728,29 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
-                    <p className="text-xs text-orange-600 mb-1">Total Aktif</p>
-                    <p className="text-2xl font-bold text-orange-700">
-                      {simulationResult.summary.totalActiveAfter}
+                    <p
+                      className="text-xs text
+                    -orange-600 mb-1">
+                      Aktif Sebelum
                     </p>
-                    <p className="text-xs mt-1">
-                      {simulationResult.summary.netChange > 0 ? "+" : ""}
-                      {simulationResult.summary.netChange} dari sebelumnya
+                    <p className="text-2xl font-bold text-orange-700">
+                      {simulationResult.summary.totalActiveBefore}
                     </p>
                   </div>
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
-                    <p className="text-xs text-gray-600 mb-1">Status</p>
-                    <p
-                      className={`text-lg font-bold ${
-                        simulationResult.isValid
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}>
-                      {simulationResult.isValid ? "✅ VALID" : "⚠️ PERHATIAN"}
+                  <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 p-3 rounded-lg border border-cyan-200">
+                    <p className="text-xs text-cyan-600 mb-1">Aktif Sesudah</p>
+                    <p className="text-2xl font-bold text-cyan-700">
+                      {simulationResult.summary.totalActiveAfter}
                     </p>
                   </div>
                 </div>
 
-                {/* Distribution by Class */}
-                <div className="mb-4">
-                  <h6 className="font-medium text-gray-800 mb-2">
-                    📈 Distribusi per Kelas Setelah Transisi:
+                {/* Detailed Breakdown */}
+                <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                  <h6 className="font-medium text-gray-800 mb-2 text-sm">
+                    📋 Rincian Per Kelas (Setelah Transisi)
                   </h6>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                     {Object.entries(
                       simulationResult.detailedChanges.studentsByNewClass
                     )
@@ -763,16 +758,12 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                       .map(([kelas, students]) => (
                         <div
                           key={kelas}
-                          className="bg-white p-3 rounded border">
-                          <p className="font-bold text-center text-blue-700">
-                            Kelas {kelas}
-                          </p>
-                          <p className="text-2xl font-bold text-center">
+                          className="bg-white p-2 rounded border text-center">
+                          <p className="text-xs text-gray-600">Kelas {kelas}</p>
+                          <p className="text-lg font-bold text-blue-600">
                             {students.length}
                           </p>
-                          <p className="text-xs text-gray-500 text-center">
-                            siswa
-                          </p>
+                          <p className="text-xs text-gray-500">siswa</p>
                         </div>
                       ))}
                   </div>
@@ -780,50 +771,51 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
                 {/* Warnings */}
                 {simulationResult.warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle
-                        className="text-yellow-600 flex-shrink-0 mt-0.5"
-                        size={16}
-                      />
-                      <div className="flex-1">
-                        <p className="text-yellow-800 font-medium mb-2">
-                          ⚠️ Peringatan dari Sistem:
-                        </p>
-                        <ul className="text-yellow-700 text-sm space-y-1 list-disc list-inside max-h-32 overflow-y-auto">
-                          {simulationResult.warnings.map((warning, idx) => (
-                            <li key={idx}>{warning}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                    <h6 className="font-medium text-yellow-800 mb-2 text-sm flex items-center gap-2">
+                      <AlertTriangle size={16} />
+                      Peringatan Deteksi
+                    </h6>
+                    <ul className="text-sm text-yellow-700 space-y-1">
+                      {simulationResult.warnings.map((warning, idx) => (
+                        <li key={idx}>{warning}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
-                {/* Simulation Status */}
+                {/* Validation Status */}
                 <div
-                  className={`p-3 rounded-lg mb-4 ${
+                  className={`rounded-lg p-3 ${
                     simulationResult.isValid
                       ? "bg-green-50 border border-green-200"
                       : "bg-red-50 border border-red-200"
                   }`}>
                   <div className="flex items-center gap-2">
                     {simulationResult.isValid ? (
-                      <CheckCircle className="text-green-600" size={20} />
+                      <>
+                        <CheckCircle className="text-green-600" size={16} />
+                        <p className="text-sm font-medium text-green-800">
+                          ✅ Simulasi Valid - Siap untuk Execute
+                        </p>
+                      </>
                     ) : (
-                      <AlertTriangle className="text-red-600" size={20} />
+                      <>
+                        <AlertTriangle className="text-red-600" size={16} />
+                        <p className="text-sm font-medium text-red-800">
+                          ❌ Ada masalah yang harus diperbaiki sebelum execute
+                        </p>
+                      </>
                     )}
-                    <p
-                      className={`font-medium ${
-                        simulationResult.isValid
-                          ? "text-green-800"
-                          : "text-red-800"
-                      }`}>
-                      {simulationResult.isValid
-                        ? "✅ Simulasi menunjukkan transisi dapat dilakukan dengan aman."
-                        : "⚠️ Ada masalah yang perlu diperhatikan sebelum execute!"}
-                    </p>
                   </div>
+                </div>
+
+                {/* Info Footer */}
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-600 italic">
+                    💡 Simulasi ini hanya menghitung dan menampilkan hasil.
+                    Database tidak berubah sama sekali.
+                  </p>
                 </div>
               </div>
             )}
@@ -856,7 +848,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                     <button
                       onClick={executeYearTransition}
                       disabled={loading || yearTransition.inProgress}
-                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium">
+                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium transition-all">
                       {yearTransition.inProgress ? (
                         <>
                           <RefreshCw
@@ -866,7 +858,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                           Memproses...
                         </>
                       ) : (
-                        "Mulai Tahun Ajaran Baru"
+                        "🔥 Mulai Tahun Ajaran Baru"
                       )}
                     </button>
 

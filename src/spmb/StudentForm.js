@@ -174,8 +174,7 @@ const StudentForm = ({
   const getCurrentAcademicYear = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const nextYear = currentYear + 1;
-    return `${currentYear}/${nextYear}`;
+    return `${currentYear + 1}/${currentYear + 2}`; // 2026/2027 ✅
   };
 
   // Validation functions
