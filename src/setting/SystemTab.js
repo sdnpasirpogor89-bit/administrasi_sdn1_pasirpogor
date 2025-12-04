@@ -168,6 +168,10 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
         { name: "system_health_logs", display: "System Health Logs" },
         { name: "class_schedules", display: "Jadwal Kelas" },
         { name: "cleanup_history", display: "Riwayat Cleanup" },
+        // Tabel baru yang ditambahkan
+        { name: "classes", display: "Kelas" },
+        { name: "nilai_settings", display: "Pengaturan Nilai" },
+        { name: "teacher_attendance", display: "Kehadiran Guru" },
       ];
 
       let exportedCount = 0;
@@ -244,6 +248,10 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
         systemHealthLogsRes,
         classSchedulesRes,
         cleanupHistoryRes,
+        // Tabel baru yang ditambahkan
+        classesRes,
+        nilaiSettingsRes,
+        teacherAttendanceRes,
       ] = await Promise.all([
         supabase.from("users").select("*"),
         supabase.from("students").select("*"),
@@ -256,6 +264,10 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
         supabase.from("system_health_logs").select("*"),
         supabase.from("class_schedules").select("*"),
         supabase.from("cleanup_history").select("*"),
+        // Tabel baru yang ditambahkan
+        supabase.from("classes").select("*"),
+        supabase.from("nilai_settings").select("*"),
+        supabase.from("teacher_attendance").select("*"),
       ]);
 
       const backupData = {
@@ -274,6 +286,10 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
           system_health_logs: systemHealthLogsRes.data,
           class_schedules: classSchedulesRes.data,
           cleanup_history: cleanupHistoryRes.data,
+          // Tabel baru yang ditambahkan
+          classes: classesRes.data,
+          nilai_settings: nilaiSettingsRes.data,
+          teacher_attendance: teacherAttendanceRes.data,
         },
         stats: {
           total_users: usersRes.data?.length || 0,
@@ -286,6 +302,10 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
           total_system_health_logs: systemHealthLogsRes.data?.length || 0,
           total_class_schedules: classSchedulesRes.data?.length || 0,
           total_cleanup_history: cleanupHistoryRes.data?.length || 0,
+          // Tabel baru yang ditambahkan
+          total_classes: classesRes.data?.length || 0,
+          total_nilai_settings: nilaiSettingsRes.data?.length || 0,
+          total_teacher_attendance: teacherAttendanceRes.data?.length || 0,
         },
       };
 
@@ -371,6 +391,10 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
           await supabase.from("system_health_logs").delete().neq("id", 0);
           await supabase.from("class_schedules").delete().neq("id", 0);
           await supabase.from("cleanup_history").delete().neq("id", 0);
+          // Tabel baru yang ditambahkan
+          await supabase.from("classes").delete().neq("id", 0);
+          await supabase.from("nilai_settings").delete().neq("id", 0);
+          await supabase.from("teacher_attendance").delete().neq("id", 0);
 
           // Insert data baru dari backup
           if (backupData.data.school_settings?.length > 0) {
@@ -431,6 +455,23 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
             await supabase
               .from("cleanup_history")
               .insert(backupData.data.cleanup_history);
+          }
+
+          // Tabel baru yang ditambahkan
+          if (backupData.data.classes?.length > 0) {
+            await supabase.from("classes").insert(backupData.data.classes);
+          }
+
+          if (backupData.data.nilai_settings?.length > 0) {
+            await supabase
+              .from("nilai_settings")
+              .insert(backupData.data.nilai_settings);
+          }
+
+          if (backupData.data.teacher_attendance?.length > 0) {
+            await supabase
+              .from("teacher_attendance")
+              .insert(backupData.data.teacher_attendance);
           }
 
           showToast("Database restored successfully!", "success");
@@ -550,7 +591,7 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
             Export System Logs
           </button>
 
-          {/* Baris 4 - 3 tombol (2 individual + 1 Export Semua) */}
+          {/* Baris 4 - 3 tombol */}
           <button
             onClick={() => exportTableToCSV("class_schedules", "Jadwal Kelas")}
             disabled={loading}
@@ -569,14 +610,47 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
             Export Riwayat Cleanup
           </button>
 
-          {/* TOMBOL EXPORT SEMUA - DI BARIS 4 SEJAJAR */}
+          {/* Tabel baru yang ditambahkan - Baris 5 */}
           <button
-            onClick={exportAllTablesToCSV}
+            onClick={() => exportTableToCSV("classes", "Data Kelas")}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium justify-center">
-            <FileText size={18} />
-            {loading ? "Exporting..." : "Export Semua"}
+            className="flex items-center gap-2 px-4 py-3 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 disabled:opacity-50 font-medium">
+            <Table size={16} />
+            Export Kelas
           </button>
+
+          <button
+            onClick={() =>
+              exportTableToCSV("nilai_settings", "Pengaturan Nilai")
+            }
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 disabled:opacity-50 font-medium">
+            <Table size={16} />
+            Export Pengaturan Nilai
+          </button>
+
+          <button
+            onClick={() =>
+              exportTableToCSV("teacher_attendance", "Kehadiran Guru")
+            }
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-3 bg-cyan-100 text-cyan-700 rounded-lg hover:bg-cyan-200 disabled:opacity-50 font-medium">
+            <Table size={16} />
+            Export Kehadiran Guru
+          </button>
+
+          {/* TOMBOL EXPORT SEMUA - BARIS TERPISAH */}
+          <div className="col-span-full mt-4">
+            <button
+              onClick={exportAllTablesToCSV}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium text-base">
+              <FileText size={20} />
+              {loading
+                ? "Exporting All Tables..."
+                : "Export Semua Tabel (14 Tables)"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -612,6 +686,9 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
             <li>System health logs (system_health_logs table)</li>
             <li>Jadwal kelas (class_schedules table)</li>
             <li>Riwayat cleanup (cleanup_history table)</li>
+            <li>Data kelas (classes table)</li>
+            <li>Pengaturan nilai (nilai_settings table)</li>
+            <li>Kehadiran guru (teacher_attendance table)</li>
           </ul>
         </div>
       </div>
@@ -704,6 +781,16 @@ const SystemTab = ({ user, loading, setLoading, showToast }) => {
                       <li>
                         {restorePreview.stats?.total_cleanup_history || 0}{" "}
                         riwayat cleanup
+                      </li>
+                      {/* Stats baru yang ditambahkan */}
+                      <li>{restorePreview.stats?.total_classes || 0} kelas</li>
+                      <li>
+                        {restorePreview.stats?.total_nilai_settings || 0}{" "}
+                        pengaturan nilai
+                      </li>
+                      <li>
+                        {restorePreview.stats?.total_teacher_attendance || 0}{" "}
+                        kehadiran guru
                       </li>
                     </ul>
                   </div>
