@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Logo from "./Logo";
 import {
   Home,
   Users,
@@ -187,9 +188,7 @@ const Sidebar = ({
         <div className="flex items-center justify-between">
           {!showCollapsed && (
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="text-xl sm:text-2xl bg-blue-500/20 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-sm border border-blue-400/40">
-                🏫
-              </div>
+              <Logo size="small" className="flex-shrink-0" />
               <h2 className="text-sm sm:text-base font-bold text-white leading-tight tracking-wide">
                 SDN 1 PASIRPOGOR
               </h2>
@@ -198,9 +197,7 @@ const Sidebar = ({
 
           {showCollapsed && (
             <div className="w-full flex justify-center">
-              <div className="text-2xl bg-blue-500/20 p-2 rounded-xl backdrop-blur-sm border border-blue-400/40">
-                🏫
-              </div>
+              <Logo size="small" />
             </div>
           )}
 
