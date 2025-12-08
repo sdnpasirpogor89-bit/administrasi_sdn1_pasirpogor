@@ -18,7 +18,41 @@ import {
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 
-// Enhanced Stats Card Component
+// Helper hook untuk mendeteksi Dark Mode (opsional, tapi baik untuk konsistensi)
+const useDarkMode = () => {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const checkDark = () => {
+      // Cek apakah class 'dark' ada di html atau body
+      if (
+        document.documentElement.classList.contains("dark") ||
+        document.body.classList.contains("dark")
+      ) {
+        setIsDark(true);
+      } else {
+        setIsDark(false);
+      }
+    };
+
+    checkDark();
+
+    // Observer untuk mendeteksi perubahan class (saat mode diganti)
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class") {
+          checkDark();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+  return isDark;
+};
+
+// Enhanced Stats Card Component (REVISI DARK MODE)
 const StatsCard = ({
   title,
   value,
@@ -36,31 +70,31 @@ const StatsCard = ({
   };
 
   const iconColorClasses = {
-    blue: "text-blue-500",
-    green: "text-emerald-500",
-    purple: "text-purple-500",
-    orange: "text-orange-500",
-    red: "text-red-500",
+    blue: "text-blue-500 dark:text-blue-400",
+    green: "text-emerald-500 dark:text-emerald-400",
+    purple: "text-purple-500 dark:text-purple-400",
+    orange: "text-orange-500 dark:text-orange-400",
+    red: "text-red-500 dark:text-red-400",
   };
 
   return (
     <div
-      className={`bg-white rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow-sm border-l-4 ${colorClasses[color]} hover:shadow-md transition-all duration-200 touch-manipulation`}>
+      className={`bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow-sm border-l-4 ${colorClasses[color]} hover:shadow-md transition-all duration-200 touch-manipulation dark:border-gray-700`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-0.5 sm:mb-1 leading-none">
+          <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-0.5 sm:mb-1 leading-none">
             {isLoading ? (
-              <div className="bg-gray-200 animate-pulse h-5 sm:h-8 w-8 sm:w-14 rounded"></div>
+              <div className="bg-gray-200 dark:bg-gray-700 animate-pulse h-5 sm:h-8 w-8 sm:w-14 rounded"></div>
             ) : (
               <span className="block">{value}</span>
             )}
           </div>
           <div>
-            <p className="text-xs sm:text-sm font-semibold text-gray-700 leading-tight line-clamp-1">
+            <p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 leading-tight line-clamp-1">
               {title}
             </p>
             {subtitle && (
-              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 leading-tight">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1 leading-tight">
                 {subtitle}
               </p>
             )}
@@ -77,7 +111,7 @@ const StatsCard = ({
   );
 };
 
-// Today's Schedule Card Component
+// Today's Schedule Card Component (REVISI DARK MODE)
 const TodayScheduleCard = ({ schedule, isMobile }) => {
   const getDayName = () => {
     const days = [
@@ -178,29 +212,32 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
 
   if (!schedule || schedule.length === 0) {
     return (
-      <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-        <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+        <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
               Jadwal Hari Ini
             </h3>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Clock size={16} />
               <span>{getCurrentTime()}</span>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
             {todayDay}, {new Date().toLocaleDateString("id-ID")}
           </p>
         </div>
         <div className="text-center py-8">
-          <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 font-medium">
+          <BookOpen
+            size={48}
+            className="mx-auto text-gray-300 dark:text-gray-600 mb-4"
+          />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">
             {isWeekend
               ? "Hari libur - Tidak ada jadwal"
               : "Tidak ada jadwal untuk hari ini"}
           </p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             {isWeekend ? "Selamat beristirahat!" : "Silakan cek hari lainnya"}
           </p>
         </div>
@@ -209,18 +246,18 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-      <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+    <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+      <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+          <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
             Jadwal Hari Ini
           </h3>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Clock size={16} />
             <span>{getCurrentTime()}</span>
           </div>
         </div>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
           {todayDay}, {new Date().toLocaleDateString("id-ID")}
         </p>
       </div>
@@ -235,23 +272,23 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
           return (
             <div
               key={`grouped-${index}-${group.mapel}-${group.startSession}`}
-              className="flex items-center gap-3 sm:gap-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg hover:shadow-md transition-all duration-200">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Clock size={20} className="text-blue-600" />
+              className="flex items-center gap-3 sm:gap-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 border border-blue-100 dark:border-gray-600 rounded-lg hover:shadow-md transition-all duration-200">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
+                <Clock size={20} className="text-blue-600 dark:text-blue-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">
                   {group.mapel}
                 </h4>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
                     <BookOpen size={10} />
                     Kelas {group.kelas}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
                     📚 {sessionLabel}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
                     <Clock size={10} />
                     {group.jam_mulai.substring(0, 5)} -{" "}
                     {group.jam_selesai.substring(0, 5)}
@@ -266,7 +303,7 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
   );
 };
 
-// Absent Students Table Component - FIXED VERSION
+// Absent Students Table Component (REVISI DARK MODE)
 const AbsentStudentsTable = ({
   absentStudents,
   isMobile,
@@ -281,17 +318,20 @@ const AbsentStudentsTable = ({
   const getStatusBadge = (status) => {
     const badges = {
       izin: {
-        color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+        color:
+          "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-900",
         icon: "🟡",
         label: "Izin",
       },
       sakit: {
-        color: "bg-blue-100 text-blue-700 border-blue-200",
+        color:
+          "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-900",
         icon: "🔵",
         label: "Sakit",
       },
       alpa: {
-        color: "bg-red-100 text-red-700 border-red-200",
+        color:
+          "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-900",
         icon: "🔴",
         label: "Alpa",
       },
@@ -312,14 +352,14 @@ const AbsentStudentsTable = ({
       : absentStudents;
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-      <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100">
+    <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+      <div className="mb-3 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight">
               Siswa Tidak Hadir Hari Ini
             </h3>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
               Total: {filteredStudents.length} siswa
             </p>
           </div>
@@ -328,7 +368,7 @@ const AbsentStudentsTable = ({
             <select
               value={selectedKelas}
               onChange={(e) => onKelasChange(e.target.value)}
-              className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all min-h-[44px] touch-manipulation">
+              className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all min-h-[44px] touch-manipulation">
               {allClasses.map((kelas) => (
                 <option key={kelas} value={kelas}>
                   Kelas {kelas}
@@ -341,21 +381,29 @@ const AbsentStudentsTable = ({
 
       {totalAttendanceRecords === 0 ? (
         <div className="text-center py-12">
-          <UserCheck size={64} className="mx-auto text-yellow-400 mb-4" />
-          <p className="text-xl font-bold text-gray-900 mb-2">
+          <UserCheck
+            size={64}
+            className="mx-auto text-yellow-400 dark:text-yellow-500 mb-4"
+          />
+          <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             Anda Belum Melakukan Presensi Siswa Hari Ini! 📝
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Silakan input presensi siswa terlebih dahulu
           </p>
         </div>
       ) : filteredStudents.length === 0 ? (
         <div className="text-center py-12">
-          <UserCheck size={64} className="mx-auto text-green-400 mb-4" />
-          <p className="text-xl font-bold text-gray-900 mb-2">
+          <UserCheck
+            size={64}
+            className="mx-auto text-green-400 dark:text-green-500 mb-4"
+          />
+          <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             Semua Siswa Hadir Hari Ini! 🎉
           </p>
-          <p className="text-sm text-gray-500">Kehadiran 100% - Luar biasa!</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Kehadiran 100% - Luar biasa!
+          </p>
         </div>
       ) : (
         <>
@@ -363,19 +411,19 @@ const AbsentStudentsTable = ({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">
                       No
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                    <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">
                       Nama Siswa
                     </th>
                     {isGuruMapel && (
-                      <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">
+                      <th className="text-left py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">
                         Kelas
                       </th>
                     )}
-                    <th className="text-center py-3 px-4 text-sm font-bold text-gray-700">
+                    <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-300">
                       Status Kehadiran
                     </th>
                   </tr>
@@ -384,22 +432,22 @@ const AbsentStudentsTable = ({
                   {filteredStudents.map((student, index) => (
                     <tr
                       key={student.nisn}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 text-sm text-gray-600">
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
                         {index + 1}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                             {student.nama_siswa
                               ? student.nama_siswa.charAt(0).toUpperCase()
                               : "?"}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 text-sm">
+                            <p className="font-semibold text-gray-900 dark:text-white text-sm">
                               {student.nama_siswa || "Nama tidak tersedia"}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               NISN: {student.nisn || "N/A"}
                             </p>
                           </div>
@@ -407,7 +455,7 @@ const AbsentStudentsTable = ({
                       </td>
                       {isGuruMapel && (
                         <td className="py-3 px-4 text-sm text-gray-600">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">
                             Kelas {student.kelas}
                           </span>
                         </td>
@@ -425,7 +473,7 @@ const AbsentStudentsTable = ({
               {filteredStudents.map((student, index) => (
                 <div
                   key={student.nisn}
-                  className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all">
+                  className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all">
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                       {student.nama_siswa
@@ -435,17 +483,17 @@ const AbsentStudentsTable = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-gray-900 text-sm truncate">
+                          <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate">
                             {student.nama_siswa || "Nama tidak tersedia"}
                           </h4>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             NISN: {student.nisn || "N/A"}
                           </p>
                         </div>
                         {getStatusBadge(student.status)}
                       </div>
                       {isGuruMapel && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">
                           Kelas {student.kelas || "N/A"}
                         </span>
                       )}
@@ -461,43 +509,45 @@ const AbsentStudentsTable = ({
   );
 };
 
-// Quick Actions Component untuk Mobile
+// Quick Actions Component untuk Mobile (REVISI DARK MODE)
 const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
   return (
     <div className="mb-6">
-      <h2 className="text-lg font-semibold text-slate-800 mb-3">Aksi Cepat</h2>
+      <h2 className="text-lg font-semibold text-slate-800 dark:text-gray-200 mb-3">
+        Aksi Cepat
+      </h2>
 
       {/* Baris 1 */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <button
           onClick={() => handleNavigation("/attendance")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-green-50 dark:hover:bg-gray-700/50 hover:border-green-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👨‍🎓</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Presensi Siswa
           </span>
         </button>
 
         <button
           onClick={() => handleNavigation("/teacher-attendance")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:border-blue-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👨‍🏫</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Presensi Guru
           </span>
         </button>
 
         <button
           onClick={() => handleNavigation("/grades")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-purple-50 dark:hover:bg-gray-700/50 hover:border-purple-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📊</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Nilai Siswa
           </span>
         </button>
@@ -507,33 +557,33 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
       <div className="grid grid-cols-3 gap-2 mb-3">
         <button
           onClick={() => handleNavigation("/teachers")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-orange-50 dark:hover:bg-gray-700/50 hover:border-orange-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👥</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Data Guru
           </span>
         </button>
 
         <button
           onClick={() => handleNavigation("/classes")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-cyan-50 hover:border-cyan-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-cyan-50 dark:hover:bg-gray-700/50 hover:border-cyan-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">🏫</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Data Kelas
           </span>
         </button>
 
         <button
           onClick={() => handleNavigation("/students")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-pink-50 hover:border-pink-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-pink-50 dark:hover:bg-gray-700/50 hover:border-pink-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👤</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Data Siswa
           </span>
         </button>
@@ -543,33 +593,33 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={() => handleNavigation("/catatan-siswa")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700/50 hover:border-yellow-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📝</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Catatan Siswa
           </span>
         </button>
 
         <button
           onClick={() => handleNavigation("/schedule")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-gray-700/50 hover:border-indigo-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📅</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Jadwal Saya
           </span>
         </button>
 
         <button
           onClick={() => handleNavigation("/reports")}
-          className="flex flex-col items-center justify-center p-3 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm">
           <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📄</span>
           </div>
-          <span className="text-xs font-medium text-slate-800 text-center">
+          <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
             Laporan
           </span>
         </button>
@@ -599,6 +649,9 @@ const TeacherDashboard = ({ userData }) => {
   const navigate = useNavigate();
   const isGuruKelas = userData.role === "guru_kelas";
   const isGuruMapel = userData.role === "guru_mapel";
+
+  // Tambahkan penggunaan hook Dark Mode di sini
+  const isDark = useDarkMode();
 
   useEffect(() => {
     const checkDevice = () => {
@@ -925,10 +978,10 @@ const TeacherDashboard = ({ userData }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium">
             Memuat data dashboard...
           </p>
         </div>
@@ -939,37 +992,37 @@ const TeacherDashboard = ({ userData }) => {
   const renderGuruKelasDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG */}
-        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
+        {/* 🎯 HEADER SELAMAT DATANG (REVISI DARK MODE) */}
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl shadow-sm border border-blue-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
           <div>
             <div className="sm:whitespace-nowrap">
-              <span className="text-xl font-semibold text-slate-800 block sm:inline-block">
+              <span className="text-xl font-semibold text-slate-800 dark:text-gray-200 block sm:inline-block">
                 Selamat Datang,
               </span>{" "}
-              <span className="text-lg sm:text-xl font-bold text-slate-900 block sm:inline-block mt-0 sm:mt-0 break-words">
+              <span className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white block sm:inline-block mt-0 sm:mt-0 break-words">
                 {userData?.full_name || userData?.username}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 text-blue-700 border border-blue-200/50">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50">
                 Guru Kelas {userData.kelas}
               </span>
             </div>
           </div>
         </div>
 
-        {/* HEADER JUDUL DASHBOARD */}
+        {/* HEADER JUDUL DASHBOARD (REVISI DARK MODE) */}
         <div className="flex items-center gap-3">
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
             Dashboard Guru Kelas {userData.kelas}
           </h1>
-          <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 sm:hidden">
             <Smartphone size={12} />
             <span>Mobile</span>
           </div>
         </div>
 
-        {/* AKSI CEPAT MOBILE */}
+        {/* AKSI CEPAT MOBILE - sudah direvisi di komponen QuickActionsMobile */}
         {isMobile && (
           <QuickActionsMobile
             isGuruKelas={isGuruKelas}
@@ -1027,16 +1080,16 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop */}
+        {/* Aksi Cepat Desktop (REVISI DARK MODE) */}
         {!isMobile && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-6 leading-tight">
               Aksi Cepat
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/students")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <Users
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1045,7 +1098,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <ClipboardList
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1056,7 +1109,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <BarChart3
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1065,7 +1118,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/reports")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <FileText
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1076,12 +1129,15 @@ const TeacherDashboard = ({ userData }) => {
           </div>
         )}
 
+        {/* Floating Refresh Button (REVISI DARK MODE) */}
         <div className="fixed bottom-20 right-4 sm:hidden z-40">
           <button
             onClick={fetchDashboardData}
             disabled={refreshing}
-            className={`w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
-              refreshing ? "opacity-50" : "hover:bg-blue-700 active:scale-95"
+            className={`w-12 h-12 bg-blue-600 dark:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+              refreshing
+                ? "opacity-50"
+                : "hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95"
             }`}>
             <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
           </button>
@@ -1093,37 +1149,37 @@ const TeacherDashboard = ({ userData }) => {
   const renderGuruMapelDashboard = () => {
     return (
       <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG */}
-        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 rounded-xl shadow-sm border border-blue-100 p-4 sm:p-6 lg:p-8">
+        {/* 🎯 HEADER SELAMAT DATANG (REVISI DARK MODE) */}
+        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl shadow-sm border border-blue-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
-              <h1 className="text-xl font-semibold text-slate-800">
+              <h1 className="text-xl font-semibold text-slate-800 dark:text-gray-200">
                 Selamat Datang,
               </h1>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 mt-1 sm:mt-0 break-words">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-1 sm:mt-0 break-words">
                 {userData?.full_name || userData?.username}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 text-blue-700 border border-blue-200/50">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50">
                 Guru Mapel
               </span>
             </div>
           </div>
         </div>
 
-        {/* HEADER JUDUL DASHBOARD */}
+        {/* HEADER JUDUL DASHBOARD (REVISI DARK MODE) */}
         <div className="flex items-center gap-3">
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
             Dashboard Guru Mapel
           </h1>
-          <div className="flex items-center gap-1 text-xs text-gray-500 sm:hidden">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 sm:hidden">
             <Smartphone size={12} />
             <span>Mobile</span>
           </div>
         </div>
 
-        {/* AKSI CEPAT MOBILE */}
+        {/* AKSI CEPAT MOBILE - sudah direvisi di komponen QuickActionsMobile */}
         {isMobile && (
           <QuickActionsMobile
             isGuruKelas={isGuruKelas}
@@ -1180,16 +1236,16 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop */}
+        {/* Aksi Cepat Desktop (REVISI DARK MODE) */}
         {!isMobile && (
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100">
-            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 leading-tight">
+          <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
+            <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-6 leading-tight">
               Aksi Cepat
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/students")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <Users
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1198,7 +1254,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <ClipboardList
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1209,7 +1265,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <BarChart3
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1218,7 +1274,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/reports")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <FileText
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1229,12 +1285,15 @@ const TeacherDashboard = ({ userData }) => {
           </div>
         )}
 
+        {/* Floating Refresh Button (REVISI DARK MODE) */}
         <div className="fixed bottom-20 right-4 sm:hidden z-40">
           <button
             onClick={fetchDashboardData}
             disabled={refreshing}
-            className={`w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
-              refreshing ? "opacity-50" : "hover:bg-blue-700 active:scale-95"
+            className={`w-12 h-12 bg-blue-600 dark:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+              refreshing
+                ? "opacity-50"
+                : "hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95"
             }`}>
             <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
           </button>
@@ -1244,7 +1303,7 @@ const TeacherDashboard = ({ userData }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-3 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-6 lg:p-8">
       {isGuruKelas ? renderGuruKelasDashboard() : renderGuruMapelDashboard()}
     </div>
   );

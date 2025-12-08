@@ -1,4 +1,5 @@
-// src/pages/Attendance.js - FULL VERSION WITH DARK MODE SUPPORT ✅
+// src/pages/Attendance.js - FULL VERSION WITH SEMESTER EXPORT ✅
+// COPY PASTE SELURUH FILE INI, REPLACE SEMUA ISI FILE ATTENDANCE.JS LO!
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -19,15 +20,13 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
-  Moon,
-  Sun,
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
 import AttendanceModal from "./AttendanceModal";
 import {
   exportAttendanceFromComponent,
-  exportSemesterRecapFromComponent,
+  exportSemesterRecapFromComponent, // ✅ ADDED: Import semester export
 } from "./AttendanceExport";
 import { getSemesterData } from "../services/semesterService";
 
@@ -41,45 +40,7 @@ import { useSyncStatus } from "../hooks/useSyncStatus";
 import SyncStatusBadge from "../components/SyncStatusBadge";
 // ===============================
 
-// Dark Mode Toggle Component
-const DarkModeToggle = () => {
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem("darkMode") === "true" ||
-        (!("darkMode" in localStorage) &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches)
-      );
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-      localStorage.setItem("darkMode", "true");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("darkMode", "false");
-    }
-  }, [darkMode]);
-
-  return (
-    <button
-      onClick={() => setDarkMode(!darkMode)}
-      className="fixed bottom-4 right-4 z-50 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200"
-      aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
-      {darkMode ? (
-        <Sun className="w-5 h-5 text-yellow-500" />
-      ) : (
-        <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-      )}
-    </button>
-  );
-};
-
-// Toast Component - Enhanced for mobile + OFFLINE STATUS + DARK MODE
+// Toast Component - Enhanced for mobile + OFFLINE STATUS
 const Toast = ({ show, message, type, onClose }) => {
   useEffect(() => {
     if (show) {
@@ -97,9 +58,9 @@ const Toast = ({ show, message, type, onClose }) => {
   };
 
   const getBgColor = () => {
-    if (type === "error") return "bg-red-600 dark:bg-red-700";
-    if (type === "offline") return "bg-orange-600 dark:bg-orange-700";
-    return "bg-green-600 dark:bg-green-700";
+    if (type === "error") return "bg-red-600";
+    if (type === "offline") return "bg-orange-600";
+    return "bg-green-600";
   };
 
   return (
@@ -120,34 +81,31 @@ const Toast = ({ show, message, type, onClose }) => {
   );
 };
 
-// Confirmation Modal Component with Dark Mode
+// Confirmation Modal Component
 const ConfirmationModal = ({ show, onClose, onConfirm, title, message }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-4">
-          <AlertTriangle
-            className="text-orange-500 dark:text-orange-400 flex-shrink-0"
-            size={20}
-          />
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <AlertTriangle className="text-orange-500 flex-shrink-0" size={20} />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
             {title}
           </h3>
         </div>
-        <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed text-sm sm:text-base">
+        <p className="text-gray-600 mb-6 leading-relaxed text-sm sm:text-base">
           {message}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base">
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base">
             Tidak
           </button>
           <button
             onClick={onConfirm}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors font-medium text-sm sm:text-base">
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm sm:text-base">
             Ya, Timpa Data
           </button>
         </div>
@@ -156,7 +114,7 @@ const ConfirmationModal = ({ show, onClose, onConfirm, title, message }) => {
   );
 };
 
-// ExportModal Component - MONTHLY with Dark Mode
+// ExportModal Component - MONTHLY
 const ExportModal = ({ show, onClose, onExport, loading }) => {
   const [selectedMonth, setSelectedMonth] = useState(
     (new Date().getMonth() + 1).toString()
@@ -172,27 +130,24 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-4">
-          <Download
-            className="text-blue-500 dark:text-blue-400 flex-shrink-0"
-            size={20}
-          />
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <Download className="text-blue-500 flex-shrink-0" size={20} />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
             Export Data Presensi Bulanan
           </h3>
         </div>
 
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Bulan:
             </label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               disabled={loading}>
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -205,13 +160,13 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Tahun:
             </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               disabled={loading}>
               {Array.from({ length: 10 }, (_, i) => (
                 <option key={2020 + i} value={2020 + i}>
@@ -225,13 +180,13 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
             disabled={loading}>
             Batal
           </button>
           <button
             onClick={handleExport}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             disabled={loading}>
             {loading ? (
               <>
@@ -251,7 +206,7 @@ const ExportModal = ({ show, onClose, onExport, loading }) => {
   );
 };
 
-// ExportSemesterModal Component - SEMESTER with Dark Mode
+// ✅ ADDED: ExportSemesterModal Component - SEMESTER
 const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
   const [selectedSemester, setSelectedSemester] = useState(1);
   const [selectedYear, setSelectedYear] = useState(
@@ -265,27 +220,24 @@ const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-4">
-          <Calendar
-            className="text-purple-500 dark:text-purple-400 flex-shrink-0"
-            size={20}
-          />
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <Calendar className="text-purple-500 flex-shrink-0" size={20} />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
             Export Rekap Semester
           </h3>
         </div>
 
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Semester:
             </label>
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(parseInt(e.target.value))}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
               disabled={loading}>
               <option value={1}>Semester 1 (Ganjil - Juli-Desember)</option>
               <option value={2}>Semester 2 (Genap - Januari-Juni)</option>
@@ -293,13 +245,13 @@ const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Tahun:
             </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
               disabled={loading}>
               {Array.from({ length: 10 }, (_, i) => (
                 <option key={2020 + i} value={2020 + i}>
@@ -309,8 +261,8 @@ const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
             </select>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-700">
               💡 <strong>Info:</strong> Export semester akan menghasilkan rekap
               total kehadiran untuk periode{" "}
               {selectedSemester === 1 ? "Juli-Desember" : "Januari-Juni"}{" "}
@@ -322,13 +274,13 @@ const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
             disabled={loading}>
             Batal
           </button>
           <button
             onClick={handleExport}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             disabled={loading}>
             {loading ? (
               <>
@@ -348,7 +300,7 @@ const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
   );
 };
 
-// Status Button Component with Dark Mode
+// Status Button Component
 const StatusButton = React.memo(
   ({ status, active, onClick, icon: Icon, label, disabled = false }) => {
     const getStatusClass = () => {
@@ -357,20 +309,20 @@ const StatusButton = React.memo(
 
       if (status === "Hadir") {
         return active
-          ? `${baseClass} bg-green-600 dark:bg-green-700 text-white border-green-600 dark:border-green-700 shadow-sm`
-          : `${baseClass} bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-800/50 active:bg-green-200 dark:active:bg-green-700/50`;
+          ? `${baseClass} bg-green-600 text-white border-green-600 shadow-sm`
+          : `${baseClass} bg-green-50 text-green-700 border-green-200 hover:bg-green-100 active:bg-green-200`;
       } else if (status === "Sakit") {
         return active
-          ? `${baseClass} bg-yellow-600 dark:bg-yellow-700 text-white border-yellow-600 dark:border-yellow-700 shadow-sm`
-          : `${baseClass} bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-800/50 active:bg-yellow-200 dark:active:bg-yellow-700/50`;
+          ? `${baseClass} bg-yellow-600 text-white border-yellow-600 shadow-sm`
+          : `${baseClass} bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 active:bg-yellow-200`;
       } else if (status === "Izin") {
         return active
-          ? `${baseClass} bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700 shadow-sm`
-          : `${baseClass} bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 active:bg-blue-200 dark:active:bg-blue-700/50`;
+          ? `${baseClass} bg-blue-600 text-white border-blue-600 shadow-sm`
+          : `${baseClass} bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 active:bg-blue-200`;
       } else if (status === "Alpa") {
         return active
-          ? `${baseClass} bg-red-600 dark:bg-red-700 text-white border-red-600 dark:border-red-700 shadow-sm`
-          : `${baseClass} bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-800/50 active:bg-red-200 dark:active:bg-red-700/50`;
+          ? `${baseClass} bg-red-600 text-white border-red-600 shadow-sm`
+          : `${baseClass} bg-red-50 text-red-700 border-red-200 hover:bg-red-100 active:bg-red-200`;
       }
       return baseClass;
     };
@@ -387,47 +339,47 @@ const StatusButton = React.memo(
   }
 );
 
-// Compact Stats Card Component with Dark Mode
+// Compact Stats Card Component
 const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
   const getLeftBorderColor = () => {
     switch (color) {
       case "blue":
-        return "border-l-blue-500 dark:border-l-blue-400";
+        return "border-l-blue-500";
       case "green":
-        return "border-l-green-500 dark:border-l-green-400";
+        return "border-l-green-500";
       case "purple":
-        return "border-l-purple-500 dark:border-l-purple-400";
+        return "border-l-purple-500";
       case "orange":
-        return "border-l-orange-500 dark:border-l-orange-400";
+        return "border-l-orange-500";
       default:
-        return "border-l-gray-500 dark:border-l-gray-400";
+        return "border-l-gray-500";
     }
   };
 
   const getIconColor = () => {
     switch (color) {
       case "blue":
-        return "text-blue-500 dark:text-blue-400";
+        return "text-blue-500";
       case "green":
-        return "text-green-500 dark:text-green-400";
+        return "text-green-500";
       case "purple":
-        return "text-purple-500 dark:text-purple-400";
+        return "text-purple-500";
       case "orange":
-        return "text-orange-500 dark:text-orange-400";
+        return "text-orange-500";
       default:
-        return "text-gray-500 dark:text-gray-400";
+        return "text-gray-500";
     }
   };
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-l-4 ${getLeftBorderColor()} border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:-translate-y-1 shadow-sm`}>
+      className={`bg-white rounded-lg p-3 sm:p-4 border border-l-4 ${getLeftBorderColor()} border-gray-200 transition-all duration-200 hover:shadow-md hover:-translate-y-1 shadow-sm`}>
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xl sm:text-2xl font-bold mb-1 text-gray-900 dark:text-gray-100">
+          <div className="text-xl sm:text-2xl font-bold mb-1 text-gray-900">
             {number}
           </div>
-          <div className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+          <div className="text-xs sm:text-sm font-medium text-gray-600">
             {label}
           </div>
         </div>
@@ -440,7 +392,7 @@ const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
   );
 });
 
-// Mobile Student Card Component with Dark Mode
+// Mobile Student Card Component
 const StudentCard = ({
   student,
   originalIndex,
@@ -451,20 +403,18 @@ const StudentCard = ({
   saving,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm">
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+          <h3 className="font-semibold text-gray-900 text-sm truncate">
             {student.nama_siswa}
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            NISN: {student.nisn}
-          </p>
+          <p className="text-xs text-gray-500">NISN: {student.nisn}</p>
           <span
             className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
               student.jenis_kelamin === "Laki-laki"
-                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                : "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-pink-100 text-pink-700"
             }`}>
             {student.jenis_kelamin}
           </span>
@@ -512,7 +462,7 @@ const StudentCard = ({
         value={attendance.note || ""}
         onChange={(e) => updateNote(activeClass, originalIndex, e.target.value)}
         disabled={saving}
-        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       />
     </div>
   );
@@ -653,7 +603,7 @@ const useAttendance = (currentUser) => {
   };
 };
 
-// Main Attendance Component with Dark Mode
+// Main Attendance Component
 const Attendance = ({
   currentUser = { role: "admin", kelas: null, username: "admin" },
 }) => {
@@ -680,6 +630,7 @@ const Attendance = ({
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
+  // ✅ ADDED: State untuk semester export modal
   const [showExportSemesterModal, setShowExportSemesterModal] = useState(false);
   const [exportSemesterLoading, setExportSemesterLoading] = useState(false);
 
@@ -1370,6 +1321,7 @@ const Attendance = ({
     [activeClass, studentsData, showToast, currentUser]
   );
 
+  // ✅ ADDED: Handler untuk export semester
   const exportSemester = useCallback(
     async (semester, year) => {
       try {
@@ -1409,13 +1361,10 @@ const Attendance = ({
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
         <div className="flex items-center justify-center py-12">
-          <RefreshCw
-            className="animate-spin mr-3 text-gray-600 dark:text-gray-400"
-            size={24}
-          />
-          <span className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
+          <RefreshCw className="animate-spin mr-3" size={24} />
+          <span className="text-gray-600 text-base sm:text-lg">
             Memuat data siswa...
           </span>
         </div>
@@ -1424,9 +1373,7 @@ const Attendance = ({
   }
 
   return (
-    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
-      <DarkModeToggle />
-
+    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
       <Toast
         show={toast.show}
         message={toast.message}
@@ -1463,31 +1410,31 @@ const Attendance = ({
         />
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6 space-y-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 space-y-4">
         <div className="relative w-full">
           <Search
             size={18}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
           />
           <input
             type="text"
             placeholder="Cari nama siswa atau NISN..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors font-medium text-sm sm:text-base"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors font-medium text-sm sm:text-base"
           />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center lg:justify-start">
           <div className="flex items-center gap-3 w-full lg:w-auto flex-shrink-0">
-            <label className="font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap text-sm sm:text-base">
+            <label className="font-semibold text-gray-700 whitespace-nowrap text-sm sm:text-base">
               Tanggal:
             </label>
             <input
               type="date"
               value={attendanceDate}
               onChange={(e) => setAttendanceDate(e.target.value)}
-              className="w-full lg:w-72 px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full lg:w-72 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium bg-white text-sm sm:text-base"
             />
           </div>
 
@@ -1498,8 +1445,8 @@ const Attendance = ({
                   key={classNum}
                   className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 border-2 flex-1 text-center min-w-[80px] ${
                     activeClass === classNum
-                      ? "bg-gradient-to-r from-blue-600 to-green-600 dark:from-blue-500 dark:to-green-500 text-white border-transparent shadow-md"
-                      : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 hover:-translate-y-0.5"
+                      ? "bg-gradient-to-r from-blue-600 to-green-600 text-white border-transparent shadow-md"
+                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:-translate-y-0.5"
                   }`}
                   onClick={() => setActiveClass(classNum)}>
                   Kelas {classNum}
@@ -1514,8 +1461,8 @@ const Attendance = ({
                     key={classNum}
                     className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 border-2 flex-1 text-center min-w-[80px] ${
                       activeClass === classNum
-                        ? "bg-gradient-to-r from-blue-600 to-green-600 dark:from-blue-500 dark:to-green-500 text-white border-transparent shadow-md"
-                        : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 hover:-translate-y-0.5"
+                        ? "bg-gradient-to-r from-blue-600 to-green-600 text-white border-transparent shadow-md"
+                        : "bg-white text-gray-600 border-gray-300 hover:border-blue-500 hover:text-blue-600 hover:-translate-y-0.5"
                     }`}
                     onClick={() => setActiveClass(classNum)}>
                     Kelas {classNum}
@@ -1527,10 +1474,10 @@ const Attendance = ({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 w-full">
           <button
-            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
             onClick={markAllPresent}
             disabled={
               !studentsData[activeClass] ||
@@ -1545,7 +1492,7 @@ const Attendance = ({
             <span>Hadir Semua</span>
           </button>
           <button
-            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-800/50 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
             onClick={saveAttendance}
             disabled={
               !studentsData[activeClass] ||
@@ -1561,7 +1508,7 @@ const Attendance = ({
             <span>Simpan Presensi</span>
           </button>
           <button
-            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-800/50 hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
             onClick={showRekap}
             disabled={
               !studentsData[activeClass] ||
@@ -1571,7 +1518,7 @@ const Attendance = ({
             <span>Lihat Rekap</span>
           </button>
           <button
-            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-lg border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-800/50 hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
             onClick={() => setShowExportModal(true)}
             disabled={
               !studentsData[activeClass] ||
@@ -1580,8 +1527,9 @@ const Attendance = ({
             <Download size={14} />
             <span>Export Bulanan</span>
           </button>
+          {/* ✅ ADDED: Tombol Export Semester */}
           <button
-            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
             onClick={() => setShowExportSemesterModal(true)}
             disabled={
               !studentsData[activeClass] ||
@@ -1596,16 +1544,16 @@ const Attendance = ({
       {showCardView ? (
         <div className="space-y-3">
           {filteredStudents.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
               <div className="flex flex-col items-center gap-3 text-center">
-                <Users size={48} className="text-gray-300 dark:text-gray-600" />
+                <Users size={48} className="text-gray-300" />
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
+                  <p className="text-gray-500 font-medium text-sm">
                     {studentsData[activeClass]?.length === 0
                       ? "Tidak ada siswa di kelas ini"
                       : "Tidak ada siswa yang sesuai dengan pencarian"}
                   </p>
-                  <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+                  <p className="text-gray-400 text-xs mt-1">
                     {searchTerm
                       ? `Tidak ditemukan siswa dengan kata kunci "${searchTerm}"`
                       : "Kelas ini belum memiliki siswa terdaftar"}
@@ -1636,47 +1584,44 @@ const Attendance = ({
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-12 sm:w-14">
+                <tr className="bg-gray-100 border-b border-gray-200">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-12 sm:w-14">
                     No
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-24 sm:w-28">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider w-24 sm:w-28">
                     NISN
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
                     Nama Siswa
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell w-20">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-center text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell w-20">
                     L/P
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell w-64">
+                  <th className="px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider hidden xl:table-cell w-64">
                     Keterangan
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-100">
                 {filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
-                        <Users
-                          size={48}
-                          className="text-gray-300 dark:text-gray-600"
-                        />
+                        <Users size={48} className="text-gray-300" />
                         <div>
-                          <p className="text-gray-500 dark:text-gray-400 font-medium text-sm sm:text-base">
+                          <p className="text-gray-500 font-medium text-sm sm:text-base">
                             {studentsData[activeClass]?.length === 0
                               ? "Tidak ada siswa di kelas ini"
                               : "Tidak ada siswa yang sesuai dengan pencarian"}
                           </p>
-                          <p className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm mt-1">
+                          <p className="text-gray-400 text-xs sm:text-sm mt-1">
                             {searchTerm
                               ? `Tidak ditemukan siswa dengan kata kunci "${searchTerm}"`
                               : "Kelas ini belum memiliki siswa terdaftar"}
@@ -1696,14 +1641,14 @@ const Attendance = ({
                     return (
                       <tr
                         key={originalIndex}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        className="hover:bg-gray-50 transition-colors">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-900">
                           {index + 1}
                         </td>
-                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
                           {student.nisn}
                         </td>
-                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <td className="px-2 sm:px-3 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
                           <div>
                             <div className="line-clamp-2">
                               {student.nama_siswa}
@@ -1712,8 +1657,8 @@ const Attendance = ({
                               <span
                                 className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                                   student.jenis_kelamin === "Laki-laki"
-                                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                                    : "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-pink-100 text-pink-700"
                                 }`}>
                                 {student.jenis_kelamin === "Laki-laki"
                                   ? "L"
@@ -1726,8 +1671,8 @@ const Attendance = ({
                           <span
                             className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                               student.jenis_kelamin === "Laki-laki"
-                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                                : "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-pink-100 text-pink-700"
                             }`}>
                             {student.jenis_kelamin === "Laki-laki" ? "L" : "P"}
                           </span>
@@ -1796,7 +1741,7 @@ const Attendance = ({
                                 )
                               }
                               disabled={saving}
-                              className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                              className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                             />
                           </div>
                         </td>
@@ -1813,7 +1758,7 @@ const Attendance = ({
                               )
                             }
                             disabled={saving}
-                            className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-4"
+                            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-4"
                           />
                         </td>
                       </tr>
@@ -1854,6 +1799,7 @@ const Attendance = ({
         loading={exportLoading}
       />
 
+      {/* ✅ ADDED: Modal Export Semester */}
       <ExportSemesterModal
         show={showExportSemesterModal}
         onClose={() => setShowExportSemesterModal(false)}

@@ -6,35 +6,71 @@ import {
   School,
   BookOpen,
   Search,
-  Filter, // unused, but kept for context
+  Filter,
   MoreVertical,
 } from "lucide-react";
 
-// Compact Stats Card Component - RESPONSIVE (No changes needed)
+// Hook sederhana untuk membaca status Dark Mode dari body/html class (Jika ada)
+// Untuk demonstrasi Dark Mode di Tailwind, ini adalah best practice.
+const useDarkModeStatus = () => {
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  useEffect(() => {
+    // Observer untuk mendeteksi perubahan class "dark" pada tag <html>
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.attributeName === "class" &&
+          mutation.target.tagName === "HTML"
+        ) {
+          setIsDarkMode(mutation.target.classList.contains("dark"));
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDarkMode;
+};
+
+// Compact Stats Card Component - SUPPORT DARK MODE
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
-    blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white",
-    green: "border-l-green-500 bg-gradient-to-r from-green-50 to-white",
-    purple: "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white",
-    orange: "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white",
+    blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950 dark:to-gray-800",
+    green:
+      "border-l-green-500 bg-gradient-to-r from-green-50 to-white dark:from-green-950 dark:to-gray-800",
+    purple:
+      "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950 dark:to-gray-800",
+    orange:
+      "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950 dark:to-gray-800",
   };
 
   const iconColorClasses = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    purple: "text-purple-600",
-    orange: "text-orange-600",
+    blue: "text-blue-600 dark:text-blue-400",
+    green: "text-green-600 dark:text-green-400",
+    purple: "text-purple-600 dark:text-purple-400",
+    orange: "text-orange-600 dark:text-orange-400",
   };
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-3 sm:p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
+      className={`
+        rounded-lg shadow-sm border-l-4 p-3 sm:p-4 transition-all duration-300
+        ${colorClasses[color]} 
+        hover:shadow-md hover:scale-105 
+        dark:bg-gray-800 dark:border-gray-700
+      `}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900">
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {number}
           </p>
-          <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">
+          <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
             {label}
           </p>
         </div>
@@ -47,21 +83,21 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
   );
 };
 
-// Status Badge Component - RESPONSIVE (No changes needed)
+// Status Badge Component - SUPPORT DARK MODE
 const StatusBadge = ({ isActive }) => {
   return (
     <span
       className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold ${
         isActive
-          ? "bg-green-100 text-green-800 border border-green-200"
-          : "bg-red-100 text-red-800 border border-red-200"
+          ? "bg-green-100 text-green-800 border border-green-200 dark:bg-green-800 dark:text-green-100 dark:border-green-700"
+          : "bg-red-100 text-red-800 border border-red-200 dark:bg-red-800 dark:text-red-100 dark:border-red-700"
       }`}>
       {isActive ? "Aktif" : "Tidak Aktif"}
     </span>
   );
 };
 
-// Teacher Card Component - FULLY RESPONSIVE (No changes needed)
+// Teacher Card Component - SUPPORT DARK MODE
 const TeacherCard = ({ teacher, index }) => {
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
@@ -79,12 +115,12 @@ const TeacherCard = ({ teacher, index }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all duration-300">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-blue-600 font-bold text-xs sm:text-sm">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 dark:bg-blue-900">
+              <span className="text-blue-600 font-bold text-xs sm:text-sm dark:text-blue-400">
                 {teacher.full_name
                   .split(" ")
                   .map((n) => n[0])
@@ -93,23 +129,29 @@ const TeacherCard = ({ teacher, index }) => {
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate dark:text-white">
                 {teacher.full_name}
               </h3>
-              <p className="text-xs text-gray-600">#{index + 1}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                #{index + 1}
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
             <div className="min-w-0">
-              <p className="text-xs text-gray-500 font-medium">Tugas/Kelas</p>
-              <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">
+              <p className="text-xs text-gray-500 font-medium dark:text-gray-400">
+                Tugas/Kelas
+              </p>
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate dark:text-gray-200">
                 {formatTeachingArea(teacher)}
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-500 font-medium">Jumlah Siswa</p>
-              <p className="text-xs sm:text-sm font-semibold text-gray-800">
+              <p className="text-xs text-gray-500 font-medium dark:text-gray-400">
+                Jumlah Siswa
+              </p>
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {teacher.studentCount} siswa
               </p>
             </div>
@@ -117,10 +159,10 @@ const TeacherCard = ({ teacher, index }) => {
 
           <div className="flex items-center justify-between gap-2">
             <StatusBadge isActive={teacher.is_active} />
-            <button className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">
+            <button className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 dark:hover:bg-gray-700">
               <MoreVertical
                 size={16}
-                className="sm:w-[18px] sm:h-[18px] text-gray-500"
+                className="sm:w-[18px] sm:h-[18px] text-gray-500 dark:text-gray-400"
               />
             </button>
           </div>
@@ -130,24 +172,16 @@ const TeacherCard = ({ teacher, index }) => {
   );
 };
 
-// Main Teacher Component - EFFICIENTLY RESPONSIVE
+// Main Teacher Component - SUPPORT DARK MODE
 const Teacher = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  // --- REVISI PRO: Hapus state isMobile dan logic useEffect terkait ---
-  // const [isMobile, setIsMobile] = useState(false);
-  // useEffect(() => {
-  //   const checkDevice = () => {
-  //     setIsMobile(window.innerWidth < 1024);
-  //   };
-  //   checkDevice();
-  //   window.addEventListener("resize", checkDevice);
-  //   return () => window.removeEventListener("resize", checkDevice);
-  // }, []);
-  // -------------------------------------------------------------------
+
+  // Membaca status dark mode dari hook
+  const isDarkMode = useDarkModeStatus();
 
   const [stats, setStats] = useState({
     totalGuru: 0,
@@ -306,10 +340,10 @@ const Teacher = () => {
 
   if (loading) {
     return (
-      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center h-64 sm:h-96 bg-white rounded-xl shadow-sm">
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto dark:bg-gray-900 min-h-screen">
+        <div className="flex flex-col items-center justify-center h-64 sm:h-96 bg-white rounded-xl shadow-sm dark:bg-gray-800">
           <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-3 sm:mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">
+          <p className="text-sm sm:text-base text-gray-600 font-medium dark:text-gray-300">
             Memuat data guru...
           </p>
         </div>
@@ -318,8 +352,9 @@ const Teacher = () => {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
-      {/* Compact Stats Cards - RESPONSIVE GRID (No changes) */}
+    // Background utama diubah untuk Dark Mode
+    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      {/* Compact Stats Cards (Revisi ada di StatsCard Component) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <StatsCard
           icon={Users}
@@ -347,13 +382,13 @@ const Teacher = () => {
         />
       </div>
 
-      {/* Filter Section - FULLY RESPONSIVE (No changes) */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4">
+      {/* Filter Section - SUPPORT DARK MODE */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4">
           {/* Search Input */}
           <div className="flex-1 relative">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
               size={18}
             />
             <input
@@ -361,7 +396,7 @@ const Teacher = () => {
               placeholder="Cari nama guru..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
+              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
           </div>
 
@@ -370,7 +405,7 @@ const Teacher = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base">
+              className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white">
               <option value="all">Semua Status</option>
               <option value="active">Aktif</option>
               <option value="inactive">Tidak Aktif</option>
@@ -379,13 +414,13 @@ const Teacher = () => {
         </div>
       </div>
 
-      {/* Tabel Data Guru - RESPONSIVE LAYOUT - REVISI PRO */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 sm:p-5 lg:p-6 border-b border-gray-100">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+      {/* Tabel Data Guru - SUPPORT DARK MODE */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div className="p-4 sm:p-5 lg:p-6 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
             Daftar Guru
           </h2>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 dark:text-gray-400">
             Menampilkan {filteredTeachers.length} dari {teachers.length} guru
           </p>
         </div>
@@ -400,9 +435,9 @@ const Teacher = () => {
             <div className="text-center py-12 sm:py-16">
               <Users
                 size={40}
-                className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3 sm:mb-4"
+                className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3 sm:mb-4 dark:text-gray-600"
               />
-              <p className="text-sm sm:text-base text-gray-500 font-medium">
+              <p className="text-sm sm:text-base text-gray-500 font-medium dark:text-gray-400">
                 Tidak ada data guru yang cocok
               </p>
             </div>
@@ -412,45 +447,45 @@ const Teacher = () => {
         {/* Desktop Table View (Sembunyikan di Mobile/Tablet, Tampilkan di Large/Desktop) */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-700 dark:border-gray-600">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   No.
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Nama Guru
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Tugas/Kelas
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Jumlah Siswa
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredTeachers.length > 0 ? (
                 filteredTeachers.map((teacher, index) => (
                   <tr
                     key={teacher.id}
-                    className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                    className="hover:bg-gray-50 transition-colors dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium dark:text-white">
                       {index + 1}
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {teacher.full_name}
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-700 font-medium">
+                      <span className="text-sm text-gray-700 font-medium dark:text-gray-300">
                         {formatTeachingArea(teacher)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
                       {teacher.studentCount} siswa
                     </td>
                     <td className="px-6 py-4">
@@ -462,9 +497,12 @@ const Teacher = () => {
                 <tr>
                   <td colSpan="5" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <Users size={48} className="text-gray-300" />
+                      <Users
+                        size={48}
+                        className="text-gray-300 dark:text-gray-600"
+                      />
                       <div>
-                        <p className="text-gray-500 font-medium">
+                        <p className="text-gray-500 font-medium dark:text-gray-400">
                           Tidak ada data guru yang cocok
                         </p>
                       </div>

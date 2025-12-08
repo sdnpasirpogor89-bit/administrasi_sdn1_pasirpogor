@@ -1,4 +1,4 @@
-// src/App.js - SD VERSION DENGAN MAINTENANCE MODE + WHITELIST + PRESENSI GURU
+// src/App.js - SD VERSION DENGAN MAINTENANCE MODE + WHITELIST + PRESENSI GURU + DARK MODE
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BrowserRouter as Router,
@@ -29,7 +29,6 @@ import Setting from "./setting/setting";
 import MonitorSistem from "./system/MonitorSistem";
 import MaintenancePage from "./setting/MaintenancePage";
 import AdminPanel from "./setting/AdminPanel";
-// 🔥 IMPORT PRESENSI GURU
 import TeacherAttendance from "./attendance-teacher/TeacherAttendance";
 
 // ===== WRAPPER COMPONENTS =====
@@ -113,7 +112,6 @@ const MonitorSistemWithNavigation = ({ userData }) => {
   );
 };
 
-// 🔥 WRAPPER UNTUK PRESENSI GURU
 const TeacherAttendanceWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
@@ -126,11 +124,34 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ========== 🌙 DARK MODE STATE ==========
+  const [darkMode, setDarkMode] = useState(() => {
+    // Cek localStorage dulu, kalau ga ada default false (light mode)
+    const saved = localStorage.getItem("darkMode");
+    return saved === "true";
+  });
+
   // ========== MAINTENANCE MODE STATE ==========
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [maintenanceLoading, setMaintenanceLoading] = useState(true);
   const [whitelistUsers, setWhitelistUsers] = useState([]);
+
+  // ========== 🌙 APPLY DARK MODE TO HTML ==========
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    // Simpan ke localStorage
+    localStorage.setItem("darkMode", darkMode.toString());
+  }, [darkMode]);
+
+  // ========== 🌙 TOGGLE DARK MODE FUNCTION ==========
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode((prev) => !prev);
+  }, []);
 
   // ========== 1. SETUP AUTO-SYNC & MAINTENANCE CHECK ==========
   useEffect(() => {
@@ -203,7 +224,6 @@ function App() {
           "Aplikasi sedang dalam maintenance. Kami akan kembali segera!"
       );
 
-      // ✅ Parse whitelist
       if (settings.maintenance_whitelist) {
         try {
           const parsed = JSON.parse(settings.maintenance_whitelist);
@@ -221,7 +241,6 @@ function App() {
     }
   };
 
-  // 🔥 HELPER: Cek apakah user ada di whitelist
   const isUserWhitelisted = useCallback(
     (userId) => {
       return whitelistUsers.some((u) => u.id === userId);
@@ -233,7 +252,6 @@ function App() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // 🔥 GUNAKAN KEY "user" (bukan "userSession")
         const sessionData = localStorage.getItem("user");
 
         if (!sessionData) {
@@ -296,7 +314,7 @@ function App() {
     checkSession();
   }, []);
 
-  // ========== 4. 🔥 FIX: HANDLE LOGIN (bukan handleLoginSuccess) ==========
+  // ========== 4. HANDLE LOGIN ==========
   const handleLogin = async (userData, rememberMe = false) => {
     try {
       const { data: dbUserData, error } = await supabase
@@ -313,8 +331,8 @@ function App() {
 
       const loginTime = Date.now();
       const expiryTime = rememberMe
-        ? loginTime + 30 * 24 * 60 * 60 * 1000 // 30 hari
-        : loginTime + 24 * 60 * 60 * 1000; // 24 jam
+        ? loginTime + 30 * 24 * 60 * 60 * 1000
+        : loginTime + 24 * 60 * 60 * 1000;
 
       const completeUserData = {
         id: dbUserData.id,
@@ -333,7 +351,6 @@ function App() {
       console.log("✅ Login success:", completeUserData.username);
       setUser(completeUserData);
 
-      // 🔥 GUNAKAN KEY "user" (bukan "userSession")
       localStorage.setItem("user", JSON.stringify(completeUserData));
 
       if (rememberMe) {
@@ -370,7 +387,6 @@ function App() {
     }
   };
 
-  // 🔥 HELPER: Cek apakah user boleh akses (admin ATAU whitelisted)
   const canAccessDuringMaintenance = useCallback(
     (userData) => {
       if (!isMaintenanceMode) return true;
@@ -402,7 +418,7 @@ function App() {
     );
   }
 
-  // ========== 8. ADMIN PANEL SPECIAL ROUTE (BYPASS MAINTENANCE) ==========
+  // ========== 8. ADMIN PANEL SPECIAL ROUTE ==========
   const currentPath = window.location.pathname;
   if (currentPath === "/secret-admin-panel-2024") {
     return (
@@ -419,7 +435,6 @@ function App() {
     <Router>
       <div className="App min-h-screen bg-gray-50">
         <Routes>
-          {/* 🔥 FIX: LOGIN ROUTE - PROPS DIPERBAIKI */}
           <Route
             path="/login"
             element={
@@ -430,13 +445,18 @@ function App() {
               )
             }
           />
-          {/* 🔥 PROTECTED ROUTES - CEK MAINTENANCE + WHITELIST */}
+
+          {/* PROTECTED ROUTES */}
           <Route
             path="/dashboard"
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     {renderDashboard(user)}
                   </Layout>
                 ) : (
@@ -452,7 +472,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <StudentsWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -468,7 +492,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <ClassesWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -484,7 +512,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <AttendanceWithNavigation currentUser={user} />
                   </Layout>
                 ) : (
@@ -495,13 +527,16 @@ function App() {
               )
             }
           />
-          {/* 🔥 ROUTE BARU: PRESENSI GURU */}
           <Route
             path="/teacher-attendance"
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <TeacherAttendanceWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -517,7 +552,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <Teacher />
                   </Layout>
                 ) : (
@@ -533,8 +572,12 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
-                    <Grade userData={user} /> {/* ✅ GANTI JADI Grade */}
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
+                    <Grade userData={user} />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />
@@ -549,7 +592,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <Katrol userData={user} />
                   </Layout>
                 ) : (
@@ -565,7 +612,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <CatatanSiswaWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -581,7 +632,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <TeacherScheduleWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -597,7 +652,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <SPMBWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -613,7 +672,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <ReportWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -629,7 +692,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <SettingWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -645,7 +712,11 @@ function App() {
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
-                  <Layout userData={user} onLogout={handleLogout}>
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
                     <MonitorSistemWithNavigation userData={user} />
                   </Layout>
                 ) : (
@@ -656,6 +727,7 @@ function App() {
               )
             }
           />
+
           {/* DEFAULT ROUTES */}
           <Route
             path="/"

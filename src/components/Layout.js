@@ -10,10 +10,18 @@ import {
   ChevronDown,
   LogOut,
   X,
+  Moon,
+  Sun,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 
-const Layout = ({ children, userData, onLogout }) => {
+const Layout = ({
+  children,
+  userData,
+  onLogout,
+  darkMode,
+  onToggleDarkMode,
+}) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isNavigating, setIsNavigating] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -154,7 +162,7 @@ const Layout = ({ children, userData, onLogout }) => {
       "/classes": "Data Kelas",
       "/teachers": "Data Guru",
       "/attendance": "Presensi Siswa",
-      "/teacher-attendance": "Presensi Guru", // 🔥 TAMBAH INI
+      "/teacher-attendance": "Presensi Guru",
       "/grades": "Nilai Siswa",
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
@@ -174,7 +182,7 @@ const Layout = ({ children, userData, onLogout }) => {
       "/classes": "Kelas",
       "/teachers": "Guru",
       "/attendance": "Presensi",
-      "/teacher-attendance": "Presensi Guru", // 🔥 TAMBAH INI
+      "/teacher-attendance": "Presensi Guru",
       "/grades": "Nilai",
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
@@ -202,7 +210,7 @@ const Layout = ({ children, userData, onLogout }) => {
         "Data Guru": "/teachers",
         Guru: "/teachers",
         "Presensi Siswa": "/attendance",
-        "Presensi Guru": "/teacher-attendance", // 🔥 TAMBAH INI
+        "Presensi Guru": "/teacher-attendance",
         Presensi: "/attendance",
         "Nilai Siswa": "/grades",
         Nilai: "/grades",
@@ -271,20 +279,23 @@ const Layout = ({ children, userData, onLogout }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex flex-col items-center px-6 pt-6 pb-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <LogOut className="text-blue-600" size={32} />
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                <LogOut
+                  className="text-blue-600 dark:text-blue-400"
+                  size={32}
+                />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 text-center">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 text-center">
                 Keluar dari Sistem?
               </h3>
-              <p className="text-gray-600 text-center mt-2">
+              <p className="text-gray-600 dark:text-slate-300 text-center mt-2">
                 Anda harus login kembali untuk mengakses sistem
               </p>
             </div>
@@ -293,7 +304,7 @@ const Layout = ({ children, userData, onLogout }) => {
             <div className="flex gap-3 px-6 pb-6">
               <button
                 onClick={handleCancelLogout}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors duration-150">
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 active:bg-gray-300 dark:active:bg-slate-500 text-gray-700 dark:text-slate-200 font-semibold rounded-xl transition-colors duration-150">
                 Batal
               </button>
               <button
@@ -340,7 +351,7 @@ const Layout = ({ children, userData, onLogout }) => {
       <div
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${getSidebarMargin()}`}>
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+        <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm transition-colors duration-300">
           {/* Mobile Header */}
           {isMobile && (
             <div className="px-4 py-2.5">
@@ -354,19 +365,31 @@ const Layout = ({ children, userData, onLogout }) => {
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-lg font-bold text-gray-900 truncate">
+                    <h1 className="text-lg font-bold text-gray-900 dark:text-slate-100 truncate">
                       {currentPageName}
                     </h1>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 min-w-0">
+                  {/* 🌙 DARK MODE TOGGLE - MOBILE */}
+                  <button
+                    onClick={onToggleDarkMode}
+                    className="w-11 h-11 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center touch-manipulation shadow-sm"
+                    aria-label="Toggle Dark Mode">
+                    {darkMode ? (
+                      <Sun size={18} className="text-yellow-500" />
+                    ) : (
+                      <Moon size={18} className="text-slate-600" />
+                    )}
+                  </button>
+
+                  <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 min-w-0">
                     <div className="text-center">
-                      <div className="font-mono font-bold text-gray-900 text-sm leading-none">
+                      <div className="font-mono font-bold text-gray-900 dark:text-slate-100 text-sm leading-none">
                         {formatTime(currentTime)}
                       </div>
-                      <div className="text-xs text-gray-600 font-medium mt-0.5">
+                      <div className="text-xs text-gray-600 dark:text-slate-400 font-medium mt-0.5">
                         {formatDate(currentTime)}
                       </div>
                     </div>
@@ -381,12 +404,12 @@ const Layout = ({ children, userData, onLogout }) => {
                     </button>
 
                     {showProfileDropdown && (
-                      <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 animate-in slide-in-from-top-2 duration-200">
-                        <div className="px-4 py-3 border-b border-gray-100">
-                          <p className="font-semibold text-gray-900 text-sm truncate">
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50 animate-in slide-in-from-top-2 duration-200">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                             {userData.full_name || userData.username}
                           </p>
-                          <p className="text-xs text-blue-600 capitalize truncate">
+                          <p className="text-xs text-blue-600 dark:text-blue-400 capitalize truncate">
                             {userData.role === "guru_kelas" && userData.kelas
                               ? `Guru Kelas ${userData.kelas}`
                               : userData.role.replace("_", " ")}
@@ -399,19 +422,19 @@ const Layout = ({ children, userData, onLogout }) => {
                               navigate("/settings");
                               setShowProfileDropdown(false);
                             }}
-                            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-gray-700 hover:bg-blue-50 active:bg-blue-100 transition-colors touch-manipulation">
+                            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 active:bg-blue-100 dark:active:bg-slate-600 transition-colors touch-manipulation">
                             <Settings
                               size={18}
-                              className="flex-shrink-0 text-gray-500"
+                              className="flex-shrink-0 text-gray-500 dark:text-slate-400"
                             />
                             <span className="font-medium">Profile</span>
                           </button>
 
-                          <div className="border-t border-gray-100 my-1"></div>
+                          <div className="border-t border-gray-100 dark:border-slate-700 my-1"></div>
 
                           <button
                             onClick={handleLogoutClick}
-                            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors touch-manipulation">
+                            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-colors touch-manipulation">
                             <LogOut size={18} className="flex-shrink-0" />
                             <span className="font-medium">Logout</span>
                           </button>
@@ -437,24 +460,42 @@ const Layout = ({ children, userData, onLogout }) => {
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-xl font-bold text-gray-900 truncate">
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 truncate">
                       {currentPageName}
                     </h1>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
+                  {/* 🌙 DARK MODE TOGGLE - TABLET */}
+                  <button
+                    onClick={onToggleDarkMode}
+                    className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center touch-manipulation shadow-sm"
+                    aria-label="Toggle Dark Mode">
+                    {darkMode ? (
+                      <Sun size={20} className="text-yellow-500" />
+                    ) : (
+                      <Moon size={20} className="text-slate-600" />
+                    )}
+                  </button>
+
+                  <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5">
                     <div className="flex items-center gap-3">
                       <div className="text-center">
                         <div className="flex items-center gap-2">
-                          <Clock size={16} className="text-blue-600" />
-                          <span className="font-mono font-semibold text-gray-900 text-base">
+                          <Clock
+                            size={16}
+                            className="text-blue-600 dark:text-blue-400"
+                          />
+                          <span className="font-mono font-semibold text-gray-900 dark:text-slate-100 text-base">
                             {formatTime(currentTime)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600 text-sm mt-1">
-                          <Calendar size={14} className="text-blue-600" />
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-slate-400 text-sm mt-1">
+                          <Calendar
+                            size={14}
+                            className="text-blue-600 dark:text-blue-400"
+                          />
                           <span>{formatDate(currentTime)}</span>
                         </div>
                       </div>
@@ -476,12 +517,12 @@ const Layout = ({ children, userData, onLogout }) => {
                     </button>
 
                     {showProfileDropdown && (
-                      <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
-                        <div className="px-4 py-3 border-b border-gray-100">
-                          <p className="font-semibold text-gray-900 text-sm truncate">
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                             {userData.full_name || userData.username}
                           </p>
-                          <p className="text-xs text-blue-600 capitalize">
+                          <p className="text-xs text-blue-600 dark:text-blue-400 capitalize">
                             {userData.role === "guru_kelas" && userData.kelas
                               ? `Guru Kelas ${userData.kelas}`
                               : userData.role.replace("_", " ")}
@@ -494,14 +535,14 @@ const Layout = ({ children, userData, onLogout }) => {
                               navigate("/settings");
                               setShowProfileDropdown(false);
                             }}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors">
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
                             <Settings size={16} />
                             <span className="font-medium">Profile</span>
                           </button>
-                          <hr className="my-1 border-gray-100" />
+                          <hr className="my-1 border-gray-100 dark:border-slate-700" />
                           <button
                             onClick={handleLogoutClick}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                             <LogOut size={16} />
                             <span className="font-medium">Logout</span>
                           </button>
@@ -519,10 +560,10 @@ const Layout = ({ children, userData, onLogout }) => {
             <div className="px-8 py-5">
               <div className="flex justify-between items-center">
                 <div className="flex flex-col min-w-0 flex-1">
-                  <h1 className="text-2xl font-bold text-gray-900 truncate">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 truncate">
                     {currentPageName}
                     {isNavigating && (
-                      <span className="ml-2 text-sm text-blue-600 font-normal">
+                      <span className="ml-2 text-sm text-blue-600 dark:text-blue-400 font-normal">
                         Loading...
                       </span>
                     )}
@@ -530,24 +571,37 @@ const Layout = ({ children, userData, onLogout }) => {
                 </div>
 
                 <div className="flex items-center gap-6">
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-300 rounded-xl px-4 py-3 shadow-sm">
+                  {/* 🌙 DARK MODE TOGGLE - DESKTOP */}
+                  <button
+                    onClick={onToggleDarkMode}
+                    className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                    aria-label="Toggle Dark Mode"
+                    title={darkMode ? "Light Mode" : "Dark Mode"}>
+                    {darkMode ? (
+                      <Sun size={20} className="text-yellow-500" />
+                    ) : (
+                      <Moon size={20} className="text-slate-600" />
+                    )}
+                  </button>
+
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl px-4 py-3 shadow-sm">
                     <div className="flex flex-col space-y-1">
                       <div className="flex items-center gap-2">
                         <Clock
                           size={14}
-                          className="text-blue-600 flex-shrink-0"
+                          className="text-blue-600 dark:text-blue-400 flex-shrink-0"
                         />
-                        <span className="font-mono font-semibold text-gray-900 text-base tracking-wide">
+                        <span className="font-mono font-semibold text-gray-900 dark:text-slate-100 text-base tracking-wide">
                           {formatTime(currentTime)}
                         </span>
                         <span className="bg-emerald-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
                           WIB
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600 text-sm font-medium">
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-slate-400 text-sm font-medium">
                         <Calendar
                           size={14}
-                          className="text-blue-600 flex-shrink-0"
+                          className="text-blue-600 dark:text-blue-400 flex-shrink-0"
                         />
                         <span>{formatDate(currentTime)}</span>
                       </div>
@@ -562,12 +616,12 @@ const Layout = ({ children, userData, onLogout }) => {
                       </span>
                     </button>
 
-                    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-200 z-50">
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="font-semibold text-gray-900 text-sm truncate">
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-200 z-50">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                           {userData.full_name || userData.username}
                         </p>
-                        <p className="text-xs text-gray-600 capitalize">
+                        <p className="text-xs text-gray-600 dark:text-slate-400 capitalize">
                           {userData.role === "guru_kelas" && userData.kelas
                             ? `Guru Kelas ${userData.kelas}`
                             : userData.role.replace("_", " ")}
@@ -577,14 +631,14 @@ const Layout = ({ children, userData, onLogout }) => {
                       <div className="py-2">
                         <button
                           onClick={() => navigate("/settings")}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150">
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-700 dark:hover:text-blue-400 transition-colors duration-150">
                           <Settings size={16} className="flex-shrink-0" />
                           <span className="font-medium">Profile</span>
                         </button>
-                        <hr className="my-1 border-gray-100" />
+                        <hr className="my-1 border-gray-100 dark:border-slate-700" />
                         <button
                           onClick={handleLogoutClick}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150">
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-400 transition-colors duration-150">
                           <LogOut size={16} className="flex-shrink-0" />
                           <span className="font-medium">Logout</span>
                         </button>
@@ -599,7 +653,7 @@ const Layout = ({ children, userData, onLogout }) => {
 
         {/* Main Content */}
         <main
-          className={`flex-1 overflow-y-auto ${
+          className={`flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-900 transition-colors duration-300 ${
             isMobile ? "p-3" : isTablet ? "p-6" : "p-8"
           }`}>
           {children}

@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Users,
   GraduationCap,
   UserCheck,
   BarChart3,
   TrendingUp,
-  UserPlus,
+  // UserPlus, // Tidak digunakan, bisa dihapus
   Download,
   RefreshCw,
   ClipboardList,
-  FileText,
-  Settings,
+  // FileText, // Tidak digunakan, bisa dihapus
+  // Settings, // Tidak digunakan, bisa dihapus
   Calendar,
   Smartphone,
-  Monitor
-} from 'lucide-react';
+  Monitor,
+} from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -27,10 +27,46 @@ import {
   Cell,
   LineChart,
   Line,
-  ResponsiveContainer
-} from 'recharts';
-import { supabase } from '../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+  ResponsiveContainer,
+} from "recharts";
+import { supabase } from "../supabaseClient";
+import { useNavigate } from "react-router-dom";
+
+// Helper hook untuk mendeteksi apakah dark mode aktif (Asumsi menggunakan class 'dark' di body/html)
+const useDarkMode = () => {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.attributeName === "class" &&
+          (document.documentElement.classList.contains("dark") ||
+            document.body.classList.contains("dark"))
+        ) {
+          setIsDark(true);
+        } else {
+          setIsDark(false);
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    // Initial check
+    if (
+      document.documentElement.classList.contains("dark") ||
+      document.body.classList.contains("dark")
+    ) {
+      setIsDark(true);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+  return isDark;
+};
 
 const Dashboard = ({ userData }) => {
   const [loading, setLoading] = useState(true);
@@ -42,9 +78,10 @@ const Dashboard = ({ userData }) => {
     attendanceRate: 0,
     classAttendance: [],
     weeklyTrend: [],
-    totalClasses: 0
+    totalClasses: 0,
   });
   const [isMobile, setIsMobile] = useState(false);
+  const isDark = useDarkMode(); // Panggil hook untuk deteksi Dark Mode
 
   const navigate = useNavigate();
 
@@ -53,15 +90,15 @@ const Dashboard = ({ userData }) => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return new Date().toISOString().split("T")[0];
   };
 
   // Get week dates for trend analysis
@@ -72,8 +109,8 @@ const Dashboard = ({ userData }) => {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       week.push({
-        date: date.toISOString().split('T')[0],
-        day: date.toLocaleDateString('id-ID', { weekday: 'short' }) // Short day for mobile
+        date: date.toISOString().split("T")[0],
+        day: date.toLocaleDateString("id-ID", { weekday: "short" }), // Short day for mobile
       });
     }
     return week;
@@ -92,62 +129,62 @@ const Dashboard = ({ userData }) => {
 
       // 1. Total Students (active only)
       const { data: studentsData, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('is_active', true);
+        .from("students")
+        .select("*")
+        .eq("is_active", true);
 
       if (studentsError) throw studentsError;
 
       // 2. Total Teachers
       const { data: teachersData, error: teachersError } = await supabase
-        .from('users')
-        .select('*')
-        .in('role', ['guru_kelas', 'guru_mapel']);
+        .from("users")
+        .select("*")
+        .in("role", ["guru_kelas", "guru_mapel"]);
 
       if (teachersError) throw teachersError;
 
       // 3. Today's Attendance
       const { data: todayAttendanceData, error: todayError } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('tanggal', today);
+        .from("attendance")
+        .select("*")
+        .eq("tanggal", today);
 
       if (todayError) throw todayError;
 
       // 4. Class-wise attendance for today
       const classAttendanceMap = {};
-      const allClasses = [...new Set(studentsData.map(s => s.kelas))].sort();
+      const allClasses = [...new Set(studentsData.map((s) => s.kelas))].sort();
 
       // Initialize all classes
-      allClasses.forEach(kelas => {
+      allClasses.forEach((kelas) => {
         classAttendanceMap[kelas] = {
           kelas: `Kelas ${kelas}`,
           hadir: 0,
           izin: 0,
           sakit: 0,
-          alpa: 0
+          alpa: 0,
         };
       });
 
       // Count attendance by class and status
-      todayAttendanceData.forEach(record => {
+      todayAttendanceData.forEach((record) => {
         if (classAttendanceMap[record.kelas]) {
           const status = record.status.toLowerCase();
-          if (status === 'hadir') {
+          if (status === "hadir") {
             classAttendanceMap[record.kelas].hadir++;
-          } else if (status === 'izin') {
+          } else if (status === "izin") {
             classAttendanceMap[record.kelas].izin++;
-          } else if (status === 'sakit') {
+          } else if (status === "sakit") {
             classAttendanceMap[record.kelas].sakit++;
-          } else if (status === 'alpa') {
+          } else if (status === "alpa") {
             classAttendanceMap[record.kelas].alpa++;
           }
         }
       });
 
       // For students not marked, consider as alpa
-      const todayMarkedNisns = new Set(todayAttendanceData.map(r => r.nisn));
-      studentsData.forEach(student => {
+      const todayMarkedNisns = new Set(todayAttendanceData.map((r) => r.nisn));
+      studentsData.forEach((student) => {
         if (!todayMarkedNisns.has(student.nisn)) {
           if (classAttendanceMap[student.kelas]) {
             classAttendanceMap[student.kelas].alpa++;
@@ -158,21 +195,22 @@ const Dashboard = ({ userData }) => {
       // 5. Weekly Trend
       const weeklyTrendPromises = weekDates.map(async ({ date, day }) => {
         const { data: dayAttendance } = await supabase
-          .from('attendance')
-          .select('*')
-          .eq('tanggal', date)
-          .eq('status', 'Hadir');
+          .from("attendance")
+          .select("*")
+          .eq("tanggal", date)
+          .eq("status", "Hadir");
 
         const attendanceCount = dayAttendance?.length || 0;
         const totalStudents = studentsData.length;
-        const attendanceRate = totalStudents > 0 
-          ? Math.round((attendanceCount / totalStudents) * 100)
-          : 0;
+        const attendanceRate =
+          totalStudents > 0
+            ? Math.round((attendanceCount / totalStudents) * 100)
+            : 0;
 
         return {
           day: day,
           attendance: attendanceRate,
-          date: date
+          date: date,
         };
       });
 
@@ -180,12 +218,13 @@ const Dashboard = ({ userData }) => {
 
       // Calculate overall attendance rate
       const todayPresentCount = todayAttendanceData.filter(
-        r => r.status.toLowerCase() === 'hadir'
+        (r) => r.status.toLowerCase() === "hadir"
       ).length;
       const totalStudentsCount = studentsData.length;
-      const attendanceRate = totalStudentsCount > 0 
-        ? Math.round((todayPresentCount / totalStudentsCount) * 100)
-        : 0;
+      const attendanceRate =
+        totalStudentsCount > 0
+          ? Math.round((todayPresentCount / totalStudentsCount) * 100)
+          : 0;
 
       // Update state
       setDashboardData({
@@ -195,11 +234,10 @@ const Dashboard = ({ userData }) => {
         attendanceRate: attendanceRate,
         classAttendance: Object.values(classAttendanceMap),
         weeklyTrend: weeklyTrend,
-        totalClasses: allClasses.length
+        totalClasses: allClasses.length,
       });
-
     } catch (error) {
-      console.error('Error fetching admin dashboard data:', error);
+      console.error("Error fetching admin dashboard data:", error);
     }
   };
 
@@ -212,10 +250,10 @@ const Dashboard = ({ userData }) => {
 
       // 1. Students in this class ONLY
       const { data: classStudents, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('kelas', userKelas)
-        .eq('is_active', true);
+        .from("students")
+        .select("*")
+        .eq("kelas", userKelas)
+        .eq("is_active", true);
 
       if (studentsError) throw studentsError;
 
@@ -225,25 +263,31 @@ const Dashboard = ({ userData }) => {
           totalTeachers: 0,
           todayAttendance: 0,
           attendanceRate: 0,
-          classAttendance: [{
-            kelas: `Kelas ${userKelas}`,
-            hadir: 0,
-            izin: 0,
-            sakit: 0,
-            alpa: 0
-          }],
-          weeklyTrend: weekDates.map(({ date, day }) => ({ day, attendance: 0, date })),
-          totalClasses: 1
+          classAttendance: [
+            {
+              kelas: `Kelas ${userKelas}`,
+              hadir: 0,
+              izin: 0,
+              sakit: 0,
+              alpa: 0,
+            },
+          ],
+          weeklyTrend: weekDates.map(({ date, day }) => ({
+            day,
+            attendance: 0,
+            date,
+          })),
+          totalClasses: 1,
         });
         return;
       }
 
       // 2. Today's Attendance for this class ONLY
       const { data: todayAttendanceData, error: todayError } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('tanggal', today)
-        .eq('kelas', userKelas);
+        .from("attendance")
+        .select("*")
+        .eq("tanggal", today)
+        .eq("kelas", userKelas);
 
       if (todayError) throw todayError;
 
@@ -253,26 +297,26 @@ const Dashboard = ({ userData }) => {
         hadir: 0,
         izin: 0,
         sakit: 0,
-        alpa: 0
+        alpa: 0,
       };
 
       // Count attendance by status
-      todayAttendanceData.forEach(record => {
+      todayAttendanceData.forEach((record) => {
         const status = record.status.toLowerCase();
-        if (status === 'hadir') {
+        if (status === "hadir") {
           classAttendance.hadir++;
-        } else if (status === 'izin') {
+        } else if (status === "izin") {
           classAttendance.izin++;
-        } else if (status === 'sakit') {
+        } else if (status === "sakit") {
           classAttendance.sakit++;
-        } else if (status === 'alpa') {
+        } else if (status === "alpa") {
           classAttendance.alpa++;
         }
       });
 
       // For students not marked, consider as alpa
-      const todayMarkedNisns = new Set(todayAttendanceData.map(r => r.nisn));
-      classStudents.forEach(student => {
+      const todayMarkedNisns = new Set(todayAttendanceData.map((r) => r.nisn));
+      classStudents.forEach((student) => {
         if (!todayMarkedNisns.has(student.nisn)) {
           classAttendance.alpa++;
         }
@@ -281,22 +325,23 @@ const Dashboard = ({ userData }) => {
       // 4. Weekly Trend for this class ONLY
       const weeklyTrendPromises = weekDates.map(async ({ date, day }) => {
         const { data: dayAttendance } = await supabase
-          .from('attendance')
-          .select('*')
-          .eq('tanggal', date)
-          .eq('kelas', userKelas)
-          .eq('status', 'Hadir');
+          .from("attendance")
+          .select("*")
+          .eq("tanggal", date)
+          .eq("kelas", userKelas)
+          .eq("status", "Hadir");
 
         const attendanceCount = dayAttendance?.length || 0;
         const totalStudents = classStudents.length;
-        const attendanceRate = totalStudents > 0 
-          ? Math.round((attendanceCount / totalStudents) * 100)
-          : 0;
+        const attendanceRate =
+          totalStudents > 0
+            ? Math.round((attendanceCount / totalStudents) * 100)
+            : 0;
 
         return {
           day: day,
           attendance: attendanceRate,
-          date: date
+          date: date,
         };
       });
 
@@ -304,13 +349,14 @@ const Dashboard = ({ userData }) => {
 
       // Calculate class attendance rate
       const todayPresentCount = todayAttendanceData.filter(
-        r => r.status.toLowerCase() === 'hadir'
+        (r) => r.status.toLowerCase() === "hadir"
       ).length;
-      
+
       const totalClassStudents = classStudents.length;
-      const attendanceRate = totalClassStudents > 0 
-        ? Math.round((todayPresentCount / totalClassStudents) * 100)
-        : 0;
+      const attendanceRate =
+        totalClassStudents > 0
+          ? Math.round((todayPresentCount / totalClassStudents) * 100)
+          : 0;
 
       // Update state
       setDashboardData({
@@ -320,10 +366,10 @@ const Dashboard = ({ userData }) => {
         attendanceRate: attendanceRate,
         classAttendance: [classAttendance],
         weeklyTrend: weeklyTrend,
-        totalClasses: 1
+        totalClasses: 1,
       });
     } catch (error) {
-      console.error('Error fetching guru kelas dashboard data:', error);
+      console.error("Error fetching guru kelas dashboard data:", error);
     }
   };
 
@@ -335,54 +381,54 @@ const Dashboard = ({ userData }) => {
 
       // 1. All Students (since guru mapel teaches all classes)
       const { data: studentsData, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('is_active', true);
+        .from("students")
+        .select("*")
+        .eq("is_active", true);
 
       if (studentsError) throw studentsError;
 
       // 2. Today's Attendance for all classes
       const { data: todayAttendanceData, error: todayError } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('tanggal', today);
+        .from("attendance")
+        .select("*")
+        .eq("tanggal", today);
 
       if (todayError) throw todayError;
 
       // 3. Class-wise attendance for today
       const classAttendanceMap = {};
-      const allClasses = [...new Set(studentsData.map(s => s.kelas))].sort();
+      const allClasses = [...new Set(studentsData.map((s) => s.kelas))].sort();
 
       // Initialize all classes
-      allClasses.forEach(kelas => {
+      allClasses.forEach((kelas) => {
         classAttendanceMap[kelas] = {
           kelas: `Kelas ${kelas}`,
           hadir: 0,
           izin: 0,
           sakit: 0,
-          alpa: 0
+          alpa: 0,
         };
       });
 
       // Count attendance by class and status
-      todayAttendanceData.forEach(record => {
+      todayAttendanceData.forEach((record) => {
         if (classAttendanceMap[record.kelas]) {
           const status = record.status.toLowerCase();
-          if (status === 'hadir') {
+          if (status === "hadir") {
             classAttendanceMap[record.kelas].hadir++;
-          } else if (status === 'izin') {
+          } else if (status === "izin") {
             classAttendanceMap[record.kelas].izin++;
-          } else if (status === 'sakit') {
+          } else if (status === "sakit") {
             classAttendanceMap[record.kelas].sakit++;
-          } else if (status === 'alpa') {
+          } else if (status === "alpa") {
             classAttendanceMap[record.kelas].alpa++;
           }
         }
       });
 
       // For students not marked, consider as alpa
-      const todayMarkedNisns = new Set(todayAttendanceData.map(r => r.nisn));
-      studentsData.forEach(student => {
+      const todayMarkedNisns = new Set(todayAttendanceData.map((r) => r.nisn));
+      studentsData.forEach((student) => {
         if (!todayMarkedNisns.has(student.nisn)) {
           if (classAttendanceMap[student.kelas]) {
             classAttendanceMap[student.kelas].alpa++;
@@ -393,21 +439,22 @@ const Dashboard = ({ userData }) => {
       // 4. Weekly Trend (all classes)
       const weeklyTrendPromises = weekDates.map(async ({ date, day }) => {
         const { data: dayAttendance } = await supabase
-          .from('attendance')
-          .select('*')
-          .eq('tanggal', date)
-          .eq('status', 'Hadir');
+          .from("attendance")
+          .select("*")
+          .eq("tanggal", date)
+          .eq("status", "Hadir");
 
         const attendanceCount = dayAttendance?.length || 0;
         const totalStudents = studentsData.length;
-        const attendanceRate = totalStudents > 0 
-          ? Math.round((attendanceCount / totalStudents) * 100)
-          : 0;
+        const attendanceRate =
+          totalStudents > 0
+            ? Math.round((attendanceCount / totalStudents) * 100)
+            : 0;
 
         return {
           day: day,
           attendance: attendanceRate,
-          date: date
+          date: date,
         };
       });
 
@@ -415,12 +462,13 @@ const Dashboard = ({ userData }) => {
 
       // Calculate overall attendance rate
       const todayPresentCount = todayAttendanceData.filter(
-        r => r.status.toLowerCase() === 'hadir'
+        (r) => r.status.toLowerCase() === "hadir"
       ).length;
       const totalStudentsCount = studentsData.length;
-      const attendanceRate = totalStudentsCount > 0 
-        ? Math.round((todayPresentCount / totalStudentsCount) * 100)
-        : 0;
+      const attendanceRate =
+        totalStudentsCount > 0
+          ? Math.round((todayPresentCount / totalStudentsCount) * 100)
+          : 0;
 
       // Update state
       setDashboardData({
@@ -430,11 +478,10 @@ const Dashboard = ({ userData }) => {
         attendanceRate: attendanceRate,
         classAttendance: Object.values(classAttendanceMap),
         weeklyTrend: weeklyTrend,
-        totalClasses: allClasses.length
+        totalClasses: allClasses.length,
       });
-
     } catch (error) {
-      console.error('Error fetching guru mapel dashboard data:', error);
+      console.error("Error fetching guru mapel dashboard data:", error);
     }
   };
 
@@ -442,15 +489,15 @@ const Dashboard = ({ userData }) => {
   const fetchDashboardData = async () => {
     setRefreshing(true);
     try {
-      if (userData.role === 'admin') {
+      if (userData.role === "admin") {
         await fetchAdminDashboardData();
-      } else if (userData.role === 'guru_kelas') {
+      } else if (userData.role === "guru_kelas") {
         await fetchGuruKelasDashboardData();
-      } else if (userData.role === 'guru_mapel') {
+      } else if (userData.role === "guru_mapel") {
         await fetchGuruMapelDashboardData();
       }
     } catch (error) {
-      console.error('Error in fetchDashboardData:', error);
+      console.error("Error in fetchDashboardData:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -460,7 +507,7 @@ const Dashboard = ({ userData }) => {
   useEffect(() => {
     fetchDashboardData();
 
-    // Auto refresh every 5 minutes
+    // Auto refresh every 5 minutes (300000ms)
     const interval = setInterval(() => {
       fetchDashboardData();
     }, 300000);
@@ -469,76 +516,134 @@ const Dashboard = ({ userData }) => {
   }, [userData.role, userData.kelas]);
 
   // Responsive Stats Card Component
-  const StatsCard = ({ title, value, subtitle, icon: Icon, trend, color = 'blue', isLoading = false }) => {
+  const StatsCard = ({
+    title,
+    value,
+    subtitle,
+    icon: Icon,
+    trend,
+    color = "blue",
+    isLoading = false,
+  }) => {
     const colorClasses = {
-      blue: 'from-blue-500 to-blue-600',
-      green: 'from-emerald-500 to-emerald-600',
-      purple: 'from-purple-500 to-purple-600',
-      orange: 'from-orange-500 to-orange-600',
-      red: 'from-red-500 to-red-600'
+      blue: "from-blue-500 to-blue-600",
+      green: "from-emerald-500 to-emerald-600",
+      purple: "from-purple-500 to-purple-600",
+      orange: "from-orange-500 to-orange-600",
+      red: "from-red-500 to-red-600",
     };
 
     return (
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 relative overflow-hidden">
-        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorClasses[color]}`}></div>
-        
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 relative overflow-hidden">
+        <div
+          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorClasses[color]}`}></div>
+
         <div className="flex justify-between items-start mb-3">
-          <div className={`bg-gradient-to-br from-gray-50 to-gray-100 p-2 rounded-lg`}>
-            <Icon size={isMobile ? 20 : 24} className={`text-${color}-600`} />
+          <div
+            className={`bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-2 rounded-lg`}>
+            <Icon
+              size={isMobile ? 20 : 24}
+              className={`text-${color}-600 dark:text-${color}-400`}
+            />
           </div>
           {trend && (
-            <div className={`flex items-center gap-1 text-xs font-semibold ${trend > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              <TrendingUp size={12} className={trend > 0 ? '' : 'rotate-180'} />
-              <span>{trend > 0 ? '+' : ''}{trend}%</span>
+            <div
+              className={`flex items-center gap-1 text-xs font-semibold ${
+                trend > 0 ? "text-emerald-600" : "text-red-600"
+              }`}>
+              <TrendingUp size={12} className={trend > 0 ? "" : "rotate-180"} />
+              <span>
+                {trend > 0 ? "+" : ""}
+                {trend}%
+              </span>
             </div>
           )}
         </div>
-        
+
         <div>
-          <h3 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900 mb-1`}>
+          <h3
+            className={`${
+              isMobile ? "text-2xl" : "text-3xl"
+            } font-bold text-gray-900 dark:text-white mb-1`}>
             {isLoading ? (
-              <div className="bg-gray-200 animate-pulse h-6 w-12 rounded"></div>
+              <div className="bg-gray-200 dark:bg-gray-600 animate-pulse h-6 w-12 rounded"></div>
             ) : (
               value
             )}
           </h3>
-          <p className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold text-gray-700 mb-1`}>{title}</p>
-          {subtitle && <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-500 font-medium`}>{subtitle}</p>}
+          <p
+            className={`${
+              isMobile ? "text-sm" : "text-lg"
+            } font-semibold text-gray-700 dark:text-gray-300 mb-1`}>
+            {title}
+          </p>
+          {subtitle && (
+            <p
+              className={`${
+                isMobile ? "text-xs" : "text-sm"
+              } text-gray-500 dark:text-gray-400 font-medium`}>
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
     );
   };
 
-  // Mobile Class Summary Card
+  // Mobile Class Summary Card (REVISI DARK MODE DI SINI)
   const MobileClassCard = ({ kelas, hadir, izin, sakit, alpa }) => {
     const total = hadir + izin + sakit + alpa;
     const attendanceRate = total > 0 ? Math.round((hadir / total) * 100) : 0;
 
     return (
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-        <h4 className="font-bold text-gray-900 mb-3 text-sm">{kelas}</h4>
+      <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
+        <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-sm">
+          {kelas}
+        </h4>
         <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="bg-green-50 rounded p-2">
-            <span className="block font-bold text-green-700 text-sm">{hadir}</span>
-            <span className="text-xs text-green-600">Hadir</span>
+          {/* Hadir */}
+          <div className="bg-green-50 dark:bg-green-800/50 rounded p-2">
+            <span className="block font-bold text-green-700 dark:text-green-300 text-sm">
+              {hadir}
+            </span>
+            <span className="text-xs text-green-600 dark:text-green-400">
+              Hadir
+            </span>
           </div>
-          <div className="bg-yellow-50 rounded p-2">
-            <span className="block font-bold text-yellow-700 text-sm">{izin}</span>
-            <span className="text-xs text-yellow-600">Izin</span>
+          {/* Izin */}
+          <div className="bg-yellow-50 dark:bg-yellow-800/50 rounded p-2">
+            <span className="block font-bold text-yellow-700 dark:text-yellow-300 text-sm">
+              {izin}
+            </span>
+            <span className="text-xs text-yellow-600 dark:text-yellow-400">
+              Izin
+            </span>
           </div>
-          <div className="bg-blue-50 rounded p-2">
-            <span className="block font-bold text-blue-700 text-sm">{sakit}</span>
-            <span className="text-xs text-blue-600">Sakit</span>
+          {/* Sakit */}
+          <div className="bg-blue-50 dark:bg-blue-800/50 rounded p-2">
+            <span className="block font-bold text-blue-700 dark:text-blue-300 text-sm">
+              {sakit}
+            </span>
+            <span className="text-xs text-blue-600 dark:text-blue-400">
+              Sakit
+            </span>
           </div>
-          <div className="bg-red-50 rounded p-2">
-            <span className="block font-bold text-red-700 text-sm">{alpa}</span>
-            <span className="text-xs text-red-600">Alpa</span>
+          {/* Alpa */}
+          <div className="bg-red-50 dark:bg-red-800/50 rounded p-2">
+            <span className="block font-bold text-red-700 dark:text-red-300 text-sm">
+              {alpa}
+            </span>
+            <span className="text-xs text-red-600 dark:text-red-400">Alpa</span>
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-600">Kehadiran</span>
-            <span className="font-bold text-gray-900">{attendanceRate}%</span>
+            <span className="text-xs text-gray-600 dark:text-gray-300">
+              Kehadiran
+            </span>
+            <span className="font-bold text-gray-900 dark:text-white">
+              {attendanceRate}%
+            </span>
           </div>
         </div>
       </div>
@@ -551,32 +656,40 @@ const Dashboard = ({ userData }) => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Memuat data dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">
+            Memuat data dashboard...
+          </p>
         </div>
       </div>
     );
   }
 
+  // RECHARTS Theme Configuration
+  // Tentukan warna teks untuk Axis berdasarkan Dark Mode
+  const chartTickColor = isDark ? "#A0AEC0" : "#4A5568"; // Tailwind gray-400 atau gray-700
+
   // Render dashboard content based on user role
   const renderDashboardByRole = () => {
-    if (userData.role === 'admin') {
+    if (userData.role === "admin") {
       return (
         <div className="space-y-6">
           {/* Header dengan Device Indicator */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
-              <span>Tampilan {isMobile ? 'Mobile' : 'Desktop'}</span>
+              <span>Tampilan {isMobile ? "Mobile" : "Desktop"}</span>
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
               className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
-                refreshing ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-              {refreshing ? 'Memperbarui...' : 'Refresh Data'}
+                refreshing ? "opacity-50 cursor-not-allowed" : ""
+              }`}>
+              <RefreshCw
+                size={18}
+                className={refreshing ? "animate-spin" : ""}
+              />
+              {refreshing ? "Memperbarui..." : "Refresh Data"}
             </button>
           </div>
 
@@ -615,9 +728,9 @@ const Dashboard = ({ userData }) => {
           {/* Charts Section */}
           <div className="space-y-6">
             {/* Class Attendance Chart */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Kehadiran Per Kelas Hari Ini
                 </h3>
                 <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
@@ -627,32 +740,69 @@ const Dashboard = ({ userData }) => {
               </div>
               <div className={isMobile ? "h-64" : "h-80"}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
+                  <BarChart
                     data={dashboardData.classAttendance}
-                    margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 20 } : { top: 20, right: 30, left: 20, bottom: 20 }}
-                  >
+                    margin={
+                      isMobile
+                        ? { top: 20, right: 10, left: 10, bottom: 20 }
+                        : { top: 20, right: 30, left: 20, bottom: 20 }
+                    }>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis 
-                      dataKey="kelas" 
+                    <XAxis
+                      dataKey="kelas"
                       angle={isMobile ? -45 : 0}
                       textAnchor={isMobile ? "end" : "middle"}
-                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                      tick={{
+                        fontSize: isMobile ? 10 : 12,
+                        fill: chartTickColor,
+                      }} // Revisi Tick Color
                     />
-                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[2, 2, 0, 0]} />
+                    <YAxis
+                      tick={{
+                        fontSize: isMobile ? 10 : 12,
+                        fill: chartTickColor,
+                      }} // Revisi Tick Color
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: isDark ? "#4B5563" : "#fff",
+                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
+                        color: isDark ? "#fff" : "#000",
+                      }}
+                    />
+                    <Bar
+                      dataKey="hadir"
+                      fill="#10b981"
+                      name="Hadir"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="izin"
+                      fill="#f59e0b"
+                      name="Izin"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="sakit"
+                      fill="#3b82f6"
+                      name="Sakit"
+                      radius={[2, 2, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="alpa"
+                      fill="#ef4444"
+                      name="Alpa"
+                      radius={[2, 2, 0, 0]}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Weekly Trend Chart */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Trend Kehadiran 7 Hari Terakhir
                 </h3>
                 <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
@@ -662,18 +812,34 @@ const Dashboard = ({ userData }) => {
               </div>
               <div className={isMobile ? "h-64" : "h-80"}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart 
+                  <LineChart
                     data={dashboardData.weeklyTrend}
-                    margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 20 } : { top: 20, right: 30, left: 20, bottom: 20 }}
-                  >
+                    margin={
+                      isMobile
+                        ? { top: 20, right: 10, left: 10, bottom: 20 }
+                        : { top: 20, right: 30, left: 20, bottom: 20 }
+                    }>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis 
-                      dataKey="day" 
-                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    <XAxis
+                      dataKey="day"
+                      tick={{
+                        fontSize: isMobile ? 10 : 12,
+                        fill: chartTickColor,
+                      }} // Revisi Tick Color
                     />
-                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <YAxis
+                      tick={{
+                        fontSize: isMobile ? 10 : 12,
+                        fill: chartTickColor,
+                      }} // Revisi Tick Color
+                    />
                     <Tooltip
-                      formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
+                      contentStyle={{
+                        backgroundColor: isDark ? "#4B5563" : "#fff",
+                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
+                        color: isDark ? "#fff" : "#000",
+                      }}
+                      formatter={(value) => [`${value}%`, "Tingkat Kehadiran"]}
                       labelFormatter={(label) => `Hari: ${label}`}
                     />
                     <Line
@@ -691,27 +857,26 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+              Aksi Cepat
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button 
-                onClick={() => handleNavigation('/attendance')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/attendance")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <ClipboardList size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Input Kehadiran</span>
               </button>
-              <button 
-                onClick={() => handleNavigation('/grades')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/grades")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <BarChart3 size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Input Nilai</span>
               </button>
-              <button 
-                onClick={() => handleNavigation('/students')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/students")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <Users size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Lihat Data Siswa</span>
               </button>
@@ -721,26 +886,36 @@ const Dashboard = ({ userData }) => {
       );
     }
 
-    if (userData.role === 'guru_kelas') {
-      const kelasData = dashboardData.classAttendance[0] || { hadir: 0, izin: 0, sakit: 0, alpa: 0 };
+    if (userData.role === "guru_kelas") {
+      const kelasData = dashboardData.classAttendance[0] || {
+        hadir: 0,
+        izin: 0,
+        sakit: 0,
+        alpa: 0,
+      };
 
       return (
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
-              <span>Tampilan {isMobile ? 'Mobile' : 'Desktop'} - Kelas {userData.kelas}</span>
+              <span>
+                Tampilan {isMobile ? "Mobile" : "Desktop"} - Kelas{" "}
+                {userData.kelas}
+              </span>
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
               className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
-                refreshing ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-              {refreshing ? 'Memperbarui...' : 'Refresh Data'}
+                refreshing ? "opacity-50 cursor-not-allowed" : ""
+              }`}>
+              <RefreshCw
+                size={18}
+                className={refreshing ? "animate-spin" : ""}
+              />
+              {refreshing ? "Memperbarui..." : "Refresh Data"}
             </button>
           </div>
 
@@ -779,9 +954,9 @@ const Dashboard = ({ userData }) => {
           {/* Charts Section */}
           <div className="space-y-6">
             {/* Pie Chart for Class Attendance */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Status Kehadiran - Kelas {userData.kelas}
                 </h3>
                 <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
@@ -794,46 +969,89 @@ const Dashboard = ({ userData }) => {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Hadir', value: kelasData.hadir, fill: '#10b981' },
-                        { name: 'Izin', value: kelasData.izin, fill: '#f59e0b' },
-                        { name: 'Sakit', value: kelasData.sakit, fill: '#3b82f6' },
-                        { name: 'Alpa', value: kelasData.alpa, fill: '#ef4444' }
+                        {
+                          name: "Hadir",
+                          value: kelasData.hadir,
+                          fill: "#10b981",
+                        },
+                        {
+                          name: "Izin",
+                          value: kelasData.izin,
+                          fill: "#f59e0b",
+                        },
+                        {
+                          name: "Sakit",
+                          value: kelasData.sakit,
+                          fill: "#3b82f6",
+                        },
+                        {
+                          name: "Alpa",
+                          value: kelasData.alpa,
+                          fill: "#ef4444",
+                        },
                       ]}
                       cx="50%"
                       cy="50%"
                       outerRadius={isMobile ? 80 : 100}
                       dataKey="value"
                       label={({ name, value }) => `${name}: ${value}`}
-                    >
-                      {[kelasData.hadir, kelasData.izin, kelasData.sakit, kelasData.alpa].map((entry, index) => (
+                      labelLine={false}>
+                      {[
+                        kelasData.hadir,
+                        kelasData.izin,
+                        kelasData.sakit,
+                        kelasData.alpa,
+                      ].map((entry, index) => (
                         <Cell key={`cell-${index}`} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: isDark ? "#4B5563" : "#fff",
+                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
+                        color: isDark ? "#fff" : "#000",
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Weekly Trend */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
                 Trend Kehadiran Kelas {userData.kelas}
               </h3>
               <div className={isMobile ? "h-64" : "h-80"}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart 
+                  <LineChart
                     data={dashboardData.weeklyTrend}
-                    margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 20 } : { top: 20, right: 30, left: 20, bottom: 20 }}
-                  >
+                    margin={
+                      isMobile
+                        ? { top: 20, right: 10, left: 10, bottom: 20 }
+                        : { top: 20, right: 30, left: 20, bottom: 20 }
+                    }>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis 
-                      dataKey="day" 
-                      tick={{ fontSize: isMobile ? 10 : 12 }}
+                    <XAxis
+                      dataKey="day"
+                      tick={{
+                        fontSize: isMobile ? 10 : 12,
+                        fill: chartTickColor,
+                      }} // Revisi Tick Color
                     />
-                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <YAxis
+                      tick={{
+                        fontSize: isMobile ? 10 : 12,
+                        fill: chartTickColor,
+                      }} // Revisi Tick Color
+                    />
                     <Tooltip
-                      formatter={(value) => [`${value}%`, 'Tingkat Kehadiran']}
+                      contentStyle={{
+                        backgroundColor: isDark ? "#4B5563" : "#fff",
+                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
+                        color: isDark ? "#fff" : "#000",
+                      }}
+                      formatter={(value) => [`${value}%`, "Tingkat Kehadiran"]}
                       labelFormatter={(label) => `Hari: ${label}`}
                     />
                     <Line
@@ -850,27 +1068,26 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+              Aksi Cepat
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button 
-                onClick={() => handleNavigation('/attendance')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/attendance")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <ClipboardList size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Input Kehadiran</span>
               </button>
-              <button 
-                onClick={() => handleNavigation('/grades')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/grades")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <BarChart3 size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Input Nilai</span>
               </button>
-              <button 
-                onClick={() => handleNavigation('/students')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/students")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <Users size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Data Siswa</span>
               </button>
@@ -880,34 +1097,42 @@ const Dashboard = ({ userData }) => {
       );
     }
 
-    if (userData.role === 'guru_mapel') {
-      const bestClass = dashboardData.classAttendance.length > 0
-        ? dashboardData.classAttendance.reduce((best, current) => {
-            const currentTotal = current.hadir + current.izin + current.sakit + current.alpa;
-            const bestTotal = best.hadir + best.izin + best.sakit + best.alpa;
-            const currentRate = currentTotal > 0 ? (current.hadir / currentTotal) * 100 : 0;
-            const bestRate = bestTotal > 0 ? (best.hadir / bestTotal) * 100 : 0;
-            return currentRate > bestRate ? current : best;
-          })
-        : null;
+    if (userData.role === "guru_mapel") {
+      const bestClass =
+        dashboardData.classAttendance.length > 0
+          ? dashboardData.classAttendance.reduce((best, current) => {
+              const currentTotal =
+                current.hadir + current.izin + current.sakit + current.alpa;
+              const bestTotal = best.hadir + best.izin + best.sakit + best.alpa;
+              const currentRate =
+                currentTotal > 0 ? (current.hadir / currentTotal) * 100 : 0;
+              const bestRate =
+                bestTotal > 0 ? (best.hadir / bestTotal) * 100 : 0;
+              return currentRate > bestRate ? current : best;
+            })
+          : null;
 
       return (
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
-              <span>Tampilan {isMobile ? 'Mobile' : 'Desktop'} - Guru Mapel</span>
+              <span>
+                Tampilan {isMobile ? "Mobile" : "Desktop"} - Guru Mapel
+              </span>
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
               className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
-                refreshing ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-              {refreshing ? 'Memperbarui...' : 'Refresh Data'}
+                refreshing ? "opacity-50 cursor-not-allowed" : ""
+              }`}>
+              <RefreshCw
+                size={18}
+                className={refreshing ? "animate-spin" : ""}
+              />
+              {refreshing ? "Memperbarui..." : "Refresh Data"}
             </button>
           </div>
 
@@ -936,7 +1161,7 @@ const Dashboard = ({ userData }) => {
             />
             <StatsCard
               title="Kelas Terbaik"
-              value={bestClass ? bestClass.kelas.replace('Kelas ', '') : 'N/A'}
+              value={bestClass ? bestClass.kelas.replace("Kelas ", "") : "N/A"}
               subtitle="Kehadiran tertinggi"
               icon={TrendingUp}
               color="orange"
@@ -944,9 +1169,9 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Class Comparison Chart */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 Perbandingan Kehadiran Antar Kelas
               </h3>
               <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
@@ -956,48 +1181,87 @@ const Dashboard = ({ userData }) => {
             </div>
             <div className={isMobile ? "h-96" : "h-80"}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
+                <BarChart
                   data={dashboardData.classAttendance}
-                  margin={isMobile ? { top: 20, right: 10, left: 10, bottom: 40 } : { top: 20, right: 30, left: 20, bottom: 20 }}
-                  layout={isMobile ? "vertical" : "horizontal"}
-                >
+                  margin={
+                    isMobile
+                      ? { top: 20, right: 10, left: 10, bottom: 40 }
+                      : { top: 20, right: 30, left: 20, bottom: 20 }
+                  }
+                  layout={isMobile ? "vertical" : "horizontal"}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   {isMobile ? (
                     <>
-                      <XAxis type="number" tick={{ fontSize: 10 }} />
-                      <YAxis 
-                        type="category" 
-                        dataKey="kelas" 
-                        tick={{ fontSize: 10 }}
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 10, fill: chartTickColor }}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="kelas"
+                        tick={{ fontSize: 10, fill: chartTickColor }}
                         width={80}
                       />
                     </>
                   ) : (
                     <>
-                      <XAxis 
-                        dataKey="kelas" 
+                      <XAxis
+                        dataKey="kelas"
                         angle={-45}
                         textAnchor="end"
-                        tick={{ fontSize: 10 }}
+                        tick={{ fontSize: 10, fill: chartTickColor }}
                         height={80}
                       />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10, fill: chartTickColor }} />
                     </>
                   )}
-                  <Tooltip />
-                  <Bar dataKey="hadir" fill="#10b981" name="Hadir" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="izin" fill="#f59e0b" name="Izin" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="sakit" fill="#3b82f6" name="Sakit" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="alpa" fill="#ef4444" name="Alpa" radius={[2, 2, 0, 0]} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDark ? "#4B5563" : "#fff",
+                      border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
+                      color: isDark ? "#fff" : "#000",
+                    }}
+                  />
+                  <Bar
+                    dataKey="hadir"
+                    fill="#10b981"
+                    name="Hadir"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="izin"
+                    fill="#f59e0b"
+                    name="Izin"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="sakit"
+                    fill="#3b82f6"
+                    name="Sakit"
+                    radius={[2, 2, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="alpa"
+                    fill="#ef4444"
+                    name="Alpa"
+                    radius={[2, 2, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Class Summary */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Ringkasan Per Kelas</h3>
-            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} gap-4`}>
+          {/* Class Summary (Menggunakan MobileClassCard yang sudah direvisi) */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+              Ringkasan Per Kelas
+            </h3>
+            <div
+              className={`grid ${
+                isMobile
+                  ? "grid-cols-1"
+                  : "grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+              } gap-4`}>
               {dashboardData.classAttendance.map((kelas, index) => (
                 <MobileClassCard
                   key={index}
@@ -1012,27 +1276,26 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">Aksi Cepat</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+              Aksi Cepat
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button 
-                onClick={() => handleNavigation('/attendance')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/attendance")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <ClipboardList size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Input Kehadiran</span>
               </button>
-              <button 
-                onClick={() => handleNavigation('/grades')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/grades")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <BarChart3 size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Input Nilai</span>
               </button>
-              <button 
-                onClick={() => handleNavigation('/students')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]"
-              >
+              <button
+                onClick={() => handleNavigation("/students")}
+                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
                 <Users size={isMobile ? 18 : 20} />
                 <span className="text-sm sm:text-base">Data Siswa</span>
               </button>
@@ -1044,16 +1307,14 @@ const Dashboard = ({ userData }) => {
 
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Dashboard content for {userData.role}</p>
+        <p className="text-gray-600 dark:text-gray-400">
+          Dashboard content for {userData.role}
+        </p>
       </div>
     );
   };
 
-  return (
-    <div className="space-y-6 p-4 sm:p-6">
-      {renderDashboardByRole()}
-    </div>
-  );
+  return <div className="space-y-6 p-4 sm:p-6">{renderDashboardByRole()}</div>;
 };
 
 export default Dashboard;
