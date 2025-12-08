@@ -278,13 +278,110 @@ const Layout = ({
     return sidebarCollapsed ? "ml-20" : "ml-72";
   };
 
+  // 🔥 COOL DARK MODE TOGGLE COMPONENT
+  const CoolDarkModeToggle = ({ size = "default" }) => {
+    const sizes = {
+      small: { container: "w-14 h-7", circle: "w-5 h-5", icon: 12 },
+      default: { container: "w-16 h-8", circle: "w-6 h-6", icon: 14 },
+      large: { container: "w-20 h-10", circle: "w-8 h-8", icon: 18 },
+    };
+
+    const currentSize = sizes[size];
+
+    return (
+      <button
+        onClick={onToggleDarkMode}
+        className={`relative ${
+          currentSize.container
+        } rounded-full transition-all duration-500 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 ${
+          darkMode
+            ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"
+            : "bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400"
+        }`}
+        aria-label="Toggle Dark Mode"
+        title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+        {/* Animated Background Stars (Dark Mode) */}
+        {darkMode && (
+          <>
+            <span className="absolute top-1 left-2 w-1 h-1 bg-white rounded-full animate-pulse"></span>
+            <span className="absolute top-2 right-3 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-100"></span>
+            <span className="absolute bottom-2 left-3 w-0.5 h-0.5 bg-white rounded-full animate-pulse delay-200"></span>
+          </>
+        )}
+
+        {/* Animated Sun Rays (Light Mode) */}
+        {!darkMode && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute w-full h-full animate-spin-slow">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-0.5 h-1 bg-yellow-200 rounded-full"
+                  style={{
+                    top: "50%",
+                    left: "50%",
+                    transform: `rotate(${i * 45}deg) translateY(-${
+                      currentSize.container.includes("20")
+                        ? "12"
+                        : currentSize.container.includes("16")
+                        ? "10"
+                        : "8"
+                    }px)`,
+                    transformOrigin: "0 0",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Toggle Circle with Icon */}
+        <div
+          className={`absolute top-1 ${
+            currentSize.circle
+          } bg-white rounded-full shadow-md flex items-center justify-center transition-all duration-500 ease-in-out transform ${
+            darkMode ? `translate-x-[calc(100%-0.25rem)]` : "translate-x-0"
+          }`}>
+          {darkMode ? (
+            <Moon
+              size={currentSize.icon}
+              className="text-indigo-600 animate-spin-slow"
+              fill="currentColor"
+            />
+          ) : (
+            <Sun
+              size={currentSize.icon}
+              className="text-orange-500 animate-pulse"
+            />
+          )}
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
+      {/* Add custom animations */}
+      <style>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 20s linear infinite;
+        }
+        .delay-100 {
+          animation-delay: 0.1s;
+        }
+        .delay-200 {
+          animation-delay: 0.2s;
+        }
+      `}</style>
+
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
             <div className="flex flex-col items-center px-6 pt-6 pb-4">
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
                 <LogOut
@@ -300,7 +397,6 @@ const Layout = ({
               </p>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex gap-3 px-6 pb-6">
               <button
                 onClick={handleCancelLogout}
@@ -372,17 +468,8 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* 🌙 DARK MODE TOGGLE - MOBILE */}
-                  <button
-                    onClick={onToggleDarkMode}
-                    className="w-11 h-11 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center touch-manipulation shadow-sm"
-                    aria-label="Toggle Dark Mode">
-                    {darkMode ? (
-                      <Sun size={18} className="text-yellow-500" />
-                    ) : (
-                      <Moon size={18} className="text-slate-600" />
-                    )}
-                  </button>
+                  {/* 🔥 COOL DARK MODE TOGGLE - MOBILE */}
+                  <CoolDarkModeToggle size="small" />
 
                   <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 min-w-0">
                     <div className="text-center">
@@ -467,17 +554,8 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  {/* 🌙 DARK MODE TOGGLE - TABLET */}
-                  <button
-                    onClick={onToggleDarkMode}
-                    className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center touch-manipulation shadow-sm"
-                    aria-label="Toggle Dark Mode">
-                    {darkMode ? (
-                      <Sun size={20} className="text-yellow-500" />
-                    ) : (
-                      <Moon size={20} className="text-slate-600" />
-                    )}
-                  </button>
+                  {/* 🔥 COOL DARK MODE TOGGLE - TABLET */}
+                  <CoolDarkModeToggle size="default" />
 
                   <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5">
                     <div className="flex items-center gap-3">
@@ -571,18 +649,8 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-6">
-                  {/* 🌙 DARK MODE TOGGLE - DESKTOP */}
-                  <button
-                    onClick={onToggleDarkMode}
-                    className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                    aria-label="Toggle Dark Mode"
-                    title={darkMode ? "Light Mode" : "Dark Mode"}>
-                    {darkMode ? (
-                      <Sun size={20} className="text-yellow-500" />
-                    ) : (
-                      <Moon size={20} className="text-slate-600" />
-                    )}
-                  </button>
+                  {/* 🔥 COOL DARK MODE TOGGLE - DESKTOP */}
+                  <CoolDarkModeToggle size="large" />
 
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl px-4 py-3 shadow-sm">
                     <div className="flex flex-col space-y-1">

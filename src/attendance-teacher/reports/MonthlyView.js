@@ -1,4 +1,4 @@
-// src/attendance-teacher/reports/MonthlyView.js - FIXED WITH 2025-2026 HOLIDAYS
+// src/attendance-teacher/reports/MonthlyView.js - DARK MODE COMPLETE
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -34,16 +34,6 @@ const MonthlyView = ({ currentUser }) => {
     "Desember",
   ];
 
-  // ========================================
-  // 🗓️ LIBUR NASIONAL 2025-2026
-  // ========================================
-  // ⚠️ UPDATE ARRAY INI SETIAP TAHUN BARU! ⚠️
-  // Sumber: Keputusan Bersama (SKB) 3 Menteri
-  // Last update: Desember 2024 untuk tahun 2025
-  //
-  // TODO 2026: Update array ini dengan libur nasional 2026
-  // (biasanya diumumkan sekitar Desember 2025)
-  // ========================================
   const nationalHolidays = {
     // ===== 2025 =====
     "2025-01-01": "Tahun Baru Masehi",
@@ -81,16 +71,14 @@ const MonthlyView = ({ currentUser }) => {
     "2026-12-25": "Hari Raya Natal",
   };
 
-  // Helper: Check if date is national holiday
   const isNationalHoliday = (dateStr) => {
     return nationalHolidays[dateStr] || null;
   };
 
-  // Helper: Check if day is weekend (Saturday = 6, Sunday = 0)
   const isWeekend = (year, month, day) => {
     const date = new Date(year, month, day);
     const dayOfWeek = date.getDay();
-    return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    return dayOfWeek === 0 || dayOfWeek === 6;
   };
 
   useEffect(() => {
@@ -106,28 +94,18 @@ const MonthlyView = ({ currentUser }) => {
       const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate();
       const endDate = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
 
-      console.log("🔍 DEBUG - Date Range:", { startDate, endDate });
-
-      // ✅ Fetch teachers
       const { data: teachersData, error: teachersError } = await supabase
         .from("users")
         .select("id, full_name, role")
-        .in("role", ["guru_kelas", "guru_mapel"]) // 🔴 UBAH INI SESUAI DB LU
+        .in("role", ["guru_kelas", "guru_mapel"])
         .eq("is_active", true)
         .order("full_name");
 
-      console.log("👥 Teachers Data:", teachersData);
-      console.log("❌ Teachers Error:", teachersError);
-
-      // ✅ Fetch attendances
       const { data: attendancesData, error: attendancesError } = await supabase
         .from("teacher_attendance")
         .select("*")
         .gte("attendance_date", startDate)
         .lte("attendance_date", endDate);
-
-      console.log("📊 Attendances Data:", attendancesData);
-      console.log("❌ Attendances Error:", attendancesError);
 
       if (teachersError) throw teachersError;
       if (attendancesError) throw attendancesError;
@@ -135,7 +113,7 @@ const MonthlyView = ({ currentUser }) => {
       setTeachers(teachersData || []);
       setAttendances(attendancesData || []);
     } catch (error) {
-      console.error("💥 Error fetching monthly data:", error);
+      console.error("Error fetching monthly data:", error);
     } finally {
       setLoading(false);
     }
@@ -145,7 +123,6 @@ const MonthlyView = ({ currentUser }) => {
     return new Date(selectedYear, selectedMonth + 1, 0).getDate();
   };
 
-  // FIX: Format tanggal tanpa konversi timezone
   const getAttendanceForDay = (teacherId, day) => {
     const year = selectedYear;
     const month = String(selectedMonth + 1).padStart(2, "0");
@@ -157,29 +134,34 @@ const MonthlyView = ({ currentUser }) => {
     );
   };
 
-  // 🔥 FIXED: Case-insensitive status matching
   const getStatusBadge = (status) => {
-    // Normalize status to lowercase for comparison
     const normalizedStatus = status?.toLowerCase();
 
     const badges = {
-      hadir: { bg: "bg-green-500", text: "H", title: "Hadir" },
-      izin: { bg: "bg-blue-500", text: "I", title: "Izin" },
-      sakit: { bg: "bg-yellow-500", text: "S", title: "Sakit" },
-      alpa: { bg: "bg-red-500", text: "A", title: "Alpha" },
-      alpha: { bg: "bg-red-500", text: "A", title: "Alpha" }, // Support both "alpa" and "alpha"
+      hadir: {
+        bg: "bg-green-500 dark:bg-green-600",
+        text: "H",
+        title: "Hadir",
+      },
+      izin: { bg: "bg-blue-500 dark:bg-blue-600", text: "I", title: "Izin" },
+      sakit: {
+        bg: "bg-yellow-500 dark:bg-yellow-600",
+        text: "S",
+        title: "Sakit",
+      },
+      alpa: { bg: "bg-red-500 dark:bg-red-600", text: "A", title: "Alpha" },
+      alpha: { bg: "bg-red-500 dark:bg-red-600", text: "A", title: "Alpha" },
     };
 
     return (
       badges[normalizedStatus] || {
-        bg: "bg-gray-300",
+        bg: "bg-gray-300 dark:bg-gray-700",
         text: "-",
         title: "Tidak ada data",
       }
     );
   };
 
-  // 🔥 FIXED: Case-insensitive filtering untuk stats
   const calculateTeacherStats = (teacherId) => {
     const teacherAttendances = attendances.filter(
       (att) => att.teacher_id === teacherId
@@ -229,36 +211,38 @@ const MonthlyView = ({ currentUser }) => {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
+    <div className="bg-white rounded-xl shadow-lg p-6 dark:bg-gray-800 dark:shadow-xl">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <Calendar className="text-blue-600" size={24} />
-          <h2 className="text-xl font-bold text-gray-800">Laporan Bulanan</h2>
+          <Calendar className="text-blue-600 dark:text-blue-400" size={24} />
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+            Laporan Bulanan
+          </h2>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Month Navigation */}
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 dark:bg-gray-700">
             <button
               onClick={handlePrevMonth}
-              className="p-2 hover:bg-white rounded transition-all">
-              <ChevronLeft size={20} />
+              className="p-2 hover:bg-white rounded transition-all dark:hover:bg-gray-600">
+              <ChevronLeft size={20} className="dark:text-gray-300" />
             </button>
-            <span className="px-4 font-semibold text-gray-800 min-w-[180px] text-center">
+            <span className="px-4 font-semibold text-gray-800 min-w-[180px] text-center dark:text-white">
               {months[selectedMonth]} {selectedYear}
             </span>
             <button
               onClick={handleNextMonth}
-              className="p-2 hover:bg-white rounded transition-all">
-              <ChevronRight size={20} />
+              className="p-2 hover:bg-white rounded transition-all dark:hover:bg-gray-600">
+              <ChevronRight size={20} className="dark:text-gray-300" />
             </button>
           </div>
 
           {/* Export Button */}
           <button
             onClick={() => setShowExport(true)}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all flex items-center gap-2">
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all flex items-center gap-2 dark:bg-green-700 dark:hover:bg-green-800">
             <Download size={20} />
             Export Excel
           </button>
@@ -269,7 +253,7 @@ const MonthlyView = ({ currentUser }) => {
       <div className="mb-4">
         <div className="relative">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
             size={20}
           />
           <input
@@ -277,7 +261,7 @@ const MonthlyView = ({ currentUser }) => {
             placeholder="Cari nama guru..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
           />
         </div>
       </div>
@@ -285,26 +269,28 @@ const MonthlyView = ({ currentUser }) => {
       {/* Loading State */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Memuat data...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto dark:border-blue-400"></div>
+          <p className="text-gray-600 mt-4 dark:text-gray-300">
+            Memuat data...
+          </p>
         </div>
       ) : (
         /* Table */
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-gray-100 z-10 min-w-[200px]">
+              <tr className="bg-gray-100 dark:bg-gray-900">
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-gray-100 z-10 min-w-[200px] dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300">
                   Nama Guru
                 </th>
                 {days.map((day) => (
                   <th
                     key={day}
-                    className="border border-gray-300 px-2 py-3 text-center font-semibold text-gray-700 min-w-[40px]">
+                    className="border border-gray-300 px-2 py-3 text-center font-semibold text-gray-700 min-w-[40px] dark:border-gray-600 dark:text-gray-300">
                     {day}
                   </th>
                 ))}
-                <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[80px]">
+                <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[80px] dark:border-gray-600 dark:text-gray-300">
                   H/I/S/A
                 </th>
               </tr>
@@ -314,24 +300,23 @@ const MonthlyView = ({ currentUser }) => {
                 <tr>
                   <td
                     colSpan={daysInMonth + 2}
-                    className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                    className="border border-gray-300 px-4 py-8 text-center text-gray-500 dark:border-gray-600 dark:text-gray-400">
                     Tidak ada data guru
                   </td>
                 </tr>
               ) : (
                 filteredTeachers.map((teacher) => {
-                  // ✅ FIXED: Ganti teacher.teacher_id jadi teacher.id
                   const stats = calculateTeacherStats(teacher.id);
                   return (
-                    <tr key={teacher.id} className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
+                    <tr
+                      key={teacher.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100">
                         {teacher.full_name}
                       </td>
                       {days.map((day) => {
-                        // ✅ FIXED: Ganti teacher.teacher_id jadi teacher.id
                         const attendance = getAttendanceForDay(teacher.id, day);
 
-                        // Format date string untuk check holiday
                         const year = selectedYear;
                         const month = String(selectedMonth + 1).padStart(
                           2,
@@ -340,7 +325,6 @@ const MonthlyView = ({ currentUser }) => {
                         const dayStr = String(day).padStart(2, "0");
                         const dateStr = `${year}-${month}-${dayStr}`;
 
-                        // Check if weekend or holiday
                         const weekend = isWeekend(
                           selectedYear,
                           selectedMonth,
@@ -353,8 +337,8 @@ const MonthlyView = ({ currentUser }) => {
                           : {
                               bg:
                                 weekend || holiday
-                                  ? "bg-gray-300"
-                                  : "bg-gray-200",
+                                  ? "bg-gray-300 dark:bg-gray-700"
+                                  : "bg-gray-200 dark:bg-gray-800",
                               text: "-",
                               title: holiday
                                 ? `🎉 ${holiday}`
@@ -367,8 +351,10 @@ const MonthlyView = ({ currentUser }) => {
                           <td
                             key={day}
                             className={`border border-gray-300 px-2 py-3 text-center ${
-                              weekend || holiday ? "bg-red-100" : ""
-                            }`}>
+                              weekend || holiday
+                                ? "bg-red-100 dark:bg-red-900/30"
+                                : ""
+                            } dark:border-gray-600`}>
                             <span
                               className={`${badge.bg} text-white font-bold text-xs px-2 py-1 rounded inline-block min-w-[24px]`}
                               title={badge.title}>
@@ -377,11 +363,22 @@ const MonthlyView = ({ currentUser }) => {
                           </td>
                         );
                       })}
-                      <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-sm">
-                        <span className="text-green-600">{stats.hadir}</span>/
-                        <span className="text-blue-600">{stats.izin}</span>/
-                        <span className="text-yellow-600">{stats.sakit}</span>/
-                        <span className="text-red-600">{stats.alpa}</span>
+                      <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-sm dark:border-gray-600">
+                        <span className="text-green-600 dark:text-green-400">
+                          {stats.hadir}
+                        </span>
+                        /
+                        <span className="text-blue-600 dark:text-blue-400">
+                          {stats.izin}
+                        </span>
+                        /
+                        <span className="text-yellow-600 dark:text-yellow-400">
+                          {stats.sakit}
+                        </span>
+                        /
+                        <span className="text-red-600 dark:text-red-400">
+                          {stats.alpa}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -395,40 +392,42 @@ const MonthlyView = ({ currentUser }) => {
       {/* Legend */}
       <div className="mt-6 flex flex-wrap gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <span className="bg-green-500 text-white font-bold text-xs px-2 py-1 rounded">
+          <span className="bg-green-500 dark:bg-green-600 text-white font-bold text-xs px-2 py-1 rounded">
             H
           </span>
-          <span className="text-gray-600">Hadir</span>
+          <span className="text-gray-600 dark:text-gray-300">Hadir</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-blue-500 text-white font-bold text-xs px-2 py-1 rounded">
+          <span className="bg-blue-500 dark:bg-blue-600 text-white font-bold text-xs px-2 py-1 rounded">
             I
           </span>
-          <span className="text-gray-600">Izin</span>
+          <span className="text-gray-600 dark:text-gray-300">Izin</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-yellow-500 text-white font-bold text-xs px-2 py-1 rounded">
+          <span className="bg-yellow-500 dark:bg-yellow-600 text-white font-bold text-xs px-2 py-1 rounded">
             S
           </span>
-          <span className="text-gray-600">Sakit</span>
+          <span className="text-gray-600 dark:text-gray-300">Sakit</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-red-500 text-white font-bold text-xs px-2 py-1 rounded">
+          <span className="bg-red-500 dark:bg-red-600 text-white font-bold text-xs px-2 py-1 rounded">
             A
           </span>
-          <span className="text-gray-600">Alpha</span>
+          <span className="text-gray-600 dark:text-gray-300">Alpha</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-gray-200 text-gray-600 font-bold text-xs px-2 py-1 rounded">
+          <span className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs px-2 py-1 rounded">
             -
           </span>
-          <span className="text-gray-600">Belum Absen</span>
+          <span className="text-gray-600 dark:text-gray-300">Belum Absen</span>
         </div>
-        <div className="flex items-center gap-2 pl-4 border-l-2 border-gray-300">
-          <span className="bg-gray-300 text-gray-600 font-bold text-xs px-2 py-1 rounded">
+        <div className="flex items-center gap-2 pl-4 border-l-2 border-gray-300 dark:border-gray-600">
+          <span className="bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold text-xs px-2 py-1 rounded">
             🏠
           </span>
-          <span className="text-gray-600">Weekend / Libur Nasional</span>
+          <span className="text-gray-600 dark:text-gray-300">
+            Weekend / Libur Nasional
+          </span>
         </div>
       </div>
 

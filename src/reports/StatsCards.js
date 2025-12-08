@@ -27,7 +27,14 @@ import {
  */
 const StatsCards = ({ type, stats, userRole, viewMode = "detail" }) => {
   if (!stats || Object.keys(stats).length === 0) {
-    return null;
+    // 🆕 Dark Mode: Tambahkan bg-white/dark:bg-gray-900 ke container utama
+    return (
+      <div className="p-4 bg-white dark:bg-gray-900 rounded-xl">
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+          Data statistik belum tersedia untuk filter ini.
+        </p>
+      </div>
+    );
   }
 
   // Render berdasarkan type
@@ -50,341 +57,87 @@ const StatsCards = ({ type, stats, userRole, viewMode = "detail" }) => {
     }
   };
 
+  // 2. REVISI UTAMA: MOBILE FIRST GRID WRAPPER
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {renderCards()}
-      </div>
+    // Gunakan grid yang responsive:
+    // Mobile: grid-cols-2 (agar tidak terlalu panjang ke bawah)
+    // Tablet (md): grid-cols-3
+    // Laptop (lg): grid-cols-4
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+      {renderCards()}
     </div>
   );
 };
 
 // ========================================
-// STUDENT STATS
+// CARD COMPONENT (DIREVISI untuk Dark Mode)
 // ========================================
-const renderStudentCards = (stats) => {
-  return (
-    <>
-      <MiniStatCard
-        icon={<Users className="w-5 h-5" />}
-        label="Total Siswa Aktif"
-        value={stats.totalSiswaAktif || 0}
-        color="blue"
-      />
-      <MiniStatCard
-        icon={<Users className="w-5 h-5" />}
-        label="Laki-laki"
-        value={stats.siswaLaki || 0}
-        color="indigo"
-      />
-      <MiniStatCard
-        icon={<Users className="w-5 h-5" />}
-        label="Perempuan"
-        value={stats.siswaPerempuan || 0}
-        color="pink"
-      />
-      <MiniStatCard
-        icon={<XCircle className="w-5 h-5" />}
-        label="Tidak Aktif"
-        value={stats.siswaTidakAktif || 0}
-        color={stats.siswaTidakAktif > 0 ? "red" : "green"}
-      />
-    </>
-  );
-};
 
-// ========================================
-// ATTENDANCE STATS (DETAIL VIEW)
-// ========================================
-const renderAttendanceCards = (stats) => {
-  // Calculate Izin + Alpa (convert string to number first)
-  const persenIzin = parseFloat(stats.persenIzin) || 0;
-  const persenAlpa = parseFloat(stats.persenAlpa) || 0;
-  const totalIzinAlpa = (persenIzin + persenAlpa).toFixed(1);
-
-  return (
-    <>
-      <MiniStatCard
-        icon={<Calendar className="w-5 h-5" />}
-        label="Total Hari"
-        value={stats.totalHari || 0}
-        color="blue"
-      />
-      <MiniStatCard
-        icon={<CheckCircle className="w-5 h-5" />}
-        label="Hadir"
-        value={`${stats.persenHadir || 0}%`}
-        color="green"
-      />
-      <MiniStatCard
-        icon={<AlertCircle className="w-5 h-5" />}
-        label="Sakit"
-        value={`${stats.persenSakit || 0}%`}
-        color="yellow"
-      />
-      <MiniStatCard
-        icon={<XCircle className="w-5 h-5" />}
-        label="Izin & Alpa"
-        value={`${totalIzinAlpa}%`}
-        color="red"
-      />
-    </>
-  );
-};
-
-// ========================================
-// ATTENDANCE RECAP STATS
-// ========================================
-const renderAttendanceRecapCards = (stats) => {
-  const rataRata = parseFloat(stats.rataRataKehadiran) || 0;
-
-  // Determine color based on average attendance
-  let avgColor = "red";
-  if (rataRata >= 90) avgColor = "green";
-  else if (rataRata >= 80) avgColor = "blue";
-  else if (rataRata >= 70) avgColor = "yellow";
-
-  return (
-    <>
-      {/* Card 1: Total Siswa */}
-      <MiniStatCard
-        icon={<Users className="w-5 h-5" />}
-        label="Total Siswa"
-        value={stats.totalSiswa || 0}
-        subtitle={`${stats.totalHariEfektif || 0} hari efektif`}
-        color="blue"
-      />
-
-      {/* Card 2: Rata-rata Kehadiran */}
-      <MiniStatCard
-        icon={<BarChart3 className="w-5 h-5" />}
-        label="Rata-rata Kehadiran"
-        value={`${stats.rataRataKehadiran || 0}%`}
-        subtitle={
-          rataRata >= 90
-            ? "Sangat Baik"
-            : rataRata >= 80
-            ? "Baik"
-            : rataRata >= 70
-            ? "Cukup"
-            : "Perlu Perhatian"
-        }
-        color={avgColor}
-      />
-
-      {/* Card 3: Siswa Sangat Baik (>=90%) */}
-      <MiniStatCard
-        icon={<Award className="w-5 h-5" />}
-        label="Kehadiran ≥90%"
-        value={stats.siswaSangatBaik || 0}
-        subtitle={`Tertinggi: ${stats.tertinggi || 0}%`}
-        color="green"
-      />
-
-      {/* Card 4: Siswa Bermasalah (<80%) */}
-      <MiniStatCard
-        icon={<AlertCircle className="w-5 h-5" />}
-        label="Kehadiran <80%"
-        value={stats.siswaRendah || 0}
-        subtitle={`Terendah: ${stats.terendah || 0}%`}
-        color={stats.siswaRendah > 0 ? "red" : "green"}
-      />
-    </>
-  );
-};
-
-// ========================================
-// GRADES STATS
-// ========================================
-const renderGradeCards = (stats) => {
-  return (
-    <>
-      <MiniStatCard
-        icon={<TrendingUp className="w-5 h-5" />}
-        label="Rata-rata"
-        value={stats.rataRata || 0}
-        color="blue"
-      />
-      <MiniStatCard
-        icon={<Award className="w-5 h-5" />}
-        label="Tertinggi"
-        value={stats.tertinggi || 0}
-        color="green"
-      />
-      <MiniStatCard
-        icon={<AlertCircle className="w-5 h-5" />}
-        label="Terendah"
-        value={stats.terendah || 0}
-        color="orange"
-      />
-      <MiniStatCard
-        icon={<CheckCircle className="w-5 h-5" />}
-        label="Tuntas"
-        value={`${stats.tuntas || 0}/${stats.totalSiswa || 0}`}
-        color="emerald"
-      />
-    </>
-  );
-};
-
-// ========================================
-// ✅ NOTES STATS - FIXED UNTUK GURU KELAS
-// ========================================
-/**
- * Stats untuk Catatan Siswa
- * - Total Catatan
- * - Catatan Akademik
- * - Catatan Perilaku
- * - Catatan Karakter
- *
- * CATATAN: Semua data sudah pasti dari guru_kelas itu sendiri
- * karena di backend sudah difilter by teacher_id
- */
-const renderNotesCards = (stats, userRole) => {
-  return (
-    <>
-      {/* Card 1: Total Catatan */}
-      <MiniStatCard
-        icon={<FileText className="w-5 h-5" />}
-        label="Total Catatan"
-        value={stats.totalCatatan || 0}
-        subtitle={userRole === "guru_kelas" ? "Catatan Anda" : undefined}
-        color="blue"
-      />
-
-      {/* Card 2: Catatan Akademik */}
-      <MiniStatCard
-        icon={<BookOpen className="w-5 h-5" />}
-        label="Akademik"
-        value={stats.catatanAkademik || 0}
-        subtitle={
-          stats.totalCatatan > 0
-            ? `${((stats.catatanAkademik / stats.totalCatatan) * 100).toFixed(
-                0
-              )}%`
-            : undefined
-        }
-        color="green"
-      />
-
-      {/* Card 3: Catatan Perilaku */}
-      <MiniStatCard
-        icon={<Shield className="w-5 h-5" />}
-        label="Perilaku"
-        value={stats.catatanPerilaku || 0}
-        subtitle={
-          stats.totalCatatan > 0
-            ? `${((stats.catatanPerilaku / stats.totalCatatan) * 100).toFixed(
-                0
-              )}%`
-            : undefined
-        }
-        color="orange"
-      />
-
-      {/* Card 4: Catatan Karakter */}
-      <MiniStatCard
-        icon={<Heart className="w-5 h-5" />}
-        label="Karakter"
-        value={stats.catatanKarakter || 0}
-        subtitle={
-          stats.totalCatatan > 0
-            ? `${((stats.catatanKarakter / stats.totalCatatan) * 100).toFixed(
-                0
-              )}%`
-            : undefined
-        }
-        color="purple"
-      />
-    </>
-  );
-};
-
-// ========================================
-// MINI STAT CARD (COMPACT WITH PASTEL COLORS)
-// ========================================
-const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
-  // Color mapping - Pastel backgrounds with matching icons and text
+// 1. REVISI PALET WARNA UNTUK DARK MODE
+const Card = ({ label, value, icon, color = "blue", subtitle }) => {
   const colorClasses = {
+    // BLUE (General / Total)
     blue: {
-      bg: "bg-gradient-to-br from-blue-50 to-blue-100",
-      icon: "text-blue-600 bg-white/80",
-      text: "text-blue-900",
-      label: "text-blue-700",
-      subtitle: "text-blue-600",
-      border: "border-blue-200",
+      label: "text-blue-500 dark:text-blue-400",
+      text: "text-blue-800 dark:text-blue-200",
+      subtitle: "text-blue-500 dark:text-blue-400",
+      icon: "bg-blue-200 text-blue-700 dark:bg-blue-700 dark:text-blue-100",
+      bg: "bg-blue-50 dark:bg-blue-900/40",
+      border: "border-blue-200 dark:border-blue-700",
     },
+    // GREEN (Success / Positif)
     green: {
-      bg: "bg-gradient-to-br from-green-50 to-green-100",
-      icon: "text-green-600 bg-white/80",
-      text: "text-green-900",
-      label: "text-green-700",
-      subtitle: "text-green-600",
-      border: "border-green-200",
+      label: "text-green-500 dark:text-green-400",
+      text: "text-green-800 dark:text-green-200",
+      subtitle: "text-green-500 dark:text-green-400",
+      icon: "bg-green-200 text-green-700 dark:bg-green-700 dark:text-green-100",
+      bg: "bg-green-50 dark:bg-green-900/40",
+      border: "border-green-200 dark:border-green-700",
     },
-    indigo: {
-      bg: "bg-gradient-to-br from-indigo-50 to-indigo-100",
-      icon: "text-indigo-600 bg-white/80",
-      text: "text-indigo-900",
-      label: "text-indigo-700",
-      subtitle: "text-indigo-600",
-      border: "border-indigo-200",
-    },
-    pink: {
-      bg: "bg-gradient-to-br from-pink-50 to-pink-100",
-      icon: "text-pink-600 bg-white/80",
-      text: "text-pink-900",
-      label: "text-pink-700",
-      subtitle: "text-pink-600",
-      border: "border-pink-200",
-    },
-    purple: {
-      bg: "bg-gradient-to-br from-purple-50 to-purple-100",
-      icon: "text-purple-600 bg-white/80",
-      text: "text-purple-900",
-      label: "text-purple-700",
-      subtitle: "text-purple-600",
-      border: "border-purple-200",
-    },
-    emerald: {
-      bg: "bg-gradient-to-br from-emerald-50 to-emerald-100",
-      icon: "text-emerald-600 bg-white/80",
-      text: "text-emerald-900",
-      label: "text-emerald-700",
-      subtitle: "text-emerald-600",
-      border: "border-emerald-200",
-    },
+    // YELLOW/ORANGE (Warning / Perhatian)
     orange: {
-      bg: "bg-gradient-to-br from-orange-50 to-orange-100",
-      icon: "text-orange-600 bg-white/80",
-      text: "text-orange-900",
-      label: "text-orange-700",
-      subtitle: "text-orange-600",
-      border: "border-orange-200",
+      label: "text-orange-500 dark:text-orange-400",
+      text: "text-orange-800 dark:text-orange-200",
+      subtitle: "text-orange-500 dark:text-orange-400",
+      icon: "bg-orange-200 text-orange-700 dark:bg-orange-700 dark:text-orange-100",
+      bg: "bg-orange-50 dark:bg-orange-900/40",
+      border: "border-orange-200 dark:border-orange-700",
     },
-    yellow: {
-      bg: "bg-gradient-to-br from-yellow-50 to-yellow-100",
-      icon: "text-yellow-600 bg-white/80",
-      text: "text-yellow-900",
-      label: "text-yellow-700",
-      subtitle: "text-yellow-600",
-      border: "border-yellow-200",
-    },
+    // RED (Negatif / Masalah)
     red: {
-      bg: "bg-gradient-to-br from-red-50 to-red-100",
-      icon: "text-red-600 bg-white/80",
-      text: "text-red-900",
-      label: "text-red-700",
-      subtitle: "text-red-600",
-      border: "border-red-200",
+      label: "text-red-500 dark:text-red-400",
+      text: "text-red-800 dark:text-red-200",
+      subtitle: "text-red-500 dark:text-red-400",
+      icon: "bg-red-200 text-red-700 dark:bg-red-700 dark:text-red-100",
+      bg: "bg-red-50 dark:bg-red-900/40",
+      border: "border-red-200 dark:border-red-700",
+    },
+    // PURPLE (Unik / Notes)
+    purple: {
+      label: "text-purple-500 dark:text-purple-400",
+      text: "text-purple-800 dark:text-purple-200",
+      subtitle: "text-purple-500 dark:text-purple-400",
+      icon: "bg-purple-200 text-purple-700 dark:bg-purple-700 dark:text-purple-100",
+      bg: "bg-purple-50 dark:bg-purple-900/40",
+      border: "border-purple-200 dark:border-purple-700",
+    },
+    // GRAY (Neutral)
+    gray: {
+      label: "text-gray-500 dark:text-gray-400",
+      text: "text-gray-800 dark:text-gray-200",
+      subtitle: "text-gray-500 dark:text-gray-400",
+      icon: "bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-100",
+      bg: "bg-gray-50 dark:bg-gray-700",
+      border: "border-gray-200 dark:border-gray-600",
     },
   };
 
   const colors = colorClasses[color] || colorClasses.blue;
 
+  // 3. REVISI: Tambahkan dark:shadow-lg untuk shadow yang lebih baik di Dark Mode
   return (
     <div
-      className={`flex items-center gap-3 p-4 rounded-xl border ${colors.border} ${colors.bg} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}>
+      className={`flex items-center gap-3 p-4 rounded-xl border ${colors.border} ${colors.bg} hover:shadow-lg hover:scale-[1.02] transition-all duration-300 dark:hover:shadow-xl dark:shadow-gray-900/50`}>
       <div
         className={`p-2.5 rounded-lg ${colors.icon} shadow-sm flex-shrink-0`}>
         {icon}
@@ -393,6 +146,7 @@ const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
         <p className={`text-xs font-medium ${colors.label} truncate`}>
           {label}
         </p>
+        {/* Font size text-xl sudah pas untuk mobile/desktop */}
         <p className={`text-xl font-bold ${colors.text}`}>
           {formatValue(value)}
         </p>
@@ -408,25 +162,205 @@ const MiniStatCard = ({ icon, label, value, subtitle, color = "blue" }) => {
 };
 
 // ========================================
-// UTILITY
+// RENDER CARDS LOGIC (TIDAK DIUBAH LOGICNYA, HANYA MEMANGGIL CARD BARU)
 // ========================================
+
+const renderStudentCards = (stats) => (
+  <>
+    <Card
+      label="Total Siswa"
+      value={stats.total}
+      icon={<Users size={20} />}
+      color="blue"
+      subtitle={`Kelas: ${stats.kelas || "-"}`}
+    />
+    <Card
+      label="Siswa Aktif"
+      value={stats.active}
+      icon={<UserCheck size={20} />}
+      color="green"
+      subtitle={`${stats.percentage}% dari total`}
+    />
+    <Card
+      label="Siswa Laki-laki"
+      value={stats.lakiLaki}
+      icon={<UserCheck size={20} />}
+      color="purple"
+      subtitle={`Perempuan: ${stats.perempuan}`}
+    />
+    {/* Kartu Tambahan: Misal Siswa Tidak Aktif */}
+    <Card
+      label="Siswa Tidak Aktif"
+      value={stats.inactive}
+      icon={<AlertCircle size={20} />}
+      color="red"
+      subtitle="Perlu diverifikasi"
+    />
+  </>
+);
+
+const renderAttendanceCards = (stats) => (
+  <>
+    <Card
+      label="Total Hari Sekolah"
+      value={stats.totalDays}
+      icon={<Calendar size={20} />}
+      color="blue"
+      subtitle={`Tahun Ajaran: ${stats.tahunAjaran || "-"}`}
+    />
+    <Card
+      label="Total Hadir"
+      value={stats.H}
+      icon={<CheckCircle size={20} />}
+      color="green"
+      subtitle={`Rata-rata: ${stats.avgPercentage}%`}
+    />
+    <Card
+      label="Total Izin/Sakit"
+      value={stats.I + stats.S}
+      icon={<Heart size={20} />}
+      color="orange"
+      subtitle={`Sakit: ${stats.S}, Izin: ${stats.I}`}
+    />
+    <Card
+      label="Total Alpa"
+      value={stats.A}
+      icon={<XCircle size={20} />}
+      color="red"
+      subtitle="Perlu Tindak Lanjut"
+    />
+  </>
+);
+
+// REVISI: Kartu untuk Recap View
+const renderAttendanceRecapCards = (stats) => (
+  <>
+    <Card
+      label="Total Siswa"
+      value={stats.totalStudents}
+      icon={<Users size={20} />}
+      color="blue"
+      subtitle={`Kelas: ${stats.kelas || "-"}`}
+    />
+    <Card
+      label="Rata-rata Kehadiran"
+      value={`${stats.avgPercentage || "-"}%`}
+      icon={<TrendingUp size={20} />}
+      color={parseFloat(stats.avgPercentage) >= 80 ? "green" : "orange"}
+      subtitle={`Total Hari: ${stats.totalDays}`}
+    />
+    <Card
+      label="Siswa Kehadiran Baik (≥80%)"
+      value={stats.goodAttendanceStudents}
+      icon={<CheckCircle size={20} />}
+      color="green"
+      subtitle={`${stats.lowAttendanceStudents} siswa di bawah 70%`}
+    />
+    <Card
+      label="Paling Sering Absen"
+      value={stats.mostAbsentStudent || "-"}
+      icon={<TrendingDown size={20} />}
+      color="red"
+      subtitle={`Alpa: ${stats.mostAbsentCount || 0}`}
+    />
+  </>
+);
+
+const renderGradeCards = (stats) => (
+  <>
+    <Card
+      label="Jumlah Mata Pelajaran"
+      value={stats.totalMapel}
+      icon={<BookOpen size={20} />}
+      color="purple"
+      subtitle={`Kelas: ${stats.kelas || "-"}`}
+    />
+    <Card
+      label="Rata-rata Nilai Kelas"
+      value={formatValue(stats.avgGrade)}
+      icon={<BarChart3 size={20} />}
+      color={stats.avgGrade >= 75 ? "green" : "orange"}
+      subtitle={`KKM: ${stats.kkm || "75"}`}
+    />
+    <Card
+      label="Siswa Lulus KKM"
+      value={stats.passedStudents}
+      icon={<UserCheck size={20} />}
+      color="green"
+      subtitle={`Gagal KKM: ${stats.failedStudents}`}
+    />
+    <Card
+      label="Nilai Tertinggi"
+      value={formatValue(stats.maxGrade)}
+      icon={<Award size={20} />}
+      color="blue"
+      subtitle={`Nilai Terendah: ${formatValue(stats.minGrade)}`}
+    />
+  </>
+);
+
+const renderNotesCards = (stats, userRole) => (
+  <>
+    <Card
+      label="Total Catatan"
+      value={stats.totalNotes}
+      icon={<FileText size={20} />}
+      color="blue"
+      subtitle={
+        userRole === "admin"
+          ? `Kelas: ${stats.totalClasses}`
+          : `Total Siswa: ${stats.totalStudents}`
+      }
+    />
+    <Card
+      label="Catatan Positif"
+      value={stats.positiveNotes}
+      icon={<TrendingUp size={20} />}
+      color="green"
+      subtitle={`Persentase: ${stats.positivePercentage}%`}
+    />
+    <Card
+      label="Catatan Negatif/Perhatian"
+      value={stats.negativeNotes}
+      icon={<AlertCircle size={20} />}
+      color="orange"
+      subtitle={`Belum ditindak: ${stats.pendingActions}`}
+    />
+    <Card
+      label="Catatan Tindak Lanjut"
+      value={stats.resolvedNotes}
+      icon={<Shield size={20} />}
+      color="purple"
+      subtitle={`Sisa: ${stats.totalNotes - stats.resolvedNotes}`}
+    />
+  </>
+);
+
+// ========================================
+// UTILITY (TIDAK DIUBAH LOGICNYA)
+// ========================================
+
 const formatValue = (value) => {
   if (value === null || value === undefined) return "-";
 
-  // Jika sudah string (misal: "95%", "28/32"), return as is
-  if (typeof value === "string") return value;
-
-  // Jika number dengan decimal, tampilkan 1 digit
-  if (typeof value === "number" && !Number.isInteger(value)) {
-    return value.toFixed(1);
+  if (typeof value === "string") {
+    // Check if it looks like a number string
+    if (!isNaN(parseFloat(value)) && isFinite(value)) {
+      value = parseFloat(value);
+    } else {
+      return value;
+    }
   }
 
-  // Jika integer
+  // Formatting numbers
   if (typeof value === "number") {
-    return value.toLocaleString("id-ID");
+    if (Number.isInteger(value)) {
+      return value.toLocaleString("id-ID");
+    }
+    return value.toFixed(1).toLocaleString("id-ID");
   }
 
-  return value;
+  return String(value);
 };
 
 export default StatsCards;

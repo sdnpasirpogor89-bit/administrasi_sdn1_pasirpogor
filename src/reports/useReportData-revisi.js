@@ -5,7 +5,7 @@ import { supabase } from "../supabaseClient";
 /**
  * Custom Hook untuk fetch data laporan dari Supabase
  * ✅ Support: students, attendance, attendance-recap, grades, notes, teachers, grades-grid
- * 🔥 REVISI: Nilai Grid AKHIR AMBIL DARI TABEL nilai_katrol
+ * 🔥 REVISI: Nilai Akhir menggunakan RUMUS KATROL
  */
 const useReportData = (reportType, filters = {}, user) => {
   const safeUser = user || {};
@@ -232,16 +232,16 @@ const fetchGradesData = async (filters, user) => {
 
 /**
  * ========================================
- * 🔥 FETCH GRADES GRID DATA - AMBIL DARI NILAI_KATROL
+ * 🔥 FETCH GRADES GRID DATA - DENGAN KATROL
  * ========================================
  */
 const fetchGradesGridData = async (filters, user) => {
   try {
     console.log("🔍 fetchGradesGridData called with filters:", filters);
 
-    // 1. AMBIL DATA NILAI_KATROL DARI DATABASE
+    // Fetch semua nilai
     let query = supabase
-      .from("nilai_katrol")
+      .from("nilai")
       .select("*")
       .order("nama_siswa", { ascending: true });
 
@@ -251,7 +251,7 @@ const fetchGradesGridData = async (filters, user) => {
       console.log("👨‍🏫 Guru Kelas filter: kelas =", user.kelas);
     }
 
-    // Filter by kelas
+    // Filter by kelas (jika ada di filter)
     if (filters.kelas && filters.kelas !== "") {
       query = query.eq("kelas", filters.kelas);
       console.log("🏫 Kelas filter:", filters.kelas);
@@ -259,213 +259,87 @@ const fetchGradesGridData = async (filters, user) => {
 
     // Filter by semester
     if (filters.semester && filters.semester !== "semua") {
-      query = query.eq("semester", filters.semester);
-      console.log("📅 Semester filter:", filters.semester);
-    }
-
-    // Filter by tahun ajaran
-    if (filters.tahunAjaran && filters.tahunAjaran !== "semua") {
-      query = query.eq("tahun_ajaran", filters.tahunAjaran);
-      console.log("📅 Tahun Ajaran filter:", filters.tahunAjaran);
-    }
-
-    // Jika tidak ada filter semester, ambil semester aktif
-    if (!filters.semester || filters.semester === "semua") {
-      // Ambil academic year aktif
-      const { data: activeYear } = await supabase
-        .from("academic_years")
-        .select("*")
-        .eq("is_active", true)
-        .single();
-
-      if (activeYear) {
+      const year = new Date().getFullYear();
+      if (filters.semester === "ganjil") {
         query = query
-          .eq("semester", activeYear.semester)
-          .eq("tahun_ajaran", activeYear.year);
-        console.log("📅 Menggunakan semester aktif:", activeYear);
+          .gte("tanggal", `${year}-07-01`)
+          .lte("tanggal", `${year}-12-31`);
+        console.log("📅 Semester Ganjil:", `${year}-07-01 to ${year}-12-31`);
+      } else if (filters.semester === "genap") {
+        query = query
+          .gte("tanggal", `${year}-01-01`)
+          .lte("tanggal", `${year}-06-30`);
+        console.log("📅 Semester Genap:", `${year}-01-01 to ${year}-06-30`);
       }
     }
 
-    const { data: katrolData, error } = await query;
+    const { data, error } = await query;
 
     if (error) {
       console.error("❌ Supabase error:", error);
       throw error;
     }
 
-    console.log("✅ Data dari nilai_katrol:", katrolData?.length, "records");
+    console.log("✅ Raw data from Supabase:", data?.length, "records");
 
-    if (!katrolData || katrolData.length === 0) {
-      console.warn("⚠️ Tidak ada data nilai_katrol ditemukan");
-
-      // Coba ambil data mentah jika tidak ada katrol
-      return await fetchGradesGridFromRaw(filters, user);
+    if (!data || data.length === 0) {
+      console.warn("⚠️ No data found for grades-grid");
+      return [];
     }
 
-    // 2. AMBIL DATA SISWA UNTUK MELENGKAPI INFORMASI
-    const { data: studentsData, error: studentsError } = await supabase
-      .from("students")
-      .select("nisn, nama_siswa, kelas")
-      .eq("is_active", true)
-      .eq("kelas", filters.kelas || user.kelas)
-      .order("nama_siswa", { ascending: true });
+    // ✅ FETCH NILAI SETTINGS (KKM & Nilai Maksimal)
+    let settingsQuery = supabase.from("nilai_settings").select("*");
 
-    if (studentsError) throw studentsError;
+    if (filters.kelas && filters.kelas !== "") {
+      settingsQuery = settingsQuery.eq("kelas", filters.kelas);
+    }
 
-    console.log("✅ Data siswa:", studentsData?.length, "records");
+    const { data: settingsData, error: settingsError } = await settingsQuery;
+    if (settingsError) throw settingsError;
 
-    // 3. TRANSFORM KE FORMAT GRID
-    const gridData = transformKatrolToGrid(katrolData, studentsData);
-    console.log("✅ Grid data hasil transformasi:", gridData.length, "siswa");
+    console.log("✅ Settings data:", settingsData?.length, "records");
+
+    // 🧮 STEP 1: Hitung nilai mentah (NH + PTS + PAS)
+    const rawGrades = calculateRawGrades(data);
+    console.log("📊 Raw grades:", rawGrades.length, "records");
+
+    // DEBUG: Tampilkan 5 raw grades pertama
+    console.log("🔍 DEBUG Raw grades (5 pertama):");
+    rawGrades.slice(0, 5).forEach((g) => {
+      console.log(`  ${g.nama_siswa} - ${g.mata_pelajaran}: ${g.nilai_mentah}`);
+    });
+
+    // 🔥 STEP 2: Apply katrol
+    const katrolGrades = applyKatrol(rawGrades, settingsData || []);
+    console.log("🎯 Katrol grades:", katrolGrades.length, "records");
+
+    // DEBUG: Tampilkan 5 hasil katrol pertama
+    console.log("🔍 DEBUG Katrol results (5 pertama):");
+    katrolGrades.slice(0, 5).forEach((g) => {
+      console.log(`  ${g.nama_siswa} - ${g.mata_pelajaran}:`);
+      console.log(`    Nilai Mentah: ${g.nilai_mentah}`);
+      console.log(`    Nilai Akhir: ${g.nilai}`);
+      console.log(`    KKM: ${g.kkm}, Status: ${g.status}`);
+    });
+
+    // 📋 STEP 3: Transform ke grid format
+    const gridData = transformToGridFormat(katrolGrades);
+    console.log("🎯 Grid data:", gridData.length, "students");
+
+    // DEBUG: Tampilkan 3 grid data pertama
+    console.log("🔍 DEBUG Grid data (3 pertama):");
+    gridData.slice(0, 3).forEach((g) => {
+      console.log(`  ${g.nama_siswa}:`);
+      console.log(`    B.Indo: ${g["Bahasa Indonesia"]}`);
+      console.log(`    B.Ing: ${g["Bahasa Inggris"]}`);
+      console.log(`    MTK: ${g["Matematika"]}`);
+    });
 
     return gridData;
   } catch (error) {
     console.error("❌ Error in fetchGradesGridData:", error);
     throw new Error(`Gagal memuat data nilai grid: ${error.message}`);
   }
-};
-
-/**
- * Backup function: Ambil data mentah jika tidak ada nilai_katrol
- */
-const fetchGradesGridFromRaw = async (filters, user) => {
-  try {
-    console.log("🔄 Fallback: Mengambil data nilai mentah...");
-
-    let query = supabase
-      .from("nilai")
-      .select("*")
-      .order("nama_siswa", { ascending: true });
-
-    // Role-based filtering
-    if (user.role === "guru_kelas") {
-      query = query.eq("kelas", user.kelas);
-    }
-
-    // Filter by kelas
-    if (filters.kelas && filters.kelas !== "") {
-      query = query.eq("kelas", filters.kelas);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    console.log("✅ Data mentah dari nilai:", data?.length, "records");
-
-    if (!data || data.length === 0) {
-      console.warn("⚠️ Tidak ada data nilai mentah");
-      return [];
-    }
-
-    // Fetch settings untuk KKM
-    const { data: settingsData } = await supabase
-      .from("nilai_settings")
-      .select("*");
-
-    // Hitung nilai mentah dan katrol
-    const rawGrades = calculateRawGrades(data);
-    const katrolGrades = applyKatrol(rawGrades, settingsData || []);
-
-    // Transform ke format grid
-    const gridData = transformToGridFormat(katrolGrades);
-
-    return gridData;
-  } catch (error) {
-    console.error("❌ Error in fetchGradesGridFromRaw:", error);
-    throw error;
-  }
-};
-
-/**
- * Transform data dari nilai_katrol ke format grid
- */
-const transformKatrolToGrid = (katrolData, studentsData) => {
-  console.log("🔄 Transform katrol to grid...");
-
-  // 9 Mata Pelajaran sesuai dengan aplikasi
-  const MAPEL_LIST = [
-    "Bahasa Indonesia",
-    "Bahasa Inggris",
-    "Bahasa Sunda",
-    "Matematika",
-    "IPAS",
-    "Pendidikan Pancasila",
-    "Seni Budaya",
-    "Pendidikan Agama dan Budi Pekerti (PABP)",
-    "Pendidikan Jasmani Olahraga Kesehatan",
-  ];
-
-  // Group by NISN
-  const groupedByNisn = {};
-
-  // Inisialisasi semua siswa terlebih dulu
-  studentsData.forEach((student) => {
-    groupedByNisn[student.nisn] = {
-      nisn: student.nisn,
-      nama_siswa: student.nama_siswa,
-      kelas: student.kelas,
-      grades: {}, // { mata_pelajaran: nilai_akhir }
-    };
-  });
-
-  // Isi dengan nilai dari nilai_katrol
-  katrolData.forEach((item) => {
-    if (groupedByNisn[item.nisn]) {
-      // Gunakan nilai_akhir dari katrol (bukan nilai_mentah)
-      groupedByNisn[item.nisn].grades[item.mata_pelajaran] = item.nilai_akhir;
-    }
-  });
-
-  // Convert to array format
-  const result = Object.values(groupedByNisn).map((student) => {
-    const row = {
-      nisn: student.nisn,
-      nama_siswa: student.nama_siswa,
-      kelas: student.kelas,
-    };
-
-    let total = 0;
-    let count = 0;
-
-    // Tambahkan kolom untuk setiap mata pelajaran
-    MAPEL_LIST.forEach((mapel) => {
-      const nilai = student.grades[mapel];
-
-      if (nilai !== undefined && nilai !== null && nilai !== 0) {
-        row[mapel] = Math.round(nilai); // Bulatkan ke integer
-        total += parseFloat(nilai);
-        count++;
-      } else {
-        row[mapel] = "-";
-      }
-    });
-
-    // Hitung jumlah dan rata-rata
-    row.jumlah = count > 0 ? Math.round(total) : "-";
-    row.rata_rata = count > 0 ? (total / count).toFixed(2) : "-";
-
-    return row;
-  });
-
-  // Sort by nama siswa
-  result.sort((a, b) => a.nama_siswa.localeCompare(b.nama_siswa));
-
-  console.log("✅ Grid data hasil transform:", result.length, "siswa");
-
-  // Debug: tampilkan 3 data pertama
-  if (result.length > 0) {
-    console.log("🔍 Sample data (3 pertama):");
-    result.slice(0, 3).forEach((item, i) => {
-      console.log(
-        `${i + 1}. ${item.nama_siswa} - B.Indo: ${
-          item["Bahasa Indonesia"]
-        }, MTK: ${item["Matematika"]}`
-      );
-    });
-  }
-
-  return result;
 };
 
 /**
@@ -542,11 +416,19 @@ const calculateRawGrades = (allGrades) => {
 /**
  * ========================================
  * 🔥 APPLY KATROL (RUMUS NORMALISASI)
- * Hanya digunakan sebagai fallback
  * ========================================
+ * Formula:
+ * Nilai Akhir = KKM + ((Nilai Mentah - Min) / (Max - Min)) × (Maks Diinginkan - KKM)
+ *
+ * Keterangan:
+ * - Nilai Mentah: Hasil kalkulasi NH + PTS + PAS
+ * - Min: Nilai terendah di kelas untuk mapel tersebut
+ * - Max: Nilai tertinggi di kelas untuk mapel tersebut
+ * - KKM: Dari tabel nilai_settings
+ * - Maks Diinginkan: nilai_maksimal dari tabel nilai_settings
  */
 const applyKatrol = (rawGrades, settings) => {
-  console.log("🔄 Apply katrol (fallback)...");
+  console.log("🔥 APPLY KATROL - Mulai proses");
 
   // Group by mata_pelajaran + kelas untuk cari min/max
   const groupedByMapel = {};
@@ -630,12 +512,22 @@ const applyKatrol = (rawGrades, settings) => {
       nilaiAkhir = 0;
     }
 
+    // DEBUG SETIAP SISWA
+    console.log(`📝 ${grade.nama_siswa} - ${grade.mata_pelajaran}:`);
+    console.log(`   Nilai Mentah: ${grade.nilai_mentah.toFixed(2)}`);
+    console.log(
+      `   Min/Max Kelas: ${minMax.min.toFixed(2)}/${minMax.max.toFixed(2)}`
+    );
+    console.log(`   KKM: ${kkm}, Maksimal: ${nilaiMaksimal}`);
+    console.log(`   Hasil Katrol: ${nilaiAkhir}`);
+    console.log(`   ---`);
+
     return {
       nisn: grade.nisn,
       nama_siswa: grade.nama_siswa,
       kelas: grade.kelas,
       mata_pelajaran: grade.mata_pelajaran,
-      nilai: nilaiAkhir,
+      nilai: nilaiAkhir, // ✅ INI YANG AKAN DITAMPILKAN
       nilai_mentah: grade.nilai_mentah.toFixed(2),
       kkm: kkm,
       status: nilaiAkhir >= kkm ? "Tuntas" : "Belum Tuntas",
@@ -654,11 +546,10 @@ const applyKatrol = (rawGrades, settings) => {
 /**
  * ========================================
  * Transform nilai data ke grid format (1 siswa = 1 row)
- * Hanya digunakan sebagai fallback
  * ========================================
  */
 const transformToGridFormat = (gradesData) => {
-  console.log("🔄 Transform to grid (fallback)...");
+  console.log("🔄 Transform to grid - Input:", gradesData.length, "records");
 
   // 9 Mata Pelajaran
   const MAPEL_LIST = [
@@ -689,6 +580,10 @@ const transformToGridFormat = (gradesData) => {
     }
 
     // Assign nilai per mapel (nilai setelah katrol)
+    // ✅ DEBUG: Pastikan ini nilai setelah katrol
+    console.log(
+      `   Assign: ${grade.nama_siswa} - ${grade.mata_pelajaran} = ${grade.nilai}`
+    );
     grouped[key].grades[grade.mata_pelajaran] = grade.nilai;
   });
 
@@ -727,6 +622,12 @@ const transformToGridFormat = (gradesData) => {
     const nameA = a.nama_siswa.toLowerCase();
     const nameB = b.nama_siswa.toLowerCase();
     return nameA.localeCompare(nameB);
+  });
+
+  // DEBUG: Tampilkan hasil akhir
+  console.log("✅ Transform result (3 pertama):");
+  result.slice(0, 3).forEach((r) => {
+    console.log(`  ${r.nama_siswa}: B.Indo = ${r["Bahasa Indonesia"]}`);
   });
 
   return result;

@@ -262,7 +262,10 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
         </p>
       </div>
 
-      <div className="space-y-3 max-h-80 overflow-y-auto">
+      <div
+        className={`space-y-3 ${
+          isMobile ? "max-h-60" : "max-h-80"
+        } overflow-y-auto`}>
         {groupedSchedule.map((group, index) => {
           const sessionLabel =
             group.sessionCount === 1
@@ -629,9 +632,17 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 };
 
 const TeacherDashboard = ({ userData }) => {
+  // 🔥 SOLUSI FINAL: Gabungkan initial state detection + immediate effect
+  const [isMobile, setIsMobile] = useState(() => {
+    // Deteksi LANGSUNG pas initialization
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedKelas, setSelectedKelas] = useState("");
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
@@ -649,16 +660,18 @@ const TeacherDashboard = ({ userData }) => {
   const navigate = useNavigate();
   const isGuruKelas = userData.role === "guru_kelas";
   const isGuruMapel = userData.role === "guru_mapel";
-
-  // Tambahkan penggunaan hook Dark Mode di sini
   const isDark = useDarkMode();
 
+  // 🔥 FIX: useLayoutEffect untuk update SEBELUM render visual
   useEffect(() => {
     const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
     };
 
+    // LANGSUNG eksekusi di awal
     checkDevice();
+
     window.addEventListener("resize", checkDevice);
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
@@ -1128,20 +1141,6 @@ const TeacherDashboard = ({ userData }) => {
             </div>
           </div>
         )}
-
-        {/* Floating Refresh Button (REVISI DARK MODE) */}
-        <div className="fixed bottom-20 right-4 sm:hidden z-40">
-          <button
-            onClick={fetchDashboardData}
-            disabled={refreshing}
-            className={`w-12 h-12 bg-blue-600 dark:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
-              refreshing
-                ? "opacity-50"
-                : "hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95"
-            }`}>
-            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
-          </button>
-        </div>
       </div>
     );
   };
@@ -1210,9 +1209,14 @@ const TeacherDashboard = ({ userData }) => {
             icon={UserX}
             color="red"
           />
+          {/* ✅ PERUBAHAN 4: Best Class untuk mobile */}
           <StatsCard
             title="Kelas Terbaik"
-            value={dashboardData.bestClass || "N/A"}
+            value={
+              isMobile && dashboardData.bestClass
+                ? dashboardData.bestClass.replace("Kelas ", "")
+                : dashboardData.bestClass || "N/A"
+            }
             subtitle="Kehadiran tertinggi"
             icon={TrendingUp}
             color="orange"
@@ -1284,20 +1288,6 @@ const TeacherDashboard = ({ userData }) => {
             </div>
           </div>
         )}
-
-        {/* Floating Refresh Button (REVISI DARK MODE) */}
-        <div className="fixed bottom-20 right-4 sm:hidden z-40">
-          <button
-            onClick={fetchDashboardData}
-            disabled={refreshing}
-            className={`w-12 h-12 bg-blue-600 dark:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
-              refreshing
-                ? "opacity-50"
-                : "hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95"
-            }`}>
-            <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
-          </button>
-        </div>
       </div>
     );
   };
@@ -1305,6 +1295,20 @@ const TeacherDashboard = ({ userData }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-6 lg:p-8">
       {isGuruKelas ? renderGuruKelasDashboard() : renderGuruMapelDashboard()}
+
+      {/* ✅ PERUBAHAN 3: SATU FLOATING BUTTON UNTUK SEMUA */}
+      <div className="fixed bottom-20 right-4 sm:hidden z-40">
+        <button
+          onClick={fetchDashboardData}
+          disabled={refreshing}
+          className={`w-12 h-12 bg-blue-600 dark:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+            refreshing
+              ? "opacity-50"
+              : "hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95"
+          }`}>
+          <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
+        </button>
+      </div>
     </div>
   );
 };

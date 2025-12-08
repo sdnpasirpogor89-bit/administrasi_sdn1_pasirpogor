@@ -69,8 +69,17 @@ const useDarkMode = () => {
 };
 
 const Dashboard = ({ userData }) => {
+  // 🔥 FIX 1: Device detection dengan initial value yang bener
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deviceChecked, setDeviceChecked] = useState(false); // 🔥 FIX 2: Track device check
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -80,21 +89,27 @@ const Dashboard = ({ userData }) => {
     weeklyTrend: [],
     totalClasses: 0,
   });
-  const [isMobile, setIsMobile] = useState(false);
-  const isDark = useDarkMode(); // Panggil hook untuk deteksi Dark Mode
 
+  const isDark = useDarkMode();
   const navigate = useNavigate();
 
-  // Cek device type dan screen size
+  // 🔥 FIX 3: Device detection yang lebih reliable
   useEffect(() => {
     const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      setDeviceChecked(true); // Mark sebagai sudah dicek
     };
 
+    // Langsung eksekusi
     checkDevice();
+
+    // Tambah listener untuk resize
     window.addEventListener("resize", checkDevice);
+
+    // Cleanup
     return () => window.removeEventListener("resize", checkDevice);
-  }, []);
+  }, []); // Tetap kosong dependency
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -485,7 +500,7 @@ const Dashboard = ({ userData }) => {
     }
   };
 
-  // Main fetch function that routes to role-specific functions
+  // 🔥 FIX 4: Main fetch function dengan device check
   const fetchDashboardData = async () => {
     setRefreshing(true);
     try {
@@ -499,21 +514,29 @@ const Dashboard = ({ userData }) => {
     } catch (error) {
       console.error("Error in fetchDashboardData:", error);
     } finally {
-      setLoading(false);
+      // Pastikan device sudah dicek sebelum set loading false
+      if (deviceChecked) {
+        setLoading(false);
+      }
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    // 🔥 FIX 5: Tunggu sampai device checked dulu baru fetch data
+    if (deviceChecked) {
+      fetchDashboardData();
+    }
 
     // Auto refresh every 5 minutes (300000ms)
     const interval = setInterval(() => {
-      fetchDashboardData();
+      if (deviceChecked) {
+        fetchDashboardData();
+      }
     }, 300000);
 
     return () => clearInterval(interval);
-  }, [userData.role, userData.kelas]);
+  }, [userData.role, userData.kelas, deviceChecked]); // 🔥 FIX 6: Tambah deviceChecked
 
   // Responsive Stats Card Component
   const StatsCard = ({
@@ -650,8 +673,8 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  // Loading state
-  if (loading) {
+  // 🔥 FIX 7: Loading state dengan device check
+  if (loading || !deviceChecked) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">

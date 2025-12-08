@@ -44,13 +44,18 @@ export const groupDataByNISN = (rawData) => {
       grouped[item.nisn] = {
         nisn: item.nisn,
         nama_siswa: item.nama_siswa,
-        nilai: {},
+        nilai: {
+          NH1: item.nh1 !== null && item.nh1 !== undefined ? item.nh1 : null,
+          NH2: item.nh2 !== null && item.nh2 !== undefined ? item.nh2 : null,
+          NH3: item.nh3 !== null && item.nh3 !== undefined ? item.nh3 : null,
+          NH4: item.nh4 !== null && item.nh4 !== undefined ? item.nh4 : null,
+          NH5: item.nh5 !== null && item.nh5 !== undefined ? item.nh5 : null,
+          UTS: item.uts !== null && item.uts !== undefined ? item.uts : null,
+          UAS: item.uas !== null && item.uas !== undefined ? item.uas : null,
+        },
         nilai_katrol: {},
       };
     }
-
-    // Simpan nilai asli
-    grouped[item.nisn].nilai[item.jenis_nilai] = item.nilai;
   });
 
   return Object.values(grouped);

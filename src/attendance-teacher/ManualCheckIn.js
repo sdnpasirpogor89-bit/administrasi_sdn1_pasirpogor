@@ -1,4 +1,4 @@
-// src/attendance-teacher/ManualCheckIn.js - SD PASIRPOGOR VERSION
+// src/attendance-teacher/ManualCheckIn.js - DARK MODE COMPLETE
 import React, { useState, useEffect } from "react";
 import {
   Calendar,
@@ -11,18 +11,18 @@ import {
   Shield,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
-import { validateAttendance } from "./LocationValidator"; // 🎯 MASTER VALIDATOR
+import { validateAttendance } from "./LocationValidator";
 
 const ManualCheckIn = ({ currentUser, onSuccess }) => {
   const today = new Date().toISOString().split("T")[0];
-  const now = new Date().toTimeString().split(" ")[0].slice(0, 5); // HH:MM
+  const now = new Date().toTimeString().split(" ")[0].slice(0, 5);
 
   const [formData, setFormData] = useState({
     date: today,
     status: "hadir",
     clockIn: now,
     notes: "",
-    teacherId: null, // Untuk admin bisa pilih guru lain
+    teacherId: null,
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -32,25 +32,26 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
   const [teachersList, setTeachersList] = useState([]);
 
   const statusOptions = [
-    { value: "hadir", label: "Hadir", color: "bg-green-500" },
-    { value: "izin", label: "Izin", color: "bg-blue-500" },
-    { value: "sakit", label: "Sakit", color: "bg-yellow-500" },
-    { value: "alpha", label: "Alpha", color: "bg-red-500" },
+    { value: "hadir", label: "Hadir", color: "bg-green-500 dark:bg-green-600" },
+    { value: "izin", label: "Izin", color: "bg-blue-500 dark:bg-blue-600" },
+    {
+      value: "sakit",
+      label: "Sakit",
+      color: "bg-yellow-500 dark:bg-yellow-600",
+    },
+    { value: "alpha", label: "Alpha", color: "bg-red-500 dark:bg-red-600" },
   ];
 
-  // Check if user is admin
   useEffect(() => {
     checkAdminStatus();
   }, [currentUser]);
 
-  // Load teachers list for admin
   useEffect(() => {
     if (isAdmin) {
       loadTeachers();
     }
   }, [isAdmin]);
 
-  // Pre-check location saat component mount (untuk status "Hadir" only)
   useEffect(() => {
     if (formData.status === "hadir" && !isAdmin) {
       checkLocation();
@@ -76,11 +77,10 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
   const loadTeachers = async () => {
     try {
-      // QUERY DARI TABLE USERS - AMBIL ID (UUID) & FULL_NAME
       const { data, error } = await supabase
         .from("users")
         .select("id, full_name, username, kelas")
-        .in("role", ["guru_kelas", "guru_mapel"]) // Role guru SD
+        .in("role", ["guru_kelas", "guru_mapel"])
         .eq("is_active", true)
         .order("full_name");
 
@@ -93,13 +93,10 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
   const checkLocation = async () => {
     setCheckingLocation(true);
-
-    // 🎯 PANGGIL MASTER VALIDATOR
     const validation = await validateAttendance({
       method: "manual",
       userId: currentUser.id,
     });
-
     setLocationStatus(validation);
     setCheckingLocation(false);
   };
@@ -110,13 +107,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
     setMessage(null);
 
     try {
-      // ========================================
-      // 🎯 VALIDASI MENGGUNAKAN MASTER VALIDATOR
-      // ========================================
-
-      // Admin bypass validasi
       if (!isAdmin) {
-        // Status "hadir" perlu validasi lengkap
         if (formData.status === "hadir") {
           const validation = await validateAttendance({
             method: "manual",
@@ -125,13 +116,11 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
 
           setLocationStatus(validation);
 
-          // ❌ Kalau ada error yang blocking
           if (!validation.isValid) {
             const errorMessages = validation.errors
               .map((err) => `• ${err.message}`)
               .join("\n");
 
-            // Cek apakah ada help text untuk GPS error
             const gpsError = validation.errors.find((err) => err.help);
             const helpText = gpsError?.help
               ? `\n\n📱 Panduan:\n${gpsError.help}`
@@ -145,7 +134,6 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
             return;
           }
 
-          // ⚠️ Tampilkan warning jika ada (jadwal)
           if (validation.data.warnings && validation.data.warnings.length > 0) {
             const warningMessages = validation.data.warnings
               .map((warn) => warn.message)
@@ -159,15 +147,12 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
               return;
             }
           }
-        }
-        // Status selain "hadir" (izin/sakit/alpha) - cuma cek waktu operational
-        else {
+        } else {
           const validation = await validateAttendance({
             method: "manual",
             userId: currentUser.id,
           });
 
-          // Cek error waktu saja
           const timeError = validation.errors.find(
             (err) => err.code === "TIME_NOT_ALLOWED"
           );
@@ -189,30 +174,22 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         }
       }
 
-      // ========================================
-      // PROSES SUBMIT ATTENDANCE
-      // ========================================
-
-      // Get teacher_id (UUID)
       let targetTeacherId;
       let targetTeacherName;
 
       if (isAdmin && formData.teacherId) {
-        // Admin input untuk guru lain (teacherId = UUID)
         targetTeacherId = formData.teacherId;
         const teacher = teachersList.find((t) => t.id === formData.teacherId);
         targetTeacherName = teacher?.full_name || "Unknown";
       } else {
-        // Guru input sendiri atau admin input untuk diri sendiri
-        targetTeacherId = currentUser.id; // UUID dari users.id
+        targetTeacherId = currentUser.id;
         targetTeacherName = currentUser.full_name;
       }
 
-      // Cek apakah sudah ada presensi di tanggal yang dipilih
       const { data: existingAttendance, error: checkError } = await supabase
         .from("teacher_attendance")
         .select("*")
-        .eq("teacher_id", targetTeacherId) // UUID
+        .eq("teacher_id", targetTeacherId)
         .eq("attendance_date", formData.date)
         .maybeSingle();
 
@@ -220,26 +197,23 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         throw checkError;
       }
 
-      // Prepare attendance data
       const attendanceData = {
-        teacher_id: targetTeacherId, // UUID
+        teacher_id: targetTeacherId,
         attendance_date: formData.date,
         status: formData.status,
-        clock_in: formData.clockIn + ":00", // Format TIME: HH:MM:SS
-        check_in_method: isAdmin ? "admin" : "Manual", // Sesuai ENUM
+        clock_in: formData.clockIn + ":00",
+        check_in_method: isAdmin ? "admin" : "Manual",
         notes: formData.notes || null,
-        full_name: targetTeacherName, // Denormalisasi
+        full_name: targetTeacherName,
         updated_at: new Date().toISOString(),
       };
 
-      // Tambahkan info admin jika di-input oleh admin
       if (isAdmin) {
         attendanceData.admin_info = `Input oleh: ${
           currentUser.full_name
         } pada ${new Date().toLocaleString("id-ID")}`;
       }
 
-      // Tambahkan GPS metadata dari validation result
       if (!isAdmin && formData.status === "hadir" && locationStatus?.isValid) {
         const locationData = locationStatus.data.location;
 
@@ -251,13 +225,10 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         formData.status === "hadir" &&
         !locationStatus?.isValid
       ) {
-        // GPS error tapi diizinkan submit
         attendanceData.gps_location = "GPS_ERROR";
       }
 
-      // Jika sudah ada, update. Jika belum, insert
       if (existingAttendance) {
-        // UPDATE existing attendance
         const { error: updateError } = await supabase
           .from("teacher_attendance")
           .update(attendanceData)
@@ -272,7 +243,6 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
             : `✅ Presensi tanggal ${formData.date} berhasil diupdate!`,
         });
       } else {
-        // INSERT new attendance
         const { error: insertError } = await supabase
           .from("teacher_attendance")
           .insert(attendanceData);
@@ -287,15 +257,12 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         });
       }
 
-      // Auto-hide success message after 3 seconds
       setTimeout(() => {
         setMessage(null);
       }, 3000);
 
-      // Trigger refresh di parent
       if (onSuccess) onSuccess();
 
-      // Reset form
       setFormData({
         date: today,
         status: "hadir",
@@ -304,7 +271,6 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         teacherId: null,
       });
 
-      // Re-check location after reset (hanya untuk non-admin)
       if (!isAdmin) {
         setTimeout(() => {
           checkLocation();
@@ -328,51 +294,58 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center justify-center gap-2">
-          {isAdmin && <Shield className="text-blue-600" size={20} />}
+        <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center justify-center gap-2 dark:text-white">
+          {isAdmin && (
+            <Shield className="text-blue-600 dark:text-blue-400" size={20} />
+          )}
           Input Presensi Manual
           {isAdmin && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
               ADMIN MODE
             </span>
           )}
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {isAdmin
             ? "Mode Admin: Dapat input presensi kapan saja untuk semua guru"
             : "Isi form di bawah untuk mencatat presensi"}
         </p>
       </div>
 
-      {/* Message Alert */}
       {message && (
         <div
           className={`p-4 rounded-lg flex items-start gap-3 transition-all duration-500 ${
             message.type === "success"
-              ? "bg-green-50 border border-green-200 animate-fade-in"
-              : "bg-red-50 border border-red-200 animate-fade-in"
+              ? "bg-green-50 border border-green-200 animate-fade-in dark:bg-green-900/30 dark:border-green-800"
+              : "bg-red-50 border border-red-200 animate-fade-in dark:bg-red-900/30 dark:border-red-800"
           }`}>
           {message.type === "success" ? (
-            <CheckCircle className="text-green-600 flex-shrink-0" size={24} />
+            <CheckCircle
+              className="text-green-600 dark:text-green-400 flex-shrink-0"
+              size={24}
+            />
           ) : (
-            <XCircle className="text-red-600 flex-shrink-0" size={24} />
+            <XCircle
+              className="text-red-600 dark:text-red-400 flex-shrink-0"
+              size={24}
+            />
           )}
           <p
             className={`text-sm font-medium whitespace-pre-line ${
-              message.type === "success" ? "text-green-800" : "text-red-800"
+              message.type === "success"
+                ? "text-green-800 dark:text-green-300"
+                : "text-red-800 dark:text-red-300"
             }`}>
             {message.text}
           </p>
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Pilih Guru (Hanya untuk Admin) */}
         {isAdmin && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <Shield size={18} className="text-blue-600" />
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2 dark:text-gray-300">
+              <Shield size={18} className="text-blue-600 dark:text-blue-400" />
               Pilih Guru (Opsional)
             </label>
             <select
@@ -380,7 +353,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
               onChange={(e) =>
                 handleChange("teacherId", e.target.value || null)
               }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
               <option value="">-- Pilih Guru --</option>
               {teachersList.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
@@ -388,15 +361,14 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
               * Pilih Guru Yang Akan Diinputkan Presensinya
             </p>
           </div>
         )}
 
-        {/* Tanggal */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2 dark:text-gray-300">
             <Calendar size={18} />
             Tanggal Presensi
           </label>
@@ -406,18 +378,17 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
             onChange={(e) => handleChange("date", e.target.value)}
             max={isAdmin ? undefined : today}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
             {isAdmin
               ? "* Admin dapat memilih tanggal kapan saja"
               : "* Bisa pilih tanggal mundur untuk input presensi yang terlupa"}
           </p>
         </div>
 
-        {/* Status */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
             Status Kehadiran
           </label>
           <div className="grid grid-cols-2 gap-3">
@@ -429,23 +400,22 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 className={`py-3 px-4 rounded-lg font-semibold transition-all ${
                   formData.status === option.value
                     ? `${option.color} text-white shadow-lg scale-105`
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                 }`}>
                 {option.label}
               </button>
             ))}
           </div>
           {formData.status !== "hadir" && (
-            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1 dark:text-gray-400">
               <AlertTriangle size={14} />
               Status selain "Hadir" hanya memerlukan validasi waktu operational
             </p>
           )}
         </div>
 
-        {/* Jam Masuk */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2 dark:text-gray-300">
             <Clock size={18} />
             Jam Masuk
           </label>
@@ -454,13 +424,12 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
             value={formData.clockIn}
             onChange={(e) => handleChange("clockIn", e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
           />
         </div>
 
-        {/* Catatan */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
             Catatan (Optional)
           </label>
           <textarea
@@ -472,18 +441,17 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 ? "Contoh: Lupa input presensi, konfirmasi via WA pukul 15.30"
                 : "Contoh: Sakit demam, Ada keperluan keluarga, dll... (opsional)"
             }
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400"
           />
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
           className={`w-full py-4 ${
             isAdmin
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-green-600 hover:bg-green-700"
+              ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+              : "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
           } disabled:bg-gray-400 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg`}>
           {loading ? (
             <>
@@ -499,14 +467,13 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         </button>
       </form>
 
-      {/* Info */}
       <div
         className={`${
           isAdmin
-            ? "bg-blue-50 border-blue-200"
-            : "bg-green-50 border-green-200"
+            ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800"
+            : "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800"
         } border rounded-lg p-4`}>
-        <p className="text-sm text-gray-800">
+        <p className="text-sm text-gray-800 dark:text-gray-300">
           <strong>ℹ️ Info:</strong>{" "}
           {isAdmin
             ? "Sebagai Admin, Anda Dapat Input Presensi Kapan Saja Tanpa Batasan Waktu."
@@ -514,7 +481,6 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         </p>
       </div>
 
-      {/* CSS Animations */}
       <style>{`
         @keyframes fade-in {
           from {
