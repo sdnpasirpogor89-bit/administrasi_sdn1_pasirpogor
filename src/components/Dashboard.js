@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
+//[file name]: Dashboard.js
+import React, { useState, useEffect, useLayoutEffect } from "react"; // ✅ TAMBAH useLayoutEffect
 import {
   Users,
   GraduationCap,
   UserCheck,
   BarChart3,
   TrendingUp,
-  // UserPlus, // Tidak digunakan, bisa dihapus
   Download,
   RefreshCw,
   ClipboardList,
-  // FileText, // Tidak digunakan, bisa dihapus
-  // Settings, // Tidak digunakan, bisa dihapus
   Calendar,
   Smartphone,
   Monitor,
@@ -69,17 +67,12 @@ const useDarkMode = () => {
 };
 
 const Dashboard = ({ userData }) => {
-  // 🔥 FIX 1: Device detection dengan initial value yang bener
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth < 768;
-    }
-    return false;
-  });
+  // 🔥 FIX 1: Simplifikasi device detection - sama seperti TeacherDashboard.js
+  const [isMobile, setIsMobile] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // ✅ Flag initialization
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [deviceChecked, setDeviceChecked] = useState(false); // 🔥 FIX 2: Track device check
   const [dashboardData, setDashboardData] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -93,12 +86,12 @@ const Dashboard = ({ userData }) => {
   const isDark = useDarkMode();
   const navigate = useNavigate();
 
-  // 🔥 FIX 3: Device detection yang lebih reliable
-  useEffect(() => {
+  // 🔥 FIX 2: Gunakan useLayoutEffect untuk device detection yang konsisten
+  useLayoutEffect(() => {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      setDeviceChecked(true); // Mark sebagai sudah dicek
+      setIsInitialized(true); // ✅ Tandai sudah initialized
     };
 
     // Langsung eksekusi
@@ -109,7 +102,22 @@ const Dashboard = ({ userData }) => {
 
     // Cleanup
     return () => window.removeEventListener("resize", checkDevice);
-  }, []); // Tetap kosong dependency
+  }, []);
+
+  // ✅ TAMBAH: Backup resize listener
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      if (mobile !== isMobile) {
+        setIsMobile(mobile);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isInitialized, isMobile]);
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -500,8 +508,10 @@ const Dashboard = ({ userData }) => {
     }
   };
 
-  // 🔥 FIX 4: Main fetch function dengan device check
+  // 🔥 FIX 3: Main fetch function yang lebih sederhana
   const fetchDashboardData = async () => {
+    if (!isInitialized) return; // ✅ Jangan fetch jika belum initialized
+
     setRefreshing(true);
     try {
       if (userData.role === "admin") {
@@ -514,29 +524,26 @@ const Dashboard = ({ userData }) => {
     } catch (error) {
       console.error("Error in fetchDashboardData:", error);
     } finally {
-      // Pastikan device sudah dicek sebelum set loading false
-      if (deviceChecked) {
-        setLoading(false);
-      }
+      setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    // 🔥 FIX 5: Tunggu sampai device checked dulu baru fetch data
-    if (deviceChecked) {
+    // 🔥 FIX 4: Tunggu sampai device initialized baru fetch
+    if (isInitialized) {
       fetchDashboardData();
     }
 
     // Auto refresh every 5 minutes (300000ms)
     const interval = setInterval(() => {
-      if (deviceChecked) {
+      if (isInitialized) {
         fetchDashboardData();
       }
     }, 300000);
 
     return () => clearInterval(interval);
-  }, [userData.role, userData.kelas, deviceChecked]); // 🔥 FIX 6: Tambah deviceChecked
+  }, [userData.role, userData.kelas, isInitialized]); // 🔥 FIX 5: Tambah isInitialized
 
   // Responsive Stats Card Component
   const StatsCard = ({
@@ -673,8 +680,8 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  // 🔥 FIX 7: Loading state dengan device check
-  if (loading || !deviceChecked) {
+  // 🔥 FIX 6: Loading state dengan isInitialized check
+  if (loading || !isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">

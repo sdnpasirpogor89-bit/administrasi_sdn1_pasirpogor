@@ -37,6 +37,7 @@ const Attendance = ({
     saving,
     isSyncing,
     availableClasses,
+    deviceDetected, // <-- ADD THIS
 
     // Modal states
     showModal,
@@ -71,6 +72,22 @@ const Attendance = ({
     exportSemester,
   } = useAttendanceLogic(currentUser);
 
+  // FIX: Show loading until device is detected AND data is loaded
+  if ((loading && !deviceDetected) || (loading && !studentsData[activeClass])) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">
+            {!deviceDetected
+              ? "Mendeteksi perangkat..."
+              : "Memuat data siswa..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Global Components */}
@@ -86,7 +103,7 @@ const Attendance = ({
       {/* Main UI */}
       <AttendanceUI
         // State
-        loading={loading}
+        loading={loading && deviceDetected} // Pass loading only after device detected
         summary={summary}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -131,6 +148,8 @@ const Attendance = ({
         // Export handlers
         exportAttendance={exportAttendance}
         exportSemester={exportSemester}
+        // Device info
+        deviceDetected={deviceDetected} // <-- Pass to UI
       />
 
       {/* Modals */}

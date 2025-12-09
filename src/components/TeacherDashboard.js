@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+//[file name]: TeacherDashboard.js
+import React, { useState, useEffect, useLayoutEffect } from "react"; // ✅ TAMBAH useLayoutEffect
 import {
   Users,
   GraduationCap,
@@ -632,14 +633,9 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 };
 
 const TeacherDashboard = ({ userData }) => {
-  // 🔥 SOLUSI FINAL: Gabungkan initial state detection + immediate effect
-  const [isMobile, setIsMobile] = useState(() => {
-    // Deteksi LANGSUNG pas initialization
-    if (typeof window !== "undefined") {
-      return window.innerWidth < 768;
-    }
-    return false;
-  });
+  // 🔥 FIX: Gunakan useLayoutEffect untuk device detection konsisten
+  const [isMobile, setIsMobile] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // ✅ Tambah flag initialization
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -662,11 +658,12 @@ const TeacherDashboard = ({ userData }) => {
   const isGuruMapel = userData.role === "guru_mapel";
   const isDark = useDarkMode();
 
-  // 🔥 FIX: useLayoutEffect untuk update SEBELUM render visual
-  useEffect(() => {
+  // 🔥 FIX: Gunakan useLayoutEffect untuk update SEBELUM render visual
+  useLayoutEffect(() => {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
+      setIsInitialized(true); // ✅ Tandai sudah initialized
     };
 
     // LANGSUNG eksekusi di awal
@@ -675,6 +672,21 @@ const TeacherDashboard = ({ userData }) => {
     window.addEventListener("resize", checkDevice);
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
+
+  // ✅ TAMBAH: useEffect untuk handle resize listener (opsional backup)
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      if (mobile !== isMobile) {
+        setIsMobile(mobile);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isInitialized, isMobile]);
 
   const getTodayDate = () => {
     // Get local date in YYYY-MM-DD format (Indonesia timezone)
@@ -980,6 +992,8 @@ const TeacherDashboard = ({ userData }) => {
   };
 
   useEffect(() => {
+    if (!isInitialized) return; // ✅ Tunggu sampai device detection selesai
+
     fetchDashboardData();
 
     const interval = setInterval(() => {
@@ -987,9 +1001,10 @@ const TeacherDashboard = ({ userData }) => {
     }, 300000);
 
     return () => clearInterval(interval);
-  }, [userData.role, userData.kelas]);
+  }, [userData.role, userData.kelas, isInitialized]); // ✅ Tambah dependency isInitialized
 
-  if (loading) {
+  if (loading || !isInitialized) {
+    // ✅ Tampilkan loading sampai semua initialized
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-900">
         <div className="text-center">

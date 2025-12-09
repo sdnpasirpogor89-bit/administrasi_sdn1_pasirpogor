@@ -1,4 +1,5 @@
 // src/components/Attendance/AttendanceMain.js
+// LOGIC & STATE MANAGEMENT FOR ATTENDANCE SYSTEM
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
@@ -18,44 +19,8 @@ export const useAttendance = (currentUser) => {
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [deviceDetected, setDeviceDetected] = useState(false); // NEW: Track if device is detected
 
   const { isOnline, pendingCount, isSyncing } = useSyncStatus();
-
-  // FIXED: Better device detection with debounce
-  useEffect(() => {
-    const checkDeviceType = () => {
-      const width = window.innerWidth;
-      const isMobileNow = width < 768;
-      const isTabletNow = width >= 768 && width < 1024;
-
-      // Only update if changed
-      if (isMobile !== isMobileNow || isTablet !== isTabletNow) {
-        setIsMobile(isMobileNow);
-        setIsTablet(isTabletNow);
-      }
-      setDeviceDetected(true); // Mark as detected
-    };
-
-    // Initial check
-    checkDeviceType();
-
-    // Debounced resize handler
-    let resizeTimeout;
-    const handleResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(checkDeviceType, 100);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(resizeTimeout);
-    };
-  }, [isMobile, isTablet]);
 
   const loadStudentsData = useCallback(async () => {
     try {
@@ -180,9 +145,6 @@ export const useAttendance = (currentUser) => {
     isOnline,
     pendingCount,
     isSyncing,
-    isMobile,
-    isTablet,
-    deviceDetected, // NEW
   };
 };
 
@@ -208,9 +170,6 @@ export const useAttendanceLogic = (
     isOnline,
     pendingCount,
     isSyncing,
-    isMobile,
-    isTablet,
-    deviceDetected, // NEW
   } = useAttendance(currentUser);
 
   const [attendanceDate, setAttendanceDate] = useState("");
@@ -229,14 +188,8 @@ export const useAttendanceLogic = (
   const [rekapSubtitle, setRekapSubtitle] = useState("");
   const [rekapLoading, setRekapLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
-
-  // FIXED: Wait for device detection before showing card view
-  const showCardView = useMemo(() => {
-    if (!deviceDetected) {
-      return false; // Wait for detection
-    }
-    return isMobile;
-  }, [isMobile, deviceDetected]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
   // Auto-sync when online
   useEffect(() => {
@@ -250,6 +203,21 @@ export const useAttendanceLogic = (
         });
     }
   }, [isOnline, pendingCount]);
+
+  // Device detection
+  useEffect(() => {
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    checkDeviceType();
+    window.addEventListener("resize", checkDeviceType);
+    return () => window.removeEventListener("resize", checkDeviceType);
+  }, []);
+
+  const showCardView = isMobile;
 
   const getJenisPresensi = useCallback(() => {
     return currentUser.role === "guru_kelas" ? "kelas" : "mapel";
@@ -1017,10 +985,5 @@ export const useAttendanceLogic = (
     isOnline,
     pendingCount,
     isSyncing,
-
-    // Device info
-    isMobile,
-    isTablet,
-    deviceDetected,
   };
 };

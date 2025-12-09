@@ -922,7 +922,7 @@ export const exportLeger = async (
     worksheet.columns = [
       { width: 5 },
       { width: 14 },
-      { width: 30 },
+      { width: 33 },
       { width: 9 },
       { width: 9 },
       { width: 9 },
