@@ -1,3 +1,4 @@
+//[file name]: TeacherSchedule.js
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import TeacherScheduleExcel from "./TeacherScheduleExcel";
@@ -343,16 +344,20 @@ const TeacherSchedule = ({ user }) => {
   const renderScheduleContent = () => {
     if (loading && schedules.length === 0) {
       return (
-        <div className="p-8 text-center text-slate-600">Memuat jadwal...</div>
+        <div className="p-8 text-center text-slate-600 dark:text-slate-400">
+          Memuat jadwal...
+        </div>
       );
     }
 
     if (schedules.length === 0) {
       return (
-        <div className="p-8 text-center text-slate-500">
-          <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-400" />
-          <p className="mb-2">Belum ada jadwal</p>
-          <p className="text-sm">Klik "Tambah Jadwal" untuk memulai</p>
+        <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+          <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-slate-600" />
+          <p className="mb-2 dark:text-slate-300">Belum ada jadwal</p>
+          <p className="text-sm dark:text-slate-500">
+            Klik "Tambah Jadwal" untuk memulai
+          </p>
         </div>
       );
     }
@@ -367,17 +372,17 @@ const TeacherSchedule = ({ user }) => {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-green-50">
-              <th className="p-4 border border-green-200 text-center font-semibold text-green-800">
+            <tr className="bg-green-50 dark:bg-green-900/30">
+              <th className="p-3 sm:p-4 border border-green-200 dark:border-green-800 text-center font-semibold text-green-800 dark:text-green-300">
                 JAM KE
               </th>
-              <th className="p-4 border border-green-200 text-center font-semibold text-green-800">
+              <th className="p-3 sm:p-4 border border-green-200 dark:border-green-800 text-center font-semibold text-green-800 dark:text-green-300">
                 WAKTU
               </th>
               {days.map((day) => (
                 <th
                   key={day}
-                  className="p-4 border border-green-200 text-center font-semibold text-green-800">
+                  className="p-3 sm:p-4 border border-green-200 dark:border-green-800 text-center font-semibold text-green-800 dark:text-green-300">
                   {day.toUpperCase()}
                 </th>
               ))}
@@ -386,18 +391,16 @@ const TeacherSchedule = ({ user }) => {
           <tbody>
             {periods.map((period) => {
               const time = JAM_SCHEDULE.Senin[period];
-
-              // 🔥 PERBAIKAN: ISTIRAHAT SETELAH JAM KE-5 (period "5")
-              const showIstirahat = period === "5"; // Jam ke-5 adalah sebelum istirahat
+              const showIstirahat = period === "5";
 
               return (
                 <React.Fragment key={period}>
                   {/* BARIS JAM NORMAL */}
-                  <tr className="hover:bg-green-50 transition-colors">
-                    <td className="p-3 border border-green-100 text-center font-semibold text-green-900">
+                  <tr className="hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
+                    <td className="p-3 sm:p-4 border border-green-100 dark:border-green-800/50 text-center font-semibold text-green-900 dark:text-green-200">
                       {period}
                     </td>
-                    <td className="p-3 border border-green-100 text-center text-sm text-green-800">
+                    <td className="p-3 sm:p-4 border border-green-100 dark:border-green-800/50 text-center text-sm text-green-800 dark:text-green-300">
                       {time.start} - {time.end}
                     </td>
                     {days.map((day) => {
@@ -412,49 +415,51 @@ const TeacherSchedule = ({ user }) => {
                         <td
                           key={`${day}-${period}`}
                           colSpan={cellData?.colspan || 1}
-                          className="p-3 border border-green-100 text-center">
+                          className="p-3 sm:p-4 border border-green-100 dark:border-green-800/50 text-center">
                           {cellData && !cellData.skip ? (
                             <div className="relative group">
-                              <span className="font-bold text-slate-800 text-sm">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">
                                 {cellData.subject}
                               </span>
                               <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
                                 <button
                                   onClick={() => handleOpenModal(cellData)}
-                                  className="text-blue-600 hover:text-blue-700 p-1 bg-white rounded shadow-sm">
+                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-1 bg-white dark:bg-gray-800 rounded shadow-sm">
                                   <Edit className="w-3 h-3" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(cellData.id)}
-                                  className="text-red-600 hover:text-red-700 p-1 bg-white rounded shadow-sm">
+                                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-1 bg-white dark:bg-gray-800 rounded shadow-sm">
                                   <Trash2 className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>
                           ) : pagiActivity ? (
-                            <span className="font-bold text-green-700 text-xs">
+                            <span className="font-bold text-green-700 dark:text-green-400 text-xs">
                               {pagiActivity}
                             </span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-400 dark:text-slate-600">
+                              -
+                            </span>
                           )}
                         </td>
                       );
                     })}
                   </tr>
 
-                  {/* 🔥 PERBAIKAN: BARIS ISTIRAHAT SETELAH JAM KE-5 */}
+                  {/* BARIS ISTIRAHAT SETELAH JAM KE-5 */}
                   {showIstirahat && (
-                    <tr className="bg-orange-50 hover:bg-orange-100 transition-colors">
-                      <td className="p-3 border border-green-100 text-center font-semibold text-orange-800">
+                    <tr className="bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
+                      <td className="p-3 sm:p-4 border border-green-100 dark:border-green-800/50 text-center font-semibold text-orange-800 dark:text-orange-300">
                         -
                       </td>
-                      <td className="p-3 border border-green-100 text-center text-sm text-orange-800">
+                      <td className="p-3 sm:p-4 border border-green-100 dark:border-green-800/50 text-center text-sm text-orange-800 dark:text-orange-300">
                         09:20 - 09:50
                       </td>
                       <td
                         colSpan={5}
-                        className="p-3 border border-green-100 text-center font-bold text-orange-700">
+                        className="p-3 sm:p-4 border border-green-100 dark:border-green-800/50 text-center font-bold text-orange-700 dark:text-orange-400">
                         ISTIRAHAT
                       </td>
                     </tr>
@@ -464,8 +469,8 @@ const TeacherSchedule = ({ user }) => {
             })}
           </tbody>
         </table>
-        <div className="p-4 bg-green-50 border-t border-green-200">
-          <p className="text-sm md:text-base text-green-800 text-center font-bold">
+        <div className="p-4 bg-green-50 dark:bg-green-900/30 border-t border-green-200 dark:border-green-800">
+          <p className="text-sm md:text-base text-green-800 dark:text-green-300 text-center font-bold">
             NB: Jadwal ini sebagai contoh perhitungan jumlah JP setiap mata
             pelajarannya setiap minggunya. Silahkan sesuaikan dengan Kelasnya
             masing-masing.
@@ -479,21 +484,21 @@ const TeacherSchedule = ({ user }) => {
     return (
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-green-50">
+          <thead className="bg-green-50 dark:bg-green-900/30">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-green-800 border-b border-green-200">
+              <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-green-800 dark:text-green-300 border-b border-green-200 dark:border-green-800">
                 Hari
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-green-800 border-b border-green-200">
+              <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-green-800 dark:text-green-300 border-b border-green-200 dark:border-green-800">
                 Jam Ke
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-green-800 border-b border-green-200">
+              <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-green-800 dark:text-green-300 border-b border-green-200 dark:border-green-800">
                 Waktu
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-green-800 border-b border-green-200">
+              <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-green-800 dark:text-green-300 border-b border-green-200 dark:border-green-800">
                 Mata Pelajaran
               </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-green-800 border-b border-green-200">
+              <th className="px-4 sm:px-6 py-3 text-left text-sm font-semibold text-green-800 dark:text-green-300 border-b border-green-200 dark:border-green-800">
                 Aksi
               </th>
             </tr>
@@ -504,13 +509,15 @@ const TeacherSchedule = ({ user }) => {
 
               if (daySchedules.length === 0) {
                 return (
-                  <tr key={day} className="border-b border-slate-200">
-                    <td className="px-6 py-4 font-semibold text-slate-800">
+                  <tr
+                    key={day}
+                    className="border-b border-slate-200 dark:border-slate-700">
+                    <td className="px-4 sm:px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">
                       {day}
                     </td>
                     <td
                       colSpan={4}
-                      className="px-6 py-4 text-slate-500 text-center">
+                      className="px-4 sm:px-6 py-4 text-slate-500 dark:text-slate-400 text-center">
                       Tidak ada jadwal
                     </td>
                   </tr>
@@ -535,35 +542,35 @@ const TeacherSchedule = ({ user }) => {
                 return (
                   <tr
                     key={schedule.id}
-                    className="border-b border-slate-200 hover:bg-green-50 transition-colors">
+                    className="border-b border-slate-200 dark:border-slate-700 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
                     {idx === 0 && (
                       <td
-                        className="px-6 py-4 font-semibold text-slate-800"
+                        className="px-4 sm:px-6 py-4 font-semibold text-slate-800 dark:text-slate-200"
                         rowSpan={daySchedules.length}>
                         {day}
                       </td>
                     )}
-                    <td className="px-6 py-4 text-slate-700 font-medium">
+                    <td className="px-4 sm:px-6 py-4 text-slate-700 dark:text-slate-300 font-medium">
                       JP {jamKe}
                     </td>
-                    <td className="px-6 py-4 text-slate-700">
+                    <td className="px-4 sm:px-6 py-4 text-slate-700 dark:text-slate-300">
                       {formatTime(schedule.start_time)} -{" "}
                       {formatTime(schedule.end_time)}
                     </td>
-                    <td className="px-6 py-4 font-semibold text-slate-800">
+                    <td className="px-4 sm:px-6 py-4 font-semibold text-slate-800 dark:text-slate-200">
                       {schedule.subject}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleOpenModal(schedule)}
-                          className="text-blue-600 hover:text-blue-700 flex items-center gap-1 text-sm">
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 text-sm">
                           <Edit className="w-4 h-4" />
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(schedule.id)}
-                          className="text-red-600 hover:text-red-700 flex items-center gap-1 text-sm">
+                          className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 flex items-center gap-1 text-sm">
                           <Trash2 className="w-4 h-4" />
                           Hapus
                         </button>
@@ -580,19 +587,19 @@ const TeacherSchedule = ({ user }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header - ONLY ONE */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-slate-200 dark:border-gray-700 p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <Calendar className="w-7 h-7 text-green-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <Calendar className="w-6 h-6 sm:w-7 sm:h-7 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">
                 JADWAL PELAJARAN KELAS {currentUser?.kelas || "-"}
               </h1>
-              <p className="text-slate-600 font-semibold">
+              <p className="text-slate-600 dark:text-slate-400 font-semibold text-sm sm:text-base">
                 TAHUN AJARAN 2025/2026 - SEMESTER GANJIL
               </p>
             </div>
@@ -600,46 +607,48 @@ const TeacherSchedule = ({ user }) => {
         </div>
 
         {/* Controls */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-          <div className="flex gap-3 justify-center flex-wrap">
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-slate-200 dark:border-gray-700 p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => setViewMode("grid")}
-              className={`flex-1 min-w-[140px] px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border transition-all ${
+              className={`flex-1 min-w-[140px] px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border transition-all ${
                 viewMode === "grid"
-                  ? "bg-green-100 text-green-700 border-green-300"
-                  : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700"
+                  : "bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-600 hover:bg-slate-200 dark:hover:bg-gray-600"
               }`}>
-              <LayoutGrid className="w-5 h-5" />
+              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
               Tampilan Grid
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`flex-1 min-w-[140px] px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border transition-all ${
+              className={`flex-1 min-w-[140px] px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border transition-all ${
                 viewMode === "list"
-                  ? "bg-green-100 text-green-700 border-green-300"
-                  : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700"
+                  : "bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-600 hover:bg-slate-200 dark:hover:bg-gray-600"
               }`}>
-              <List className="w-5 h-5" />
+              <List className="w-4 h-4 sm:w-5 sm:h-5" />
               Tampilan List
             </button>
             <button
               onClick={() => handleOpenModal()}
-              className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-green-700 transition-all">
-              <Plus className="w-5 h-5" />
+              className="flex-1 min-w-[140px] bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-green-700 dark:border-green-600 transition-all">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               Tambah Jadwal
             </button>
-            <TeacherScheduleExcel
-              schedules={schedules}
-              className={`Kelas ${currentUser?.kelas}`}
-              user={currentUser}
-              onRefresh={fetchSchedules}
-            />
+            <div className="flex-1 min-w-[140px]">
+              <TeacherScheduleExcel
+                schedules={schedules}
+                className={`Kelas ${currentUser?.kelas}`}
+                user={currentUser}
+                onRefresh={fetchSchedules}
+              />
+            </div>
           </div>
         </div>
 
         {/* Messages */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 px-4 py-3 rounded-lg mb-6">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5" />
               <span>{success}</span>
@@ -648,7 +657,7 @@ const TeacherSchedule = ({ user }) => {
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 px-4 py-3 rounded-lg mb-6">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5" />
               <span>{error}</span>
@@ -657,28 +666,28 @@ const TeacherSchedule = ({ user }) => {
         )}
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden">
           {renderScheduleContent()}
         </div>
       </div>
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 dark:border-gray-700">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">
                 {editingId ? "Edit Jadwal" : "Tambah Jadwal"}
               </h2>
               <button
                 onClick={handleCloseModal}
-                className="text-slate-400 hover:text-slate-600 transition-colors">
+                className="text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-400 transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                   Hari
                 </label>
                 <select
@@ -686,7 +695,7 @@ const TeacherSchedule = ({ user }) => {
                   value={formData.day}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 focus:border-green-500 dark:focus:border-green-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                   {days.map((day) => (
                     <option key={day} value={day}>
                       {day}
@@ -694,9 +703,9 @@ const TeacherSchedule = ({ user }) => {
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Dari Jam Ke
                   </label>
                   <select
@@ -704,7 +713,7 @@ const TeacherSchedule = ({ user }) => {
                     value={formData.start_period}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 focus:border-green-500 dark:focus:border-green-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                     {getAvailablePeriods().map((jam) => (
                       <option key={jam} value={jam}>
                         Jam {jam}
@@ -713,7 +722,7 @@ const TeacherSchedule = ({ user }) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Sampai Jam Ke
                   </label>
                   <select
@@ -721,7 +730,7 @@ const TeacherSchedule = ({ user }) => {
                     value={formData.end_period}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 focus:border-green-500 dark:focus:border-green-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                     {getAvailablePeriods().map((jam) => (
                       <option
                         key={jam}
@@ -736,7 +745,7 @@ const TeacherSchedule = ({ user }) => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                   Mata Pelajaran
                 </label>
                 <select
@@ -744,7 +753,7 @@ const TeacherSchedule = ({ user }) => {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 focus:border-green-500 dark:focus:border-green-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                   <option value="">Pilih Mata Pelajaran</option>
                   {SUBJECTS.map((subject) => (
                     <option key={subject} value={subject}>
@@ -754,30 +763,30 @@ const TeacherSchedule = ({ user }) => {
                 </select>
               </div>
               <div className="pt-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-green-800 mb-2">
+                <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-green-800 dark:text-green-300 mb-2">
                     <Clock className="w-4 h-4" />
                     <span className="font-medium">Info Waktu:</span>
                   </div>
-                  <p className="text-green-700 text-sm">
+                  <p className="text-green-700 dark:text-green-400 text-sm">
                     {formData.day}:{" "}
                     {JAM_SCHEDULE[formData.day]?.[formData.start_period]?.start}{" "}
                     - {JAM_SCHEDULE[formData.day]?.[formData.end_period]?.end}
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   type="button"
                   onClick={handleCloseModal}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 disabled:bg-slate-100 text-slate-700 rounded-lg font-medium transition-colors">
+                  className="flex-1 px-4 py-2 bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 dark:hover:bg-gray-600 disabled:bg-slate-100 dark:disabled:bg-gray-800 text-slate-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 px-4 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 disabled:bg-green-400 dark:disabled:bg-green-800 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Eye,
   Settings,
+  Save,
 } from "lucide-react";
 import KatrolTable from "./KatrolTable";
 import {
@@ -16,6 +17,8 @@ import {
   prosesKatrolSemua,
   hitungNilaiAkhir,
   exportToExcel,
+  exportToExcelMultiSheet, // ← BARU
+  exportLeger, // ← BARU
 } from "./Utils";
 
 const Katrol = ({ userData: initialUserData }) => {
@@ -25,6 +28,7 @@ const Katrol = ({ userData: initialUserData }) => {
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [dataNilai, setDataNilai] = useState([]);
   const [dataGrouped, setDataGrouped] = useState([]);
   const [hasilKatrol, setHasilKatrol] = useState([]);
@@ -39,6 +43,7 @@ const Katrol = ({ userData: initialUserData }) => {
   const [availableClasses, setAvailableClasses] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [activeAcademicYear, setActiveAcademicYear] = useState(null);
 
   const mataPelajaranGuruKelas = [
     "Bahasa Indonesia",
@@ -83,6 +88,29 @@ const Katrol = ({ userData: initialUserData }) => {
   }, [userData?.username]);
 
   useEffect(() => {
+    const fetchActiveYear = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("academic_years")
+          .select("*")
+          .eq("is_active", true)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setActiveAcademicYear(data);
+          console.log("✅ Active academic year:", data.year, data.semester);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching academic year:", error);
+        showMessage("Gagal memuat tahun ajaran aktif", "error");
+      }
+    };
+
+    fetchActiveYear();
+  }, []);
+
+  useEffect(() => {
     if (!userData?.role) return;
 
     if (userData.role === "guru_kelas") {
@@ -97,7 +125,6 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   }, [userData]);
 
-  // Fetch KKM dan Nilai Maksimal dari database berdasarkan kelas + mapel
   useEffect(() => {
     const fetchNilaiSettings = async () => {
       if (!selectedSubject || !selectedClass) return;
@@ -203,30 +230,31 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   };
 
+  // FIXED FUNCTION - FETCH DATA NILAI
   const fetchDataNilai = async () => {
     if (!selectedClass || !selectedSubject) {
       showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
       return;
     }
 
-    if (kkm > nilaiMaksimal) {
-      showMessage("KKM tidak boleh lebih besar dari Nilai Maksimal!", "error");
-      return;
-    }
-
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("nilai")
-        .select("*")
+      console.log(
+        `🔄 Mengambil data untuk kelas ${selectedClass}, mapel ${selectedSubject}`
+      );
+
+      // AMBIL DATA SISWA
+      const { data: siswaData, error: siswaError } = await supabase
+        .from("students")
+        .select("nisn, nama_siswa")
         .eq("kelas", selectedClass)
-        .eq("mata_pelajaran", selectedSubject)
-        .order("nisn", { ascending: true });
+        .eq("is_active", true)
+        .order("nama_siswa", { ascending: true });
 
-      if (error) throw error;
+      if (siswaError) throw siswaError;
 
-      if (!data || data.length === 0) {
-        showMessage("Tidak ada data nilai untuk kelas dan mapel ini", "error");
+      if (!siswaData || siswaData.length === 0) {
+        showMessage(`Tidak ada siswa di kelas ${selectedClass}`, "error");
         setDataNilai([]);
         setDataGrouped([]);
         setHasilKatrol([]);
@@ -234,19 +262,95 @@ const Katrol = ({ userData: initialUserData }) => {
         return;
       }
 
-      setDataNilai(data);
-      const grouped = groupDataByNISN(data);
-      setDataGrouped(grouped);
+      console.log(`✅ Ditemukan ${siswaData.length} siswa`);
+
+      // AMBIL SEMUA NILAI UNTUK KELAS DAN MAPEL INI
+      const { data: nilaiData, error: nilaiError } = await supabase
+        .from("nilai")
+        .select("*")
+        .eq("kelas", selectedClass)
+        .eq("mata_pelajaran", selectedSubject);
+
+      if (nilaiError) throw nilaiError;
+
+      console.log(`✅ Ditemukan ${nilaiData?.length || 0} data nilai`);
+
+      // FORMAT DATA UNTUK PREVIEW
+      const previewData = siswaData.map((siswa) => {
+        const nilaiSiswa =
+          nilaiData?.filter((n) => n.nisn === siswa.nisn) || [];
+
+        // Format untuk preview table
+        return {
+          nisn: siswa.nisn,
+          nama_siswa: siswa.nama_siswa,
+          kelas: selectedClass,
+          mata_pelajaran: selectedSubject,
+          // Default semua null dulu
+          nh1: null,
+          nh2: null,
+          nh3: null,
+          nh4: null,
+          nh5: null,
+          uts: null,
+          uas: null,
+        };
+      });
+
+      // ISI NILAI JIKA ADA
+      if (nilaiData && nilaiData.length > 0) {
+        nilaiData.forEach((item) => {
+          const siswaIndex = previewData.findIndex((s) => s.nisn === item.nisn);
+          if (siswaIndex !== -1) {
+            if (item.jenis_nilai === "NH1")
+              previewData[siswaIndex].nh1 = item.nilai;
+            if (item.jenis_nilai === "NH2")
+              previewData[siswaIndex].nh2 = item.nilai;
+            if (item.jenis_nilai === "NH3")
+              previewData[siswaIndex].nh3 = item.nilai;
+            if (item.jenis_nilai === "NH4")
+              previewData[siswaIndex].nh4 = item.nilai;
+            if (item.jenis_nilai === "NH5")
+              previewData[siswaIndex].nh5 = item.nilai;
+            if (item.jenis_nilai === "UTS")
+              previewData[siswaIndex].uts = item.nilai;
+            if (item.jenis_nilai === "UAS")
+              previewData[siswaIndex].uas = item.nilai;
+          }
+        });
+      }
+
+      // SIMPAN DATA UNTUK PREVIEW
+      setDataNilai(previewData);
+
+      // FORMAT UNTUK GROUPING (DIUTILS.JS)
+      const dataForGrouping = previewData.map((item) => ({
+        nisn: item.nisn,
+        nama_siswa: item.nama_siswa,
+        nilai: {
+          NH1: item.nh1,
+          NH2: item.nh2,
+          NH3: item.nh3,
+          NH4: item.nh4,
+          NH5: item.nh5,
+          UTS: item.uts,
+          UAS: item.uas,
+        },
+        nilai_katrol: {},
+      }));
+
+      setDataGrouped(dataForGrouping);
       setShowPreview(true);
       setHasilKatrol([]);
 
+      const nilaiCount = nilaiData?.length || 0;
       showMessage(
-        `Berhasil memuat ${data.length} data nilai dari ${grouped.length} siswa`,
+        `✅ Berhasil memuat ${previewData.length} siswa (${nilaiCount} data nilai)`,
         "success"
       );
     } catch (error) {
-      console.error("Error fetching data:", error);
-      showMessage("Gagal memuat data nilai", "error");
+      console.error("❌ Error mengambil data:", error);
+      showMessage(`Gagal memuat data: ${error.message}`, "error");
     } finally {
       setLoading(false);
     }
@@ -265,21 +369,132 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setProcessing(true);
     try {
+      console.log("🔄 Memulai proses katrol...");
       const katrol = prosesKatrolSemua(dataGrouped, kkm, nilaiMaksimal);
       const hasil = hitungNilaiAkhir(katrol);
-      hasil.sort((a, b) => a.nama_siswa.localeCompare(b.nama_siswa));
 
-      setHasilKatrol(hasil);
+      // TAMBAHKAN STATUS
+      const hasilDenganStatus = hasil.map((item) => ({
+        ...item,
+        status: item.nilai_akhir_katrol >= kkm ? "Tuntas" : "Belum Tuntas",
+      }));
+
+      hasilDenganStatus.sort((a, b) =>
+        a.nama_siswa.localeCompare(b.nama_siswa)
+      );
+
+      setHasilKatrol(hasilDenganStatus);
       setShowPreview(false);
       showMessage(
-        `Berhasil memproses katrol untuk ${hasil.length} siswa`,
+        `✅ Berhasil memproses katrol untuk ${hasilDenganStatus.length} siswa`,
         "success"
       );
     } catch (error) {
-      console.error("Error processing katrol:", error);
+      console.error("❌ Error processing katrol:", error);
       showMessage("Gagal memproses katrol", "error");
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const saveKatrolToDatabase = async () => {
+    if (!hasilKatrol || hasilKatrol.length === 0) {
+      showMessage("Tidak ada data katrol untuk disimpan", "error");
+      return;
+    }
+
+    if (!activeAcademicYear) {
+      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
+      return;
+    }
+
+    const confirmSave = window.confirm(
+      `💾 SIMPAN NILAI KATROL?\n\n` +
+        `Tahun Ajaran: ${activeAcademicYear.year}\n` +
+        `Semester: ${activeAcademicYear.semester}\n` +
+        `Kelas: ${selectedClass}\n` +
+        `Mata Pelajaran: ${selectedSubject}\n` +
+        `Total Siswa: ${hasilKatrol.length}\n\n` +
+        `Nilai akan disimpan ke database.\n` +
+        `Jika sudah ada, akan DITIMPA!\n\n` +
+        `Lanjutkan?`
+    );
+
+    if (!confirmSave) return;
+
+    setSaving(true);
+    try {
+      const recordsToSave = hasilKatrol.map((item) => {
+        // Hitung min/max dari nilai asli
+        const nilaiArray = [
+          item.nilai.NH1,
+          item.nilai.NH2,
+          item.nilai.NH3,
+          item.nilai.NH4,
+          item.nilai.NH5,
+          item.nilai.UTS,
+          item.nilai.UAS,
+        ].filter((n) => n !== null && n !== undefined && !isNaN(n));
+
+        const min = nilaiArray.length > 0 ? Math.min(...nilaiArray) : null;
+        const max = nilaiArray.length > 0 ? Math.max(...nilaiArray) : null;
+
+        return {
+          nisn: item.nisn,
+          nama_siswa: item.nama_siswa,
+          kelas: selectedClass,
+          mata_pelajaran: selectedSubject,
+          semester: activeAcademicYear.semester,
+          tahun_ajaran: activeAcademicYear.year,
+
+          // Nilai katrol
+          nh1_katrol: item.nilai_katrol?.NH1 || null,
+          nh2_katrol: item.nilai_katrol?.NH2 || null,
+          nh3_katrol: item.nilai_katrol?.NH3 || null,
+          nh4_katrol: item.nilai_katrol?.NH4 || null,
+          nh5_katrol: item.nilai_katrol?.NH5 || null,
+          uts_katrol: item.nilai_katrol?.UTS || null,
+          uas_katrol: item.nilai_katrol?.UAS || null,
+
+          rata_nh_katrol: item.rata_NH_katrol || null,
+          nilai_mentah: item.nilai_akhir_asli || null,
+          nilai_akhir: item.nilai_akhir_katrol,
+
+          status:
+            item.status ||
+            (item.nilai_akhir_katrol >= kkm ? "Tuntas" : "Belum Tuntas"),
+
+          kkm: kkm,
+          nilai_maksimal: nilaiMaksimal,
+
+          min_nilai: min,
+          max_nilai: max,
+
+          processed_by: userData.id,
+          processed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      });
+
+      console.log("💾 Menyimpan data katrol:", recordsToSave.length, "records");
+
+      const { data, error } = await supabase
+        .from("nilai_katrol")
+        .upsert(recordsToSave, {
+          onConflict: "nisn,mata_pelajaran,kelas,semester,tahun_ajaran",
+        });
+
+      if (error) throw error;
+
+      showMessage(
+        `✅ Berhasil menyimpan ${recordsToSave.length} nilai katrol ke database!`,
+        "success"
+      );
+    } catch (error) {
+      console.error("❌ Error saving katrol:", error);
+      showMessage(`Gagal menyimpan nilai katrol: ${error.message}`, "error");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -291,15 +506,14 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setExporting(true);
     try {
-      // 🔥 Pass userData ke fungsi exportToExcel
       await exportToExcel(
         hasilKatrol,
         selectedSubject,
         selectedClass,
         type,
-        userData // userData sudah ada dari props/state
+        userData
       );
-      showMessage(`Berhasil export format ${type}`, "success");
+      showMessage(`✅ Berhasil export format ${type}`, "success");
     } catch (error) {
       console.error("Error exporting:", error);
       showMessage("Gagal export data", "error");
@@ -309,7 +523,6 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   return (
-    // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-900
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
@@ -328,30 +541,37 @@ const Katrol = ({ userData: initialUserData }) => {
         </div>
       </div>
 
+      {/* Academic Year Info */}
+      {activeAcademicYear && (
+        <div className="max-w-7xl mx-auto mb-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
+            <span className="text-blue-800 dark:text-blue-300 font-medium">
+              📅 Tahun Ajaran Aktif: {activeAcademicYear.year} - Semester{" "}
+              {activeAcademicYear.semester}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Filter Section */}
       <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-        {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-800 */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
           <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 dark:text-gray-200">
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             Filter Data
           </h2>
 
-          {/* Single Row Filter - Mobile First */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
             {/* Kelas */}
             <div>
-              {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
               <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Kelas
               </label>
               {userData?.role === "guru_kelas" ? (
-                // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700, dark:border-gray-600, dark:text-gray-200
                 <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
                   <span className="font-semibold">Kelas {selectedClass}</span>
                 </div>
               ) : (
-                // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700, dark:border-gray-600, dark:text-gray-200
                 <select
                   value={selectedClass}
                   onChange={(e) => {
@@ -374,17 +594,14 @@ const Katrol = ({ userData: initialUserData }) => {
 
             {/* Mata Pelajaran */}
             <div>
-              {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
               <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Mata Pelajaran
               </label>
               {userData?.role === "guru_mapel" ? (
-                // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700, dark:border-gray-600, dark:text-gray-200
                 <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
                   <span className="font-semibold">{selectedSubject}</span>
                 </div>
               ) : (
-                // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700, dark:border-gray-600, dark:text-gray-200
                 <select
                   value={selectedSubject}
                   onChange={(e) => {
@@ -407,7 +624,6 @@ const Katrol = ({ userData: initialUserData }) => {
 
             {/* KKM */}
             <div>
-              {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
               <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 KKM
               </label>
@@ -418,7 +634,6 @@ const Katrol = ({ userData: initialUserData }) => {
                 value={kkm}
                 onChange={(e) => handleKkmChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
-                // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700, dark:border-gray-600, dark:text-gray-200, dan disabled:dark:bg-gray-800
                 className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800"
                 placeholder="KKM"
               />
@@ -426,7 +641,6 @@ const Katrol = ({ userData: initialUserData }) => {
 
             {/* Nilai Maksimal */}
             <div>
-              {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
               <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Nilai Maksimal
               </label>
@@ -437,7 +651,6 @@ const Katrol = ({ userData: initialUserData }) => {
                 value={nilaiMaksimal}
                 onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
-                // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700, dark:border-gray-600, dark:text-gray-200, dan disabled:dark:bg-gray-800
                 className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800"
                 placeholder="Nilai Max"
               />
@@ -446,7 +659,6 @@ const Katrol = ({ userData: initialUserData }) => {
 
           {/* Warning KKM > Nilai Maksimal */}
           {kkm > nilaiMaksimal && selectedSubject && (
-            // [MODIFIKASI DARK MODE] Tambahkan dark:bg-red-900/20 dan dark:text-red-400
             <div className="mb-4 flex items-center gap-2 text-red-600 dark:text-red-400 text-xs sm:text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>KKM tidak boleh lebih besar dari Nilai Maksimal!</span>
@@ -457,14 +669,12 @@ const Katrol = ({ userData: initialUserData }) => {
           {selectedClass && selectedSubject && (
             <div className="mb-4">
               {settingsChanged && (
-                // [MODIFIKASI DARK MODE] Tambahkan dark:text-orange-400
                 <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   Pengaturan KKM/Nilai Maksimal Belum Tersimpan
                 </span>
               )}
               {!settingsChanged && !loadingSettings && (
-                // [MODIFIKASI DARK MODE] Tambahkan dark:text-green-400
                 <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" />
                   Pengaturan KKM: {originalKkm} & Nilai Maksimal:{" "}
@@ -474,7 +684,7 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           )}
 
-          {/* Action Buttons: Muat Data - Proses Katrol - Simpan Pengaturan KKM - Export Buttons */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
             {/* Tombol Muat Data */}
             <button
@@ -519,6 +729,26 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
+            {/* Tombol Simpan Nilai Katrol */}
+            {hasilKatrol.length > 0 && (
+              <button
+                onClick={saveKatrolToDatabase}
+                disabled={saving}
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                {saving ? (
+                  <>
+                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Simpan Nilai Katrol</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {/* Tombol Simpan Settings */}
             {selectedClass && selectedSubject && (
               <button
@@ -541,7 +771,7 @@ const Katrol = ({ userData: initialUserData }) => {
               </button>
             )}
 
-            {/* Export Buttons - Dipindahkan ke sini */}
+            {/* Export Buttons */}
             {hasilKatrol.length > 0 && (
               <>
                 <button
@@ -557,7 +787,7 @@ const Katrol = ({ userData: initialUserData }) => {
                   disabled={exporting}
                   className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
                   <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Export Ringkas</span>
+                  <span>Exp. Katrol Akhir</span>
                 </button>
               </>
             )}
@@ -569,7 +799,6 @@ const Katrol = ({ userData: initialUserData }) => {
       {message.text && (
         <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
           <div
-            // [MODIFIKASI DARK MODE] Tambahkan dark:bg-*-900/20 dan dark:text-*-400
             className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
               message.type === "success"
                 ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400"
@@ -585,185 +814,171 @@ const Katrol = ({ userData: initialUserData }) => {
         </div>
       )}
 
-      {/* Preview Data */}
-      {showPreview && dataGrouped.length > 0 && (
-        <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-          {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-800 */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-              <h2 className="text-base sm:text-lg font-semibold dark:text-gray-200">
-                Preview Data Nilai
-              </h2>
-              {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-400 */}
-              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                KKM: {kkm} | Max: {nilaiMaksimal} | Siswa: {dataGrouped.length}
-              </span>
-            </div>
-            {/* [RESPONSIVENESS] Pastikan overflow-x-auto ada untuk table */}
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="inline-block min-w-full align-middle">
-                {/* [MODIFIKASI DARK MODE] Tambahkan dark:divide-gray-600 */}
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                  {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-700 */}
-                  <thead className="bg-gray-100 dark:bg-gray-700">
+      {/* Data Tables */}
+      <div className="max-w-7xl mx-auto">
+        {/* Preview Table */}
+        {showPreview && dataGrouped.length > 0 && (
+          <div className="mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mb-4">
+              <h3 className="text-lg font-semibold mb-4 dark:text-gray-200 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-blue-600" />
+                Preview Data Nilai ({dataGrouped.length} siswa)
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 dan dark:bg-gray-700 untuk sticky */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase sticky left-0 bg-gray-100 dark:bg-gray-700 z-10">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         No
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 dan dark:bg-gray-700 untuk sticky */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase sticky left-8 sm:left-12 bg-gray-100 dark:bg-gray-700 z-10">
-                        Nama
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        NISN
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Nama Siswa
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         NH1
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         NH2
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         NH3
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         NH4
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         NH5
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         UTS
                       </th>
-                      {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         UAS
                       </th>
                     </tr>
                   </thead>
-                  {/* [MODIFIKASI DARK MODE] Tambahkan dark:divide-gray-600 */}
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
-                    {dataGrouped.map((siswa, idx) => (
-                      // [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-800 dan dark:bg-gray-700 untuk alternating rows
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {dataGrouped.slice(0, 10).map((item, index) => (
                       <tr
-                        key={siswa.nisn}
-                        className={
-                          idx % 2 === 0
-                            ? "bg-white dark:bg-gray-800"
-                            : "bg-gray-50 dark:bg-gray-700"
-                        }>
-                        {/* [MODIFIKASI DARK MODE] Sticky cell perlu warna latar belakang eksplisit dari row, dan text color */}
-                        <td
-                          className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm dark:text-gray-300 sticky left-0 z-10 ${
-                            idx % 2 === 0
-                              ? "bg-white dark:bg-gray-800"
-                              : "bg-gray-50 dark:bg-gray-700"
-                          }`}>
-                          {idx + 1}
+                        key={item.nisn}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {index + 1}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Sticky cell perlu warna latar belakang eksplisit dari row, dan text color */}
-                        <td
-                          className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium sticky left-8 sm:left-12 z-10 whitespace-nowrap dark:text-gray-300 ${
-                            idx % 2 === 0
-                              ? "bg-white dark:bg-gray-800"
-                              : "bg-gray-50 dark:bg-gray-700"
-                          }`}>
-                          {siswa.nama_siswa}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
+                          {item.nisn}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.NH1 || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nama_siswa}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.NH2 || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.NH1 || "-"}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.NH3 || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.NH2 || "-"}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.NH4 || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.NH3 || "-"}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.NH5 || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.NH4 || "-"}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.UTS || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.NH5 || "-"}
                         </td>
-                        {/* [MODIFIKASI DARK MODE] Tambahkan dark:text-gray-300 */}
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center dark:text-gray-300">
-                          {siswa.nilai.UAS || "-"}
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.UTS || "-"}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                          {item.nilai?.UAS || "-"}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {dataGrouped.length > 10 && (
+                <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                  Menampilkan 10 dari {dataGrouped.length} siswa. Gunakan tombol
+                  "Proses Katrol" untuk melihat hasil lengkap.
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Hasil Katrol */}
-      {hasilKatrol.length > 0 && (
-        <>
-          {/* Summary Cards */}
-          <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-            {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-800 */}
+        {/* Results Table */}
+        {hasilKatrol.length > 0 && (
+          <div className="mb-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-blue-900/20 dan dark:text-gray-400 */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg">
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    KKM
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-blue-600">
-                    {kkm}
-                  </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                <h3 className="text-lg font-semibold dark:text-gray-200 flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-green-600" />
+                  Hasil Katrol Nilai ({hasilKatrol.length} siswa)
+                </h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Tuntas (
+                      {hasilKatrol.filter((h) => h.status === "Tuntas").length})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Belum Tuntas (
+                      {
+                        hasilKatrol.filter((h) => h.status === "Belum Tuntas")
+                          .length
+                      }
+                      )
+                    </span>
+                  </div>
                 </div>
-                {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-green-900/20 dan dark:text-gray-400 */}
-                <div className="bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 rounded-lg">
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    Rentang Katrol
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-green-600">
-                    {kkm} - {nilaiMaksimal}
-                  </p>
-                </div>
-                {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-purple-900/20 dan dark:text-gray-400 */}
-                <div className="bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 rounded-lg">
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    Total Siswa
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-purple-600">
-                    {hasilKatrol.length}
-                  </p>
-                </div>
+              </div>
+
+              <KatrolTable data={hasilKatrol} />
+
+              <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                <p>
+                  • KKM: {kkm} | Nilai Maksimal: {nilaiMaksimal}
+                </p>
+                <p>
+                  • Proses katrol menggunakan rumus:{" "}
+                  <span className="font-mono">
+                    Nilai Akhir = KKM + ((Nilai Mentah - Min) / (Max - Min)) ×
+                    (Nilai Maksimal - KKM)
+                  </span>
+                </p>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Tabel Hasil */}
-          <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-            {/* [MODIFIKASI DARK MODE] Tambahkan dark:bg-gray-800 */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
-              <h2 className="text-base sm:text-lg font-semibold mb-4 dark:text-gray-200">
-                Hasil Katrol
-              </h2>
-              {/* Catatan: Komponen KatrolTable harus diupdate secara terpisah untuk dark mode */}
-              <KatrolTable data={hasilKatrol} kkm={kkm} />
+        {/* Empty State */}
+        {!showPreview &&
+          hasilKatrol.length === 0 &&
+          dataGrouped.length === 0 &&
+          selectedClass &&
+          selectedSubject && (
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
+                  Belum Ada Data
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Pilih kelas dan mata pelajaran, lalu klik "Muat Data" untuk
+                  memulai proses katrol.
+                </p>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          )}
+      </div>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+//[file name]: TeacherScheduleExcel.js
 import React, { useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import { Download, Upload, AlertCircle, CheckCircle } from "lucide-react";
@@ -67,13 +68,13 @@ const SUBJECTS = [
   "IPAS",
   "Pendidikan Pancasila",
   "Seni Budaya",
-  "PABP", // 🔥 ADDED: PABP
+  "PABP",
   "PJOK",
 ];
 
 const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-// 🔥 BUTTON COMPONENT ONLY - NO FULL UI
+// 🔥 REVISI: Component sekarang return DIV dengan dua button sejajar
 const TeacherScheduleExcel = ({ schedules, className, user, onRefresh }) => {
   const [loading, setLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -457,22 +458,28 @@ const TeacherScheduleExcel = ({ schedules, className, user, onRefresh }) => {
     return schedulesToInsert;
   };
 
-  // 🔥 RENDER BUTTONS ONLY
+  // 🔥 REVISI RENDER: Kembalikan DIV dengan dua button dalam flex row
   return (
-    <>
+    <div className="flex flex-col sm:flex-row gap-2">
       {/* Export Button */}
       <button
         onClick={handleExportExcel}
         disabled={loading || schedules.length === 0}
-        className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-green-700 transition-all">
-        <Download className="w-5 h-5" />
-        {loading ? "Exporting..." : "Export Excel"}
+        className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-green-700 dark:border-green-600 transition-all text-sm sm:text-base">
+        <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="hidden sm:inline">
+          {loading ? "Exporting..." : "Export Excel"}
+        </span>
+        <span className="sm:hidden">{loading ? "..." : "Export"}</span>
       </button>
 
       {/* Import Button */}
-      <label className="flex-1 min-w-[140px] bg-blue-600 hover:bg-blue-700 cursor-pointer text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-blue-700 transition-all">
-        <Upload className="w-5 h-5" />
-        {importLoading ? "Importing..." : "Import Excel"}
+      <label className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2 justify-center border border-blue-700 dark:border-blue-600 transition-all text-sm sm:text-base">
+        <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+        <span className="hidden sm:inline">
+          {importLoading ? "Importing..." : "Import Excel"}
+        </span>
+        <span className="sm:hidden">{importLoading ? "..." : "Import"}</span>
         <input
           ref={fileInputRef}
           type="file"
@@ -489,8 +496,8 @@ const TeacherScheduleExcel = ({ schedules, className, user, onRefresh }) => {
           <div
             className={`px-4 py-3 rounded-lg shadow-lg ${
               message.type === "error"
-                ? "bg-red-50 border border-red-200 text-red-800"
-                : "bg-green-50 border border-green-200 text-green-800"
+                ? "bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
+                : "bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300"
             }`}>
             <div className="flex items-center gap-2">
               {message.type === "error" ? (
@@ -503,7 +510,7 @@ const TeacherScheduleExcel = ({ schedules, className, user, onRefresh }) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

@@ -16,7 +16,7 @@ import Layout from "./components/Layout";
 import AdminDashboard from "./components/AdminDashboard";
 import TeacherDashboard from "./components/TeacherDashboard";
 import Students from "./pages/Students";
-import Attendance from "./pages/Attendance";
+import Attendance from "./pages/attendance/Attendance";
 import Teacher from "./pages/Teacher";
 import Grade from "./pages/grades/Grade";
 import Katrol from "./pages/grades/Katrol";
@@ -126,9 +126,8 @@ function App() {
 
   // ========== 🌙 DARK MODE STATE ==========
   const [darkMode, setDarkMode] = useState(() => {
-    // Cek localStorage dulu, kalau ga ada default false (light mode)
     const saved = localStorage.getItem("darkMode");
-    return saved === "true";
+    return saved ? JSON.parse(saved) : false; // ← pake JSON.parse biar dapat boolean
   });
 
   // ========== MAINTENANCE MODE STATE ==========
@@ -144,13 +143,17 @@ function App() {
     } else {
       document.documentElement.classList.remove("dark");
     }
-    // Simpan ke localStorage
-    localStorage.setItem("darkMode", darkMode.toString());
+    // HAPUS localStorage.setItem dari sini karena udah di toggleDarkMode
   }, [darkMode]);
 
   // ========== 🌙 TOGGLE DARK MODE FUNCTION ==========
   const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev) => !prev);
+    setDarkMode((prev) => {
+      const newValue = !prev;
+      console.log("🌙 Toggling dark mode:", prev, "->", newValue);
+      localStorage.setItem("darkMode", newValue.toString()); // ← save langsung di sini
+      return newValue;
+    });
   }, []);
 
   // ========== 1. SETUP AUTO-SYNC & MAINTENANCE CHECK ==========

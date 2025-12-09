@@ -233,6 +233,8 @@ const Layout = ({
 
       try {
         navigate(path);
+        // Using a short timeout to simulate a loading state or ensure navigation completes
+        // This is generally not needed if navigation is synchronous, but kept for logic fidelity
         setTimeout(() => setIsNavigating(false), 100);
       } catch (error) {
         console.error("Navigation error:", error);
@@ -278,7 +280,7 @@ const Layout = ({
     return sidebarCollapsed ? "ml-20" : "ml-72";
   };
 
-  // 🔥 COOL DARK MODE TOGGLE COMPONENT
+  // 櫨 COOL DARK MODE TOGGLE COMPONENT
   const CoolDarkModeToggle = ({ size = "default" }) => {
     const sizes = {
       small: { container: "w-14 h-7", circle: "w-5 h-5", icon: 12 },
@@ -468,8 +470,10 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* 🔥 COOL DARK MODE TOGGLE - MOBILE */}
-                  <CoolDarkModeToggle size="small" />
+                  {/* 櫨 COOL DARK MODE TOGGLE - MOBILE */}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <CoolDarkModeToggle size="small" />
+                  </div>
 
                   <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 min-w-0">
                     <div className="text-center">
@@ -554,7 +558,7 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  {/* 🔥 COOL DARK MODE TOGGLE - TABLET */}
+                  {/* 櫨 COOL DARK MODE TOGGLE - TABLET */}
                   <CoolDarkModeToggle size="default" />
 
                   <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5">
@@ -649,7 +653,7 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-6">
-                  {/* 🔥 COOL DARK MODE TOGGLE - DESKTOP */}
+                  {/* 櫨 COOL DARK MODE TOGGLE - DESKTOP */}
                   <CoolDarkModeToggle size="large" />
 
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl px-4 py-3 shadow-sm">

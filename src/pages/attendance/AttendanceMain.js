@@ -1,32 +1,20 @@
-// src/pages/Attendance.js - VERSION AFTER SPLITTING (Hanya 180 baris!)
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Check, Save, Calendar, Download, RefreshCw } from "lucide-react";
+// src/components/Attendance/AttendanceMain.js
+// LOGIC & STATE MANAGEMENT FOR ATTENDANCE SYSTEM
 
-import { supabase } from "../supabaseClient";
-import AttendanceModal from "./AttendanceModal";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { supabase } from "../../supabaseClient";
 import {
   exportAttendanceFromComponent,
   exportSemesterRecapFromComponent,
 } from "./AttendanceExport";
+import { getSemesterData } from "../../services/semesterService";
+import { saveWithSync, syncPendingData } from "../../offlineSync";
+import { useSyncStatus } from "../../hooks/useSyncStatus";
 
-// PWA OFFLINE IMPORTS
-import { saveWithSync, syncPendingData } from "../offlineSync";
-import { useSyncStatus } from "../hooks/useSyncStatus";
-import SyncStatusBadge from "../components/SyncStatusBadge";
-
-// COMPONENTS YANG SUDAH DIPISAH
-import AttendanceFilters from "./attendance/AttendanceFilters";
-import AttendanceStats from "./attendance/AttendanceStats";
-import AttendanceTable from "./attendance/AttendanceTable";
-import {
-  Toast,
-  ConfirmationModal,
-  ExportModal,
-  ExportSemesterModal,
-} from "./attendance/AttendanceModals";
-
-// CUSTOM HOOK (Kita taruh di sini karena cuma dipakai di file ini)
-const useAttendance = (currentUser) => {
+// ============================================
+// CUSTOM HOOK FOR ATTENDANCE LOGIC
+// ============================================
+export const useAttendance = (currentUser) => {
   const [studentsData, setStudentsData] = useState({});
   const [attendanceData, setAttendanceData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -160,11 +148,16 @@ const useAttendance = (currentUser) => {
   };
 };
 
-// Main Attendance Component
-const Attendance = ({
-  currentUser = { role: "admin", kelas: null, username: "admin" },
-}) => {
-  // CUSTOM HOOK
+// ============================================
+// MAIN ATTENDANCE LOGIC HOOK
+// ============================================
+export const useAttendanceLogic = (
+  currentUser = {
+    role: "admin",
+    kelas: null,
+    username: "admin",
+  }
+) => {
   const {
     studentsData,
     attendanceData,
@@ -179,7 +172,6 @@ const Attendance = ({
     isSyncing,
   } = useAttendance(currentUser);
 
-  // STATE
   const [attendanceDate, setAttendanceDate] = useState("");
   const [activeClass, setActiveClass] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -197,8 +189,9 @@ const Attendance = ({
   const [rekapLoading, setRekapLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
-  // EFFECTS
+  // Auto-sync when online
   useEffect(() => {
     if (isOnline && pendingCount > 0) {
       syncPendingData()
@@ -211,19 +204,26 @@ const Attendance = ({
     }
   }, [isOnline, pendingCount]);
 
+  // Device detection
   useEffect(() => {
     const checkDeviceType = () => {
-      setIsMobile(window.innerWidth < 768);
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
     };
+
     checkDeviceType();
     window.addEventListener("resize", checkDeviceType);
     return () => window.removeEventListener("resize", checkDeviceType);
   }, []);
 
+  const showCardView = isMobile;
+
   const getJenisPresensi = useCallback(() => {
     return currentUser.role === "guru_kelas" ? "kelas" : "mapel";
   }, [currentUser.role]);
 
+  // Initialize date
   useEffect(() => {
     const getIndonesiaDate = () => {
       const now = new Date();
@@ -232,21 +232,25 @@ const Attendance = ({
       const day = String(now.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
+
     setAttendanceDate(getIndonesiaDate());
   }, []);
 
+  // Load students data
   useEffect(() => {
     loadStudentsData().catch((error) => {
       showToast(`Error memuat data siswa: ${error.message}`, "error");
     });
   }, [loadStudentsData]);
 
+  // Set active class based on user role
   useEffect(() => {
     if (currentUser.role === "guru_kelas" && currentUser.kelas) {
       setActiveClass(currentUser.kelas);
     }
   }, [currentUser]);
 
+  // Load attendance for selected date and class
   useEffect(() => {
     if (attendanceDate && studentsData[activeClass]?.length > 0) {
       loadAttendanceForDate(attendanceDate, activeClass).catch((error) => {
@@ -255,9 +259,10 @@ const Attendance = ({
     }
   }, [attendanceDate, activeClass, loadAttendanceForDate, studentsData]);
 
-  // FILTERED STUDENTS
+  // Filter students based on search term
   const filteredStudents = useMemo(() => {
     if (!studentsData[activeClass]) return [];
+
     return studentsData[activeClass].filter(
       (student) =>
         student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -265,29 +270,33 @@ const Attendance = ({
     );
   }, [studentsData, activeClass, searchTerm]);
 
-  // SUMMARY
+  // Calculate attendance summary
   const summary = useMemo(() => {
     if (!attendanceData[activeClass]) {
       return { Hadir: 0, Alpa: 0, Sakit: 0, Izin: 0 };
     }
+
     const counts = { Hadir: 0, Alpa: 0, Sakit: 0, Izin: 0 };
+
     Object.values(attendanceData[activeClass]).forEach((student) => {
       if (counts.hasOwnProperty(student.status)) {
         counts[student.status]++;
       }
     });
+
     return counts;
   }, [attendanceData, activeClass]);
 
-  // TOAST FUNCTIONS
+  // Toast utilities
   const showToast = useCallback((message, type = "success") => {
     setToast({ show: true, message, type });
   }, []);
+
   const hideToast = useCallback(() => {
     setToast({ show: false, message: "", type: "" });
   }, []);
 
-  // CHECK CLASS ACCESS
+  // Class access control
   const checkClassAccess = useCallback(
     (classNum) => {
       if (currentUser.role === "guru_kelas" && currentUser.kelas !== classNum) {
@@ -302,10 +311,11 @@ const Attendance = ({
     [currentUser, showToast]
   );
 
-  // UPDATE STATUS & NOTE
+  // Update student status
   const updateStatus = useCallback(
     (classNum, studentIndex, status) => {
       if (!checkClassAccess(classNum)) return;
+
       setAttendanceData((prev) => {
         const newAttendanceData = { ...prev };
         if (
@@ -323,9 +333,11 @@ const Attendance = ({
     [checkClassAccess, setAttendanceData]
   );
 
+  // Update student note
   const updateNote = useCallback(
     (classNum, studentIndex, note) => {
       if (!checkClassAccess(classNum)) return;
+
       setAttendanceData((prev) => {
         const newAttendanceData = { ...prev };
         if (
@@ -343,7 +355,7 @@ const Attendance = ({
     [checkClassAccess, setAttendanceData]
   );
 
-  // SAVE FUNCTIONS (simplified - only core logic)
+  // Check if attendance already exists for date
   const checkExistingAttendance = useCallback(
     async (classNum, date) => {
       try {
@@ -354,15 +366,21 @@ const Attendance = ({
           .eq("kelas", classNum)
           .eq("guru_input", currentUser.username)
           .limit(1);
-        if (error) return false;
+
+        if (error) {
+          console.error("Error checking existing attendance:", error);
+          return false;
+        }
         return data && data.length > 0;
       } catch (error) {
+        console.error("Error checking existing attendance:", error);
         return false;
       }
     },
     [currentUser.username]
   );
 
+  // Save attendance data to database
   const saveAttendanceData = useCallback(
     async (classNum, date) => {
       try {
@@ -374,18 +392,25 @@ const Attendance = ({
         }
 
         if (isOnline) {
-          const { error: deleteError } = await supabase
-            .from("attendance")
-            .delete()
-            .eq("tanggal", date)
-            .eq("kelas", classNum)
-            .eq("guru_input", currentUser.username);
+          try {
+            const { error: deleteError } = await supabase
+              .from("attendance")
+              .delete()
+              .eq("tanggal", date)
+              .eq("kelas", classNum)
+              .eq("guru_input", currentUser.username);
 
-          if (deleteError) console.error("❌ Delete error:", deleteError);
+            if (deleteError) {
+              console.warn("Warning delete old data:", deleteError);
+            }
+          } catch (err) {
+            console.warn("Warning delete old data:", err);
+          }
         }
 
         const attendanceRecords = Object.values(attendanceData[classNum]);
         let successCount = 0;
+        let errorCount = 0;
 
         for (const student of attendanceRecords) {
           const record = {
@@ -401,24 +426,39 @@ const Attendance = ({
           };
 
           const result = await saveWithSync("attendance", record);
-          if (result.success) successCount++;
+
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error("Failed to save:", student.name, result.error);
+          }
         }
 
         const jenisText =
           getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
-        if (isOnline) {
-          showToast(
-            `✅ ${successCount} presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
-          );
+
+        if (errorCount === 0) {
+          if (isOnline) {
+            showToast(
+              `✅ ${successCount} presensi ${jenisText} ${classNum} tanggal ${date} berhasil disimpan!`
+            );
+          } else {
+            showToast(
+              `💾 ${successCount} data disimpan offline. Akan disinkronkan saat online.`,
+              "offline"
+            );
+          }
         } else {
           showToast(
-            `💾 ${successCount} data disimpan offline. Akan disinkronkan saat online.`,
-            "offline"
+            `⚠️ ${successCount} berhasil, ${errorCount} gagal disimpan`,
+            "error"
           );
         }
 
         await loadAttendanceForDate(date, classNum);
       } catch (error) {
+        console.error("Error saving attendance:", error);
         showToast(`Error menyimpan data presensi: ${error.message}`, "error");
         throw error;
       }
@@ -433,8 +473,10 @@ const Attendance = ({
     ]
   );
 
+  // Mark all students as present
   const markAllPresent = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
+
     setSaving(true);
     try {
       setAttendanceData((prev) => {
@@ -456,9 +498,10 @@ const Attendance = ({
     }
   }, [activeClass, checkClassAccess, saving, showToast, setAttendanceData]);
 
+  // Save attendance with confirmation modal
   const saveAttendance = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
-    if (saving) return;
+
     if (!attendanceDate) {
       showToast("Pilih tanggal terlebih dahulu!", "error");
       return;
@@ -471,6 +514,7 @@ const Attendance = ({
           activeClass,
           attendanceDate
         );
+
         if (exists) {
           const jenisText =
             getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
@@ -504,32 +548,322 @@ const Attendance = ({
     isOnline,
   ]);
 
-  // REKAP & EXPORT FUNCTIONS (simplified)
+  // Generate rekap data for a specific month
+  const generateRekapData = useCallback(
+    async (classNum, month, year) => {
+      try {
+        setRekapLoading(true);
+
+        const students = studentsData[classNum] || [];
+
+        if (students.length === 0) {
+          return [];
+        }
+
+        const lastDayOfMonth = new Date(year, month, 0).getDate();
+        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
+          lastDayOfMonth
+        ).padStart(2, "0")}`;
+
+        const { data: attendanceRecords, error } = await supabase
+          .from("attendance")
+          .select("*")
+          .eq("kelas", classNum)
+          .eq("guru_input", currentUser.username)
+          .gte("tanggal", startDate)
+          .lte("tanggal", endDate)
+          .order("tanggal", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        const rekapData = students.map((student) => {
+          const studentRecords = attendanceRecords.filter(
+            (record) => record.nisn === student.nisn
+          );
+
+          const dailyStatus = {};
+          studentRecords.forEach((record) => {
+            dailyStatus[record.tanggal] = record.status.toLowerCase();
+          });
+
+          const counts = {
+            hadir: studentRecords.filter((r) => r.status === "Hadir").length,
+            sakit: studentRecords.filter((r) => r.status === "Sakit").length,
+            izin: studentRecords.filter((r) => r.status === "Izin").length,
+            alpa: studentRecords.filter((r) => r.status === "Alpa").length,
+          };
+
+          const totalDays = studentRecords.length;
+          const percentage =
+            totalDays > 0 ? Math.round((counts.hadir / totalDays) * 100) : 100;
+
+          return {
+            nisn: student.nisn,
+            name: student.nama_siswa,
+            nama_siswa: student.nama_siswa,
+            dailyStatus: dailyStatus,
+            hadir: counts.hadir,
+            sakit: counts.sakit,
+            izin: counts.izin,
+            alpa: counts.alpa,
+            total: totalDays,
+            percentage: percentage,
+          };
+        });
+
+        return rekapData;
+      } catch (error) {
+        console.error("Error generating rekap:", error);
+        showToast(`Error generating rekap: ${error.message}`, "error");
+        return [];
+      } finally {
+        setRekapLoading(false);
+      }
+    },
+    [studentsData, showToast, currentUser.username]
+  );
+
+  // Show rekap modal
   const showRekap = useCallback(async () => {
     const jenisText =
       getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
     setRekapTitle(`Rekap Presensi ${jenisText} ${activeClass}`);
     setRekapSubtitle("Laporan Kehadiran Siswa");
     setShowRekapModal(true);
-    // Load initial rekap data
-    setRekapData([]);
-  }, [activeClass, getJenisPresensi]);
 
-  const handleRekapRefresh = useCallback(async (params) => {
-    setRekapLoading(true);
-    try {
-      // Simplified - just show loading
-      setRekapData([]);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    } finally {
-      setRekapLoading(false);
-    }
-  }, []);
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
 
+    const rekapData = await generateRekapData(
+      activeClass,
+      currentMonth.toString(),
+      currentYear.toString()
+    );
+    setRekapData(rekapData);
+  }, [activeClass, generateRekapData, getJenisPresensi]);
+
+  // Handle rekap refresh (monthly or semester)
+  const handleRekapRefresh = useCallback(
+    async (params) => {
+      try {
+        setRekapLoading(true);
+
+        console.log("🔥 handleRekapRefresh called with:", params);
+
+        const mode = params?.mode || "monthly";
+
+        if (mode === "monthly") {
+          const month = params.month;
+          const year = params.year;
+
+          console.log("📅 Fetching MONTHLY data:", { month, year });
+
+          const rekapData = await generateRekapData(
+            activeClass,
+            month.toString(),
+            year.toString()
+          );
+
+          setRekapData(rekapData);
+        } else if (mode === "semester") {
+          const semester = params.semester;
+          const academicYear = params.academicYear;
+          const year = params.year;
+
+          console.log("📊 Fetching SEMESTER data:", {
+            semester,
+            academicYear,
+            year,
+          });
+
+          const [startYear, endYear] = academicYear.split("/").map(Number);
+          let startDate, endDate;
+
+          if (semester === "Ganjil") {
+            startDate = `${startYear}-07-01`;
+            endDate = `${startYear}-12-31`;
+          } else {
+            startDate = `${endYear}-01-01`;
+            endDate = `${endYear}-06-30`;
+          }
+
+          console.log("📅 Date range:", { startDate, endDate });
+
+          const students = studentsData[activeClass] || [];
+
+          if (students.length === 0) {
+            console.log("⚠️ No students found for class", activeClass);
+            setRekapData([]);
+            return;
+          }
+
+          console.log("🔍 Fetching semester data with pagination...");
+
+          let allRecords = [];
+          let page = 0;
+          const pageSize = 1000;
+          let hasMore = true;
+
+          while (hasMore) {
+            const { data, error } = await supabase
+              .from("attendance")
+              .select("*")
+              .eq("kelas", activeClass)
+              .gte("tanggal", startDate)
+              .lte("tanggal", endDate)
+              .order("tanggal", { ascending: true })
+              .range(page * pageSize, (page + 1) * pageSize - 1);
+
+            if (error) {
+              console.error("❌ Query error on page", page + 1, ":", error);
+              throw error;
+            }
+
+            if (data && data.length > 0) {
+              allRecords = [...allRecords, ...data];
+              console.log(
+                `📄 Page ${page + 1}: ${data.length} records (Total so far: ${
+                  allRecords.length
+                })`
+              );
+
+              if (data.length < pageSize) {
+                hasMore = false;
+              } else {
+                page++;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+
+          const attendanceRecords = allRecords;
+          console.log(
+            "✅ Total attendance records fetched:",
+            attendanceRecords.length
+          );
+
+          if (attendanceRecords.length === 0) {
+            console.log("⚠️ No attendance data found");
+            setRekapData([]);
+            return;
+          }
+
+          const uniqueDates = [
+            ...new Set(attendanceRecords.map((r) => r.tanggal)),
+          ];
+          const totalHariEfektif = uniqueDates.length;
+
+          console.log("📊 Total hari efektif:", totalHariEfektif);
+          console.log("📅 Unique dates:", uniqueDates.slice(0, 5), "...");
+
+          const grouped = {};
+          students.forEach((student) => {
+            grouped[student.nisn] = {
+              nisn: student.nisn,
+              nama_siswa: student.nama_siswa,
+              name: student.nama_siswa,
+              hadir: 0,
+              sakit: 0,
+              izin: 0,
+              alpa: 0,
+              dailyStatus: {},
+            };
+          });
+
+          const recordsByDate = {};
+
+          attendanceRecords.forEach((record) => {
+            const key = `${record.nisn}_${record.tanggal}`;
+
+            if (!recordsByDate[key]) {
+              recordsByDate[key] = record;
+            } else {
+              const existing = recordsByDate[key];
+
+              if (
+                record.jenis_presensi === "kelas" &&
+                existing.jenis_presensi === "mapel"
+              ) {
+                recordsByDate[key] = record;
+              } else if (record.jenis_presensi === existing.jenis_presensi) {
+                recordsByDate[key] = record;
+              }
+            }
+          });
+
+          const uniqueRecords = Object.values(recordsByDate);
+
+          console.log("📊 Total records (raw):", attendanceRecords.length);
+          console.log("✅ Unique records (after dedup):", uniqueRecords.length);
+          console.log(
+            "🔍 Dedup removed:",
+            attendanceRecords.length - uniqueRecords.length,
+            "duplicates"
+          );
+
+          uniqueRecords.forEach((record) => {
+            if (grouped[record.nisn]) {
+              const status = record.status.toLowerCase();
+
+              if (status === "hadir") grouped[record.nisn].hadir++;
+              else if (status === "sakit") grouped[record.nisn].sakit++;
+              else if (status === "izin") grouped[record.nisn].izin++;
+              else if (status === "alpa") grouped[record.nisn].alpa++;
+
+              grouped[record.nisn].dailyStatus[record.tanggal] = status;
+            }
+          });
+
+          const processedData = Object.values(grouped).map((student) => {
+            const totalRecords =
+              student.hadir + student.sakit + student.izin + student.alpa;
+
+            const percentage =
+              totalHariEfektif > 0
+                ? Math.round((student.hadir / totalHariEfektif) * 100)
+                : 0;
+
+            return {
+              ...student,
+              total: totalHariEfektif,
+              totalRecords: totalRecords,
+              percentage,
+            };
+          });
+
+          console.log("✅ Processed data:", processedData.length, "students");
+          console.log("📊 Sample student:", processedData[0]);
+
+          setRekapData(processedData);
+        }
+      } catch (error) {
+        console.error("❌ Error in handleRekapRefresh:", error);
+        showToast(`Error memuat rekap: ${error.message}`, "error");
+        setRekapData([]);
+      } finally {
+        setRekapLoading(false);
+      }
+    },
+    [
+      activeClass,
+      generateRekapData,
+      studentsData,
+      showToast,
+      currentUser.username,
+    ]
+  );
+
+  // Export attendance to Excel
   const exportAttendance = useCallback(
     async (month, year) => {
       try {
         setExportLoading(true);
+
         const result = await exportAttendanceFromComponent(
           supabase,
           activeClass,
@@ -538,6 +872,7 @@ const Attendance = ({
           studentsData,
           currentUser
         );
+
         if (result.success) {
           showToast(result.message);
           setShowExportModal(false);
@@ -545,6 +880,7 @@ const Attendance = ({
           showToast(result.message, "error");
         }
       } catch (error) {
+        console.error("Error exporting attendance:", error);
         showToast(`Error mengexport data: ${error.message}`, "error");
       } finally {
         setExportLoading(false);
@@ -553,10 +889,12 @@ const Attendance = ({
     [activeClass, studentsData, showToast, currentUser]
   );
 
+  // Export semester recap
   const exportSemester = useCallback(
     async (semester, year) => {
       try {
         setExportSemesterLoading(true);
+
         const result = await exportSemesterRecapFromComponent(
           supabase,
           activeClass,
@@ -565,6 +903,7 @@ const Attendance = ({
           studentsData,
           currentUser
         );
+
         if (result.success) {
           showToast(result.message);
           setShowExportSemesterModal(false);
@@ -572,6 +911,7 @@ const Attendance = ({
           showToast(result.message, "error");
         }
       } catch (error) {
+        console.error("Error exporting semester:", error);
         showToast(`Error mengexport semester: ${error.message}`, "error");
       } finally {
         setExportSemesterLoading(false);
@@ -580,6 +920,7 @@ const Attendance = ({
     [activeClass, studentsData, showToast, currentUser]
   );
 
+  // Available classes based on user role
   const availableClasses = useMemo(() => {
     if (currentUser.role === "guru_kelas" && currentUser.kelas) {
       return [currentUser.kelas];
@@ -587,155 +928,62 @@ const Attendance = ({
     return [1, 2, 3, 4, 5, 6];
   }, [currentUser]);
 
-  // LOADING STATE
-  if (loading) {
-    return (
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-gray-50 min-h-screen">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="animate-spin mr-3" size={24} />
-          <span className="text-gray-600 text-base sm:text-lg">
-            Memuat data siswa...
-          </span>
-        </div>
-      </div>
-    );
-  }
+  return {
+    // State
+    studentsData,
+    attendanceData,
+    loading,
+    saving,
+    attendanceDate,
+    setAttendanceDate,
+    activeClass,
+    setActiveClass,
+    searchTerm,
+    setSearchTerm,
+    showCardView,
+    filteredStudents,
+    summary,
 
-  // ACTION BUTTONS (inline karena kecil)
-  const ActionButtons = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 w-full">
-        <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-          onClick={markAllPresent}
-          disabled={
-            !studentsData[activeClass] ||
-            studentsData[activeClass].length === 0 ||
-            saving
-          }>
-          {saving ? (
-            <RefreshCw size={14} className="animate-spin" />
-          ) : (
-            <Check size={14} />
-          )}
-          <span>Hadir Semua</span>
-        </button>
-        <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-          onClick={saveAttendance}
-          disabled={
-            !studentsData[activeClass] ||
-            studentsData[activeClass].length === 0 ||
-            saving ||
-            isSyncing
-          }>
-          {saving || isSyncing ? (
-            <RefreshCw size={14} className="animate-spin" />
-          ) : (
-            <Save size={14} />
-          )}
-          <span>Simpan Presensi</span>
-        </button>
-        <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-          onClick={showRekap}
-          disabled={
-            !studentsData[activeClass] || studentsData[activeClass].length === 0
-          }>
-          <Calendar size={14} />
-          <span>Lihat Rekap</span>
-        </button>
-        <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-          onClick={() => setShowExportModal(true)}
-          disabled={
-            !studentsData[activeClass] || studentsData[activeClass].length === 0
-          }>
-          <Download size={14} />
-          <span>Export Bulanan</span>
-        </button>
-        <button
-          className="flex items-center justify-center gap-2 px-2 sm:px-3 py-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs sm:text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 touch-manipulation min-h-[44px]"
-          onClick={() => setShowExportSemesterModal(true)}
-          disabled={
-            !studentsData[activeClass] || studentsData[activeClass].length === 0
-          }>
-          <Calendar size={14} />
-          <span>Export Semester</span>
-        </button>
-      </div>
-    </div>
-  );
+    // Modals state
+    showModal,
+    setShowModal,
+    modalMessage,
+    modalAction,
+    showExportModal,
+    setShowExportModal,
+    exportLoading,
+    showExportSemesterModal,
+    setShowExportSemesterModal,
+    exportSemesterLoading,
+    showRekapModal,
+    setShowRekapModal,
+    rekapData,
+    rekapTitle,
+    rekapSubtitle,
+    rekapLoading,
 
-  return (
-    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
-      <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={hideToast}
-      />
-      <SyncStatusBadge />
-      <AttendanceStats summary={summary} />
-      <AttendanceFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        attendanceDate={attendanceDate}
-        setAttendanceDate={setAttendanceDate}
-        activeClass={activeClass}
-        setActiveClass={setActiveClass}
-        availableClasses={availableClasses}
-      />
-      <ActionButtons />
-      <AttendanceTable
-        filteredStudents={filteredStudents}
-        studentsData={studentsData}
-        activeClass={activeClass}
-        attendanceData={attendanceData}
-        updateStatus={updateStatus}
-        updateNote={updateNote}
-        saving={saving}
-        searchTerm={searchTerm}
-        showCardView={isMobile}
-      />
-      <ConfirmationModal
-        show={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setSaving(false);
-        }}
-        onConfirm={async () => {
-          if (modalAction) await modalAction();
-          setShowModal(false);
-          setSaving(false);
-        }}
-        title="Konfirmasi Penyimpanan"
-        message={modalMessage}
-      />
-      <ExportModal
-        show={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onExport={exportAttendance}
-        loading={exportLoading}
-      />
-      <ExportSemesterModal
-        show={showExportSemesterModal}
-        onClose={() => setShowExportSemesterModal(false)}
-        onExport={exportSemester}
-        loading={exportSemesterLoading}
-      />
-      <AttendanceModal
-        show={showRekapModal}
-        onClose={() => setShowRekapModal(false)}
-        data={rekapData}
-        title={rekapTitle}
-        subtitle={rekapSubtitle}
-        loading={rekapLoading}
-        onRefreshData={handleRekapRefresh}
-        activeClass={activeClass}
-      />
-    </div>
-  );
+    // Toast
+    toast,
+    showToast,
+    hideToast,
+
+    // Handlers
+    updateStatus,
+    updateNote,
+    markAllPresent,
+    saveAttendance,
+    showRekap,
+    handleRekapRefresh,
+    exportAttendance,
+    exportSemester,
+
+    // User info
+    availableClasses,
+    getJenisPresensi,
+
+    // Sync status
+    isOnline,
+    pendingCount,
+    isSyncing,
+  };
 };
-
-export default Attendance;
