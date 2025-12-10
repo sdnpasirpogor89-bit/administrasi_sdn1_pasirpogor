@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Variables for Dark Mode */
+/* CSS Variables for Dark Mode - Updated with better naming */
 @layer base {
   :root {
     /* Light Mode Colors */
@@ -14,10 +14,11 @@
     --color-text-tertiary: 71 85 105; /* slate-600 */
     --color-border: 226 232 240; /* slate-200 */
     --color-border-light: 241 245 249; /* slate-100 */
+    --color-shadow: 0 0% 0%; /* black for shadows */
   }
 
-  .dark {
-    /* Dark Mode Colors */
+  :root.dark {
+    /* Dark Mode Colors - Fixed: gunakan class .dark bukan selector .dark */
     --color-bg-primary: 15 23 42; /* slate-900 */
     --color-bg-secondary: 30 41 59; /* slate-800 */
     --color-bg-tertiary: 51 65 85; /* slate-700 */
@@ -26,10 +27,18 @@
     --color-text-tertiary: 203 213 225; /* slate-300 */
     --color-border: 71 85 105; /* slate-600 */
     --color-border-light: 51 65 85; /* slate-700 */
+    --color-shadow: 0 0% 100%; /* white for shadows */
+  }
+
+  /* System preference detection - HARUS di base */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+      color-scheme: dark;
+    }
   }
 }
 
-/* Global Base Styles */
+/* Global Base Styles - Diperbaiki untuk konsistensi */
 @layer base {
   * {
     box-sizing: border-box;
@@ -39,6 +48,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Pastikan background warna konsisten */
+    background-color: rgb(var(--color-bg-primary));
   }
 
   body {
@@ -49,419 +60,506 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease,
+      border-color 0.3s ease;
+    min-height: 100vh;
   }
 
-  /* Typography Scale */
+  /* Selection styles untuk konsistensi */
+  ::selection {
+    background-color: rgba(59, 130, 246, 0.3); /* blue-500 dengan opacity */
+    color: rgb(var(--color-text-primary));
+  }
+
+  .dark ::selection {
+    background-color: rgba(59, 130, 246, 0.5);
+    color: rgb(var(--color-text-primary));
+  }
+
+  /* Typography Scale - Diperbaiki dengan variabel */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: rgb(var(--color-text-primary));
+    font-weight: theme("fontWeight.bold");
+    line-height: theme("lineHeight.tight");
+  }
+
   h1 {
     font-size: theme("fontSize.3xl");
-    font-weight: theme("fontWeight.bold");
-    color: rgb(var(--color-text-primary));
-    line-height: theme("lineHeight.tight");
   }
 
   h2 {
     font-size: theme("fontSize.2xl");
-    font-weight: theme("fontWeight.bold");
-    color: rgb(var(--color-text-primary));
-    line-height: theme("lineHeight.tight");
   }
 
   h3 {
     font-size: theme("fontSize.xl");
     font-weight: theme("fontWeight.semibold");
-    color: rgb(var(--color-text-primary));
-    line-height: theme("lineHeight.tight");
   }
 
   h4 {
     font-size: theme("fontSize.lg");
     font-weight: theme("fontWeight.semibold");
-    color: rgb(var(--color-text-primary));
-    line-height: theme("lineHeight.tight");
   }
 
   p {
     color: rgb(var(--color-text-tertiary));
-    font-weight: theme("fontWeight.medium");
+    font-weight: theme(
+      "fontWeight.normal"
+    ); /* Changed from medium for better readability */
   }
 
-  /* Focus styles for accessibility */
-  button:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible {
-    outline: 2px solid theme("colors.blue.600");
+  a {
+    color: theme("colors.blue.600");
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .dark a {
+    color: theme("colors.blue.400");
+  }
+
+  a:hover {
+    color: theme("colors.blue.700");
+  }
+
+  .dark a:hover {
+    color: theme("colors.blue.300");
+  }
+
+  /* Focus styles for accessibility - Diperbaiki untuk konsistensi */
+  :focus-visible {
+    outline: 2px solid theme("colors.blue.500");
     outline-offset: 2px;
+    border-radius: theme("borderRadius.md");
   }
 
-  .dark button:focus-visible,
-  .dark input:focus-visible,
-  .dark select:focus-visible,
-  .dark textarea:focus-visible {
-    outline-color: theme("colors.blue.500");
+  .dark :focus-visible {
+    outline-color: theme("colors.blue.400");
+  }
+
+  /* Placeholder konsisten */
+  ::placeholder {
+    color: rgb(var(--color-text-tertiary));
+    opacity: 0.7;
+  }
+
+  .dark ::placeholder {
+    opacity: 0.6;
   }
 }
 
-/* Custom Components */
+/* Custom Components - Diperbaiki untuk menghindari konflik */
 @layer components {
-  /* Primary Button Styles */
+  /* Primary Button Styles - Fixed hover states */
   .btn-primary {
-    @apply inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 hover:shadow-md focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out;
+    @apply inline-flex items-center justify-center px-4 py-2.5;
+    background: linear-gradient(
+      to right,
+      theme("colors.blue.600"),
+      theme("colors.blue.700")
+    );
+    color: white;
+    font-weight: theme("fontWeight.semibold");
+    border-radius: theme("borderRadius.lg");
+    border: none;
+    box-shadow: theme("boxShadow.sm");
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(
+      to right,
+      theme("colors.blue.700"),
+      theme("colors.blue.800")
+    );
+    box-shadow: theme("boxShadow.md");
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: theme("boxShadow.sm");
+  }
+
+  .btn-primary:focus-visible {
+    outline: 2px solid theme("colors.blue.500");
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
   .dark .btn-primary {
-    @apply focus:ring-offset-slate-800;
+    background: linear-gradient(
+      to right,
+      theme("colors.blue.500"),
+      theme("colors.blue.600")
+    );
   }
 
-  .btn-primary:hover {
-    @apply -translate-y-0.5 shadow-lg;
+  .dark .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(
+      to right,
+      theme("colors.blue.600"),
+      theme("colors.blue.700")
+    );
   }
 
-  .btn-primary:active {
-    @apply translate-y-0 shadow-sm;
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    transform: none !important;
   }
 
-  /* Secondary Button Styles */
+  /* Secondary Button Styles - Fixed untuk konsistensi */
   .btn-secondary {
-    @apply inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-50 hover:border-slate-400 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out;
+    @apply inline-flex items-center justify-center px-4 py-2.5;
+    background-color: rgb(var(--color-bg-secondary));
+    color: rgb(var(--color-text-secondary));
+    border: 1px solid rgb(var(--color-border));
+    font-weight: theme("fontWeight.semibold");
+    border-radius: theme("borderRadius.lg");
+    box-shadow: theme("boxShadow.sm");
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgb(var(--color-bg-tertiary));
+    border-color: rgb(var(--color-text-tertiary));
+    transform: translateY(-1px);
+    box-shadow: theme("boxShadow.md");
   }
 
   .dark .btn-secondary {
-    @apply bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600 hover:border-slate-500 focus:ring-offset-slate-800;
+    background-color: rgb(var(--color-bg-tertiary));
+    color: rgb(var(--color-text-secondary));
+    border-color: rgb(var(--color-border));
   }
 
-  .btn-secondary:hover {
-    @apply -translate-y-0.5 shadow-md;
+  .dark .btn-secondary:hover:not(:disabled) {
+    background-color: rgb(var(--color-bg-secondary));
+    border-color: rgb(var(--color-text-secondary));
   }
 
-  /* Card Component */
+  /* Card Component - Fixed untuk konsistensi */
   .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+    background-color: rgb(var(--color-bg-secondary));
+    border: 1px solid rgb(var(--color-border));
+    border-radius: theme("borderRadius.xl");
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: rgb(var(--color-text-tertiary));
   }
 
   .dark .card {
-    @apply bg-slate-800 border-slate-700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .dark .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: rgb(var(--color-text-secondary));
   }
 
   .card-elevated {
-    @apply bg-white rounded-2xl border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-300;
+    background-color: rgb(var(--color-bg-secondary));
+    border: 1px solid rgb(var(--color-border-light));
+    border-radius: theme("borderRadius.2xl");
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+  }
+
+  .card-elevated:hover:not(:disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
   }
 
   .dark .card-elevated {
-    @apply bg-slate-800 border-slate-700;
+    border-color: rgb(var(--color-border));
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   }
 
-  .card-elevated:hover {
-    @apply -translate-y-1;
+  .dark .card-elevated:hover:not(:disabled) {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   }
 
-  /* Input Styles */
+  /* Input Styles - Fixed untuk konsistensi */
   .input-primary {
-    @apply block w-full px-4 py-2.5 text-slate-900 bg-white border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
+    @apply block w-full px-4 py-2.5;
+    background-color: rgb(var(--color-bg-secondary));
+    color: rgb(var(--color-text-primary));
+    border: 1px solid rgb(var(--color-border));
+    border-radius: theme("borderRadius.lg");
+    font-size: theme("fontSize.sm");
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .dark .input-primary {
-    @apply text-slate-100 bg-slate-700 border-slate-600 placeholder-slate-400 focus:border-blue-500;
+  .input-primary::placeholder {
+    color: rgb(var(--color-text-tertiary));
+    opacity: 0.7;
   }
 
   .input-primary:focus {
-    @apply border-blue-500 ring-2 ring-blue-500 ring-opacity-20;
+    border-color: theme("colors.blue.500");
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
   }
 
-  /* Loading Spinner */
+  .dark .input-primary:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Loading Spinner - Fixed untuk konsistensi */
   .loading-spinner {
-    @apply inline-block w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin;
+    @apply inline-block w-6 h-6 border-2 rounded-full animate-spin;
+    border-color: rgb(var(--color-border));
+    border-top-color: theme("colors.blue.600");
   }
 
   .dark .loading-spinner {
-    @apply border-slate-600 border-t-blue-500;
+    border-color: rgb(var(--color-border));
+    border-top-color: theme("colors.blue.400");
   }
 
-  /* Navigation Active State */
-  .nav-active {
-    @apply bg-blue-600 text-white shadow-md;
+  /* Badge Styles - Fixed untuk konsistensi */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border;
   }
 
-  /* Badge Styles */
   .badge-success {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200;
+    background-color: rgba(16, 185, 129, 0.1);
+    color: theme("colors.emerald.700");
+    border-color: rgba(16, 185, 129, 0.2);
   }
 
   .dark .badge-success {
-    @apply bg-emerald-900/30 text-emerald-300 border-emerald-700;
+    background-color: rgba(16, 185, 129, 0.2);
+    color: theme("colors.emerald.300");
+    border-color: rgba(16, 185, 129, 0.3);
   }
 
   .badge-warning {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200;
+    background-color: rgba(245, 158, 11, 0.1);
+    color: theme("colors.amber.700");
+    border-color: rgba(245, 158, 11, 0.2);
   }
 
   .dark .badge-warning {
-    @apply bg-amber-900/30 text-amber-300 border-amber-700;
+    background-color: rgba(245, 158, 11, 0.2);
+    color: theme("colors.amber.300");
+    border-color: rgba(245, 158, 11, 0.3);
   }
 
   .badge-danger {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: theme("colors.red.700");
+    border-color: rgba(239, 68, 68, 0.2);
   }
 
   .dark .badge-danger {
-    @apply bg-red-900/30 text-red-300 border-red-700;
+    background-color: rgba(239, 68, 68, 0.2);
+    color: theme("colors.red.300");
+    border-color: rgba(239, 68, 68, 0.3);
   }
 
   .badge-info {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: theme("colors.blue.700");
+    border-color: rgba(59, 130, 246, 0.2);
   }
 
   .dark .badge-info {
-    @apply bg-blue-900/30 text-blue-300 border-blue-700;
+    background-color: rgba(59, 130, 246, 0.2);
+    color: theme("colors.blue.300");
+    border-color: rgba(59, 130, 246, 0.3);
   }
 
-  /* Table Styles */
+  /* Table Styles - Fixed untuk konsistensi */
   .table-container {
-    @apply overflow-hidden rounded-lg border border-slate-200 shadow-sm;
-  }
-
-  .dark .table-container {
-    @apply border-slate-700;
+    background-color: rgb(var(--color-bg-secondary));
+    border: 1px solid rgb(var(--color-border));
+    border-radius: theme("borderRadius.lg");
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .table-header {
-    @apply bg-slate-50 border-b border-slate-200;
-  }
-
-  .dark .table-header {
-    @apply bg-slate-800 border-slate-700;
+    background-color: rgb(var(--color-bg-tertiary));
+    border-bottom: 1px solid rgb(var(--color-border));
   }
 
   .table-row {
-    @apply border-b border-slate-100 hover:bg-slate-50 transition-colors duration-150;
+    border-bottom: 1px solid rgb(var(--color-border-light));
+    transition: background-color 0.15s ease;
   }
 
-  .dark .table-row {
-    @apply border-slate-700 hover:bg-slate-700/50;
+  .table-row:hover {
+    background-color: rgb(var(--color-bg-tertiary));
+  }
+
+  .table-row:last-child {
+    border-bottom: none;
   }
 
   .table-cell {
-    @apply px-6 py-4 text-sm font-medium text-slate-900;
+    @apply px-6 py-4 text-sm;
+    color: rgb(var(--color-text-primary));
+    font-weight: theme("fontWeight.medium");
   }
 
-  .dark .table-cell {
-    @apply text-slate-100;
-  }
-
-  /* Gradient Backgrounds */
-  .bg-primary-gradient {
-    @apply bg-gradient-to-br from-blue-600 to-blue-700;
-  }
-
-  .bg-secondary-gradient {
-    @apply bg-gradient-to-br from-slate-50 to-slate-100;
-  }
-
-  .dark .bg-secondary-gradient {
-    @apply from-slate-800 to-slate-900;
-  }
-
-  .bg-accent-gradient {
-    @apply bg-gradient-to-r from-emerald-500 to-emerald-600;
-  }
-
-  /* Text Gradients */
-  .text-gradient {
-    @apply bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent;
-  }
-
-  .dark .text-gradient {
-    @apply from-blue-400 to-blue-500;
-  }
-
-  /* Drop Shadow Variants */
+  /* Shadow Variants - Fixed untuk konsistensi */
   .shadow-smooth {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
   }
 
   .dark .shadow-smooth {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   }
 
   .shadow-elegant {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   }
 
   .dark .shadow-elegant {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Animation Classes */
-  .animate-fade-in {
-    animation: fadeIn 0.4s ease-out;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-out;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.3s ease-out;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   }
 }
 
-/* Custom Utilities */
+/* Custom Utilities - Fixed untuk konsistensi */
 @layer utilities {
   /* Text Utilities */
   .text-balance {
     text-wrap: balance;
   }
 
-  /* Backdrop Blur Variants */
-  .backdrop-blur-light {
-    backdrop-filter: blur(8px);
+  /* Gradient Text */
+  .text-gradient-primary {
+    background: linear-gradient(
+      to right,
+      theme("colors.blue.600"),
+      theme("colors.blue.700")
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .backdrop-blur-medium {
-    backdrop-filter: blur(16px);
+  .dark .text-gradient-primary {
+    background: linear-gradient(
+      to right,
+      theme("colors.blue.400"),
+      theme("colors.blue.500")
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  /* Custom Border Radius */
-  .rounded-4xl {
-    border-radius: 2rem;
+  /* Glass Effect */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* Custom Spacing */
-  .space-y-6 > * + * {
-    margin-top: 1.5rem;
+  .dark .glass-effect {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .space-y-8 > * + * {
-    margin-top: 2rem;
+  /* Hover Effects - Fixed untuk konsistensi */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  /* Custom Hover Effects */
   .hover-lift:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   }
 
-  .hover-glow:hover {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  .dark .hover-lift:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   }
 
-  .dark .hover-glow:hover {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+  /* Focus Utility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
   }
 
-  /* Responsive Text */
-  .text-responsive {
-    font-size: clamp(1rem, 2.5vw, 1.25rem);
+  .dark .focus-ring {
+    @apply focus:ring-offset-slate-900;
   }
 
-  .text-responsive-lg {
-    font-size: clamp(1.25rem, 3vw, 2rem);
-  }
-}
-
-/* Custom Keyframes */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+  /* Disabled State */
+  .disabled {
+    @apply opacity-50 cursor-not-allowed pointer-events-none;
   }
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+/* Scrollbar Styling - Fixed untuk konsistensi */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--color-bg-tertiary));
+    border-radius: theme("borderRadius.full");
   }
-}
 
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-border));
+    border-radius: theme("borderRadius.full");
+    transition: background-color 0.2s ease;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-text-tertiary));
   }
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: theme("colors.slate.100");
-  border-radius: theme("borderRadius.full");
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: theme("colors.slate.800");
-}
-
-::-webkit-scrollbar-thumb {
-  background: theme("colors.slate.300");
-  border-radius: theme("borderRadius.full");
-  transition: background-color 0.2s ease;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: theme("colors.slate.600");
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: theme("colors.slate.400");
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: theme("colors.slate.500");
 }
 
 /* Print Styles */
 @media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
   .no-print {
     display: none !important;
-  }
-
-  .print-break-before {
-    page-break-before: always;
-  }
-
-  .print-break-after {
-    page-break-after: always;
   }
 }
 
 /* High Contrast Mode Support */
 @media (prefers-contrast: high) {
-  .btn-primary {
-    @apply border-2 border-blue-800;
-  }
-
-  .card {
-    @apply border-2 border-slate-400;
-  }
-
-  .dark .card {
-    @apply border-slate-500;
+  .btn-primary,
+  .btn-secondary,
+  .card,
+  .input-primary {
+    border-width: 2px !important;
   }
 }
 
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   *,
-  ::before,
-  ::after {
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in {
+    animation: none !important;
   }
 }

@@ -20,49 +20,11 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
-  Moon,
-  Sun,
 } from "lucide-react";
 
 // ============================================
-// DARK MODE TOGGLE COMPONENT
+// HAPUS DARK MODE TOGGLE COMPONENT - SUDAH ADA DI App.js
 // ============================================
-export const DarkModeToggle = () => {
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem("darkMode") === "true" ||
-        (!("darkMode" in localStorage) &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches)
-      );
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-      localStorage.setItem("darkMode", "true");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("darkMode", "false");
-    }
-  }, [darkMode]);
-
-  return (
-    <button
-      onClick={() => setDarkMode(!darkMode)}
-      className="fixed bottom-4 right-4 z-50 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200"
-      aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
-      {darkMode ? (
-        <Sun className="w-5 h-5 text-yellow-500" />
-      ) : (
-        <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-      )}
-    </button>
-  );
-};
 
 // ============================================
 // TOAST COMPONENT - Enhanced for mobile + OFFLINE STATUS + DARK MODE
@@ -91,16 +53,17 @@ export const Toast = ({ show, message, type, onClose }) => {
 
   return (
     <div
-      className={`fixed bottom-4 sm:bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:max-w-md z-50 px-4 sm:px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${getBgColor()} text-white`}>
-      <div className="flex items-center gap-2">
+      className={`fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 sm:max-w-md z-50 px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-lg transition-all duration-300 ${getBgColor()} text-white touch-manipulation`}>
+      <div className="flex items-center gap-2 sm:gap-3">
         {getIcon()}
-        <span className="font-medium text-sm sm:text-base flex-1">
+        <span className="font-medium text-sm sm:text-base flex-1 leading-tight">
           {message}
         </span>
         <button
           onClick={onClose}
-          className="ml-2 opacity-70 hover:opacity-100 p-1">
-          <X size={14} />
+          className="ml-2 opacity-70 hover:opacity-100 p-1 sm:p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center"
+          aria-label="Close">
+          <X size={16} className="sm:w-5 sm:h-5" />
         </button>
       </div>
     </div>
@@ -108,7 +71,7 @@ export const Toast = ({ show, message, type, onClose }) => {
 };
 
 // ============================================
-// CONFIRMATION MODAL COMPONENT with Dark Mode
+// CONFIRMATION MODAL COMPONENT with Dark Mode - IMPROVED MOBILE
 // ============================================
 export const ConfirmationModal = ({
   show,
@@ -116,16 +79,24 @@ export const ConfirmationModal = ({
   onConfirm,
   title,
   message,
+  isMobile = false,
 }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-colors duration-300">
+      <div
+        className={`bg-white dark:bg-gray-800 ${
+          isMobile ? "rounded-t-2xl" : "rounded-xl sm:rounded-xl"
+        } w-full ${
+          isMobile ? "max-w-full" : "max-w-md"
+        } p-4 sm:p-6 shadow-2xl transition-transform duration-300 ${
+          isMobile ? "transform translate-y-0" : ""
+        }`}>
         <div className="flex items-center gap-3 mb-4">
           <AlertTriangle
             className="text-orange-500 dark:text-orange-400 flex-shrink-0"
-            size={20}
+            size={isMobile ? 18 : 20}
           />
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
             {title}
@@ -137,12 +108,12 @@ export const ConfirmationModal = ({
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base">
+            className="w-full sm:w-auto px-4 py-3 sm:py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation active:scale-95 min-h-[44px]">
             Tidak
           </button>
           <button
             onClick={onConfirm}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors font-medium text-sm sm:text-base">
+            className="w-full sm:w-auto px-4 py-3 sm:py-2.5 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors font-medium text-sm sm:text-base touch-manipulation active:scale-95 min-h-[44px]">
             Ya, Timpa Data
           </button>
         </div>
@@ -154,7 +125,13 @@ export const ConfirmationModal = ({
 // ============================================
 // EXPORT MODAL COMPONENT - MONTHLY with Dark Mode
 // ============================================
-export const ExportModal = ({ show, onClose, onExport, loading }) => {
+export const ExportModal = ({
+  show,
+  onClose,
+  onExport,
+  loading,
+  isMobile = false,
+}) => {
   const [selectedMonth, setSelectedMonth] = useState(
     (new Date().getMonth() + 1).toString()
   );
@@ -169,12 +146,19 @@ export const ExportModal = ({ show, onClose, onExport, loading }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-colors duration-300">
+      <div
+        className={`bg-white dark:bg-gray-800 ${
+          isMobile ? "rounded-t-2xl" : "rounded-xl sm:rounded-xl"
+        } w-full ${
+          isMobile ? "max-w-full" : "max-w-md"
+        } p-4 sm:p-6 shadow-2xl transition-transform duration-300 ${
+          isMobile ? "transform translate-y-0" : ""
+        }`}>
         <div className="flex items-center gap-3 mb-4">
           <Download
             className="text-blue-500 dark:text-blue-400 flex-shrink-0"
-            size={20}
+            size={isMobile ? 18 : 20}
           />
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
             Export Data Presensi Bulanan
@@ -189,7 +173,7 @@ export const ExportModal = ({ show, onClose, onExport, loading }) => {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors duration-200 touch-manipulation min-h-[44px]"
               disabled={loading}>
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -208,7 +192,7 @@ export const ExportModal = ({ show, onClose, onExport, loading }) => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors duration-200 touch-manipulation min-h-[44px]"
               disabled={loading}>
               {Array.from({ length: 10 }, (_, i) => (
                 <option key={2020 + i} value={2020 + i}>
@@ -222,22 +206,22 @@ export const ExportModal = ({ show, onClose, onExport, loading }) => {
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
+            className="w-full sm:w-auto px-4 py-3 sm:py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation active:scale-95 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}>
             Batal
           </button>
           <button
             onClick={handleExport}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation active:scale-95 min-h-[44px]"
             disabled={loading}>
             {loading ? (
               <>
-                <RefreshCw size={14} className="animate-spin" />
+                <RefreshCw size={isMobile ? 14 : 16} className="animate-spin" />
                 Memproses...
               </>
             ) : (
               <>
-                <Download size={14} />
+                <Download size={isMobile ? 14 : 16} />
                 Export Excel
               </>
             )}
@@ -251,7 +235,13 @@ export const ExportModal = ({ show, onClose, onExport, loading }) => {
 // ============================================
 // EXPORT SEMESTER MODAL COMPONENT - SEMESTER with Dark Mode
 // ============================================
-export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
+export const ExportSemesterModal = ({
+  show,
+  onClose,
+  onExport,
+  loading,
+  isMobile = false,
+}) => {
   const [selectedSemester, setSelectedSemester] = useState(1);
   const [selectedYear, setSelectedYear] = useState(
     new Date().getFullYear().toString()
@@ -264,12 +254,19 @@ export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-colors duration-300">
+      <div
+        className={`bg-white dark:bg-gray-800 ${
+          isMobile ? "rounded-t-2xl" : "rounded-xl sm:rounded-xl"
+        } w-full ${
+          isMobile ? "max-w-full" : "max-w-md"
+        } p-4 sm:p-6 shadow-2xl transition-transform duration-300 ${
+          isMobile ? "transform translate-y-0" : ""
+        }`}>
         <div className="flex items-center gap-3 mb-4">
           <Calendar
             className="text-purple-500 dark:text-purple-400 flex-shrink-0"
-            size={20}
+            size={isMobile ? 18 : 20}
           />
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
             Export Rekap Semester
@@ -284,7 +281,7 @@ export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(parseInt(e.target.value))}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors duration-200 touch-manipulation min-h-[44px]"
               disabled={loading}>
               <option value={1}>Semester 1 (Ganjil - Juli-Desember)</option>
               <option value={2}>Semester 2 (Genap - Januari-Juni)</option>
@@ -298,7 +295,7 @@ export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors duration-200 touch-manipulation min-h-[44px]"
               disabled={loading}>
               {Array.from({ length: 10 }, (_, i) => (
                 <option key={2020 + i} value={2020 + i}>
@@ -308,7 +305,7 @@ export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
             </select>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 transition-colors duration-300">
             <p className="text-xs text-blue-700 dark:text-blue-300">
               💡 <strong>Info:</strong> Export semester akan menghasilkan rekap
               total kehadiran untuk periode{" "}
@@ -321,22 +318,22 @@ export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base"
+            className="w-full sm:w-auto px-4 py-3 sm:py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm sm:text-base touch-manipulation active:scale-95 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}>
             Batal
           </button>
           <button
             onClick={handleExport}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation active:scale-95 min-h-[44px]"
             disabled={loading}>
             {loading ? (
               <>
-                <RefreshCw size={14} className="animate-spin" />
+                <RefreshCw size={isMobile ? 14 : 16} className="animate-spin" />
                 Memproses...
               </>
             ) : (
               <>
-                <Download size={14} />
+                <Download size={isMobile ? 14 : 16} />
                 Export Semester
               </>
             )}
@@ -348,29 +345,29 @@ export const ExportSemesterModal = ({ show, onClose, onExport, loading }) => {
 };
 
 // ============================================
-// STATUS BUTTON COMPONENT with Dark Mode
+// STATUS BUTTON COMPONENT with Dark Mode - IMPROVED TOUCH
 // ============================================
 export const StatusButton = React.memo(
   ({ status, active, onClick, icon: Icon, label, disabled = false }) => {
     const getStatusClass = () => {
       const baseClass =
-        "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 border-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] sm:min-h-[40px] touch-manipulation";
+        "flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 border-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] sm:min-h-[44px] touch-manipulation active:scale-95";
 
       if (status === "Hadir") {
         return active
-          ? `${baseClass} bg-green-600 dark:bg-green-700 text-white border-green-600 dark:border-green-700 shadow-sm`
+          ? `${baseClass} bg-green-600 dark:bg-green-700 text-white border-green-600 dark:border-green-700 shadow-sm hover:bg-green-700 dark:hover:bg-green-800`
           : `${baseClass} bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-800/50 active:bg-green-200 dark:active:bg-green-700/50`;
       } else if (status === "Sakit") {
         return active
-          ? `${baseClass} bg-yellow-600 dark:bg-yellow-700 text-white border-yellow-600 dark:border-yellow-700 shadow-sm`
+          ? `${baseClass} bg-yellow-600 dark:bg-yellow-700 text-white border-yellow-600 dark:border-yellow-700 shadow-sm hover:bg-yellow-700 dark:hover:bg-yellow-800`
           : `${baseClass} bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-800/50 active:bg-yellow-200 dark:active:bg-yellow-700/50`;
       } else if (status === "Izin") {
         return active
-          ? `${baseClass} bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700 shadow-sm`
+          ? `${baseClass} bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700 shadow-sm hover:bg-blue-700 dark:hover:bg-blue-800`
           : `${baseClass} bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 active:bg-blue-200 dark:active:bg-blue-700/50`;
       } else if (status === "Alpa") {
         return active
-          ? `${baseClass} bg-red-600 dark:bg-red-700 text-white border-red-600 dark:border-red-700 shadow-sm`
+          ? `${baseClass} bg-red-600 dark:bg-red-700 text-white border-red-600 dark:border-red-700 shadow-sm hover:bg-red-700 dark:hover:bg-red-800`
           : `${baseClass} bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-800/50 active:bg-red-200 dark:active:bg-red-700/50`;
       }
       return baseClass;
@@ -380,9 +377,10 @@ export const StatusButton = React.memo(
       <button
         className={getStatusClass()}
         onClick={onClick}
-        disabled={disabled}>
-        <Icon size={14} className="flex-shrink-0" />
-        <span className="text-xs sm:text-sm">{label}</span>
+        disabled={disabled}
+        aria-label={`Status ${label}`}>
+        <Icon size={14} className="flex-shrink-0 sm:w-4 sm:h-4" />
+        <span className="text-xs sm:text-sm whitespace-nowrap">{label}</span>
       </button>
     );
   }
@@ -424,7 +422,7 @@ export const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-l-4 ${getLeftBorderColor()} border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:-translate-y-1 shadow-sm`}>
+      className={`bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-4 border border-l-4 ${getLeftBorderColor()} border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 shadow-sm touch-manipulation active:scale-95`}>
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xl sm:text-2xl font-bold mb-1 text-gray-900 dark:text-gray-100">
@@ -444,7 +442,7 @@ export const StatsCard = React.memo(({ icon: Icon, number, label, color }) => {
 });
 
 // ============================================
-// MOBILE STUDENT CARD COMPONENT with Dark Mode
+// MOBILE STUDENT CARD COMPONENT with Dark Mode - IMPROVED
 // ============================================
 export const StudentCard = ({
   student,
@@ -456,23 +454,29 @@ export const StudentCard = ({
   saving,
 }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3 shadow-sm transition-colors duration-300">
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base truncate">
             {student.nama_siswa}
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             NISN: {student.nisn}
           </p>
-          <span
-            className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-              student.jenis_kelamin === "Laki-laki"
-                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                : "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300"
-            }`}>
-            {student.jenis_kelamin}
-          </span>
+          <div className="flex items-center gap-2 mt-2">
+            <span
+              className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                student.jenis_kelamin === "Laki-laki"
+                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                  : "bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300"
+              }`}>
+              {student.jenis_kelamin}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              Status: <span className="font-bold">{attendance.status}</span>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -513,11 +517,11 @@ export const StudentCard = ({
 
       <input
         type="text"
-        placeholder="Keterangan..."
+        placeholder="Keterangan (opsional)..."
         value={attendance.note || ""}
         onChange={(e) => updateNote(activeClass, originalIndex, e.target.value)}
         disabled={saving}
-        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-3 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
       />
     </div>
   );

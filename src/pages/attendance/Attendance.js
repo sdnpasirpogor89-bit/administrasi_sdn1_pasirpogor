@@ -1,7 +1,7 @@
 // src/components/Attendance/Attendance.js
 // MAIN ENTRY POINT - CONNECTS ALL COMPONENTS
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAttendanceLogic } from "./AttendanceMain";
 import AttendanceUI from "./AttendanceUI";
 import {
@@ -19,6 +19,22 @@ import AttendanceModal from "./AttendanceModal";
 const Attendance = ({
   currentUser = { role: "admin", kelas: null, username: "admin" },
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  // Deteksi perangkat saat mount dan resize
+  useEffect(() => {
+    const checkDevice = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
+
   // Get all logic and state from custom hook
   const {
     // State
@@ -37,7 +53,7 @@ const Attendance = ({
     saving,
     isSyncing,
     availableClasses,
-    deviceDetected, // <-- ADD THIS
+    deviceDetected,
 
     // Modal states
     showModal,
@@ -72,26 +88,57 @@ const Attendance = ({
     exportSemester,
   } = useAttendanceLogic(currentUser);
 
-  // FIX: Show loading until device is detected AND data is loaded
+  // Enhanced loading screen with responsive design
   if ((loading && !deviceDetected) || (loading && !studentsData[activeClass])) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-slate-900 flex items-center justify-center p-4 transition-colors duration-300">
+        <div className="text-center max-w-sm w-full">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800 rounded-full mx-auto mb-4"></div>
+            <div className="w-16 h-16 border-4 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+          </div>
+
+          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-2">
             {!deviceDetected
-              ? "Mendeteksi perangkat..."
-              : "Memuat data siswa..."}
+              ? "Mendeteksi Perangkat..."
+              : "Memuat Data Presensi"}
+          </h2>
+
+          <p className="text-gray-600 dark:text-slate-300 text-sm sm:text-base mb-6">
+            {!deviceDetected
+              ? "Mengoptimalkan untuk perangkat Anda..."
+              : "Mengambil data siswa dan presensi..."}
           </p>
+
+          {/* Responsive loading indicator */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse"></div>
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">
+                {isMobile ? "HP" : isTablet ? "Tablet" : "Desktop"} terdeteksi
+              </span>
+            </div>
+
+            <div className="hidden sm:block text-gray-300 dark:text-slate-600">
+              •
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse delay-150"></div>
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">
+                Mode {isMobile ? "Touch" : "Klik"} diaktifkan
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <>
-      {/* Global Components */}
-      <DarkModeToggle />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      {/* Global Components - Pindah DarkModeToggle ke App.js jika sudah ada */}
+      {/* <DarkModeToggle /> */}
 
       <Toast
         show={toast.show}
@@ -100,10 +147,10 @@ const Attendance = ({
         onClose={hideToast}
       />
 
-      {/* Main UI */}
+      {/* Main UI - Pass device info untuk responsive */}
       <AttendanceUI
         // State
-        loading={loading && deviceDetected} // Pass loading only after device detected
+        loading={loading && deviceDetected}
         summary={summary}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -126,7 +173,7 @@ const Attendance = ({
         showRekap={showRekap}
         setShowExportModal={setShowExportModal}
         setShowExportSemesterModal={setShowExportSemesterModal}
-        // Modal states (passed but not rendered here)
+        // Modal states
         showModal={showModal}
         setShowModal={setShowModal}
         modalMessage={modalMessage}
@@ -148,8 +195,10 @@ const Attendance = ({
         // Export handlers
         exportAttendance={exportAttendance}
         exportSemester={exportSemester}
-        // Device info
-        deviceDetected={deviceDetected} // <-- Pass to UI
+        // Device info - TAMBAHKAN INI
+        deviceDetected={deviceDetected}
+        isMobile={isMobile}
+        isTablet={isTablet}
       />
 
       {/* Modals */}
@@ -170,6 +219,7 @@ const Attendance = ({
         }}
         title="Konfirmasi Penyimpanan"
         message={modalMessage}
+        isMobile={isMobile} // Pass device info untuk modal responsive
       />
 
       <ExportModal
@@ -177,6 +227,7 @@ const Attendance = ({
         onClose={() => setShowExportModal(false)}
         onExport={exportAttendance}
         loading={exportLoading}
+        isMobile={isMobile} // Pass device info
       />
 
       <ExportSemesterModal
@@ -184,6 +235,7 @@ const Attendance = ({
         onClose={() => setShowExportSemesterModal(false)}
         onExport={exportSemester}
         loading={exportSemesterLoading}
+        isMobile={isMobile} // Pass device info
       />
 
       <AttendanceModal
@@ -195,8 +247,10 @@ const Attendance = ({
         loading={rekapLoading}
         onRefreshData={handleRekapRefresh}
         activeClass={activeClass}
+        isMobile={isMobile} // Pass device info
+        isTablet={isTablet} // Pass device info
       />
-    </>
+    </div>
   );
 };
 

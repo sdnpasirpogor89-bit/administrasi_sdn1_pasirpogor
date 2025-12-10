@@ -35,36 +35,37 @@ const normalizeStatus = (status) => {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 };
 
-// Helper untuk status badge
-const getStatusBadge = (status) => {
-  if (!status) return <span className="text-gray-400">-</span>;
+// Helper untuk status badge - UPDATE DARK MODE
+const getStatusBadge = (status, isDarkMode = false) => {
+  if (!status)
+    return <span className="text-gray-400 dark:text-gray-500">-</span>;
 
   const normalizedStatus = normalizeStatus(status);
 
   const statusMap = {
-    hadir: { text: "H", color: "bg-green-500 text-white" },
-    sakit: { text: "S", color: "bg-yellow-500 text-white" },
-    izin: { text: "I", color: "bg-blue-500 text-white" },
-    alpa: { text: "A", color: "bg-red-500 text-white" },
-    Hadir: { text: "H", color: "bg-green-500 text-white" },
-    Sakit: { text: "S", color: "bg-yellow-500 text-white" },
-    Izin: { text: "I", color: "bg-blue-500 text-white" },
-    Alpa: { text: "A", color: "bg-red-500 text-white" },
-    H: { text: "H", color: "bg-green-500 text-white" },
-    S: { text: "S", color: "bg-yellow-500 text-white" },
-    I: { text: "I", color: "bg-blue-500 text-white" },
-    A: { text: "A", color: "bg-red-500 text-white" },
+    hadir: { text: "H", color: "bg-green-500 text-white dark:bg-green-600" },
+    sakit: { text: "S", color: "bg-yellow-500 text-white dark:bg-yellow-600" },
+    izin: { text: "I", color: "bg-blue-500 text-white dark:bg-blue-600" },
+    alpa: { text: "A", color: "bg-red-500 text-white dark:bg-red-600" },
+    Hadir: { text: "H", color: "bg-green-500 text-white dark:bg-green-600" },
+    Sakit: { text: "S", color: "bg-yellow-500 text-white dark:bg-yellow-600" },
+    Izin: { text: "I", color: "bg-blue-500 text-white dark:bg-blue-600" },
+    Alpa: { text: "A", color: "bg-red-500 text-white dark:bg-red-600" },
+    H: { text: "H", color: "bg-green-500 text-white dark:bg-green-600" },
+    S: { text: "S", color: "bg-yellow-500 text-white dark:bg-yellow-600" },
+    I: { text: "I", color: "bg-blue-500 text-white dark:bg-blue-600" },
+    A: { text: "A", color: "bg-red-500 text-white dark:bg-red-600" },
   };
 
   const statusInfo = statusMap[status] ||
     statusMap[normalizedStatus] || {
       text: "-",
-      color: "bg-gray-200 text-gray-500",
+      color: "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
     };
 
   return (
     <span
-      className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold ${statusInfo.color} mx-auto`}>
+      className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded text-xs font-bold ${statusInfo.color} mx-auto`}>
       {statusInfo.text}
     </span>
   );
@@ -90,18 +91,32 @@ const formatDateHeader = (dateStr) => {
   }
 };
 
-// Helper untuk get kategori kehadiran
+// Helper untuk get kategori kehadiran - UPDATE DARK MODE
 const getAttendanceCategory = (percentage) => {
   if (percentage >= 90)
-    return { text: "Sangat Baik", color: "bg-green-100 text-green-700" };
+    return {
+      text: "Sangat Baik",
+      color:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    };
   if (percentage >= 80)
-    return { text: "Baik", color: "bg-blue-100 text-blue-700" };
+    return {
+      text: "Baik",
+      color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    };
   if (percentage >= 70)
-    return { text: "Cukup", color: "bg-yellow-100 text-yellow-700" };
-  return { text: "Kurang", color: "bg-red-100 text-red-700" };
+    return {
+      text: "Cukup",
+      color:
+        "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+    };
+  return {
+    text: "Kurang",
+    color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  };
 };
 
-// Komponen AttendanceModal
+// Komponen AttendanceModal dengan DARK MODE SUPPORT
 const AttendanceModal = ({
   show,
   onClose,
@@ -111,6 +126,8 @@ const AttendanceModal = ({
   loading,
   onRefreshData,
   activeClass,
+  isMobile = false,
+  isTablet = false,
 }) => {
   // State untuk view mode
   const [viewMode, setViewMode] = useState("monthly"); // "monthly" or "semester"
@@ -298,38 +315,41 @@ const AttendanceModal = ({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-xl w-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col transition-colors duration-300">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-400 to-blue-500 text-white p-3 sm:p-4 flex justify-between items-center flex-shrink-0 gap-3">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800 text-white p-3 sm:p-4 flex justify-between items-center flex-shrink-0 gap-3">
           <h2 className="text-sm sm:text-lg font-bold">📊 Rekap Presensi</h2>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Tab Switcher */}
-            <div className="flex bg-white/20 rounded-lg p-1 gap-1">
+            <div className="flex bg-white/20 dark:bg-white/10 rounded-lg p-1 gap-1">
               <button
                 onClick={() => setViewMode("monthly")}
-                className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition ${
+                className={`px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-[40px] touch-manipulation active:scale-95 ${
                   viewMode === "monthly"
-                    ? "bg-white text-blue-600 shadow"
-                    : "text-white hover:bg-white/10"
+                    ? "bg-white text-blue-600 dark:text-blue-800 shadow"
+                    : "text-white hover:bg-white/20 dark:hover:bg-white/30"
                 }`}>
-                📅 Bulanan
+                📅 {isMobile ? "" : "Bulanan"}
               </button>
               <button
                 onClick={() => setViewMode("semester")}
-                className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition ${
+                className={`px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-[40px] touch-manipulation active:scale-95 ${
                   viewMode === "semester"
-                    ? "bg-white text-blue-600 shadow"
-                    : "text-white hover:bg-white/10"
+                    ? "bg-white text-blue-600 dark:text-blue-800 shadow"
+                    : "text-white hover:bg-white/20 dark:hover:bg-white/30"
                 }`}>
-                📊 Semester
+                📊 {isMobile ? "" : "Semester"}
               </button>
             </div>
 
             {/* Period Selector - Conditional based on viewMode */}
-            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg p-1 shadow-sm">
-              <Calendar size={16} className="text-blue-500" />
+            <div className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
+              <Calendar
+                size={isMobile ? 14 : 16}
+                className="text-blue-500 dark:text-blue-400"
+              />
 
               {viewMode === "monthly" ? (
                 <>
@@ -342,13 +362,13 @@ const AttendanceModal = ({
                         selectedYear
                       )
                     }
-                    className="bg-transparent text-gray-700 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 min-w-[80px]"
+                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 dark:border-gray-700 min-w-[80px] sm:min-w-[90px]"
                     disabled={loading}>
                     {monthNames.map((month, index) => (
                       <option
                         key={index + 1}
                         value={index + 1}
-                        className="text-gray-700">
+                        className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
                         {month}
                       </option>
                     ))}
@@ -363,10 +383,13 @@ const AttendanceModal = ({
                         parseInt(e.target.value)
                       )
                     }
-                    className="bg-transparent text-gray-700 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px]"
+                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px] sm:min-w-[80px]"
                     disabled={loading}>
                     {yearOptions.map((year) => (
-                      <option key={year} value={year} className="text-gray-700">
+                      <option
+                        key={year}
+                        value={year}
+                        className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
                         {year}
                       </option>
                     ))}
@@ -380,12 +403,16 @@ const AttendanceModal = ({
                     onChange={(e) =>
                       handleSemesterChange(e.target.value, semesterYear)
                     }
-                    className="bg-transparent text-gray-700 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 min-w-[80px]"
+                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 dark:border-gray-700 min-w-[80px] sm:min-w-[90px]"
                     disabled={loading}>
-                    <option value="ganjil" className="text-gray-700">
+                    <option
+                      value="ganjil"
+                      className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
                       Ganjil
                     </option>
-                    <option value="genap" className="text-gray-700">
+                    <option
+                      value="genap"
+                      className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
                       Genap
                     </option>
                   </select>
@@ -399,10 +426,13 @@ const AttendanceModal = ({
                         parseInt(e.target.value)
                       )
                     }
-                    className="bg-transparent text-gray-700 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px]"
+                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px] sm:min-w-[80px]"
                     disabled={loading}>
                     {yearOptions.map((year) => (
-                      <option key={year} value={year} className="text-gray-700">
+                      <option
+                        key={year}
+                        value={year}
+                        className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
                         {year}
                       </option>
                     ))}
@@ -414,25 +444,25 @@ const AttendanceModal = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 p-2 rounded-lg transition min-w-[44px] min-h-[44px] flex items-center justify-center">
-              <X size={20} />
+              className="text-white hover:bg-white/20 dark:hover:bg-white/30 p-2 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation active:scale-95">
+              <X size={isMobile ? 18 : 20} />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-3 sm:p-4 flex-1 flex flex-col overflow-hidden">
+        <div className="p-3 sm:p-4 flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
           {/* Compact Header */}
-          <div className="mb-2 text-center border border-gray-200 rounded-lg p-2 bg-white flex-shrink-0 sticky top-0 z-30 shadow-sm">
-            <h3 className="text-sm sm:text-base font-bold text-gray-800">
+          <div className="mb-3 text-center border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900 flex-shrink-0 sticky top-0 z-30 shadow-sm transition-colors duration-300">
+            <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 dark:text-gray-100">
               {title || "REKAP PRESENSI"}{" "}
               {activeClass && `- KELAS ${activeClass}`}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
               {getDynamicSubtitle()}
             </p>
             {viewMode === "monthly" && filteredDates.length > 0 && (
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
                 {filteredDates.length} hari aktif •{" "}
                 {formatDateHeader(filteredDates[0])} -{" "}
                 {formatDateHeader(filteredDates[filteredDates.length - 1])}
@@ -442,66 +472,71 @@ const AttendanceModal = ({
 
           {/* Loading State */}
           {loading ? (
-            <div className="flex items-center justify-center p-8 text-gray-500 flex-1">
-              <RefreshCw className="animate-spin mr-3" size={20} />
-              <span className="text-gray-600">Memuat data rekap...</span>
+            <div className="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400 flex-1">
+              <RefreshCw
+                className="animate-spin mr-3 dark:text-gray-300"
+                size={isMobile ? 18 : 20}
+              />
+              <span className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+                Memuat data rekap...
+              </span>
             </div>
           ) : (
-            <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm flex-1 flex flex-col">
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm flex-1 flex flex-col transition-colors duration-300">
               {/* Conditional Table based on viewMode */}
               {viewMode === "monthly" ? (
                 // MONTHLY VIEW - Existing table
                 <>
                   {filteredDates.length > 0 && (
-                    <div className="bg-blue-50 p-2 text-center text-xs text-blue-700 sm:hidden border-b border-blue-200 flex-shrink-0 flex items-center justify-center gap-2">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-2 text-center text-xs text-blue-700 dark:text-blue-300 sm:hidden border-b border-blue-200 dark:border-blue-800 flex-shrink-0 flex items-center justify-center gap-2">
                       <span>👉 Geser untuk melihat semua hari</span>
-                      <span className="bg-blue-200 px-2 py-1 rounded text-blue-800 font-bold">
+                      <span className="bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200 font-bold">
                         {filteredDates.length} hari
                       </span>
                     </div>
                   )}
 
                   <div className="overflow-auto flex-1 relative">
-                    <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-blue-50 to-transparent pointer-events-none sm:hidden z-10"></div>
+                    <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-blue-50 dark:from-blue-900/20 to-transparent pointer-events-none sm:hidden z-10"></div>
 
                     <table className="w-full text-xs sm:text-sm border-collapse">
-                      <thead className="bg-gray-100 sticky top-0 z-20">
-                        <tr className="border-b-2 border-gray-400">
-                          <th className="p-2 text-center font-bold text-gray-800 border-r-2 border-gray-300 sticky left-0 bg-gray-100 z-30 min-w-[40px] sm:min-w-[50px]">
+                      <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-20">
+                        <tr className="border-b-2 border-gray-400 dark:border-gray-600">
+                          <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-200 border-r-2 border-gray-300 dark:border-gray-700 sticky left-0 bg-gray-100 dark:bg-gray-800 z-30 min-w-[40px] sm:min-w-[50px]">
                             No.
                           </th>
-                          <th className="p-2 text-left font-bold text-gray-800 border-r-2 border-gray-300 sticky left-[40px] sm:left-[50px] bg-gray-100 z-30 min-w-[140px] sm:min-w-[200px]">
+                          <th className="p-2 text-left font-bold text-gray-800 dark:text-gray-200 border-r-2 border-gray-300 dark:border-gray-700 sticky left-[40px] sm:left-[50px] bg-gray-100 dark:bg-gray-800 z-30 min-w-[140px] sm:min-w-[200px]">
                             Nama Siswa
                           </th>
 
                           {filteredDates.map((date, index) => (
                             <th
                               key={date}
-                              className={`p-1 text-center font-bold text-gray-800 min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
+                              className={`p-1 text-center font-bold text-gray-800 dark:text-gray-200 min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
                                 index < filteredDates.length - 1
-                                  ? "border-r border-gray-300"
-                                  : "border-r-2 border-gray-400"
+                                  ? "border-r border-gray-300 dark:border-gray-700"
+                                  : "border-r-2 border-gray-400 dark:border-gray-600"
                               }`}>
                               {formatDateHeader(date)}
                             </th>
                           ))}
 
-                          <th className="p-2 text-center font-bold text-green-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-green-50">
+                          <th className="p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px] bg-green-50 dark:bg-green-900/20">
                             Hadir
                           </th>
-                          <th className="p-2 text-center font-bold text-blue-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-blue-50">
+                          <th className="p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px] bg-blue-50 dark:bg-blue-900/20">
                             Izin
                           </th>
-                          <th className="p-2 text-center font-bold text-yellow-700 border-r border-gray-300 min-w-[40px] sm:min-w-[45px] bg-yellow-50">
+                          <th className="p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px] bg-yellow-50 dark:bg-yellow-900/20">
                             Sakit
                           </th>
-                          <th className="p-2 text-center font-bold text-red-700 border-r-2 border-gray-400 min-w-[40px] sm:min-w-[45px] bg-red-50">
+                          <th className="p-2 text-center font-bold text-red-700 dark:text-red-400 border-r-2 border-gray-400 dark:border-gray-600 min-w-[40px] sm:min-w-[45px] bg-red-50 dark:bg-red-900/20">
                             Alpa
                           </th>
-                          <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[40px] sm:min-w-[45px]">
+                          <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px]">
                             Total
                           </th>
-                          <th className="p-2 text-center font-bold text-gray-800 min-w-[50px] sm:min-w-[60px]">
+                          <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 min-w-[50px] sm:min-w-[60px]">
                             Persentase
                           </th>
                         </tr>
@@ -511,11 +546,11 @@ const AttendanceModal = ({
                           processedData.map((student, index) => (
                             <tr
                               key={student.nisn || student.id || index}
-                              className="border-b border-gray-200 hover:bg-blue-50 transition">
-                              <td className="p-2 text-center border-r-2 border-gray-300 sticky left-0 bg-white z-10 font-medium shadow-right sm:shadow-none">
+                              className="border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-150">
+                              <td className="p-2 text-center border-r-2 border-gray-300 dark:border-gray-700 sticky left-0 bg-white dark:bg-gray-900 z-10 font-medium shadow-right dark:shadow-gray-800 sm:shadow-none">
                                 {index + 1}
                               </td>
-                              <td className="p-2 font-medium text-gray-800 border-r-2 border-gray-300 sticky left-[40px] sm:left-[50px] bg-white z-10 whitespace-nowrap shadow-right sm:shadow-none">
+                              <td className="p-2 font-medium text-gray-800 dark:text-gray-200 border-r-2 border-gray-300 dark:border-gray-700 sticky left-[40px] sm:left-[50px] bg-white dark:bg-gray-900 z-10 whitespace-nowrap shadow-right dark:shadow-gray-800 sm:shadow-none">
                                 {student.name ||
                                   student.full_name ||
                                   student.nama_siswa}
@@ -526,40 +561,41 @@ const AttendanceModal = ({
                                   key={date}
                                   className={`p-1 text-center ${
                                     index < filteredDates.length - 1
-                                      ? "border-r border-gray-200"
-                                      : "border-r-2 border-gray-400"
+                                      ? "border-r border-gray-200 dark:border-gray-700"
+                                      : "border-r-2 border-gray-400 dark:border-gray-600"
                                   }`}>
                                   <div className="flex justify-center">
                                     {getStatusBadge(
-                                      getStudentStatusByDate(student, date)
+                                      getStudentStatusByDate(student, date),
+                                      true // Pass dark mode flag
                                     )}
                                   </div>
                                 </td>
                               ))}
 
-                              <td className="p-2 text-center text-green-700 font-bold border-r border-gray-200 bg-green-50/50">
+                              <td className="p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10">
                                 {student.hadir || 0}
                               </td>
-                              <td className="p-2 text-center text-blue-700 font-bold border-r border-gray-200 bg-blue-50/50">
+                              <td className="p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/10">
                                 {student.izin || 0}
                               </td>
-                              <td className="p-2 text-center text-yellow-700 font-bold border-r border-gray-200 bg-yellow-50/50">
+                              <td className="p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-yellow-50/50 dark:bg-yellow-900/10">
                                 {student.sakit || 0}
                               </td>
-                              <td className="p-2 text-center text-red-700 font-bold border-r-2 border-gray-400 bg-red-50/50">
+                              <td className="p-2 text-center text-red-700 dark:text-red-400 font-bold border-r-2 border-gray-400 dark:border-gray-600 bg-red-50/50 dark:bg-red-900/10">
                                 {student.alpa || 0}
                               </td>
-                              <td className="p-2 text-center font-bold text-gray-800 border-r border-gray-200">
+                              <td className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                                 {student.total || 0}
                               </td>
-                              <td className="p-2 text-center font-bold text-gray-800">
+                              <td className="p-2 text-center font-bold text-gray-800 dark:text-gray-300">
                                 <span
-                                  className={`inline-flex items-center justify-center w-12 px-2 py-1 rounded-full text-xs font-semibold ${
+                                  className={`inline-flex items-center justify-center w-12 sm:w-14 px-2 py-1 rounded-full text-xs font-semibold ${
                                     student.percentage >= 80
-                                      ? "bg-green-100 text-green-700"
+                                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                                       : student.percentage >= 60
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-red-100 text-red-700"
+                                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
                                   }`}>
                                   {student.percentage || 0}%
                                 </span>
@@ -570,14 +606,14 @@ const AttendanceModal = ({
                           <tr>
                             <td
                               colSpan={filteredDates.length + 8}
-                              className="p-8 text-center text-gray-500">
-                              <div className="text-3xl sm:text-4xl mb-3">
+                              className="p-8 text-center text-gray-500 dark:text-gray-400">
+                              <div className="text-3xl sm:text-4xl mb-3 dark:text-gray-600">
                                 📅
                               </div>
-                              <h4 className="font-semibold mb-2 text-sm sm:text-base">
+                              <h4 className="font-semibold mb-2 text-sm sm:text-base dark:text-gray-300">
                                 Belum Ada Data
                               </h4>
-                              <p className="text-xs sm:text-sm">
+                              <p className="text-xs sm:text-sm dark:text-gray-400">
                                 Belum ada data presensi untuk bulan ini
                               </p>
                             </td>
@@ -591,36 +627,36 @@ const AttendanceModal = ({
                 // SEMESTER VIEW - New summary table
                 <div className="overflow-auto flex-1">
                   <table className="w-full text-xs sm:text-sm border-collapse">
-                    <thead className="bg-gray-100 sticky top-0 z-20">
-                      <tr className="border-b-2 border-gray-400">
-                        <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[40px]">
+                    <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-20">
+                      <tr className="border-b-2 border-gray-400 dark:border-gray-600">
+                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-700 min-w-[40px]">
                           No
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[120px]">
+                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-700 min-w-[120px]">
                           NISN
                         </th>
-                        <th className="p-2 text-left font-bold text-gray-800 border-r border-gray-300 min-w-[180px]">
+                        <th className="p-2 text-left font-bold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-700 min-w-[180px]">
                           Nama Siswa
                         </th>
-                        <th className="p-2 text-center font-bold text-green-700 border-r border-gray-300 min-w-[60px] bg-green-50">
+                        <th className="p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-green-50 dark:bg-green-900/20">
                           Hadir
                         </th>
-                        <th className="p-2 text-center font-bold text-yellow-700 border-r border-gray-300 min-w-[60px] bg-yellow-50">
+                        <th className="p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-yellow-50 dark:bg-yellow-900/20">
                           Sakit
                         </th>
-                        <th className="p-2 text-center font-bold text-blue-700 border-r border-gray-300 min-w-[60px] bg-blue-50">
+                        <th className="p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-blue-50 dark:bg-blue-900/20">
                           Izin
                         </th>
-                        <th className="p-2 text-center font-bold text-red-700 border-r border-gray-300 min-w-[60px] bg-red-50">
+                        <th className="p-2 text-center font-bold text-red-700 dark:text-red-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-red-50 dark:bg-red-900/20">
                           Alpa
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[60px]">
+                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-300 dark:border-gray-700 min-w-[60px]">
                           Total
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[70px]">
+                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-300 dark:border-gray-700 min-w-[70px]">
                           %
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 min-w-[100px]">
+                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 min-w-[100px]">
                           Kategori
                         </th>
                       </tr>
@@ -634,43 +670,43 @@ const AttendanceModal = ({
                           return (
                             <tr
                               key={student.nisn || student.id || index}
-                              className="border-b border-gray-200 hover:bg-blue-50 transition">
-                              <td className="p-2 text-center border-r border-gray-200 font-medium">
+                              className="border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-150">
+                              <td className="p-2 text-center border-r border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-gray-300">
                                 {index + 1}
                               </td>
-                              <td className="p-2 text-center border-r border-gray-200 font-mono text-xs">
+                              <td className="p-2 text-center border-r border-gray-200 dark:border-gray-700 font-mono text-xs text-gray-700 dark:text-gray-400">
                                 {student.nisn || "-"}
                               </td>
-                              <td className="p-2 border-r border-gray-200 font-medium text-gray-800">
+                              <td className="p-2 border-r border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-gray-300">
                                 {student.name ||
                                   student.full_name ||
                                   student.nama_siswa}
                               </td>
-                              <td className="p-2 text-center text-green-700 font-bold border-r border-gray-200 bg-green-50/30">
+                              <td className="p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10">
                                 {student.hadir || 0}
                               </td>
-                              <td className="p-2 text-center text-yellow-700 font-bold border-r border-gray-200 bg-yellow-50/30">
+                              <td className="p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-yellow-50/30 dark:bg-yellow-900/10">
                                 {student.sakit || 0}
                               </td>
-                              <td className="p-2 text-center text-blue-700 font-bold border-r border-gray-200 bg-blue-50/30">
+                              <td className="p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
                                 {student.izin || 0}
                               </td>
-                              <td className="p-2 text-center text-red-700 font-bold border-r border-gray-200 bg-red-50/30">
+                              <td className="p-2 text-center text-red-700 dark:text-red-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10">
                                 {student.alpa || 0}
                               </td>
-                              <td className="p-2 text-center font-bold text-gray-800 border-r border-gray-200">
+                              <td className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                                 {student.total || 0}
                               </td>
-                              <td className="p-2 text-center font-bold border-r border-gray-200">
+                              <td className="p-2 text-center font-bold border-r border-gray-200 dark:border-gray-700">
                                 <span
                                   className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-semibold ${
                                     student.percentage >= 90
-                                      ? "bg-green-100 text-green-700"
+                                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                                       : student.percentage >= 80
-                                      ? "bg-blue-100 text-blue-700"
+                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                       : student.percentage >= 70
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-red-100 text-red-700"
+                                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
                                   }`}>
                                   {student.percentage || 0}%
                                 </span>
@@ -688,12 +724,14 @@ const AttendanceModal = ({
                         <tr>
                           <td
                             colSpan={10}
-                            className="p-8 text-center text-gray-500">
-                            <div className="text-3xl sm:text-4xl mb-3">📊</div>
-                            <h4 className="font-semibold mb-2 text-sm sm:text-base">
+                            className="p-8 text-center text-gray-500 dark:text-gray-400">
+                            <div className="text-3xl sm:text-4xl mb-3 dark:text-gray-600">
+                              📊
+                            </div>
+                            <h4 className="font-semibold mb-2 text-sm sm:text-base dark:text-gray-300">
                               Belum Ada Data
                             </h4>
-                            <p className="text-xs sm:text-sm">
+                            <p className="text-xs sm:text-sm dark:text-gray-400">
                               Belum ada data presensi untuk semester ini
                             </p>
                           </td>
@@ -708,10 +746,10 @@ const AttendanceModal = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 p-3 sm:p-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
-          <div className="text-sm text-gray-600">
+        <div className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0 transition-colors duration-300">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             {processedData && processedData.length > 0 && (
-              <span>
+              <span className="text-xs sm:text-sm">
                 Total {processedData.length} siswa •{" "}
                 {viewMode === "monthly" ? (
                   <>
@@ -730,7 +768,7 @@ const AttendanceModal = ({
           </div>
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm sm:text-base font-medium">
+            className="px-4 sm:px-6 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium touch-manipulation active:scale-95 min-h-[40px] min-w-[80px] sm:min-w-[100px]">
             Tutup
           </button>
         </div>

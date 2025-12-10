@@ -1,5 +1,5 @@
-//[file name]: Dashboard.js
-import React, { useState, useEffect, useLayoutEffect } from "react"; // ✅ TAMBAH useLayoutEffect
+//[file name]: Dashboard.js - REVISED WITH DARK MODE & RESPONSIVE
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
   Users,
   GraduationCap,
@@ -30,7 +30,23 @@ import {
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 
-// Helper hook untuk mendeteksi apakah dark mode aktif (Asumsi menggunakan class 'dark' di body/html)
+// 🔥 FIX 1: Warna untuk chart yang konsisten dengan Tailwind
+const CHART_COLORS = {
+  hadir: { light: "#10b981", dark: "#059669" }, // emerald-500 -> emerald-600
+  izin: { light: "#f59e0b", dark: "#d97706" }, // amber-500 -> amber-600
+  sakit: { light: "#3b82f6", dark: "#2563eb" }, // blue-500 -> blue-600
+  alpa: { light: "#ef4444", dark: "#dc2626" }, // red-500 -> red-600
+  line: { light: "#2563eb", dark: "#1d4ed8" }, // blue-600 -> blue-700
+  grid: { light: "#e5e7eb", dark: "#4b5563" }, // gray-200 -> gray-600
+  tooltip: {
+    bgLight: "#ffffff",
+    bgDark: "#374151", // gray-700
+    borderLight: "#d1d5db", // gray-300
+    borderDark: "#6b7280", // gray-500
+  },
+};
+
+// Helper hook untuk mendeteksi dark mode
 const useDarkMode = () => {
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
@@ -66,11 +82,33 @@ const useDarkMode = () => {
   return isDark;
 };
 
-const Dashboard = ({ userData }) => {
-  // 🔥 FIX 1: Simplifikasi device detection - sama seperti TeacherDashboard.js
-  const [isMobile, setIsMobile] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false); // ✅ Flag initialization
+// 🔥 FIX 2: Hook device detection yang lebih sederhana
+const useDeviceDetection = () => {
+  const [device, setDevice] = useState({
+    isMobile: false,
+    isTablet: false,
+    isDesktop: false,
+  });
 
+  useLayoutEffect(() => {
+    const updateDevice = () => {
+      const width = window.innerWidth;
+      setDevice({
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024,
+      });
+    };
+
+    updateDevice();
+    window.addEventListener("resize", updateDevice);
+    return () => window.removeEventListener("resize", updateDevice);
+  }, []);
+
+  return device;
+};
+
+const Dashboard = ({ userData }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -84,40 +122,22 @@ const Dashboard = ({ userData }) => {
   });
 
   const isDark = useDarkMode();
+  const { isMobile, isTablet, isDesktop } = useDeviceDetection();
   const navigate = useNavigate();
 
-  // 🔥 FIX 2: Gunakan useLayoutEffect untuk device detection yang konsisten
-  useLayoutEffect(() => {
-    const checkDevice = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      setIsInitialized(true); // ✅ Tandai sudah initialized
+  // 🔥 FIX 3: Function untuk responsive text sizing
+  const getTextSize = (size = "base") => {
+    const sizes = {
+      xs: isMobile ? "xs" : "sm",
+      sm: isMobile ? "sm" : "base",
+      base: isMobile ? "base" : "lg",
+      lg: isMobile ? "lg" : "xl",
+      xl: isMobile ? "xl" : "2xl",
+      "2xl": isMobile ? "2xl" : "3xl",
+      "3xl": isMobile ? "3xl" : "4xl",
     };
-
-    // Langsung eksekusi
-    checkDevice();
-
-    // Tambah listener untuk resize
-    window.addEventListener("resize", checkDevice);
-
-    // Cleanup
-    return () => window.removeEventListener("resize", checkDevice);
-  }, []);
-
-  // ✅ TAMBAH: Backup resize listener
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      if (mobile !== isMobile) {
-        setIsMobile(mobile);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isInitialized, isMobile]);
+    return sizes[size] || size;
+  };
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -133,7 +153,7 @@ const Dashboard = ({ userData }) => {
       date.setDate(today.getDate() - i);
       week.push({
         date: date.toISOString().split("T")[0],
-        day: date.toLocaleDateString("id-ID", { weekday: "short" }), // Short day for mobile
+        day: date.toLocaleDateString("id-ID", { weekday: "short" }),
       });
     }
     return week;
@@ -508,10 +528,7 @@ const Dashboard = ({ userData }) => {
     }
   };
 
-  // 🔥 FIX 3: Main fetch function yang lebih sederhana
   const fetchDashboardData = async () => {
-    if (!isInitialized) return; // ✅ Jangan fetch jika belum initialized
-
     setRefreshing(true);
     try {
       if (userData.role === "admin") {
@@ -530,22 +547,17 @@ const Dashboard = ({ userData }) => {
   };
 
   useEffect(() => {
-    // 🔥 FIX 4: Tunggu sampai device initialized baru fetch
-    if (isInitialized) {
-      fetchDashboardData();
-    }
+    fetchDashboardData();
 
     // Auto refresh every 5 minutes (300000ms)
     const interval = setInterval(() => {
-      if (isInitialized) {
-        fetchDashboardData();
-      }
+      fetchDashboardData();
     }, 300000);
 
     return () => clearInterval(interval);
-  }, [userData.role, userData.kelas, isInitialized]); // 🔥 FIX 5: Tambah isInitialized
+  }, [userData.role, userData.kelas]);
 
-  // Responsive Stats Card Component
+  // 🔥 FIX 4: Responsive Stats Card Component dengan dark mode proper
   const StatsCard = ({
     title,
     value,
@@ -556,30 +568,48 @@ const Dashboard = ({ userData }) => {
     isLoading = false,
   }) => {
     const colorClasses = {
-      blue: "from-blue-500 to-blue-600",
-      green: "from-emerald-500 to-emerald-600",
-      purple: "from-purple-500 to-purple-600",
-      orange: "from-orange-500 to-orange-600",
-      red: "from-red-500 to-red-600",
+      blue: {
+        bg: "from-blue-500 to-blue-600",
+        icon: "text-blue-600 dark:text-blue-400",
+      },
+      green: {
+        bg: "from-emerald-500 to-emerald-600",
+        icon: "text-emerald-600 dark:text-emerald-400",
+      },
+      purple: {
+        bg: "from-purple-500 to-purple-600",
+        icon: "text-purple-600 dark:text-purple-400",
+      },
+      orange: {
+        bg: "from-orange-500 to-orange-600",
+        icon: "text-orange-600 dark:text-orange-400",
+      },
+      red: {
+        bg: "from-red-500 to-red-600",
+        icon: "text-red-600 dark:text-red-400",
+      },
     };
 
+    const colorSet = colorClasses[color] || colorClasses.blue;
+
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 relative overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 relative overflow-hidden h-full">
         <div
-          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorClasses[color]}`}></div>
+          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorSet.bg}`}></div>
 
         <div className="flex justify-between items-start mb-3">
-          <div
-            className={`bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-2 rounded-lg`}>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-2 sm:p-3 rounded-lg">
             <Icon
-              size={isMobile ? 20 : 24}
-              className={`text-${color}-600 dark:text-${color}-400`}
+              size={isMobile ? 20 : isTablet ? 22 : 24}
+              className={colorSet.icon}
             />
           </div>
           {trend && (
             <div
               className={`flex items-center gap-1 text-xs font-semibold ${
-                trend > 0 ? "text-emerald-600" : "text-red-600"
+                trend > 0
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-red-600 dark:text-red-400"
               }`}>
               <TrendingUp size={12} className={trend > 0 ? "" : "rotate-180"} />
               <span>
@@ -593,25 +623,25 @@ const Dashboard = ({ userData }) => {
         <div>
           <h3
             className={`${
-              isMobile ? "text-2xl" : "text-3xl"
+              isMobile ? "text-2xl" : isTablet ? "text-3xl" : "text-4xl"
             } font-bold text-gray-900 dark:text-white mb-1`}>
             {isLoading ? (
-              <div className="bg-gray-200 dark:bg-gray-600 animate-pulse h-6 w-12 rounded"></div>
+              <div className="bg-gray-200 dark:bg-gray-600 animate-pulse h-8 w-16 rounded"></div>
             ) : (
               value
             )}
           </h3>
           <p
-            className={`${
-              isMobile ? "text-sm" : "text-lg"
-            } font-semibold text-gray-700 dark:text-gray-300 mb-1`}>
+            className={`${getTextSize(
+              "base"
+            )} font-semibold text-gray-700 dark:text-gray-300 mb-1 truncate`}>
             {title}
           </p>
           {subtitle && (
             <p
-              className={`${
-                isMobile ? "text-xs" : "text-sm"
-              } text-gray-500 dark:text-gray-400 font-medium`}>
+              className={`${getTextSize(
+                "sm"
+              )} text-gray-500 dark:text-gray-400 font-medium truncate`}>
               {subtitle}
             </p>
           )}
@@ -620,37 +650,37 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  // Mobile Class Summary Card (REVISI DARK MODE DI SINI)
+  // 🔥 FIX 5: Mobile Class Card dengan kontras dark mode yang lebih baik
   const MobileClassCard = ({ kelas, hadir, izin, sakit, alpa }) => {
     const total = hadir + izin + sakit + alpa;
     const attendanceRate = total > 0 ? Math.round((hadir / total) * 100) : 0;
 
     return (
-      <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
-        <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
+        <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-sm truncate">
           {kelas}
         </h4>
         <div className="grid grid-cols-4 gap-2 text-center">
           {/* Hadir */}
-          <div className="bg-green-50 dark:bg-green-800/50 rounded p-2">
-            <span className="block font-bold text-green-700 dark:text-green-300 text-sm">
+          <div className="bg-green-50 dark:bg-emerald-900/30 dark:border dark:border-emerald-800 rounded p-2">
+            <span className="block font-bold text-green-700 dark:text-emerald-300 text-sm">
               {hadir}
             </span>
-            <span className="text-xs text-green-600 dark:text-green-400">
+            <span className="text-xs text-green-600 dark:text-emerald-400">
               Hadir
             </span>
           </div>
           {/* Izin */}
-          <div className="bg-yellow-50 dark:bg-yellow-800/50 rounded p-2">
-            <span className="block font-bold text-yellow-700 dark:text-yellow-300 text-sm">
+          <div className="bg-yellow-50 dark:bg-amber-900/30 dark:border dark:border-amber-800 rounded p-2">
+            <span className="block font-bold text-yellow-700 dark:text-amber-300 text-sm">
               {izin}
             </span>
-            <span className="text-xs text-yellow-600 dark:text-yellow-400">
+            <span className="text-xs text-yellow-600 dark:text-amber-400">
               Izin
             </span>
           </div>
           {/* Sakit */}
-          <div className="bg-blue-50 dark:bg-blue-800/50 rounded p-2">
+          <div className="bg-blue-50 dark:bg-blue-900/30 dark:border dark:border-blue-800 rounded p-2">
             <span className="block font-bold text-blue-700 dark:text-blue-300 text-sm">
               {sakit}
             </span>
@@ -659,14 +689,14 @@ const Dashboard = ({ userData }) => {
             </span>
           </div>
           {/* Alpa */}
-          <div className="bg-red-50 dark:bg-red-800/50 rounded p-2">
+          <div className="bg-red-50 dark:bg-red-900/30 dark:border dark:border-red-800 rounded p-2">
             <span className="block font-bold text-red-700 dark:text-red-300 text-sm">
               {alpa}
             </span>
             <span className="text-xs text-red-600 dark:text-red-400">Alpa</span>
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600 dark:text-gray-300">
               Kehadiran
@@ -680,12 +710,12 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  // 🔥 FIX 6: Loading state dengan isInitialized check
-  if (loading || !isInitialized) {
+  // 🔥 FIX 6: Loading state yang tidak bergantung pada device detection
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px] px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400 font-medium">
             Memuat data dashboard...
           </p>
@@ -694,27 +724,50 @@ const Dashboard = ({ userData }) => {
     );
   }
 
-  // RECHARTS Theme Configuration
-  // Tentukan warna teks untuk Axis berdasarkan Dark Mode
-  const chartTickColor = isDark ? "#A0AEC0" : "#4A5568"; // Tailwind gray-400 atau gray-700
+  // 🔥 FIX 7: Chart configuration yang konsisten dengan dark mode
+  const getChartStyles = () => {
+    return {
+      cartesianGrid: {
+        stroke: isDark ? CHART_COLORS.grid.dark : CHART_COLORS.grid.light,
+        strokeOpacity: 0.3,
+      },
+      tooltip: {
+        backgroundColor: isDark
+          ? CHART_COLORS.tooltip.bgDark
+          : CHART_COLORS.tooltip.bgLight,
+        borderColor: isDark
+          ? CHART_COLORS.tooltip.borderDark
+          : CHART_COLORS.tooltip.borderLight,
+        textColor: isDark ? "#f3f4f6" : "#111827",
+      },
+      text: {
+        fill: isDark ? "#9ca3af" : "#6b7280", // gray-400 / gray-500
+      },
+    };
+  };
+
+  const chartStyles = getChartStyles();
 
   // Render dashboard content based on user role
   const renderDashboardByRole = () => {
     if (userData.role === "admin") {
       return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header dengan Device Indicator */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
-              <span>Tampilan {isMobile ? "Mobile" : "Desktop"}</span>
+              <span>
+                Tampilan {isMobile ? "Mobile" : isTablet ? "Tablet" : "Desktop"}
+              </span>
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
-                refreshing ? "opacity-50 cursor-not-allowed" : ""
-              }`}>
+              className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
+                refreshing ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+              aria-label="Refresh data dashboard">
               <RefreshCw
                 size={18}
                 className={refreshing ? "animate-spin" : ""}
@@ -724,7 +777,7 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Stats Cards - Responsive Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Siswa"
               value={dashboardData.totalStudents}
@@ -756,71 +809,96 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Charts Section */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Class Attendance Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Kehadiran Per Kelas Hari Ini
                 </h3>
-                <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                  aria-label="Export data kehadiran">
                   <Download size={16} />
                   Export
                 </button>
               </div>
-              <div className={isMobile ? "h-64" : "h-80"}>
+              <div className={isMobile ? "h-72" : isTablet ? "h-80" : "h-96"}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={dashboardData.classAttendance}
                     margin={
                       isMobile
-                        ? { top: 20, right: 10, left: 10, bottom: 20 }
+                        ? { top: 10, right: 5, left: 5, bottom: 40 }
                         : { top: 20, right: 30, left: 20, bottom: 20 }
                     }>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={chartStyles.cartesianGrid.stroke}
+                      opacity={chartStyles.cartesianGrid.strokeOpacity}
+                    />
                     <XAxis
                       dataKey="kelas"
                       angle={isMobile ? -45 : 0}
                       textAnchor={isMobile ? "end" : "middle"}
                       tick={{
                         fontSize: isMobile ? 10 : 12,
-                        fill: chartTickColor,
-                      }} // Revisi Tick Color
+                        fill: chartStyles.text.fill,
+                      }}
+                      height={isMobile ? 60 : 40}
                     />
                     <YAxis
                       tick={{
                         fontSize: isMobile ? 10 : 12,
-                        fill: chartTickColor,
-                      }} // Revisi Tick Color
+                        fill: chartStyles.text.fill,
+                      }}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: isDark ? "#4B5563" : "#fff",
-                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
-                        color: isDark ? "#fff" : "#000",
+                        backgroundColor: chartStyles.tooltip.backgroundColor,
+                        borderColor: chartStyles.tooltip.borderColor,
+                        color: chartStyles.tooltip.textColor,
+                        borderRadius: "8px",
+                        padding: "10px",
                       }}
                     />
                     <Bar
                       dataKey="hadir"
-                      fill="#10b981"
+                      fill={
+                        isDark
+                          ? CHART_COLORS.hadir.dark
+                          : CHART_COLORS.hadir.light
+                      }
                       name="Hadir"
                       radius={[2, 2, 0, 0]}
                     />
                     <Bar
                       dataKey="izin"
-                      fill="#f59e0b"
+                      fill={
+                        isDark
+                          ? CHART_COLORS.izin.dark
+                          : CHART_COLORS.izin.light
+                      }
                       name="Izin"
                       radius={[2, 2, 0, 0]}
                     />
                     <Bar
                       dataKey="sakit"
-                      fill="#3b82f6"
+                      fill={
+                        isDark
+                          ? CHART_COLORS.sakit.dark
+                          : CHART_COLORS.sakit.light
+                      }
                       name="Sakit"
                       radius={[2, 2, 0, 0]}
                     />
                     <Bar
                       dataKey="alpa"
-                      fill="#ef4444"
+                      fill={
+                        isDark
+                          ? CHART_COLORS.alpa.dark
+                          : CHART_COLORS.alpa.light
+                      }
                       name="Alpa"
                       radius={[2, 2, 0, 0]}
                     />
@@ -831,43 +909,52 @@ const Dashboard = ({ userData }) => {
 
             {/* Weekly Trend Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Trend Kehadiran 7 Hari Terakhir
                 </h3>
-                <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                  aria-label="Export data trend">
                   <Download size={16} />
                   Export
                 </button>
               </div>
-              <div className={isMobile ? "h-64" : "h-80"}>
+              <div className={isMobile ? "h-72" : isTablet ? "h-80" : "h-96"}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={dashboardData.weeklyTrend}
                     margin={
                       isMobile
-                        ? { top: 20, right: 10, left: 10, bottom: 20 }
+                        ? { top: 10, right: 5, left: 5, bottom: 20 }
                         : { top: 20, right: 30, left: 20, bottom: 20 }
                     }>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={chartStyles.cartesianGrid.stroke}
+                      opacity={chartStyles.cartesianGrid.strokeOpacity}
+                    />
                     <XAxis
                       dataKey="day"
                       tick={{
                         fontSize: isMobile ? 10 : 12,
-                        fill: chartTickColor,
-                      }} // Revisi Tick Color
+                        fill: chartStyles.text.fill,
+                      }}
                     />
                     <YAxis
                       tick={{
                         fontSize: isMobile ? 10 : 12,
-                        fill: chartTickColor,
-                      }} // Revisi Tick Color
+                        fill: chartStyles.text.fill,
+                      }}
+                      domain={[0, 100]}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: isDark ? "#4B5563" : "#fff",
-                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
-                        color: isDark ? "#fff" : "#000",
+                        backgroundColor: chartStyles.tooltip.backgroundColor,
+                        borderColor: chartStyles.tooltip.borderColor,
+                        color: chartStyles.tooltip.textColor,
+                        borderRadius: "8px",
+                        padding: "10px",
                       }}
                       formatter={(value) => [`${value}%`, "Tingkat Kehadiran"]}
                       labelFormatter={(label) => `Hari: ${label}`}
@@ -875,7 +962,11 @@ const Dashboard = ({ userData }) => {
                     <Line
                       type="monotone"
                       dataKey="attendance"
-                      stroke="#2563eb"
+                      stroke={
+                        isDark
+                          ? CHART_COLORS.line.dark
+                          : CHART_COLORS.line.light
+                      }
                       strokeWidth={isMobile ? 2 : 3}
                       dot={{ r: isMobile ? 4 : 6 }}
                       activeDot={{ r: isMobile ? 6 : 8 }}
@@ -888,27 +979,30 @@ const Dashboard = ({ userData }) => {
 
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Aksi Cepat
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Input kehadiran siswa">
                 <ClipboardList size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Input Kehadiran</span>
+                <span>Input Kehadiran</span>
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Input nilai siswa">
                 <BarChart3 size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Input Nilai</span>
+                <span>Input Nilai</span>
               </button>
               <button
                 onClick={() => handleNavigation("/students")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Lihat data siswa">
                 <Users size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Lihat Data Siswa</span>
+                <span>Lihat Data Siswa</span>
               </button>
             </div>
           </div>
@@ -925,22 +1019,23 @@ const Dashboard = ({ userData }) => {
       };
 
       return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
               <span>
-                Tampilan {isMobile ? "Mobile" : "Desktop"} - Kelas{" "}
-                {userData.kelas}
+                Tampilan {isMobile ? "Mobile" : isTablet ? "Tablet" : "Desktop"}{" "}
+                - Kelas {userData.kelas}
               </span>
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
-                refreshing ? "opacity-50 cursor-not-allowed" : ""
-              }`}>
+              className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
+                refreshing ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+              aria-label="Refresh data dashboard">
               <RefreshCw
                 size={18}
                 className={refreshing ? "animate-spin" : ""}
@@ -950,7 +1045,7 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title={`Siswa Kelas ${userData.kelas}`}
               value={dashboardData.totalStudents}
@@ -982,19 +1077,21 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Charts Section */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Pie Chart for Class Attendance */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Status Kehadiran - Kelas {userData.kelas}
                 </h3>
-                <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
+                <button
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                  aria-label="Export data kehadiran">
                   <Download size={16} />
                   Export
                 </button>
               </div>
-              <div className={isMobile ? "h-64" : "h-80"}>
+              <div className={isMobile ? "h-72" : isTablet ? "h-80" : "h-96"}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -1002,27 +1099,35 @@ const Dashboard = ({ userData }) => {
                         {
                           name: "Hadir",
                           value: kelasData.hadir,
-                          fill: "#10b981",
+                          fill: isDark
+                            ? CHART_COLORS.hadir.dark
+                            : CHART_COLORS.hadir.light,
                         },
                         {
                           name: "Izin",
                           value: kelasData.izin,
-                          fill: "#f59e0b",
+                          fill: isDark
+                            ? CHART_COLORS.izin.dark
+                            : CHART_COLORS.izin.light,
                         },
                         {
                           name: "Sakit",
                           value: kelasData.sakit,
-                          fill: "#3b82f6",
+                          fill: isDark
+                            ? CHART_COLORS.sakit.dark
+                            : CHART_COLORS.sakit.light,
                         },
                         {
                           name: "Alpa",
                           value: kelasData.alpa,
-                          fill: "#ef4444",
+                          fill: isDark
+                            ? CHART_COLORS.alpa.dark
+                            : CHART_COLORS.alpa.light,
                         },
                       ]}
                       cx="50%"
                       cy="50%"
-                      outerRadius={isMobile ? 80 : 100}
+                      outerRadius={isMobile ? 80 : isTablet ? 90 : 100}
                       dataKey="value"
                       label={({ name, value }) => `${name}: ${value}`}
                       labelLine={false}>
@@ -1037,9 +1142,11 @@ const Dashboard = ({ userData }) => {
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: isDark ? "#4B5563" : "#fff",
-                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
-                        color: isDark ? "#fff" : "#000",
+                        backgroundColor: chartStyles.tooltip.backgroundColor,
+                        borderColor: chartStyles.tooltip.borderColor,
+                        color: chartStyles.tooltip.textColor,
+                        borderRadius: "8px",
+                        padding: "10px",
                       }}
                     />
                   </PieChart>
@@ -1049,37 +1156,44 @@ const Dashboard = ({ userData }) => {
 
             {/* Weekly Trend */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
                 Trend Kehadiran Kelas {userData.kelas}
               </h3>
-              <div className={isMobile ? "h-64" : "h-80"}>
+              <div className={isMobile ? "h-72" : isTablet ? "h-80" : "h-96"}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={dashboardData.weeklyTrend}
                     margin={
                       isMobile
-                        ? { top: 20, right: 10, left: 10, bottom: 20 }
+                        ? { top: 10, right: 5, left: 5, bottom: 20 }
                         : { top: 20, right: 30, left: 20, bottom: 20 }
                     }>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={chartStyles.cartesianGrid.stroke}
+                      opacity={chartStyles.cartesianGrid.strokeOpacity}
+                    />
                     <XAxis
                       dataKey="day"
                       tick={{
                         fontSize: isMobile ? 10 : 12,
-                        fill: chartTickColor,
-                      }} // Revisi Tick Color
+                        fill: chartStyles.text.fill,
+                      }}
                     />
                     <YAxis
                       tick={{
                         fontSize: isMobile ? 10 : 12,
-                        fill: chartTickColor,
-                      }} // Revisi Tick Color
+                        fill: chartStyles.text.fill,
+                      }}
+                      domain={[0, 100]}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: isDark ? "#4B5563" : "#fff",
-                        border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
-                        color: isDark ? "#fff" : "#000",
+                        backgroundColor: chartStyles.tooltip.backgroundColor,
+                        borderColor: chartStyles.tooltip.borderColor,
+                        color: chartStyles.tooltip.textColor,
+                        borderRadius: "8px",
+                        padding: "10px",
                       }}
                       formatter={(value) => [`${value}%`, "Tingkat Kehadiran"]}
                       labelFormatter={(label) => `Hari: ${label}`}
@@ -1087,9 +1201,14 @@ const Dashboard = ({ userData }) => {
                     <Line
                       type="monotone"
                       dataKey="attendance"
-                      stroke="#2563eb"
+                      stroke={
+                        isDark
+                          ? CHART_COLORS.line.dark
+                          : CHART_COLORS.line.light
+                      }
                       strokeWidth={isMobile ? 2 : 3}
                       dot={{ r: isMobile ? 4 : 6 }}
+                      activeDot={{ r: isMobile ? 6 : 8 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -1099,27 +1218,30 @@ const Dashboard = ({ userData }) => {
 
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Aksi Cepat
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Input kehadiran siswa">
                 <ClipboardList size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Input Kehadiran</span>
+                <span>Input Kehadiran</span>
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Input nilai siswa">
                 <BarChart3 size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Input Nilai</span>
+                <span>Input Nilai</span>
               </button>
               <button
                 onClick={() => handleNavigation("/students")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Lihat data siswa">
                 <Users size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Data Siswa</span>
+                <span>Data Siswa</span>
               </button>
             </div>
           </div>
@@ -1143,21 +1265,23 @@ const Dashboard = ({ userData }) => {
           : null;
 
       return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
               <span>
-                Tampilan {isMobile ? "Mobile" : "Desktop"} - Guru Mapel
+                Tampilan {isMobile ? "Mobile" : isTablet ? "Tablet" : "Desktop"}{" "}
+                - Guru Mapel
               </span>
             </div>
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] ${
-                refreshing ? "opacity-50 cursor-not-allowed" : ""
-              }`}>
+              className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
+                refreshing ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+              aria-label="Refresh data dashboard">
               <RefreshCw
                 size={18}
                 className={refreshing ? "animate-spin" : ""}
@@ -1167,7 +1291,7 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatsCard
               title="Total Kelas"
               value={dashboardData.totalClasses}
@@ -1200,37 +1324,50 @@ const Dashboard = ({ userData }) => {
 
           {/* Class Comparison Chart */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 Perbandingan Kehadiran Antar Kelas
               </h3>
-              <button className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 min-h-[44px] w-full sm:w-auto justify-center">
+              <button
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                aria-label="Export data perbandingan">
                 <Download size={16} />
                 Export
               </button>
             </div>
-            <div className={isMobile ? "h-96" : "h-80"}>
+            <div
+              className={isMobile ? "h-80" : isTablet ? "h-96" : "h-[500px]"}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={dashboardData.classAttendance}
                   margin={
                     isMobile
-                      ? { top: 20, right: 10, left: 10, bottom: 40 }
-                      : { top: 20, right: 30, left: 20, bottom: 20 }
+                      ? { top: 10, right: 5, left: 5, bottom: 60 }
+                      : { top: 20, right: 30, left: 20, bottom: 40 }
                   }
                   layout={isMobile ? "vertical" : "horizontal"}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={chartStyles.cartesianGrid.stroke}
+                    opacity={chartStyles.cartesianGrid.strokeOpacity}
+                  />
                   {isMobile ? (
                     <>
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 10, fill: chartTickColor }}
+                        tick={{
+                          fontSize: 10,
+                          fill: chartStyles.text.fill,
+                        }}
                       />
                       <YAxis
                         type="category"
                         dataKey="kelas"
-                        tick={{ fontSize: 10, fill: chartTickColor }}
-                        width={80}
+                        tick={{
+                          fontSize: 10,
+                          fill: chartStyles.text.fill,
+                        }}
+                        width={70}
                       />
                     </>
                   ) : (
@@ -1239,40 +1376,62 @@ const Dashboard = ({ userData }) => {
                         dataKey="kelas"
                         angle={-45}
                         textAnchor="end"
-                        tick={{ fontSize: 10, fill: chartTickColor }}
-                        height={80}
+                        tick={{
+                          fontSize: 10,
+                          fill: chartStyles.text.fill,
+                        }}
+                        height={60}
                       />
-                      <YAxis tick={{ fontSize: 10, fill: chartTickColor }} />
+                      <YAxis
+                        tick={{
+                          fontSize: 10,
+                          fill: chartStyles.text.fill,
+                        }}
+                      />
                     </>
                   )}
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: isDark ? "#4B5563" : "#fff",
-                      border: isDark ? "1px solid #6B7280" : "1px solid #ccc",
-                      color: isDark ? "#fff" : "#000",
+                      backgroundColor: chartStyles.tooltip.backgroundColor,
+                      borderColor: chartStyles.tooltip.borderColor,
+                      color: chartStyles.tooltip.textColor,
+                      borderRadius: "8px",
+                      padding: "10px",
                     }}
                   />
                   <Bar
                     dataKey="hadir"
-                    fill="#10b981"
+                    fill={
+                      isDark
+                        ? CHART_COLORS.hadir.dark
+                        : CHART_COLORS.hadir.light
+                    }
                     name="Hadir"
                     radius={[2, 2, 0, 0]}
                   />
                   <Bar
                     dataKey="izin"
-                    fill="#f59e0b"
+                    fill={
+                      isDark ? CHART_COLORS.izin.dark : CHART_COLORS.izin.light
+                    }
                     name="Izin"
                     radius={[2, 2, 0, 0]}
                   />
                   <Bar
                     dataKey="sakit"
-                    fill="#3b82f6"
+                    fill={
+                      isDark
+                        ? CHART_COLORS.sakit.dark
+                        : CHART_COLORS.sakit.light
+                    }
                     name="Sakit"
                     radius={[2, 2, 0, 0]}
                   />
                   <Bar
                     dataKey="alpa"
-                    fill="#ef4444"
+                    fill={
+                      isDark ? CHART_COLORS.alpa.dark : CHART_COLORS.alpa.light
+                    }
                     name="Alpa"
                     radius={[2, 2, 0, 0]}
                   />
@@ -1281,17 +1440,19 @@ const Dashboard = ({ userData }) => {
             </div>
           </div>
 
-          {/* Class Summary (Menggunakan MobileClassCard yang sudah direvisi) */}
+          {/* Class Summary */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Ringkasan Per Kelas
             </h3>
             <div
               className={`grid ${
                 isMobile
                   ? "grid-cols-1"
+                  : isTablet
+                  ? "grid-cols-2"
                   : "grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-              } gap-4`}>
+              } gap-3 sm:gap-4`}>
               {dashboardData.classAttendance.map((kelas, index) => (
                 <MobileClassCard
                   key={index}
@@ -1307,27 +1468,30 @@ const Dashboard = ({ userData }) => {
 
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Aksi Cepat
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Input kehadiran siswa">
                 <ClipboardList size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Input Kehadiran</span>
+                <span>Input Kehadiran</span>
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Input nilai siswa">
                 <BarChart3 size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Input Nilai</span>
+                <span>Input Nilai</span>
               </button>
               <button
                 onClick={() => handleNavigation("/students")}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 min-h-[60px]">
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                aria-label="Lihat data siswa">
                 <Users size={isMobile ? 18 : 20} />
-                <span className="text-sm sm:text-base">Data Siswa</span>
+                <span>Data Siswa</span>
               </button>
             </div>
           </div>
@@ -1336,7 +1500,7 @@ const Dashboard = ({ userData }) => {
     }
 
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 px-4">
         <p className="text-gray-600 dark:text-gray-400">
           Dashboard content for {userData.role}
         </p>
@@ -1344,7 +1508,11 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  return <div className="space-y-6 p-4 sm:p-6">{renderDashboardByRole()}</div>;
+  return (
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6">
+      {renderDashboardByRole()}
+    </div>
+  );
 };
 
 export default Dashboard;

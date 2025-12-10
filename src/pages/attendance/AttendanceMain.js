@@ -1,6 +1,6 @@
 // src/components/Attendance/AttendanceMain.js
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "../../supabaseClient";
 import {
   exportAttendanceFromComponent,
@@ -20,29 +20,26 @@ export const useAttendance = (currentUser) => {
   const [saving, setSaving] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
-  const [deviceDetected, setDeviceDetected] = useState(false); // NEW: Track if device is detected
+  const [deviceDetected, setDeviceDetected] = useState(false);
 
   const { isOnline, pendingCount, isSyncing } = useSyncStatus();
 
-  // FIXED: Better device detection with debounce
+  // Device detection
   useEffect(() => {
     const checkDeviceType = () => {
       const width = window.innerWidth;
       const isMobileNow = width < 768;
       const isTabletNow = width >= 768 && width < 1024;
 
-      // Only update if changed
       if (isMobile !== isMobileNow || isTablet !== isTabletNow) {
         setIsMobile(isMobileNow);
         setIsTablet(isTabletNow);
       }
-      setDeviceDetected(true); // Mark as detected
+      setDeviceDetected(true);
     };
 
-    // Initial check
     checkDeviceType();
 
-    // Debounced resize handler
     let resizeTimeout;
     const handleResize = () => {
       clearTimeout(resizeTimeout);
@@ -182,7 +179,7 @@ export const useAttendance = (currentUser) => {
     isSyncing,
     isMobile,
     isTablet,
-    deviceDetected, // NEW
+    deviceDetected,
   };
 };
 
@@ -210,7 +207,7 @@ export const useAttendanceLogic = (
     isSyncing,
     isMobile,
     isTablet,
-    deviceDetected, // NEW
+    deviceDetected,
   } = useAttendance(currentUser);
 
   const [attendanceDate, setAttendanceDate] = useState("");
@@ -230,15 +227,11 @@ export const useAttendanceLogic = (
   const [rekapLoading, setRekapLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
-  // FIXED: Wait for device detection before showing card view
   const showCardView = useMemo(() => {
-    if (!deviceDetected) {
-      return false; // Wait for detection
-    }
+    if (!deviceDetected) return false;
     return isMobile;
   }, [isMobile, deviceDetected]);
 
-  // Auto-sync when online
   useEffect(() => {
     if (isOnline && pendingCount > 0) {
       syncPendingData()
@@ -255,7 +248,6 @@ export const useAttendanceLogic = (
     return currentUser.role === "guru_kelas" ? "kelas" : "mapel";
   }, [currentUser.role]);
 
-  // Initialize date
   useEffect(() => {
     const getIndonesiaDate = () => {
       const now = new Date();
@@ -264,25 +256,21 @@ export const useAttendanceLogic = (
       const day = String(now.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
-
     setAttendanceDate(getIndonesiaDate());
   }, []);
 
-  // Load students data
   useEffect(() => {
     loadStudentsData().catch((error) => {
       showToast(`Error memuat data siswa: ${error.message}`, "error");
     });
   }, [loadStudentsData]);
 
-  // Set active class based on user role
   useEffect(() => {
     if (currentUser.role === "guru_kelas" && currentUser.kelas) {
       setActiveClass(currentUser.kelas);
     }
   }, [currentUser]);
 
-  // Load attendance for selected date and class
   useEffect(() => {
     if (attendanceDate && studentsData[activeClass]?.length > 0) {
       loadAttendanceForDate(attendanceDate, activeClass).catch((error) => {
@@ -291,10 +279,8 @@ export const useAttendanceLogic = (
     }
   }, [attendanceDate, activeClass, loadAttendanceForDate, studentsData]);
 
-  // Filter students based on search term
   const filteredStudents = useMemo(() => {
     if (!studentsData[activeClass]) return [];
-
     return studentsData[activeClass].filter(
       (student) =>
         student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -302,24 +288,19 @@ export const useAttendanceLogic = (
     );
   }, [studentsData, activeClass, searchTerm]);
 
-  // Calculate attendance summary
   const summary = useMemo(() => {
     if (!attendanceData[activeClass]) {
       return { Hadir: 0, Alpa: 0, Sakit: 0, Izin: 0 };
     }
-
     const counts = { Hadir: 0, Alpa: 0, Sakit: 0, Izin: 0 };
-
     Object.values(attendanceData[activeClass]).forEach((student) => {
       if (counts.hasOwnProperty(student.status)) {
         counts[student.status]++;
       }
     });
-
     return counts;
   }, [attendanceData, activeClass]);
 
-  // Toast utilities
   const showToast = useCallback((message, type = "success") => {
     setToast({ show: true, message, type });
   }, []);
@@ -328,7 +309,6 @@ export const useAttendanceLogic = (
     setToast({ show: false, message: "", type: "" });
   }, []);
 
-  // Class access control
   const checkClassAccess = useCallback(
     (classNum) => {
       if (currentUser.role === "guru_kelas" && currentUser.kelas !== classNum) {
@@ -343,11 +323,9 @@ export const useAttendanceLogic = (
     [currentUser, showToast]
   );
 
-  // Update student status
   const updateStatus = useCallback(
     (classNum, studentIndex, status) => {
       if (!checkClassAccess(classNum)) return;
-
       setAttendanceData((prev) => {
         const newAttendanceData = { ...prev };
         if (
@@ -365,11 +343,9 @@ export const useAttendanceLogic = (
     [checkClassAccess, setAttendanceData]
   );
 
-  // Update student note
   const updateNote = useCallback(
     (classNum, studentIndex, note) => {
       if (!checkClassAccess(classNum)) return;
-
       setAttendanceData((prev) => {
         const newAttendanceData = { ...prev };
         if (
@@ -387,7 +363,6 @@ export const useAttendanceLogic = (
     [checkClassAccess, setAttendanceData]
   );
 
-  // Check if attendance already exists for date
   const checkExistingAttendance = useCallback(
     async (classNum, date) => {
       try {
@@ -398,7 +373,6 @@ export const useAttendanceLogic = (
           .eq("kelas", classNum)
           .eq("guru_input", currentUser.username)
           .limit(1);
-
         if (error) {
           console.error("Error checking existing attendance:", error);
           return false;
@@ -412,7 +386,6 @@ export const useAttendanceLogic = (
     [currentUser.username]
   );
 
-  // Save attendance data to database
   const saveAttendanceData = useCallback(
     async (classNum, date) => {
       try {
@@ -431,7 +404,6 @@ export const useAttendanceLogic = (
               .eq("tanggal", date)
               .eq("kelas", classNum)
               .eq("guru_input", currentUser.username);
-
             if (deleteError) {
               console.warn("Warning delete old data:", deleteError);
             }
@@ -458,10 +430,8 @@ export const useAttendanceLogic = (
           };
 
           const result = await saveWithSync("attendance", record);
-
-          if (result.success) {
-            successCount++;
-          } else {
+          if (result.success) successCount++;
+          else {
             errorCount++;
             console.error("Failed to save:", student.name, result.error);
           }
@@ -469,7 +439,6 @@ export const useAttendanceLogic = (
 
         const jenisText =
           getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
-
         if (errorCount === 0) {
           if (isOnline) {
             showToast(
@@ -487,7 +456,6 @@ export const useAttendanceLogic = (
             "error"
           );
         }
-
         await loadAttendanceForDate(date, classNum);
       } catch (error) {
         console.error("Error saving attendance:", error);
@@ -505,10 +473,8 @@ export const useAttendanceLogic = (
     ]
   );
 
-  // Mark all students as present
   const markAllPresent = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
-
     setSaving(true);
     try {
       setAttendanceData((prev) => {
@@ -530,15 +496,12 @@ export const useAttendanceLogic = (
     }
   }, [activeClass, checkClassAccess, saving, showToast, setAttendanceData]);
 
-  // Save attendance with confirmation modal
   const saveAttendance = useCallback(async () => {
     if (!checkClassAccess(activeClass) || saving) return;
-
     if (!attendanceDate) {
       showToast("Pilih tanggal terlebih dahulu!", "error");
       return;
     }
-
     setSaving(true);
     try {
       if (isOnline) {
@@ -546,7 +509,6 @@ export const useAttendanceLogic = (
           activeClass,
           attendanceDate
         );
-
         if (exists) {
           const jenisText =
             getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
@@ -580,24 +542,17 @@ export const useAttendanceLogic = (
     isOnline,
   ]);
 
-  // Generate rekap data for a specific month
   const generateRekapData = useCallback(
     async (classNum, month, year) => {
       try {
         setRekapLoading(true);
-
         const students = studentsData[classNum] || [];
-
-        if (students.length === 0) {
-          return [];
-        }
-
+        if (students.length === 0) return [];
         const lastDayOfMonth = new Date(year, month, 0).getDate();
         const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
         const endDate = `${year}-${String(month).padStart(2, "0")}-${String(
           lastDayOfMonth
         ).padStart(2, "0")}`;
-
         const { data: attendanceRecords, error } = await supabase
           .from("attendance")
           .select("*")
@@ -606,32 +561,24 @@ export const useAttendanceLogic = (
           .gte("tanggal", startDate)
           .lte("tanggal", endDate)
           .order("tanggal", { ascending: true });
-
-        if (error) {
-          throw error;
-        }
-
+        if (error) throw error;
         const rekapData = students.map((student) => {
           const studentRecords = attendanceRecords.filter(
             (record) => record.nisn === student.nisn
           );
-
           const dailyStatus = {};
           studentRecords.forEach((record) => {
             dailyStatus[record.tanggal] = record.status.toLowerCase();
           });
-
           const counts = {
             hadir: studentRecords.filter((r) => r.status === "Hadir").length,
             sakit: studentRecords.filter((r) => r.status === "Sakit").length,
             izin: studentRecords.filter((r) => r.status === "Izin").length,
             alpa: studentRecords.filter((r) => r.status === "Alpa").length,
           };
-
           const totalDays = studentRecords.length;
           const percentage =
             totalDays > 0 ? Math.round((counts.hadir / totalDays) * 100) : 100;
-
           return {
             nisn: student.nisn,
             name: student.nama_siswa,
@@ -645,7 +592,6 @@ export const useAttendanceLogic = (
             percentage: percentage,
           };
         });
-
         return rekapData;
       } catch (error) {
         console.error("Error generating rekap:", error);
@@ -658,18 +604,15 @@ export const useAttendanceLogic = (
     [studentsData, showToast, currentUser.username]
   );
 
-  // Show rekap modal
   const showRekap = useCallback(async () => {
     const jenisText =
       getJenisPresensi() === "kelas" ? "Kelas" : "Mata Pelajaran";
     setRekapTitle(`Rekap Presensi ${jenisText} ${activeClass}`);
     setRekapSubtitle("Laporan Kehadiran Siswa");
     setShowRekapModal(true);
-
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
-
     const rekapData = await generateRekapData(
       activeClass,
       currentMonth.toString(),
@@ -678,43 +621,33 @@ export const useAttendanceLogic = (
     setRekapData(rekapData);
   }, [activeClass, generateRekapData, getJenisPresensi]);
 
-  // Handle rekap refresh (monthly or semester)
   const handleRekapRefresh = useCallback(
     async (params) => {
       try {
         setRekapLoading(true);
-
-        console.log("🔥 handleRekapRefresh called with:", params);
-
+        console.log("handleRekapRefresh called with:", params);
         const mode = params?.mode || "monthly";
-
         if (mode === "monthly") {
           const month = params.month;
           const year = params.year;
-
-          console.log("📅 Fetching MONTHLY data:", { month, year });
-
+          console.log("Fetching MONTHLY data:", { month, year });
           const rekapData = await generateRekapData(
             activeClass,
             month.toString(),
             year.toString()
           );
-
           setRekapData(rekapData);
         } else if (mode === "semester") {
           const semester = params.semester;
           const academicYear = params.academicYear;
           const year = params.year;
-
-          console.log("📊 Fetching SEMESTER data:", {
+          console.log("Fetching SEMESTER data:", {
             semester,
             academicYear,
             year,
           });
-
           const [startYear, endYear] = academicYear.split("/").map(Number);
           let startDate, endDate;
-
           if (semester === "Ganjil") {
             startDate = `${startYear}-07-01`;
             endDate = `${startYear}-12-31`;
@@ -722,24 +655,18 @@ export const useAttendanceLogic = (
             startDate = `${endYear}-01-01`;
             endDate = `${endYear}-06-30`;
           }
-
-          console.log("📅 Date range:", { startDate, endDate });
-
+          console.log("Date range:", { startDate, endDate });
           const students = studentsData[activeClass] || [];
-
           if (students.length === 0) {
-            console.log("⚠️ No students found for class", activeClass);
+            console.log("No students found for class", activeClass);
             setRekapData([]);
             return;
           }
-
-          console.log("🔍 Fetching semester data with pagination...");
-
+          console.log("Fetching semester data with pagination...");
           let allRecords = [];
           let page = 0;
           const pageSize = 1000;
           let hasMore = true;
-
           while (hasMore) {
             const { data, error } = await supabase
               .from("attendance")
@@ -749,50 +676,37 @@ export const useAttendanceLogic = (
               .lte("tanggal", endDate)
               .order("tanggal", { ascending: true })
               .range(page * pageSize, (page + 1) * pageSize - 1);
-
             if (error) {
-              console.error("❌ Query error on page", page + 1, ":", error);
+              console.error("Query error on page", page + 1, ":", error);
               throw error;
             }
-
             if (data && data.length > 0) {
               allRecords = [...allRecords, ...data];
               console.log(
-                `📄 Page ${page + 1}: ${data.length} records (Total so far: ${
+                `Page ${page + 1}: ${data.length} records (Total so far: ${
                   allRecords.length
                 })`
               );
-
-              if (data.length < pageSize) {
-                hasMore = false;
-              } else {
-                page++;
-              }
-            } else {
-              hasMore = false;
-            }
+              if (data.length < pageSize) hasMore = false;
+              else page++;
+            } else hasMore = false;
           }
-
           const attendanceRecords = allRecords;
           console.log(
-            "✅ Total attendance records fetched:",
+            "Total attendance records fetched:",
             attendanceRecords.length
           );
-
           if (attendanceRecords.length === 0) {
-            console.log("⚠️ No attendance data found");
+            console.log("No attendance data found");
             setRekapData([]);
             return;
           }
-
           const uniqueDates = [
             ...new Set(attendanceRecords.map((r) => r.tanggal)),
           ];
           const totalHariEfektif = uniqueDates.length;
-
-          console.log("📊 Total hari efektif:", totalHariEfektif);
-          console.log("📅 Unique dates:", uniqueDates.slice(0, 5), "...");
-
+          console.log("Total hari efektif:", totalHariEfektif);
+          console.log("Unique dates:", uniqueDates.slice(0, 5), "...");
           const grouped = {};
           students.forEach((student) => {
             grouped[student.nisn] = {
@@ -806,17 +720,12 @@ export const useAttendanceLogic = (
               dailyStatus: {},
             };
           });
-
           const recordsByDate = {};
-
           attendanceRecords.forEach((record) => {
             const key = `${record.nisn}_${record.tanggal}`;
-
-            if (!recordsByDate[key]) {
-              recordsByDate[key] = record;
-            } else {
+            if (!recordsByDate[key]) recordsByDate[key] = record;
+            else {
               const existing = recordsByDate[key];
-
               if (
                 record.jenis_presensi === "kelas" &&
                 existing.jenis_presensi === "mapel"
@@ -827,39 +736,31 @@ export const useAttendanceLogic = (
               }
             }
           });
-
           const uniqueRecords = Object.values(recordsByDate);
-
-          console.log("📊 Total records (raw):", attendanceRecords.length);
-          console.log("✅ Unique records (after dedup):", uniqueRecords.length);
+          console.log("Total records (raw):", attendanceRecords.length);
+          console.log("Unique records (after dedup):", uniqueRecords.length);
           console.log(
-            "🔍 Dedup removed:",
+            "Dedup removed:",
             attendanceRecords.length - uniqueRecords.length,
             "duplicates"
           );
-
           uniqueRecords.forEach((record) => {
             if (grouped[record.nisn]) {
               const status = record.status.toLowerCase();
-
               if (status === "hadir") grouped[record.nisn].hadir++;
               else if (status === "sakit") grouped[record.nisn].sakit++;
               else if (status === "izin") grouped[record.nisn].izin++;
               else if (status === "alpa") grouped[record.nisn].alpa++;
-
               grouped[record.nisn].dailyStatus[record.tanggal] = status;
             }
           });
-
           const processedData = Object.values(grouped).map((student) => {
             const totalRecords =
               student.hadir + student.sakit + student.izin + student.alpa;
-
             const percentage =
               totalHariEfektif > 0
                 ? Math.round((student.hadir / totalHariEfektif) * 100)
                 : 0;
-
             return {
               ...student,
               total: totalHariEfektif,
@@ -867,14 +768,12 @@ export const useAttendanceLogic = (
               percentage,
             };
           });
-
-          console.log("✅ Processed data:", processedData.length, "students");
-          console.log("📊 Sample student:", processedData[0]);
-
+          console.log("Processed data:", processedData.length, "students");
+          console.log("Sample student:", processedData[0]);
           setRekapData(processedData);
         }
       } catch (error) {
-        console.error("❌ Error in handleRekapRefresh:", error);
+        console.error("Error in handleRekapRefresh:", error);
         showToast(`Error memuat rekap: ${error.message}`, "error");
         setRekapData([]);
       } finally {
@@ -890,12 +789,10 @@ export const useAttendanceLogic = (
     ]
   );
 
-  // Export attendance to Excel
   const exportAttendance = useCallback(
     async (month, year) => {
       try {
         setExportLoading(true);
-
         const result = await exportAttendanceFromComponent(
           supabase,
           activeClass,
@@ -904,13 +801,10 @@ export const useAttendanceLogic = (
           studentsData,
           currentUser
         );
-
         if (result.success) {
           showToast(result.message);
           setShowExportModal(false);
-        } else {
-          showToast(result.message, "error");
-        }
+        } else showToast(result.message, "error");
       } catch (error) {
         console.error("Error exporting attendance:", error);
         showToast(`Error mengexport data: ${error.message}`, "error");
@@ -921,12 +815,10 @@ export const useAttendanceLogic = (
     [activeClass, studentsData, showToast, currentUser]
   );
 
-  // Export semester recap
   const exportSemester = useCallback(
     async (semester, year) => {
       try {
         setExportSemesterLoading(true);
-
         const result = await exportSemesterRecapFromComponent(
           supabase,
           activeClass,
@@ -935,13 +827,10 @@ export const useAttendanceLogic = (
           studentsData,
           currentUser
         );
-
         if (result.success) {
           showToast(result.message);
           setShowExportSemesterModal(false);
-        } else {
-          showToast(result.message, "error");
-        }
+        } else showToast(result.message, "error");
       } catch (error) {
         console.error("Error exporting semester:", error);
         showToast(`Error mengexport semester: ${error.message}`, "error");
@@ -952,16 +841,13 @@ export const useAttendanceLogic = (
     [activeClass, studentsData, showToast, currentUser]
   );
 
-  // Available classes based on user role
   const availableClasses = useMemo(() => {
-    if (currentUser.role === "guru_kelas" && currentUser.kelas) {
+    if (currentUser.role === "guru_kelas" && currentUser.kelas)
       return [currentUser.kelas];
-    }
     return [1, 2, 3, 4, 5, 6];
   }, [currentUser]);
 
   return {
-    // State
     studentsData,
     attendanceData,
     loading,
@@ -975,8 +861,6 @@ export const useAttendanceLogic = (
     showCardView,
     filteredStudents,
     summary,
-
-    // Modals state
     showModal,
     setShowModal,
     modalMessage,
@@ -993,13 +877,9 @@ export const useAttendanceLogic = (
     rekapTitle,
     rekapSubtitle,
     rekapLoading,
-
-    // Toast
     toast,
     showToast,
     hideToast,
-
-    // Handlers
     updateStatus,
     updateNote,
     markAllPresent,
@@ -1008,19 +888,948 @@ export const useAttendanceLogic = (
     handleRekapRefresh,
     exportAttendance,
     exportSemester,
-
-    // User info
     availableClasses,
     getJenisPresensi,
-
-    // Sync status
     isOnline,
     pendingCount,
     isSyncing,
-
-    // Device info
     isMobile,
     isTablet,
     deviceDetected,
   };
 };
+
+// ============================================
+// RESPONSIVE & DARK MODE COMPONENTS
+// ============================================
+
+export const AttendanceLayout = ({ children, isMobile, isTablet }) => {
+  return (
+    <div
+      className={`
+      min-h-screen
+      bg-gray-50 dark:bg-gray-900
+      transition-colors duration-200
+      ${isMobile ? "p-2" : isTablet ? "p-4" : "p-6"}
+    `}>
+      <div className="max-w-7xl mx-auto">{children}</div>
+    </div>
+  );
+};
+
+export const HeaderSection = ({ title, subtitle, isMobile }) => {
+  return (
+    <div
+      className={`
+      mb-4 sm:mb-6 md:mb-8
+      bg-white dark:bg-gray-800
+      rounded-lg sm:rounded-xl
+      shadow-sm dark:shadow-gray-900/50
+      ${isMobile ? "p-3" : "p-4 sm:p-6"}
+      border border-gray-200 dark:border-gray-700
+    `}>
+      <h1
+        className={`
+        font-bold
+        text-gray-900 dark:text-white
+        ${isMobile ? "text-lg sm:text-xl" : "text-xl sm:text-2xl md:text-3xl"}
+        mb-1 sm:mb-2
+      `}>
+        {title}
+      </h1>
+      {subtitle && (
+        <p
+          className={`
+          text-gray-600 dark:text-gray-300
+          ${isMobile ? "text-xs sm:text-sm" : "text-sm sm:text-base"}
+        `}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+};
+
+export const ClassSelector = ({
+  activeClass,
+  setActiveClass,
+  availableClasses,
+  isMobile,
+  isTablet,
+}) => {
+  return (
+    <div className="mb-4 sm:mb-6">
+      <label
+        className={`
+        block
+        text-gray-700 dark:text-gray-300
+        ${isMobile ? "text-sm mb-2" : "text-base mb-3"}
+        font-medium
+      `}>
+        Pilih Kelas:
+      </label>
+      <div
+        className={`
+        grid gap-2 sm:gap-3
+        ${isMobile ? "grid-cols-3" : isTablet ? "grid-cols-4" : "grid-cols-6"}
+      `}>
+        {availableClasses.map((classNum) => (
+          <button
+            key={classNum}
+            onClick={() => setActiveClass(classNum)}
+            className={`
+              py-2 sm:py-3
+              rounded-lg sm:rounded-xl
+              font-medium
+              transition-all duration-200
+              ${
+                activeClass === classNum
+                  ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-md"
+                  : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+              }
+              ${isMobile ? "text-sm" : "text-base"}
+              min-h-[44px] sm:min-h-[48px]
+            `}>
+            Kelas {classNum}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export const DatePicker = ({ date, setDate, isMobile }) => {
+  return (
+    <div className="mb-4 sm:mb-6">
+      <label
+        className={`
+        block
+        text-gray-700 dark:text-gray-300
+        ${isMobile ? "text-sm mb-2" : "text-base mb-3"}
+        font-medium
+      `}>
+        Tanggal Presensi:
+      </label>
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className={`
+          w-full
+          ${isMobile ? "p-2.5 text-sm" : "p-3 text-base"}
+          rounded-lg sm:rounded-xl
+          border
+          bg-white dark:bg-gray-800
+          border-gray-300 dark:border-gray-600
+          text-gray-900 dark:text-white
+          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+          focus:border-blue-500 dark:focus:border-blue-400
+          outline-none
+          transition-all duration-200
+        `}
+      />
+    </div>
+  );
+};
+
+export const SearchBar = ({ searchTerm, setSearchTerm, isMobile }) => {
+  return (
+    <div className="mb-4 sm:mb-6">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg
+            className="h-5 w-5 text-gray-400 dark:text-gray-500"
+            fill="currentColor"
+            viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Cari siswa (nama atau NISN)..."
+          className={`
+            w-full
+            ${
+              isMobile
+                ? "pl-10 pr-4 py-2.5 text-sm"
+                : "pl-12 pr-4 py-3 text-base"
+            }
+            rounded-lg sm:rounded-xl
+            border
+            bg-white dark:bg-gray-800
+            border-gray-300 dark:border-gray-600
+            text-gray-900 dark:text-white
+            placeholder-gray-500 dark:placeholder-gray-400
+            focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+            focus:border-blue-500 dark:focus:border-blue-400
+            outline-none
+            transition-all duration-200
+          `}
+        />
+      </div>
+    </div>
+  );
+};
+
+export const SummaryCards = ({ summary, isMobile }) => {
+  const statusConfig = {
+    Hadir: {
+      bg: "bg-green-100 dark:bg-green-900/30",
+      text: "text-green-800 dark:text-green-300",
+      border: "border-green-200 dark:border-green-800",
+    },
+    Sakit: {
+      bg: "bg-yellow-100 dark:bg-yellow-900/30",
+      text: "text-yellow-800 dark:text-yellow-300",
+      border: "border-yellow-200 dark:border-yellow-800",
+    },
+    Izin: {
+      bg: "bg-blue-100 dark:bg-blue-900/30",
+      text: "text-blue-800 dark:text-blue-300",
+      border: "border-blue-200 dark:border-blue-800",
+    },
+    Alpa: {
+      bg: "bg-red-100 dark:bg-red-900/30",
+      text: "text-red-800 dark:text-red-300",
+      border: "border-red-200 dark:border-red-800",
+    },
+  };
+
+  return (
+    <div
+      className={`
+      grid gap-3 sm:gap-4 mb-4 sm:mb-6
+      ${isMobile ? "grid-cols-2" : "grid-cols-4"}
+    `}>
+      {Object.entries(summary).map(([status, count]) => (
+        <div
+          key={status}
+          className={`
+            ${statusConfig[status].bg}
+            ${statusConfig[status].border}
+            rounded-lg sm:rounded-xl
+            border
+            p-3 sm:p-4
+            transition-all duration-200
+            hover:shadow-md
+          `}>
+          <div
+            className={`
+            font-semibold
+            ${statusConfig[status].text}
+            ${isMobile ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"}
+            mb-1
+          `}>
+            {count}
+          </div>
+          <div
+            className={`
+            ${statusConfig[status].text}
+            ${isMobile ? "text-xs sm:text-sm" : "text-sm"}
+            font-medium
+          `}>
+            {status}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const ActionButtons = ({
+  onMarkAllPresent,
+  onSave,
+  onShowRekap,
+  saving,
+  isMobile,
+  isOnline,
+  pendingCount,
+}) => {
+  return (
+    <div
+      className={`
+      flex flex-wrap gap-2 sm:gap-3
+      mb-4 sm:mb-6
+      ${isMobile ? "flex-col" : "flex-row"}
+    `}>
+      <button
+        onClick={onMarkAllPresent}
+        disabled={saving}
+        className={`
+          flex-1
+          ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
+          px-4 py-2.5 sm:py-3
+          rounded-lg sm:rounded-xl
+          bg-yellow-500 hover:bg-yellow-600
+          dark:bg-yellow-600 dark:hover:bg-yellow-700
+          text-white
+          font-medium
+          ${isMobile ? "text-sm" : "text-base"}
+          transition-all duration-200
+          disabled:opacity-50 disabled:cursor-not-allowed
+          flex items-center justify-center gap-2
+        `}>
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+        Tandai Semua Hadir
+      </button>
+
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className={`
+          flex-1
+          ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
+          px-4 py-2.5 sm:py-3
+          rounded-lg sm:rounded-xl
+          bg-blue-600 hover:bg-blue-700
+          dark:bg-blue-500 dark:hover:bg-blue-600
+          text-white
+          font-medium
+          ${isMobile ? "text-sm" : "text-base"}
+          transition-all duration-200
+          disabled:opacity-50 disabled:cursor-not-allowed
+          flex items-center justify-center gap-2
+        `}>
+        {saving ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            Menyimpan...
+          </>
+        ) : (
+          <>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            Simpan Presensi
+          </>
+        )}
+      </button>
+
+      <button
+        onClick={onShowRekap}
+        className={`
+          flex-1
+          ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
+          px-4 py-2.5 sm:py-3
+          rounded-lg sm:rounded-xl
+          bg-green-600 hover:bg-green-700
+          dark:bg-green-500 dark:hover:bg-green-600
+          text-white
+          font-medium
+          ${isMobile ? "text-sm" : "text-base"}
+          transition-all duration-200
+          flex items-center justify-center gap-2
+        `}>
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        Lihat Rekap
+      </button>
+
+      {!isOnline && pendingCount > 0 && (
+        <div
+          className={`
+          w-full
+          ${isMobile ? "p-2.5 text-sm" : "p-3 text-base"}
+          rounded-lg sm:rounded-xl
+          bg-yellow-100 dark:bg-yellow-900/30
+          text-yellow-800 dark:text-yellow-300
+          border border-yellow-200 dark:border-yellow-800
+          flex items-center justify-center gap-2
+        `}>
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+            />
+          </svg>
+          {pendingCount} data offline menunggu sinkronisasi
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const StudentCard = ({
+  student,
+  index,
+  attendance,
+  onUpdateStatus,
+  onUpdateNote,
+  isMobile,
+}) => {
+  const statusOptions = ["Hadir", "Sakit", "Izin", "Alpa"];
+  const statusColors = {
+    Hadir:
+      "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800",
+    Sakit:
+      "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800",
+    Izin: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    Alpa: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800",
+  };
+
+  return (
+    <div
+      className={`
+      bg-white dark:bg-gray-800
+      rounded-lg sm:rounded-xl
+      border border-gray-200 dark:border-gray-700
+      ${isMobile ? "p-3 mb-3" : "p-4 mb-4"}
+      shadow-sm dark:shadow-gray-900/30
+      transition-all duration-200
+      hover:shadow-md dark:hover:shadow-gray-900/50
+    `}>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        {/* Student Info */}
+        <div className="flex-1">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div
+              className={`
+              flex-shrink-0
+              ${isMobile ? "w-8 h-8" : "w-10 h-10"}
+              rounded-full
+              bg-blue-100 dark:bg-blue-900/30
+              flex items-center justify-center
+            `}>
+              <span
+                className={`
+                font-semibold
+                text-blue-600 dark:text-blue-400
+                ${isMobile ? "text-sm" : "text-base"}
+              `}>
+                {index + 1}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3
+                className={`
+                font-semibold
+                text-gray-900 dark:text-white
+                ${isMobile ? "text-sm sm:text-base" : "text-base"}
+                mb-0.5 sm:mb-1
+                truncate
+              `}>
+                {student.nama_siswa}
+              </h3>
+              <p
+                className={`
+                text-gray-600 dark:text-gray-400
+                ${isMobile ? "text-xs" : "text-sm"}
+                font-mono
+              `}>
+                NISN: {student.nisn}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Selector */}
+        <div
+          className={`
+          ${isMobile ? "w-full" : "w-auto"}
+        `}>
+          <div
+            className={`
+            grid grid-cols-4 gap-1 sm:gap-2
+            ${isMobile ? "mb-3" : ""}
+          `}>
+            {statusOptions.map((status) => (
+              <button
+                key={status}
+                onClick={() => onUpdateStatus(student.kelas, index, status)}
+                className={`
+                  ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"}
+                  rounded-lg
+                  font-medium
+                  transition-all duration-200
+                  ${
+                    attendance?.status === status
+                      ? statusColors[status] + " font-semibold shadow-sm"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  }
+                  min-h-[36px] sm:min-h-[40px]
+                  flex items-center justify-center
+                `}>
+                {isMobile ? status.charAt(0) : status}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Note Input */}
+      <div className="mt-3 sm:mt-4">
+        <textarea
+          value={attendance?.note || ""}
+          onChange={(e) => onUpdateNote(student.kelas, index, e.target.value)}
+          placeholder="Keterangan (opsional)..."
+          rows={2}
+          className={`
+            w-full
+            ${isMobile ? "p-2.5 text-sm" : "p-3 text-base"}
+            rounded-lg
+            border
+            bg-gray-50 dark:bg-gray-900
+            border-gray-300 dark:border-gray-600
+            text-gray-900 dark:text-white
+            placeholder-gray-500 dark:placeholder-gray-400
+            focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+            focus:border-blue-500 dark:focus:border-blue-400
+            outline-none
+            resize-none
+            transition-all duration-200
+          `}
+        />
+      </div>
+
+      {/* Current Status Badge */}
+      <div className="mt-2 flex justify-end">
+        <span
+          className={`
+          ${statusColors[attendance?.status || "Hadir"]}
+          ${isMobile ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm"}
+          rounded-full
+          font-medium
+        `}>
+          Status: {attendance?.status || "Hadir"}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+export const LoadingSpinner = ({ isMobile }) => {
+  return (
+    <div className="flex items-center justify-center min-h-[300px]">
+      <div className="text-center">
+        <div
+          className={`
+          animate-spin rounded-full
+          border-4 border-blue-600 dark:border-blue-500
+          border-t-transparent
+          ${isMobile ? "w-12 h-12" : "w-16 h-16"}
+          mx-auto mb-4
+        `}
+        />
+        <p
+          className={`
+          text-gray-700 dark:text-gray-300
+          ${isMobile ? "text-sm" : "text-base"}
+        `}>
+          Memuat data siswa...
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export const NoStudentsMessage = ({ isMobile }) => {
+  return (
+    <div className="text-center py-8 sm:py-12">
+      <div
+        className={`
+        mx-auto mb-4
+        ${isMobile ? "w-16 h-16" : "w-20 h-20"}
+        text-gray-400 dark:text-gray-600
+      `}>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+          />
+        </svg>
+      </div>
+      <h3
+        className={`
+        font-semibold
+        text-gray-700 dark:text-gray-300
+        ${isMobile ? "text-lg mb-2" : "text-xl mb-3"}
+      `}>
+        Tidak ada siswa ditemukan
+      </h3>
+      <p
+        className={`
+        text-gray-600 dark:text-gray-400
+        ${isMobile ? "text-sm" : "text-base"}
+      `}>
+        Tidak ada data siswa untuk kelas ini atau filter pencarian tidak cocok.
+      </p>
+    </div>
+  );
+};
+
+export const Toast = ({ toast, onHide }) => {
+  if (!toast.show) return null;
+
+  const toastConfig = {
+    success: {
+      bg: "bg-green-50 dark:bg-green-900/30",
+      border: "border-green-200 dark:border-green-800",
+      text: "text-green-800 dark:text-green-300",
+      icon: "✅",
+    },
+    error: {
+      bg: "bg-red-50 dark:bg-red-900/30",
+      border: "border-red-200 dark:border-red-800",
+      text: "text-red-800 dark:text-red-300",
+      icon: "❌",
+    },
+    warning: {
+      bg: "bg-yellow-50 dark:bg-yellow-900/30",
+      border: "border-yellow-200 dark:border-yellow-800",
+      text: "text-yellow-800 dark:text-yellow-300",
+      icon: "⚠️",
+    },
+    info: {
+      bg: "bg-blue-50 dark:bg-blue-900/30",
+      border: "border-blue-200 dark:border-blue-800",
+      text: "text-blue-800 dark:text-blue-300",
+      icon: "ℹ️",
+    },
+    offline: {
+      bg: "bg-gray-100 dark:bg-gray-800",
+      border: "border-gray-300 dark:border-gray-700",
+      text: "text-gray-800 dark:text-gray-300",
+      icon: "📴",
+    },
+  };
+
+  const config = toastConfig[toast.type] || toastConfig.success;
+
+  return (
+    <div className="fixed top-4 right-4 left-4 sm:left-auto sm:right-4 sm:w-96 z-50 animate-fade-in-down">
+      <div
+        className={`
+        ${config.bg}
+        ${config.border}
+        rounded-lg sm:rounded-xl
+        border
+        p-4
+        shadow-lg dark:shadow-gray-900/50
+        flex items-start gap-3
+      `}>
+        <span className="text-lg flex-shrink-0">{config.icon}</span>
+        <div className="flex-1">
+          <p className={`${config.text} text-sm sm:text-base`}>
+            {toast.message}
+          </p>
+        </div>
+        <button
+          onClick={onHide}
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex-shrink-0">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const ConfirmationModal = ({
+  show,
+  message,
+  onConfirm,
+  onCancel,
+  isMobile,
+}) => {
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 animate-fade-in">
+      <div
+        className={`
+        bg-white dark:bg-gray-800
+        rounded-lg sm:rounded-xl
+        shadow-xl dark:shadow-gray-900/50
+        w-full max-w-md
+        ${isMobile ? "p-4" : "p-6"}
+        animate-scale-in
+      `}>
+        <div className="mb-4">
+          <h3
+            className={`
+            font-semibold
+            text-gray-900 dark:text-white
+            ${isMobile ? "text-lg mb-2" : "text-xl mb-3"}
+          `}>
+            Konfirmasi
+          </h3>
+          <p
+            className={`
+            text-gray-700 dark:text-gray-300
+            ${isMobile ? "text-sm" : "text-base"}
+          `}>
+            {message}
+          </p>
+        </div>
+        <div
+          className={`
+          flex gap-2 sm:gap-3
+          ${isMobile ? "flex-col" : "flex-row justify-end"}
+        `}>
+          <button
+            onClick={onCancel}
+            className={`
+              flex-1
+              ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
+              px-4 py-2.5
+              rounded-lg
+              bg-gray-200 hover:bg-gray-300
+              dark:bg-gray-700 dark:hover:bg-gray-600
+              text-gray-800 dark:text-white
+              font-medium
+              ${isMobile ? "text-sm" : "text-base"}
+              transition-all duration-200
+            `}>
+            Batal
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`
+              flex-1
+              ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
+              px-4 py-2.5
+              rounded-lg
+              bg-blue-600 hover:bg-blue-700
+              dark:bg-blue-500 dark:hover:bg-blue-600
+              text-white
+              font-medium
+              ${isMobile ? "text-sm" : "text-base"}
+              transition-all duration-200
+            `}>
+            Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
+export const AttendanceMain = ({ currentUser }) => {
+  const {
+    // State
+    loading,
+    saving,
+    attendanceDate,
+    setAttendanceDate,
+    activeClass,
+    setActiveClass,
+    searchTerm,
+    setSearchTerm,
+    showCardView,
+    filteredStudents,
+    summary,
+
+    // Modal states
+    showModal,
+    setShowModal,
+    modalMessage,
+    modalAction,
+
+    // Toast
+    toast,
+    hideToast,
+
+    // Handlers
+    updateStatus,
+    updateNote,
+    markAllPresent,
+    saveAttendance,
+    showRekap,
+
+    // User info
+    availableClasses,
+
+    // Sync status
+    isOnline,
+    pendingCount,
+
+    // Device info
+    isMobile,
+    isTablet,
+    deviceDetected,
+  } = useAttendanceLogic(currentUser);
+
+  // Wait for device detection
+  if (!deviceDetected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 dark:border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-700 dark:text-gray-300">Memuat aplikasi...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleConfirm = () => {
+    if (modalAction) modalAction();
+    setShowModal(false);
+  };
+
+  return (
+    <>
+      <AttendanceLayout isMobile={isMobile} isTablet={isTablet}>
+        <HeaderSection
+          title="Presensi Siswa"
+          subtitle="Input dan kelola kehadiran siswa harian"
+          isMobile={isMobile}
+        />
+
+        <ClassSelector
+          activeClass={activeClass}
+          setActiveClass={setActiveClass}
+          availableClasses={availableClasses}
+          isMobile={isMobile}
+          isTablet={isTablet}
+        />
+
+        <DatePicker
+          date={attendanceDate}
+          setDate={setAttendanceDate}
+          isMobile={isMobile}
+        />
+
+        <SearchBar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          isMobile={isMobile}
+        />
+
+        <SummaryCards summary={summary} isMobile={isMobile} />
+
+        <ActionButtons
+          onMarkAllPresent={markAllPresent}
+          onSave={saveAttendance}
+          onShowRekap={showRekap}
+          saving={saving}
+          isMobile={isMobile}
+          isOnline={isOnline}
+          pendingCount={pendingCount}
+        />
+
+        {loading ? (
+          <LoadingSpinner isMobile={isMobile} />
+        ) : filteredStudents.length === 0 ? (
+          <NoStudentsMessage isMobile={isMobile} />
+        ) : (
+          <div>
+            <div
+              className={`
+              mb-3 sm:mb-4
+              text-gray-700 dark:text-gray-300
+              ${isMobile ? "text-sm" : "text-base"}
+            `}>
+              Menampilkan {filteredStudents.length} siswa
+            </div>
+
+            <div
+              className={
+                showCardView
+                  ? "space-y-3"
+                  : "grid grid-cols-1 lg:grid-cols-2 gap-4"
+              }>
+              {filteredStudents.map((student, index) => (
+                <StudentCard
+                  key={student.nisn}
+                  student={student}
+                  index={index}
+                  attendance={student.attendance}
+                  onUpdateStatus={updateStatus}
+                  onUpdateNote={updateNote}
+                  isMobile={isMobile}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </AttendanceLayout>
+
+      <Toast toast={toast} onHide={hideToast} />
+
+      <ConfirmationModal
+        show={showModal}
+        message={modalMessage}
+        onConfirm={handleConfirm}
+        onCancel={() => setShowModal(false)}
+        isMobile={isMobile}
+      />
+    </>
+  );
+};
+
+export default AttendanceMain;

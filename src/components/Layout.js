@@ -25,8 +25,23 @@ const Layout = ({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isNavigating, setIsNavigating] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
+
+  // ✅ FIX: Initialize dengan nilai yang benar dari awal
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
+  const [isTablet, setIsTablet] = useState(() => {
+    if (typeof window !== "undefined") {
+      const width = window.innerWidth;
+      return width >= 768 && width < 1024;
+    }
+    return false;
+  });
+
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -36,7 +51,7 @@ const Layout = ({
   const navigationTimeoutRef = useRef(null);
   const profileDropdownRef = useRef(null);
 
-  // Enhanced device detection
+  // ✅ FIX: Enhanced device detection - sekarang cuma untuk resize
   useEffect(() => {
     const checkDeviceType = () => {
       const width = window.innerWidth;
@@ -52,7 +67,7 @@ const Layout = ({
       }
     };
 
-    checkDeviceType();
+    // Nggak perlu checkDeviceType() di sini karena udah di-initialize di useState
     window.addEventListener("resize", checkDeviceType);
     return () => window.removeEventListener("resize", checkDeviceType);
   }, []);
