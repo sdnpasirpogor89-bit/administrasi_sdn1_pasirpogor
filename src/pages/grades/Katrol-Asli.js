@@ -16,9 +16,8 @@ import {
   groupDataByNISN,
   prosesKatrolSemua,
   hitungNilaiAkhir,
-  exportToExcel,
-  exportToExcelMultiSheet, // ← BARU
-  exportLeger, // ← BARU
+  exportToExcelMultiSheet,
+  exportLeger,
 } from "./Utils";
 
 const Katrol = ({ userData: initialUserData }) => {
@@ -28,6 +27,7 @@ const Katrol = ({ userData: initialUserData }) => {
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingLeger, setExportingLeger] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dataNilai, setDataNilai] = useState([]);
   const [dataGrouped, setDataGrouped] = useState([]);
@@ -230,20 +230,89 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   };
 
-  // FIXED FUNCTION - FETCH DATA NILAI
   const fetchDataNilai = async () => {
     if (!selectedClass || !selectedSubject) {
       showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
       return;
     }
 
+    if (!activeAcademicYear) {
+      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
+      return;
+    }
+
     setLoading(true);
     try {
       console.log(
-        `🔄 Mengambil data untuk kelas ${selectedClass}, mapel ${selectedSubject}`
+        `📄 Mengambil data untuk kelas ${selectedClass}, mapel ${selectedSubject}`
       );
 
-      // AMBIL DATA SISWA
+      // 1️⃣ CEK DULU: Ada data katrol atau ngga?
+      const { data: katrolData, error: katrolError } = await supabase
+        .from("nilai_katrol")
+        .select("*")
+        .eq("kelas", selectedClass)
+        .eq("mata_pelajaran", selectedSubject)
+        .eq("semester", activeAcademicYear.semester)
+        .eq("tahun_ajaran", activeAcademicYear.year);
+
+      if (katrolError) {
+        console.error("Error cek katrol:", katrolError);
+      }
+
+      // 2️⃣ KALAU ADA DATA KATROL, LOAD ITU!
+      if (katrolData && katrolData.length > 0) {
+        console.log(
+          `✅ Ditemukan ${katrolData.length} data KATROL (sudah diproses)`
+        );
+
+        // Format data katrol ke format hasilKatrol
+        const formattedKatrol = katrolData.map((item) => ({
+          nisn: item.nisn,
+          nama_siswa: item.nama_siswa,
+          nilai: {
+            NH1: null, // Nilai original tidak perlu ditampilkan
+            NH2: null,
+            NH3: null,
+            NH4: null,
+            NH5: null,
+            UTS: null,
+            UAS: null,
+          },
+          nilai_katrol: {
+            NH1: item.nh1_katrol,
+            NH2: item.nh2_katrol,
+            NH3: item.nh3_katrol,
+            NH4: item.nh4_katrol,
+            NH5: item.nh5_katrol,
+            UTS: item.uts_katrol,
+            UAS: item.uas_katrol,
+          },
+          rata_NH_katrol: item.rata_nh_katrol,
+          nilai_akhir_asli: item.nilai_mentah,
+          nilai_akhir_katrol: item.nilai_akhir,
+          status: item.status,
+        }));
+
+        formattedKatrol.sort((a, b) =>
+          a.nama_siswa.localeCompare(b.nama_siswa)
+        );
+
+        setHasilKatrol(formattedKatrol);
+        setShowPreview(false);
+        setDataNilai([]);
+        setDataGrouped([]);
+
+        showMessage(
+          `✅ Berhasil memuat ${formattedKatrol.length} data nilai KATROL (sudah diproses sebelumnya)`,
+          "success"
+        );
+        return; // STOP DI SINI, jangan load nilai original
+      }
+
+      // 3️⃣ KALAU BELUM ADA DATA KATROL, BARU LOAD NILAI ORIGINAL
+      console.log(`ℹ️ Tidak ada data katrol, memuat nilai ORIGINAL...`);
+
       const { data: siswaData, error: siswaError } = await supabase
         .from("students")
         .select("nisn, nama_siswa")
@@ -264,7 +333,6 @@ const Katrol = ({ userData: initialUserData }) => {
 
       console.log(`✅ Ditemukan ${siswaData.length} siswa`);
 
-      // AMBIL SEMUA NILAI UNTUK KELAS DAN MAPEL INI
       const { data: nilaiData, error: nilaiError } = await supabase
         .from("nilai")
         .select("*")
@@ -275,18 +343,15 @@ const Katrol = ({ userData: initialUserData }) => {
 
       console.log(`✅ Ditemukan ${nilaiData?.length || 0} data nilai`);
 
-      // FORMAT DATA UNTUK PREVIEW
       const previewData = siswaData.map((siswa) => {
         const nilaiSiswa =
           nilaiData?.filter((n) => n.nisn === siswa.nisn) || [];
 
-        // Format untuk preview table
         return {
           nisn: siswa.nisn,
           nama_siswa: siswa.nama_siswa,
           kelas: selectedClass,
           mata_pelajaran: selectedSubject,
-          // Default semua null dulu
           nh1: null,
           nh2: null,
           nh3: null,
@@ -297,7 +362,6 @@ const Katrol = ({ userData: initialUserData }) => {
         };
       });
 
-      // ISI NILAI JIKA ADA
       if (nilaiData && nilaiData.length > 0) {
         nilaiData.forEach((item) => {
           const siswaIndex = previewData.findIndex((s) => s.nisn === item.nisn);
@@ -320,10 +384,8 @@ const Katrol = ({ userData: initialUserData }) => {
         });
       }
 
-      // SIMPAN DATA UNTUK PREVIEW
       setDataNilai(previewData);
 
-      // FORMAT UNTUK GROUPING (DIUTILS.JS)
       const dataForGrouping = previewData.map((item) => ({
         nisn: item.nisn,
         nama_siswa: item.nama_siswa,
@@ -345,7 +407,7 @@ const Katrol = ({ userData: initialUserData }) => {
 
       const nilaiCount = nilaiData?.length || 0;
       showMessage(
-        `✅ Berhasil memuat ${previewData.length} siswa (${nilaiCount} data nilai)`,
+        `✅ Berhasil memuat ${previewData.length} siswa (${nilaiCount} data nilai ORIGINAL - belum dikatrol)`,
         "success"
       );
     } catch (error) {
@@ -357,8 +419,8 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   const prosesKatrol = async () => {
-    if (!dataGrouped || dataGrouped.length === 0) {
-      showMessage("Tidak ada data untuk diproses", "error");
+    if (!selectedClass || !selectedSubject) {
+      showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
       return;
     }
 
@@ -369,11 +431,84 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setProcessing(true);
     try {
-      console.log("🔄 Memulai proses katrol...");
-      const katrol = prosesKatrolSemua(dataGrouped, kkm, nilaiMaksimal);
+      console.log("📄 Memulai proses katrol...");
+
+      // 🔥 LOAD ULANG NILAI ORIGINAL DARI DATABASE
+      const { data: siswaData, error: siswaError } = await supabase
+        .from("students")
+        .select("nisn, nama_siswa")
+        .eq("kelas", selectedClass)
+        .eq("is_active", true)
+        .order("nama_siswa", { ascending: true });
+
+      if (siswaError) throw siswaError;
+
+      const { data: nilaiData, error: nilaiError } = await supabase
+        .from("nilai")
+        .select("*")
+        .eq("kelas", selectedClass)
+        .eq("mata_pelajaran", selectedSubject);
+
+      if (nilaiError) throw nilaiError;
+
+      // Format data
+      const previewData = siswaData.map((siswa) => {
+        return {
+          nisn: siswa.nisn,
+          nama_siswa: siswa.nama_siswa,
+          kelas: selectedClass,
+          mata_pelajaran: selectedSubject,
+          nh1: null,
+          nh2: null,
+          nh3: null,
+          nh4: null,
+          nh5: null,
+          uts: null,
+          uas: null,
+        };
+      });
+
+      if (nilaiData && nilaiData.length > 0) {
+        nilaiData.forEach((item) => {
+          const siswaIndex = previewData.findIndex((s) => s.nisn === item.nisn);
+          if (siswaIndex !== -1) {
+            if (item.jenis_nilai === "NH1")
+              previewData[siswaIndex].nh1 = item.nilai;
+            if (item.jenis_nilai === "NH2")
+              previewData[siswaIndex].nh2 = item.nilai;
+            if (item.jenis_nilai === "NH3")
+              previewData[siswaIndex].nh3 = item.nilai;
+            if (item.jenis_nilai === "NH4")
+              previewData[siswaIndex].nh4 = item.nilai;
+            if (item.jenis_nilai === "NH5")
+              previewData[siswaIndex].nh5 = item.nilai;
+            if (item.jenis_nilai === "UTS")
+              previewData[siswaIndex].uts = item.nilai;
+            if (item.jenis_nilai === "UAS")
+              previewData[siswaIndex].uas = item.nilai;
+          }
+        });
+      }
+
+      const dataForGrouping = previewData.map((item) => ({
+        nisn: item.nisn,
+        nama_siswa: item.nama_siswa,
+        nilai: {
+          NH1: item.nh1,
+          NH2: item.nh2,
+          NH3: item.nh3,
+          NH4: item.nh4,
+          NH5: item.nh5,
+          UTS: item.uts,
+          UAS: item.uas,
+        },
+        nilai_katrol: {},
+      }));
+
+      // Proses katrol
+      const katrol = prosesKatrolSemua(dataForGrouping, kkm, nilaiMaksimal);
       const hasil = hitungNilaiAkhir(katrol);
 
-      // TAMBAHKAN STATUS
       const hasilDenganStatus = hasil.map((item) => ({
         ...item,
         status: item.nilai_akhir_katrol >= kkm ? "Tuntas" : "Belum Tuntas",
@@ -425,7 +560,6 @@ const Katrol = ({ userData: initialUserData }) => {
     setSaving(true);
     try {
       const recordsToSave = hasilKatrol.map((item) => {
-        // Hitung min/max dari nilai asli
         const nilaiArray = [
           item.nilai.NH1,
           item.nilai.NH2,
@@ -447,7 +581,6 @@ const Katrol = ({ userData: initialUserData }) => {
           semester: activeAcademicYear.semester,
           tahun_ajaran: activeAcademicYear.year,
 
-          // Nilai katrol
           nh1_katrol: item.nilai_katrol?.NH1 || null,
           nh2_katrol: item.nilai_katrol?.NH2 || null,
           nh3_katrol: item.nilai_katrol?.NH3 || null,
@@ -498,7 +631,7 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   };
 
-  const handleExport = async (type) => {
+  const handleExport = async () => {
     if (!hasilKatrol || hasilKatrol.length === 0) {
       showMessage("Tidak ada data untuk di-export", "error");
       return;
@@ -506,19 +639,50 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setExporting(true);
     try {
-      await exportToExcel(
+      await exportToExcelMultiSheet(
         hasilKatrol,
         selectedSubject,
         selectedClass,
-        type,
         userData
       );
-      showMessage(`✅ Berhasil export format ${type}`, "success");
+      showMessage("✅ Berhasil export Nilai Katrol", "success");
     } catch (error) {
       console.error("Error exporting:", error);
       showMessage("Gagal export data", "error");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportLeger = async () => {
+    if (!selectedClass) {
+      showMessage("Pilih kelas terlebih dahulu", "error");
+      return;
+    }
+
+    if (!activeAcademicYear) {
+      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
+      return;
+    }
+
+    setExportingLeger(true);
+    try {
+      const result = await exportLeger(
+        selectedClass,
+        supabase,
+        activeAcademicYear.year,
+        activeAcademicYear.semester
+      );
+
+      showMessage(
+        `✅ Berhasil export Leger Nilai (${result.count} siswa)`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Error exporting leger:", error);
+      showMessage(`Gagal export leger: ${error.message}`, "error");
+    } finally {
+      setExportingLeger(false);
     }
   };
 
@@ -709,11 +873,14 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
-            {/* Tombol Proses Katrol */}
+            {/* Tombol Proses Katrol - SELALU MUNCUL kalau udah pilih kelas & mapel */}
             <button
               onClick={prosesKatrol}
               disabled={
-                dataGrouped.length === 0 || processing || kkm > nilaiMaksimal
+                !selectedClass ||
+                !selectedSubject ||
+                processing ||
+                kkm > nilaiMaksimal
               }
               className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
               {processing ? (
@@ -724,7 +891,11 @@ const Katrol = ({ userData: initialUserData }) => {
               ) : (
                 <>
                   <Calculator className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Proses Katrol</span>
+                  <span>
+                    {hasilKatrol.length > 0
+                      ? "Proses Ulang Katrol"
+                      : "Proses Katrol"}
+                  </span>
                 </>
               )}
             </button>
@@ -775,21 +946,33 @@ const Katrol = ({ userData: initialUserData }) => {
             {hasilKatrol.length > 0 && (
               <>
                 <button
-                  onClick={() => handleExport("lengkap")}
+                  onClick={handleExport}
                   disabled={exporting}
                   className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
                   <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Export Lengkap</span>
-                </button>
-
-                <button
-                  onClick={() => handleExport("ringkas")}
-                  disabled={exporting}
-                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
-                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Exp. Katrol Akhir</span>
+                  <span>Export Nilai Katrol</span>
                 </button>
               </>
+            )}
+
+            {/* Tombol Export Leger */}
+            {selectedClass && (
+              <button
+                onClick={handleExportLeger}
+                disabled={exportingLeger}
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                {exportingLeger ? (
+                  <>
+                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Export Leger</span>
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>

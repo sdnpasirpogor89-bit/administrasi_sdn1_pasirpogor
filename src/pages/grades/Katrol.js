@@ -419,8 +419,8 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   const prosesKatrol = async () => {
-    if (!dataGrouped || dataGrouped.length === 0) {
-      showMessage("Tidak ada data untuk diproses", "error");
+    if (!selectedClass || !selectedSubject) {
+      showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
       return;
     }
 
@@ -432,7 +432,81 @@ const Katrol = ({ userData: initialUserData }) => {
     setProcessing(true);
     try {
       console.log("📄 Memulai proses katrol...");
-      const katrol = prosesKatrolSemua(dataGrouped, kkm, nilaiMaksimal);
+
+      // 🔥 LOAD ULANG NILAI ORIGINAL DARI DATABASE
+      const { data: siswaData, error: siswaError } = await supabase
+        .from("students")
+        .select("nisn, nama_siswa")
+        .eq("kelas", selectedClass)
+        .eq("is_active", true)
+        .order("nama_siswa", { ascending: true });
+
+      if (siswaError) throw siswaError;
+
+      const { data: nilaiData, error: nilaiError } = await supabase
+        .from("nilai")
+        .select("*")
+        .eq("kelas", selectedClass)
+        .eq("mata_pelajaran", selectedSubject);
+
+      if (nilaiError) throw nilaiError;
+
+      // Format data
+      const previewData = siswaData.map((siswa) => {
+        return {
+          nisn: siswa.nisn,
+          nama_siswa: siswa.nama_siswa,
+          kelas: selectedClass,
+          mata_pelajaran: selectedSubject,
+          nh1: null,
+          nh2: null,
+          nh3: null,
+          nh4: null,
+          nh5: null,
+          uts: null,
+          uas: null,
+        };
+      });
+
+      if (nilaiData && nilaiData.length > 0) {
+        nilaiData.forEach((item) => {
+          const siswaIndex = previewData.findIndex((s) => s.nisn === item.nisn);
+          if (siswaIndex !== -1) {
+            if (item.jenis_nilai === "NH1")
+              previewData[siswaIndex].nh1 = item.nilai;
+            if (item.jenis_nilai === "NH2")
+              previewData[siswaIndex].nh2 = item.nilai;
+            if (item.jenis_nilai === "NH3")
+              previewData[siswaIndex].nh3 = item.nilai;
+            if (item.jenis_nilai === "NH4")
+              previewData[siswaIndex].nh4 = item.nilai;
+            if (item.jenis_nilai === "NH5")
+              previewData[siswaIndex].nh5 = item.nilai;
+            if (item.jenis_nilai === "UTS")
+              previewData[siswaIndex].uts = item.nilai;
+            if (item.jenis_nilai === "UAS")
+              previewData[siswaIndex].uas = item.nilai;
+          }
+        });
+      }
+
+      const dataForGrouping = previewData.map((item) => ({
+        nisn: item.nisn,
+        nama_siswa: item.nama_siswa,
+        nilai: {
+          NH1: item.nh1,
+          NH2: item.nh2,
+          NH3: item.nh3,
+          NH4: item.nh4,
+          NH5: item.nh5,
+          UTS: item.uts,
+          UAS: item.uas,
+        },
+        nilai_katrol: {},
+      }));
+
+      // Proses katrol
+      const katrol = prosesKatrolSemua(dataForGrouping, kkm, nilaiMaksimal);
       const hasil = hitungNilaiAkhir(katrol);
 
       const hasilDenganStatus = hasil.map((item) => ({
@@ -799,11 +873,14 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
-            {/* Tombol Proses Katrol */}
+            {/* Tombol Proses Katrol - SELALU MUNCUL kalau udah pilih kelas & mapel */}
             <button
               onClick={prosesKatrol}
               disabled={
-                dataGrouped.length === 0 || processing || kkm > nilaiMaksimal
+                !selectedClass ||
+                !selectedSubject ||
+                processing ||
+                kkm > nilaiMaksimal
               }
               className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
               {processing ? (
@@ -814,7 +891,11 @@ const Katrol = ({ userData: initialUserData }) => {
               ) : (
                 <>
                   <Calculator className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Proses Katrol</span>
+                  <span>
+                    {hasilKatrol.length > 0
+                      ? "Proses Ulang Katrol"
+                      : "Proses Katrol"}
+                  </span>
                 </>
               )}
             </button>
