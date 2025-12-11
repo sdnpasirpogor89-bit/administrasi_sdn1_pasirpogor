@@ -236,11 +236,82 @@ const Katrol = ({ userData: initialUserData }) => {
       return;
     }
 
+    if (!activeAcademicYear) {
+      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
+      return;
+    }
+
     setLoading(true);
     try {
       console.log(
         `📄 Mengambil data untuk kelas ${selectedClass}, mapel ${selectedSubject}`
       );
+
+      // 1️⃣ CEK DULU: Ada data katrol atau ngga?
+      const { data: katrolData, error: katrolError } = await supabase
+        .from("nilai_katrol")
+        .select("*")
+        .eq("kelas", selectedClass)
+        .eq("mata_pelajaran", selectedSubject)
+        .eq("semester", activeAcademicYear.semester)
+        .eq("tahun_ajaran", activeAcademicYear.year);
+
+      if (katrolError) {
+        console.error("Error cek katrol:", katrolError);
+      }
+
+      // 2️⃣ KALAU ADA DATA KATROL, LOAD ITU!
+      if (katrolData && katrolData.length > 0) {
+        console.log(
+          `✅ Ditemukan ${katrolData.length} data KATROL (sudah diproses)`
+        );
+
+        // Format data katrol ke format hasilKatrol
+        const formattedKatrol = katrolData.map((item) => ({
+          nisn: item.nisn,
+          nama_siswa: item.nama_siswa,
+          nilai: {
+            NH1: null, // Nilai original tidak perlu ditampilkan
+            NH2: null,
+            NH3: null,
+            NH4: null,
+            NH5: null,
+            UTS: null,
+            UAS: null,
+          },
+          nilai_katrol: {
+            NH1: item.nh1_katrol,
+            NH2: item.nh2_katrol,
+            NH3: item.nh3_katrol,
+            NH4: item.nh4_katrol,
+            NH5: item.nh5_katrol,
+            UTS: item.uts_katrol,
+            UAS: item.uas_katrol,
+          },
+          rata_NH_katrol: item.rata_nh_katrol,
+          nilai_akhir_asli: item.nilai_mentah,
+          nilai_akhir_katrol: item.nilai_akhir,
+          status: item.status,
+        }));
+
+        formattedKatrol.sort((a, b) =>
+          a.nama_siswa.localeCompare(b.nama_siswa)
+        );
+
+        setHasilKatrol(formattedKatrol);
+        setShowPreview(false);
+        setDataNilai([]);
+        setDataGrouped([]);
+
+        showMessage(
+          `✅ Berhasil memuat ${formattedKatrol.length} data nilai KATROL (sudah diproses sebelumnya)`,
+          "success"
+        );
+        return; // STOP DI SINI, jangan load nilai original
+      }
+
+      // 3️⃣ KALAU BELUM ADA DATA KATROL, BARU LOAD NILAI ORIGINAL
+      console.log(`ℹ️ Tidak ada data katrol, memuat nilai ORIGINAL...`);
 
       const { data: siswaData, error: siswaError } = await supabase
         .from("students")
@@ -336,7 +407,7 @@ const Katrol = ({ userData: initialUserData }) => {
 
       const nilaiCount = nilaiData?.length || 0;
       showMessage(
-        `✅ Berhasil memuat ${previewData.length} siswa (${nilaiCount} data nilai)`,
+        `✅ Berhasil memuat ${previewData.length} siswa (${nilaiCount} data nilai ORIGINAL - belum dikatrol)`,
         "success"
       );
     } catch (error) {

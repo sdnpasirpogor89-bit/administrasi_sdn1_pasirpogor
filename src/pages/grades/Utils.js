@@ -738,7 +738,7 @@ export const exportToExcel = async (
 };
 
 // ========================================
-// 8. EXPORT LEGER - NILAI SEMUA MAPEL
+// 8. EXPORT LEGER - NILAI SEMUA MAPEL (FIXED)
 // ========================================
 export const exportLeger = async (
   kelas,
@@ -781,11 +781,22 @@ export const exportLeger = async (
       "Pendidikan Jasmani Olahraga Kesehatan": "pjok",
     };
 
-    // Group data per siswa
-    const grouped = {};
-    data.forEach((item) => {
-      if (!grouped[item.nisn]) {
-        grouped[item.nisn] = {
+    // PERBAIKAN 1: Gunakan Map untuk menjaga urutan
+    const siswaMap = new Map();
+
+    // PERBAIKAN 2: Sort data terlebih dahulu berdasarkan nama_siswa
+    const sortedData = [...data].sort((a, b) => {
+      const nameA = a.nama_siswa.toUpperCase();
+      const nameB = b.nama_siswa.toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    // PERBAIKAN 3: Group data dengan tetap menjaga urutan
+    const siswaOrder = []; // Menyimpan urutan NISN
+
+    sortedData.forEach((item) => {
+      if (!siswaMap.has(item.nisn)) {
+        siswaMap.set(item.nisn, {
           nisn: item.nisn,
           nama_siswa: item.nama_siswa,
           bindo: null,
@@ -797,18 +808,22 @@ export const exportLeger = async (
           senbud: null,
           pabp: null,
           pjok: null,
-        };
+        });
+        siswaOrder.push(item.nisn); // Simpan urutan NISN
       }
 
-      // Map mata pelajaran ke shorthand
+      const siswaData = siswaMap.get(item.nisn);
       const shorthand = mapelMapping[item.mata_pelajaran];
       if (shorthand) {
-        grouped[item.nisn][shorthand] = item.nilai_akhir;
+        siswaData[shorthand] = item.nilai_akhir;
       }
     });
 
-    // Convert ke array dan hitung jumlah + rata-rata
-    const legerData = Object.values(grouped).map((siswa, index) => {
+    // PERBAIKAN 4: Konversi Map ke array dengan urutan yang benar
+    const legerData = [];
+
+    siswaOrder.forEach((nisn, index) => {
+      const siswa = siswaMap.get(nisn);
       const nilai = [
         siswa.bindo,
         siswa.bing,
@@ -829,7 +844,7 @@ export const exportLeger = async (
       const rataRata =
         nilaiValid.length > 0 ? (jumlah / nilaiValid.length).toFixed(2) : null;
 
-      return {
+      legerData.push({
         no: index + 1,
         nisn: siswa.nisn,
         nama_siswa: siswa.nama_siswa,
@@ -844,7 +859,19 @@ export const exportLeger = async (
         pjok: siswa.pjok || "-",
         jumlah: jumlah || "-",
         rata_rata: rataRata || "-",
-      };
+      });
+    });
+
+    // PERBAIKAN 5: Pastikan urutan akhir
+    legerData.sort((a, b) => {
+      const nameA = a.nama_siswa.toUpperCase();
+      const nameB = b.nama_siswa.toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    // Update nomor urut setelah sorting
+    legerData.forEach((item, index) => {
+      item.no = index + 1;
     });
 
     // Buat Excel
