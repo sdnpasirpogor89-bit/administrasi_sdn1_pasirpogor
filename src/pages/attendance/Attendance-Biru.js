@@ -21,31 +21,18 @@ const Attendance = ({
 }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Enhanced device detection with Tailwind breakpoints
+  // Deteksi perangkat saat mount dan resize
   useEffect(() => {
     const checkDevice = () => {
       const width = window.innerWidth;
-      setIsMobile(width < 640); // Tailwind 'sm' breakpoint
-      setIsTablet(width >= 640 && width < 1024); // Tailwind 'md' and 'lg'
-      setIsDesktop(width >= 1024); // Tailwind 'lg' and above
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
     };
 
     checkDevice();
-
-    // Debounced resize handler
-    let resizeTimeout;
-    const handleResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(checkDevice, 150);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(resizeTimeout);
-    };
+    window.addEventListener("resize", checkDevice);
+    return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
   // Get all logic and state from custom hook
@@ -101,108 +88,55 @@ const Attendance = ({
     exportSemester,
   } = useAttendanceLogic(currentUser);
 
-  // Enhanced loading screen with responsive design and Red-950 theme
+  // Enhanced loading screen with responsive design
   if ((loading && !deviceDetected) || (loading && !studentsData[activeClass])) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-white dark:from-gray-900 dark:to-slate-950 flex items-center justify-center p-3 sm:p-4 md:p-6 transition-colors duration-300">
-        <div className="text-center max-w-xs xs:max-w-sm sm:max-w-md w-full">
-          <div className="relative mb-5 sm:mb-6">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-red-200 dark:border-red-800 rounded-full mx-auto"></div>
-            <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-red-700 dark:border-red-500 border-t-transparent rounded-full animate-spin absolute top-0 left-1/2 transform -translate-x-1/2"></div>
-
-            {/* Device icon based on detection */}
-            <div className="absolute -bottom-2 -right-2 sm:-bottom-3 sm:-right-3 bg-white dark:bg-gray-800 p-1.5 sm:p-2 rounded-lg shadow-md border border-red-100 dark:border-gray-700">
-              {isMobile ? (
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
-              ) : isTablet ? (
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              )}
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-slate-900 flex items-center justify-center p-4 transition-colors duration-300">
+        <div className="text-center max-w-sm w-full">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800 rounded-full mx-auto mb-4"></div>
+            <div className="w-16 h-16 border-4 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin absolute top-0 left-1/2 transform -translate-x-1/2"></div>
           </div>
 
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-red-900 dark:text-slate-100 mb-2 sm:mb-3 px-4">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-2">
             {!deviceDetected
               ? "Mendeteksi Perangkat..."
               : "Memuat Data Presensi"}
           </h2>
 
-          <p className="text-red-700 dark:text-slate-300 text-sm sm:text-base mb-4 sm:mb-6 px-4">
+          <p className="text-gray-600 dark:text-slate-300 text-sm sm:text-base mb-6">
             {!deviceDetected
               ? "Mengoptimalkan untuk perangkat Anda..."
               : "Mengambil data siswa dan presensi..."}
           </p>
 
-          {/* Responsive loading indicator with Red-950 theme */}
-          <div className="flex flex-col xs:flex-row items-center justify-center gap-2.5 sm:gap-3 md:gap-4 mb-6">
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-red-100 dark:bg-red-900/30 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800">
-              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-red-600 dark:bg-red-400 rounded-full animate-pulse"></div>
-              <span className="text-xs sm:text-sm text-red-800 dark:text-red-300 font-medium">
+          {/* Responsive loading indicator */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full animate-pulse"></div>
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">
                 {isMobile ? "HP" : isTablet ? "Tablet" : "Desktop"} terdeteksi
               </span>
             </div>
 
-            <div className="hidden xs:block text-red-300 dark:text-slate-600 text-lg">
+            <div className="hidden sm:block text-gray-300 dark:text-slate-600">
               •
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-pulse delay-150"></div>
-              <span className="text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 font-medium">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse delay-150"></div>
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">
                 Mode {isMobile ? "Touch" : "Klik"} diaktifkan
               </span>
             </div>
           </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-red-100 dark:bg-red-900/30 h-1.5 sm:h-2 rounded-full overflow-hidden mb-2">
-            <div className="h-full bg-gradient-to-r from-red-600 to-red-700 dark:from-red-500 dark:to-red-600 animate-pulse rounded-full w-3/4"></div>
-          </div>
-
-          <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
-            Mengoptimalkan pengalaman untuk perangkat Anda...
-          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-white dark:from-gray-900 dark:to-gray-950 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Global Components - Pindah DarkModeToggle ke App.js jika sudah ada */}
       {/* <DarkModeToggle /> */}
 
@@ -261,11 +195,10 @@ const Attendance = ({
         // Export handlers
         exportAttendance={exportAttendance}
         exportSemester={exportSemester}
-        // Enhanced device info
+        // Device info - TAMBAHKAN INI
         deviceDetected={deviceDetected}
         isMobile={isMobile}
         isTablet={isTablet}
-        isDesktop={isDesktop}
       />
 
       {/* Modals */}
@@ -286,8 +219,7 @@ const Attendance = ({
         }}
         title="Konfirmasi Penyimpanan"
         message={modalMessage}
-        isMobile={isMobile}
-        isTablet={isTablet}
+        isMobile={isMobile} // Pass device info untuk modal responsive
       />
 
       <ExportModal
@@ -295,8 +227,7 @@ const Attendance = ({
         onClose={() => setShowExportModal(false)}
         onExport={exportAttendance}
         loading={exportLoading}
-        isMobile={isMobile}
-        isTablet={isTablet}
+        isMobile={isMobile} // Pass device info
       />
 
       <ExportSemesterModal
@@ -304,8 +235,7 @@ const Attendance = ({
         onClose={() => setShowExportSemesterModal(false)}
         onExport={exportSemester}
         loading={exportSemesterLoading}
-        isMobile={isMobile}
-        isTablet={isTablet}
+        isMobile={isMobile} // Pass device info
       />
 
       <AttendanceModal
@@ -317,9 +247,8 @@ const Attendance = ({
         loading={rekapLoading}
         onRefreshData={handleRekapRefresh}
         activeClass={activeClass}
-        isMobile={isMobile}
-        isTablet={isTablet}
-        isDesktop={isDesktop}
+        isMobile={isMobile} // Pass device info
+        isTablet={isTablet} // Pass device info
       />
     </div>
   );

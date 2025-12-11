@@ -8,8 +8,8 @@ import {
   User,
   Filter,
   X,
-  Download, // DIPERLUKAN UNTUK StudentsExcelActions
-  Upload, // DIPERLUKAN UNTUK StudentsExcelActions
+  Download,
+  Upload,
   Plus,
   Edit,
   Trash2,
@@ -18,58 +18,56 @@ import {
 } from "lucide-react";
 
 // WAJIB: Import komponen action dari StudentsExcel.js
-import { StudentsExcelActions } from "./StudentsExcel"; // <--- SUDAH DIAKTIFKAN
+import { StudentsExcelActions } from "./StudentsExcel";
 
-// Compact Stats Card Component (Dark Mode Added)
+// Compact Stats Card Component (Tema Merah)
 const StatsCard = ({ icon: Icon, number, label, color }) => {
-  // ... (Kode StatsCard)
   const colorClasses = {
-    blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white dark:to-slate-800 dark:from-blue-900/40",
-    green:
-      "border-l-green-500 bg-gradient-to-r from-green-50 to-white dark:to-slate-800 dark:from-green-900/40",
-    purple:
-      "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white dark:to-slate-800 dark:from-purple-900/40",
+    red: "border-l-red-600 bg-gradient-to-r from-red-50 to-white dark:to-slate-800 dark:from-red-900/40",
     orange:
-      "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white dark:to-slate-800 dark:from-orange-900/40",
+      "border-l-orange-600 bg-gradient-to-r from-orange-50 to-white dark:to-slate-800 dark:from-orange-900/40",
+    amber:
+      "border-l-amber-600 bg-gradient-to-r from-amber-50 to-white dark:to-slate-800 dark:from-amber-900/40",
+    rose: "border-l-rose-600 bg-gradient-to-r from-rose-50 to-white dark:to-slate-800 dark:from-rose-900/40",
   };
 
   const iconColorClasses = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    purple: "text-purple-600",
-    orange: "text-orange-600",
+    red: "text-red-600 dark:text-red-400",
+    orange: "text-orange-600 dark:text-orange-400",
+    amber: "text-amber-600 dark:text-amber-400",
+    rose: "text-rose-600 dark:text-rose-400",
   };
 
   return (
     <div
-      className={`bg-white dark:bg-slate-800 rounded-lg shadow-sm border-l-4 ${colorClasses[color]} p-3 sm:p-4 hover:shadow-md transition-all duration-300 hover:scale-105`}>
+      className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border-l-4 ${colorClasses[color]} p-3 sm:p-4 hover:shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-95 touch-manipulation`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">
+          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-red-900 dark:text-slate-100">
             {number}
           </p>
-          <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm font-medium text-red-700 dark:text-slate-400 mt-0.5 sm:mt-1">
             {label}
           </p>
         </div>
-        {/* Responsive icon display */}
-        <Icon
-          size={24}
-          className={`${iconColorClasses[color]} hidden sm:block`}
-        />
-        <Icon size={20} className={`${iconColorClasses[color]} sm:hidden`} />
+        <div className="bg-red-100 dark:bg-red-900/30 p-2 sm:p-2.5 rounded-lg">
+          <Icon
+            size={20}
+            className={`${iconColorClasses[color]} sm:w-6 sm:h-6`}
+          />
+        </div>
       </div>
     </div>
   );
 };
 
-// Status Badge Component (Dark Mode Added)
+// Status Badge Component (Tema Merah)
 const StatusBadge = ({ isActive }) => {
   return (
     <span
-      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
         isActive
-          ? "bg-green-100 text-green-800 border border-green-200 dark:border-green-700 dark:bg-green-900/20 dark:text-green-300"
+          ? "bg-emerald-100 text-emerald-800 border border-emerald-200 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300"
           : "bg-red-100 text-red-800 border border-red-200 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300"
       }`}>
       {isActive ? "Aktif" : "Nonaktif"}
@@ -77,7 +75,7 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
-// Action Button Component (Dark Mode Added - Secondary variant)
+// Action Button Component (Tema Merah)
 const ActionButton = ({
   icon: Icon,
   label,
@@ -86,38 +84,38 @@ const ActionButton = ({
   disabled = false,
 }) => {
   const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
+    primary: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
     secondary:
-      "bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 shadow-sm",
-    danger: "bg-red-600 text-white hover:bg-red-700",
+      "bg-white dark:bg-slate-700 text-red-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-slate-600 border border-red-300 dark:border-slate-600 shadow-sm",
+    danger: "bg-red-700 text-white hover:bg-red-800",
   };
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]}`}>
+      className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 touch-manipulation min-h-[44px] ${variants[variant]}`}>
       <Icon size={18} />
       <span>{label}</span>
     </button>
   );
 };
 
-// Toast Notification Component (Dark Mode Added)
+// Toast Notification Component (Tema Merah)
 const Toast = ({ message, type = "success", onClose }) => {
   const bgColor =
     type === "success"
-      ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700"
+      ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-700"
       : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-700";
   const textColor =
     type === "success"
-      ? "text-green-800 dark:text-green-300"
+      ? "text-emerald-800 dark:text-emerald-300"
       : "text-red-800 dark:text-red-300";
   const Icon = type === "success" ? CheckCircle : AlertCircle;
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 border rounded-lg p-4 shadow-lg ${bgColor} animate-in slide-in-from-right-5 duration-300`}>
+      className={`fixed top-4 right-4 z-50 border rounded-xl p-4 shadow-lg ${bgColor} animate-in slide-in-from-right-5 duration-300`}>
       <div className="flex items-center gap-3">
         <Icon size={20} className={textColor} />
         <p className={`font-medium ${textColor}`}>{message}</p>
@@ -129,54 +127,53 @@ const Toast = ({ message, type = "success", onClose }) => {
   );
 };
 
-// Mobile Student Card Component (Dark Mode Added)
+// Mobile Student Card Component (Tema Merah)
 const StudentCard = ({ student, index, onEdit, onDelete }) => {
-  // ... (Kode StudentCard)
   return (
-    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-3 shadow-sm">
+    <div className="bg-white dark:bg-slate-800 border border-red-200 dark:border-slate-700 rounded-xl p-4 space-y-3 shadow-sm hover:shadow-md transition-shadow active:scale-[0.995] touch-manipulation">
       <div className="flex justify-between items-start">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-semibold text-gray-500 dark:text-slate-400">
+            <span className="text-sm font-semibold text-red-500 dark:text-slate-400">
               #{index + 1}
             </span>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">
+            <h3 className="text-sm sm:text-base font-bold text-red-900 dark:text-slate-100 truncate">
               {student.nama_siswa}
             </h3>
           </div>
-          <p className="text-xs text-gray-500 dark:text-slate-400 font-mono">
+          <p className="text-xs text-red-600 dark:text-slate-400 font-mono">
             NISN: {student.nisn}
           </p>
         </div>
         <StatusBadge isActive={student.is_active} />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="flex items-center gap-1">
-          <School size={14} className="text-gray-400 dark:text-slate-500" />
-          <span className="text-gray-700 dark:text-slate-300">
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg">
+          <School size={14} className="text-red-500 dark:text-red-400" />
+          <span className="text-red-700 dark:text-red-300 font-medium">
             Kelas {student.kelas}
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          <User size={14} className="text-gray-400 dark:text-slate-500" />
-          <span className="text-gray-700 dark:text-slate-300">
+        <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-lg">
+          <User size={14} className="text-amber-500 dark:text-amber-400" />
+          <span className="text-amber-700 dark:text-amber-300 font-medium">
             {student.jenis_kelamin}
           </span>
         </div>
       </div>
 
       {/* Action Buttons for Mobile */}
-      <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
+      <div className="flex gap-2 pt-3 border-t border-red-100 dark:border-slate-700">
         <button
           onClick={() => onEdit(student)}
-          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 rounded-lg text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+          className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors active:scale-95 touch-manipulation">
           <Edit size={14} />
           Edit
         </button>
         <button
           onClick={() => onDelete(student)}
-          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 rounded-lg text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+          className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors active:scale-95 touch-manipulation">
           <Trash2 size={14} />
           Hapus
         </button>
@@ -185,9 +182,8 @@ const StudentCard = ({ student, index, onEdit, onDelete }) => {
   );
 };
 
-// Student Form Modal Component (Dark Mode Added)
+// Student Form Modal Component (Tema Merah)
 const StudentFormModal = ({ show, onClose, student, onSave }) => {
-  // ... (Kode StudentFormModal)
   const [formData, setFormData] = useState({
     nisn: "",
     nama_siswa: "",
@@ -238,23 +234,22 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
   if (!show) return null;
 
   return (
-    // Responsive modal sizing (Max-w-md on all screens)
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+      <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-slate-100">
             {student ? "Edit Siswa" : "Tambah Siswa Baru"}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-900 dark:text-slate-100">
+            className="p-2 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors text-red-900 dark:text-slate-100 active:scale-95">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-red-700 dark:text-slate-300 mb-2">
               NISN *
             </label>
             <input
@@ -264,13 +259,13 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
               onChange={(e) =>
                 setFormData({ ...formData, nisn: e.target.value })
               }
-              className="w-full px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100"
+              className="w-full px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100"
               placeholder="Masukkan NISN"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-red-700 dark:text-slate-300 mb-2">
               Nama Siswa *
             </label>
             <input
@@ -280,15 +275,14 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
               onChange={(e) =>
                 setFormData({ ...formData, nama_siswa: e.target.value })
               }
-              className="w-full px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100"
+              className="w-full px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100"
               placeholder="Masukkan nama lengkap"
             />
           </div>
 
-          {/* Responsive form grid (2 cols on all sizes, good for mobile) */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-red-700 dark:text-slate-300 mb-2">
                 Kelas *
               </label>
               <select
@@ -297,7 +291,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
                 onChange={(e) =>
                   setFormData({ ...formData, kelas: e.target.value })
                 }
-                className="w-full px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+                className="w-full px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100">
                 <option value="" className="dark:bg-slate-800">
                   Pilih Kelas
                 </option>
@@ -313,7 +307,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-red-700 dark:text-slate-300 mb-2">
                 Jenis Kelamin *
               </label>
               <select
@@ -322,7 +316,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
                 onChange={(e) =>
                   setFormData({ ...formData, jenis_kelamin: e.target.value })
                 }
-                className="w-full px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+                className="w-full px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100">
                 <option value="Laki-laki" className="dark:bg-slate-800">
                   Laki-laki
                 </option>
@@ -333,7 +327,7 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <input
               type="checkbox"
               id="is_active"
@@ -341,11 +335,11 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
               onChange={(e) =>
                 setFormData({ ...formData, is_active: e.target.checked })
               }
-              className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-900"
+              className="rounded border-red-300 dark:border-slate-600 text-red-600 focus:ring-red-500 dark:bg-slate-900 w-5 h-5"
             />
             <label
               htmlFor="is_active"
-              className="text-sm text-gray-700 dark:text-slate-300">
+              className="text-sm text-red-700 dark:text-slate-300 font-medium">
               Siswa Aktif
             </label>
           </div>
@@ -354,13 +348,13 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm">
+              className="flex-1 px-4 py-3 border border-red-300 dark:border-slate-600 text-red-700 dark:text-slate-300 rounded-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm active:scale-95 touch-manipulation">
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm disabled:opacity-50">
+              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50 active:scale-95 touch-manipulation">
               {loading ? "Menyimpan..." : student ? "Update" : "Simpan"}
             </button>
           </div>
@@ -370,9 +364,8 @@ const StudentFormModal = ({ show, onClose, student, onSave }) => {
   );
 };
 
-// Delete Confirmation Modal (Dark Mode Added)
+// Delete Confirmation Modal (Tema Merah)
 const DeleteModal = ({ show, onClose, student, onConfirm }) => {
-  // ... (Kode DeleteModal)
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -391,49 +384,49 @@ const DeleteModal = ({ show, onClose, student, onConfirm }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+      <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <div className="p-2.5 bg-red-100 dark:bg-red-900/20 rounded-lg">
             <Trash2 size={24} className="text-red-600 dark:text-red-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-slate-100">
               Hapus Siswa
             </h3>
-            <p className="text-sm text-gray-600 dark:text-slate-400">
+            <p className="text-sm text-red-600 dark:text-slate-400">
               Apakah Anda yakin ingin menghapus siswa ini?
             </p>
           </div>
         </div>
 
         {student && (
-          <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4 mb-4">
-            <p className="font-medium text-gray-900 dark:text-slate-100">
+          <div className="bg-red-50 dark:bg-slate-700 rounded-lg p-4 mb-4 sm:mb-6">
+            <p className="font-medium text-red-900 dark:text-slate-100 text-sm sm:text-base">
               {student.nama_siswa}
             </p>
-            <p className="text-sm text-gray-600 dark:text-slate-400">
+            <p className="text-xs sm:text-sm text-red-600 dark:text-slate-400 mt-1">
               NISN: {student.nisn}
             </p>
-            <p className="text-sm text-gray-600 dark:text-slate-400">
+            <p className="text-xs sm:text-sm text-red-600 dark:text-slate-400">
               Kelas: {student.kelas}
             </p>
           </div>
         )}
 
-        <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
+        <p className="text-xs sm:text-sm text-red-600 dark:text-slate-400 mb-4 sm:mb-6">
           Data Yang Dihapus Permanen Dan Tidak Dapat Dikembalikan.
         </p>
 
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm">
+            className="flex-1 px-4 py-3 border border-red-300 dark:border-slate-600 text-red-700 dark:text-slate-300 rounded-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm active:scale-95 touch-manipulation">
             Batal
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50">
+            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm disabled:opacity-50 active:scale-95 touch-manipulation">
             {loading ? "Menghapus..." : "Ya, Hapus"}
           </button>
         </div>
@@ -442,9 +435,8 @@ const DeleteModal = ({ show, onClose, student, onConfirm }) => {
   );
 };
 
-// Mobile Filter Modal (Dark Mode Added)
+// Mobile Filter Modal (Tema Merah)
 const FilterModal = ({
-  // ... (Kode FilterModal)
   show,
   onClose,
   selectedClass,
@@ -458,27 +450,27 @@ const FilterModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-slate-800 rounded-t-xl sm:rounded-xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-slate-100">
             Filter Siswa
           </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-gray-900 dark:text-slate-100">
+            className="p-2 hover:bg-red-50 dark:hover:bg-slate-700 rounded-lg transition-colors text-red-900 dark:text-slate-100 active:scale-95">
             <X size={20} />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-red-700 dark:text-slate-300 mb-2">
               Kelas
             </label>
             {userData.role !== "guru_kelas" ? (
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+                className="w-full px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100">
                 <option value="" className="dark:bg-slate-800">
                   Semua Kelas
                 </option>
@@ -492,20 +484,20 @@ const FilterModal = ({
                 ))}
               </select>
             ) : (
-              <div className="px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-sm">
+              <div className="px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg bg-red-50 dark:bg-slate-700 text-red-500 dark:text-slate-400 text-sm">
                 Kelas {userData.kelas}
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-red-700 dark:text-slate-300 mb-2">
               Jenis Kelamin
             </label>
             <select
               value={genderFilter}
               onChange={(e) => setGenderFilter(e.target.value)}
-              className="w-full px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+              className="w-full px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100">
               <option value="" className="dark:bg-slate-800">
                 Semua
               </option>
@@ -525,12 +517,12 @@ const FilterModal = ({
               setSelectedClass("");
               setGenderFilter("");
             }}
-            className="flex-1 px-4 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm">
+            className="flex-1 px-4 py-3 border border-red-300 dark:border-slate-600 text-red-700 dark:text-slate-300 rounded-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm active:scale-95 touch-manipulation">
             Reset
           </button>
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm active:scale-95 touch-manipulation">
             Terapkan
           </button>
         </div>
@@ -539,10 +531,8 @@ const FilterModal = ({
   );
 };
 
-// Main Students Component - PRODUCTION READY (Dark Mode Added)
+// Main Students Component (Tema Merah)
 const Students = ({ userData }) => {
-  // ... (Kode Students setup)
-  // All hooks must be called first
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -560,7 +550,7 @@ const Students = ({ userData }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Auto hide toast (No changes)
+  // Auto hide toast
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => {
@@ -570,7 +560,7 @@ const Students = ({ userData }) => {
     }
   }, [toast]);
 
-  // Fetch students data from Supabase (No changes)
+  // Fetch students data from Supabase
   const fetchStudents = async () => {
     try {
       setLoading(true);
@@ -625,14 +615,12 @@ const Students = ({ userData }) => {
     }
   }, [userData]);
 
-  // Show toast notification (No changes)
+  // Show toast notification
   const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
 
-  // Hapus Fungsi handleImport - Dipindah ke StudentsExcel.js
-
-  // Save student (create or update) (No changes)
+  // Save student (create or update)
   const handleSaveStudent = async (studentData) => {
     try {
       if (studentData.id) {
@@ -674,7 +662,7 @@ const Students = ({ userData }) => {
     }
   };
 
-  // Delete student (hard delete) (No changes)
+  // Delete student (hard delete)
   const handleDeleteStudent = async (student) => {
     try {
       const { error } = await supabase
@@ -693,34 +681,34 @@ const Students = ({ userData }) => {
     }
   };
 
-  // Open edit modal (No changes)
+  // Open edit modal
   const handleEdit = (student) => {
     setSelectedStudent(student);
     setShowFormModal(true);
   };
 
-  // Open delete modal (No changes)
+  // Open delete modal
   const handleDelete = (student) => {
     setSelectedStudent(student);
     setShowDeleteModal(true);
   };
 
-  // Open add modal (No changes)
+  // Open add modal
   const handleAdd = () => {
     setSelectedStudent(null);
     setShowFormModal(true);
   };
 
-  // Validation after hooks (Dark Mode Added)
+  // Validation after hooks
   if (!userData) {
     return (
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center h-96 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-          <div className="w-10 h-10 border-3 border-red-100 dark:border-red-900/20 border-t-red-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-red-600 font-medium">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 border-3 border-red-100 dark:border-red-900/20 border-t-red-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-red-600 dark:text-red-400 font-medium text-sm sm:text-base">
             Error: Data user tidak tersedia
           </p>
-          <p className="text-sm text-gray-400 dark:text-slate-500 mt-2">
+          <p className="text-xs sm:text-sm text-red-500 dark:text-slate-500 mt-2">
             Silakan login kembali
           </p>
         </div>
@@ -731,11 +719,11 @@ const Students = ({ userData }) => {
   if (!userData.role || !userData.username) {
     return (
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center h-96 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-          <p className="text-red-600 font-medium">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+          <p className="text-red-600 dark:text-red-400 font-medium text-sm sm:text-base">
             Error: Data user tidak lengkap
           </p>
-          <p className="text-sm text-gray-400 dark:text-slate-500 mt-2">
+          <p className="text-xs sm:text-sm text-red-500 dark:text-slate-500 mt-2">
             Hubungi administrator sistem
           </p>
         </div>
@@ -743,7 +731,7 @@ const Students = ({ userData }) => {
     );
   }
 
-  // Filter students based on search and filters (No changes)
+  // Filter students based on search and filters
   const filteredStudents = students.filter((student) => {
     if (
       (userData.role === "admin" || userData.role === "guru_mapel") &&
@@ -768,395 +756,404 @@ const Students = ({ userData }) => {
     return true;
   });
 
-  // Active filters count for badge (No changes)
+  // Active filters count for badge
   const activeFiltersCount = [selectedClass, genderFilter].filter(
     Boolean
   ).length;
 
   if (loading && students.length === 0) {
     return (
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center h-96 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-          <div className="w-10 h-10 border-3 border-blue-100 dark:border-blue-900/20 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 dark:text-slate-300 font-medium">
-            Memuat data siswa...
-          </p>
+      <div className="min-h-screen bg-red-50 dark:bg-slate-900 p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 border-3 border-red-100 dark:border-red-900/20 border-t-red-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-red-700 dark:text-slate-300 font-medium text-sm sm:text-base">
+              Memuat data siswa...
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // =================================================================
-  // !!! PENTING: KODE PLACEHOLDER StudentsExcelActions DI SINI DIHAPUS !!!
-  // =================================================================
-
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div className="min-h-screen bg-red-50 dark:bg-slate-900 p-3 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+        {/* Toast Notification */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
 
-      {/* Compact Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatsCard
-          icon={School}
-          number={stats.totalKelas}
-          label="Total Kelas"
-          color="blue"
-        />
-        <StatsCard
-          icon={Users}
-          number={stats.totalSiswa}
-          label="Total Siswa"
-          color="green"
-        />
-        <StatsCard
-          icon={User}
-          number={stats.lakiLaki}
-          label="Laki-laki"
-          color="purple"
-        />
-        <StatsCard
-          icon={UserCheck}
-          number={stats.perempuan}
-          label="Perempuan"
-          color="orange"
-        />
-      </div>
+        {/* Header */}
+        <div className="mb-2 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-red-900 dark:text-slate-100">
+            Data Siswa
+          </h1>
+          <p className="text-sm sm:text-base text-red-700 dark:text-slate-300 mt-1">
+            Tahun Ajaran 2025/2026
+          </p>
+        </div>
 
-      {/* Optimized Filter & Action Section - Dark Mode Added */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search Input - Full width on mobile */}
-          <div className="relative flex-1">
-            <Search
-              size={20}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500"
-            />
-            <input
-              type="text"
-              placeholder="Cari nama siswa atau NISN..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100"
-            />
-          </div>
+        {/* Compact Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <StatsCard
+            icon={School}
+            number={stats.totalKelas}
+            label="Total Kelas"
+            color="red"
+          />
+          <StatsCard
+            icon={Users}
+            number={stats.totalSiswa}
+            label="Total Siswa"
+            color="orange"
+          />
+          <StatsCard
+            icon={User}
+            number={stats.lakiLaki}
+            label="Laki-laki"
+            color="amber"
+          />
+          <StatsCard
+            icon={UserCheck}
+            number={stats.perempuan}
+            label="Perempuan"
+            color="rose"
+          />
+        </div>
 
-          {/* Mobile Layout: Filter Button + Action Menu (Hidden on Large screens) */}
-          <div className="flex gap-2 lg:hidden">
-            <button
-              onClick={() => setShowFilterModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium min-h-[44px] flex-1 text-gray-700 dark:text-slate-300">
-              <Filter size={16} />
-              Filter
-              {activeFiltersCount > 0 && (
-                <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </button>
-
-            {/* Mobile Action Menu (memanggil StudentsExcelActions dari file terpisah) */}
+        {/* Filter & Action Section */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-slate-700 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Search Input */}
             <div className="relative flex-1">
+              <Search
+                size={20}
+                className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-red-400 dark:text-slate-500"
+              />
+              <input
+                type="text"
+                placeholder="Cari nama siswa atau NISN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100 min-h-[44px]"
+              />
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="flex gap-2 lg:hidden">
+              <button
+                onClick={() => setShowFilterModal(true)}
+                className="flex items-center justify-center gap-2 px-4 py-3 border border-red-300 dark:border-slate-600 rounded-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium min-h-[44px] flex-1 text-red-700 dark:text-slate-300 active:scale-95 touch-manipulation">
+                <Filter size={16} />
+                Filter
+                {activeFiltersCount > 0 && (
+                  <span className="bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+
+              <div className="relative flex-1">
+                <StudentsExcelActions
+                  students={students}
+                  showToast={showToast}
+                  fetchStudents={fetchStudents}
+                  onAdd={handleAdd}
+                  isMobile={true}
+                  userData={userData}
+                />
+              </div>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex gap-3 flex-1 sm:flex-initial">
+              <div className="flex gap-3 flex-1">
+                {/* Class Filter */}
+                {userData.role !== "guru_kelas" ? (
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="flex-1 px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm min-h-[44px] bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100">
+                    <option value="" className="dark:bg-slate-800">
+                      Semua Kelas
+                    </option>
+                    {[1, 2, 3, 4, 5, 6].map((kelas) => (
+                      <option
+                        key={kelas}
+                        value={kelas}
+                        className="dark:bg-slate-800">
+                        Kelas {kelas}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex-1 px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg bg-red-50 dark:bg-slate-700 text-red-500 dark:text-slate-400 text-sm min-h-[44px] flex items-center">
+                    Kelas {userData.kelas}
+                  </div>
+                )}
+
+                {/* Gender Filter */}
+                <select
+                  value={genderFilter}
+                  onChange={(e) => setGenderFilter(e.target.value)}
+                  className="flex-1 px-3 py-3 border border-red-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm min-h-[44px] bg-white dark:bg-slate-900 text-red-900 dark:text-slate-100">
+                  <option value="" className="dark:bg-slate-800">
+                    Semua Jenis Kelamin
+                  </option>
+                  <option value="Laki-laki" className="dark:bg-slate-800">
+                    Laki-laki
+                  </option>
+                  <option value="Perempuan" className="dark:bg-slate-800">
+                    Perempuan
+                  </option>
+                </select>
+              </div>
+
               <StudentsExcelActions
                 students={students}
                 showToast={showToast}
                 fetchStudents={fetchStudents}
                 onAdd={handleAdd}
-                isMobile={true}
-                userData={userData} // <--- PASTIKAN ADA
+                isMobile={false}
+                userData={userData}
               />
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-slate-300">
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
             </div>
           </div>
 
-          {/* Desktop Layout: Filters + Action Buttons (Hidden on Mobile/Tablet, displayed on Large screens) - Dark Mode Added */}
-          <div className="hidden lg:flex gap-3 flex-1 sm:flex-initial">
-            {/* Desktop Filters */}
-            <div className="flex gap-3 flex-1">
-              {/* Class Filter */}
-              {userData.role !== "guru_kelas" ? (
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="flex-1 px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm min-h-[44px] bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
-                  <option value="" className="dark:bg-slate-800">
-                    Semua Kelas
-                  </option>
-                  {[1, 2, 3, 4, 5, 6].map((kelas) => (
-                    <option
-                      key={kelas}
-                      value={kelas}
-                      className="dark:bg-slate-800">
-                      Kelas {kelas}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="flex-1 px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-sm min-h-[44px] flex items-center">
-                  Kelas {userData.kelas}
-                </div>
-              )}
-
-              {/* Gender Filter */}
-              <select
-                value={genderFilter}
-                onChange={(e) => setGenderFilter(e.target.value)}
-                className="flex-1 px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm min-h-[44px] bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">
-                <option value="" className="dark:bg-slate-800">
-                  Semua Jenis Kelamin
-                </option>
-                <option value="Laki-laki" className="dark:bg-slate-800">
-                  Laki-laki
-                </option>
-                <option value="Perempuan" className="dark:bg-slate-800">
-                  Perempuan
-                </option>
-              </select>
-            </div>
-
-            {/* Action Buttons for Desktop - Memanggil StudentsExcelActions dari file terpisah */}
-            <StudentsExcelActions
-              students={students}
-              showToast={showToast}
-              fetchStudents={fetchStudents}
-              onAdd={handleAdd}
-              isMobile={false}
-              userData={userData} // <--- PASTIKAN ADA
-            />
-          </div>
-        </div>
-
-        {/* Active Filters Indicator (Dark Mode Added) */}
-        {(selectedClass || genderFilter) && (
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            <span className="text-xs text-gray-500 dark:text-slate-400">
-              Filter aktif:
-            </span>
-            {selectedClass && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
-                Kelas {selectedClass}
-                <button
-                  onClick={() => setSelectedClass("")}
-                  className="ml-1 hover:text-blue-600">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            {genderFilter && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300">
-                {genderFilter}
-                <button
-                  onClick={() => setGenderFilter("")}
-                  className="ml-1 hover:text-green-600">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Results Header (Dark Mode Added) */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-slate-100">
-              Daftar Siswa
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-              Menampilkan {filteredStudents.length} dari {students.length} siswa
-            </p>
-          </div>
-          {/* Show clear filter button on mobile if filters are active */}
+          {/* Active Filters Indicator */}
           {(selectedClass || genderFilter) && (
-            <button
-              onClick={() => {
-                setSelectedClass("");
-                setGenderFilter("");
-              }}
-              className="mt-2 sm:mt-0 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium lg:hidden">
-              Hapus Filter
-            </button>
+            <div className="flex items-center gap-2 mt-3 sm:mt-4 flex-wrap">
+              <span className="text-xs text-red-500 dark:text-slate-400">
+                Filter aktif:
+              </span>
+              {selectedClass && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 font-medium">
+                  Kelas {selectedClass}
+                  <button
+                    onClick={() => setSelectedClass("")}
+                    className="ml-1.5 hover:text-red-600">
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+              {genderFilter && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 font-medium">
+                  {genderFilter}
+                  <button
+                    onClick={() => setGenderFilter("")}
+                    className="ml-1.5 hover:text-amber-600">
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Students List - Responsive View - Dark Mode Added */}
+        {/* Results Header */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-slate-700 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-slate-100">
+                Daftar Siswa
+              </h2>
+              <p className="text-sm text-red-700 dark:text-slate-400 mt-1">
+                Menampilkan {filteredStudents.length} dari {students.length}{" "}
+                siswa
+              </p>
+            </div>
+            {(selectedClass || genderFilter) && (
+              <button
+                onClick={() => {
+                  setSelectedClass("");
+                  setGenderFilter("");
+                }}
+                className="mt-2 sm:mt-0 px-3 py-2 text-sm text-red-600 hover:text-red-800 font-medium lg:hidden">
+                Hapus Filter
+              </button>
+            )}
+          </div>
+        </div>
 
-      {/* MOBILE CARD VIEW (Default, Hidden on Large screens) */}
-      <div className="space-y-3 lg:hidden">
-        {filteredStudents.length === 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-8">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <Users size={48} className="text-gray-300 dark:text-slate-600" />
-              <div>
-                <p className="text-gray-500 dark:text-slate-400 font-medium text-sm">
-                  Tidak ada data siswa yang ditemukan
-                </p>
-                <p className="text-gray-400 dark:text-slate-500 text-xs mt-1">
-                  Coba ubah kata kunci pencarian atau filter
-                </p>
+        {/* MOBILE CARD VIEW */}
+        <div className="space-y-3 sm:space-y-4 lg:hidden">
+          {filteredStudents.length === 0 ? (
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-slate-700 p-6 sm:p-8">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <Users size={48} className="text-red-300 dark:text-slate-600" />
+                <div>
+                  <p className="text-red-500 dark:text-slate-400 font-medium text-sm sm:text-base">
+                    Tidak ada data siswa yang ditemukan
+                  </p>
+                  <p className="text-red-400 dark:text-slate-500 text-xs sm:text-sm mt-1">
+                    Coba ubah kata kunci pencarian atau filter
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          filteredStudents.map((student, index) => (
-            <StudentCard
-              key={student.id}
-              student={student}
-              index={index}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))
-        )}
-      </div>
+          ) : (
+            filteredStudents.map((student, index) => (
+              <StudentCard
+                key={student.id}
+                student={student}
+                index={index}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+        </div>
 
-      {/* DESKTOP TABLE VIEW (Hidden by default, displayed on Large screens) - Dark Mode Added */}
-      <div className="hidden lg:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-600">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider w-12">
-                  No.
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider w-24">
-                  NISN
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                  Nama Siswa
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">
-                  Jenis Kelamin
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                  Kelas
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider w-20">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-              {filteredStudents.length === 0 ? (
+        {/* DESKTOP TABLE VIEW */}
+        <div className="hidden lg:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-red-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-red-50 dark:bg-slate-700 border-b border-red-200 dark:border-slate-600">
                 <tr>
-                  <td colSpan="7" className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Users
-                        size={48}
-                        className="text-gray-300 dark:text-slate-600"
-                      />
-                      <div>
-                        <p className="text-gray-500 dark:text-slate-400 font-medium">
-                          Tidak ada data siswa yang ditemukan
-                        </p>
-                        <p className="text-gray-400 dark:text-slate-500 text-sm mt-1">
-                          Coba ubah kata kunci pencarian atau filter
-                        </p>
-                      </div>
-                    </div>
-                  </td>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider w-12">
+                    No.
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider w-24">
+                    NISN
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider">
+                    Nama Siswa
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider">
+                    Jenis Kelamin
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider">
+                    Kelas
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 sm:px-6 py-3 text-left text-xs sm:text-sm font-bold text-red-900 dark:text-slate-300 uppercase tracking-wider w-28">
+                    Aksi
+                  </th>
                 </tr>
-              ) : (
-                filteredStudents.map((student, index) => (
-                  <tr
-                    key={student.id}
-                    className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-4 sm:px-6 py-4 text-sm text-gray-900 dark:text-slate-100 font-medium">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 text-sm font-mono text-gray-600 dark:text-slate-400">
-                      {student.nisn}
-                    </td>
-                    <td className="px-4 sm:px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
-                        {student.nama_siswa}
-                      </p>
-                    </td>
-                    <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                      <span className="text-sm text-gray-700 dark:text-slate-300 font-medium">
-                        {student.jenis_kelamin}
-                      </span>
-                    </td>
-                    <td className="px-4 sm:px-6 py-4">
-                      <span className="text-sm text-gray-700 dark:text-slate-300 font-medium">
-                        Kelas {student.kelas}
-                      </span>
-                    </td>
-                    <td className="px-4 sm:px-6 py-4">
-                      <StatusBadge isActive={student.is_active} />
-                    </td>
-                    <td className="px-4 sm:px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Edit">
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Hapus">
-                          <Trash2 size={16} />
-                        </button>
+              </thead>
+              <tbody className="divide-y divide-red-100 dark:divide-slate-700">
+                {filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Users
+                          size={48}
+                          className="text-red-300 dark:text-slate-600"
+                        />
+                        <div>
+                          <p className="text-red-500 dark:text-slate-400 font-medium">
+                            Tidak ada data siswa yang ditemukan
+                          </p>
+                          <p className="text-red-400 dark:text-slate-500 text-sm mt-1">
+                            Coba ubah kata kunci pencarian atau filter
+                          </p>
+                        </div>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredStudents.map((student, index) => (
+                    <tr
+                      key={student.id}
+                      className="hover:bg-red-50/50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="px-4 sm:px-6 py-4 text-sm text-red-900 dark:text-slate-100 font-medium">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-sm font-mono text-red-600 dark:text-slate-400">
+                        {student.nisn}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <p className="text-sm font-semibold text-red-900 dark:text-slate-100">
+                          {student.nama_siswa}
+                        </p>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <span className="text-sm text-red-700 dark:text-slate-300 font-medium">
+                          {student.jenis_kelamin}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300">
+                          <School size={12} />
+                          Kelas {student.kelas}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <StatusBadge isActive={student.is_active} />
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors active:scale-95"
+                            title="Edit">
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(student)}
+                            className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors active:scale-95"
+                            title="Hapus">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* Footer Info */}
+        <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-red-200 dark:border-slate-700">
+          <div className="text-center">
+            <p className="text-sm sm:text-base text-red-700 dark:text-slate-400">
+              Total{" "}
+              <span className="font-bold text-red-900 dark:text-slate-100">
+                {students.length}
+              </span>{" "}
+              siswa • {stats.totalKelas} kelas aktif
+            </p>
+            <p className="text-xs text-red-500 dark:text-slate-500 mt-1">
+              Tahun Ajaran 2025/2026 • Terakhir diperbarui:{" "}
+              {new Date().toLocaleDateString("id-ID")}
+            </p>
+          </div>
+        </div>
+
+        {/* Modals */}
+        <FilterModal
+          show={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          selectedClass={selectedClass}
+          setSelectedClass={setSelectedClass}
+          genderFilter={genderFilter}
+          setGenderFilter={setGenderFilter}
+          userData={userData}
+        />
+
+        <StudentFormModal
+          show={showFormModal}
+          onClose={() => setShowFormModal(false)}
+          student={selectedStudent}
+          onSave={handleSaveStudent}
+        />
+
+        <DeleteModal
+          show={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          student={selectedStudent}
+          onConfirm={handleDeleteStudent}
+        />
       </div>
-
-      {/* Modals (No changes - Already updated to support dark mode) */}
-      <FilterModal
-        show={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
-        selectedClass={selectedClass}
-        setSelectedClass={setSelectedClass}
-        genderFilter={genderFilter}
-        setGenderFilter={setGenderFilter}
-        userData={userData}
-      />
-
-      <StudentFormModal
-        show={showFormModal}
-        onClose={() => setShowFormModal(false)}
-        student={selectedStudent}
-        onSave={handleSaveStudent}
-      />
-
-      <DeleteModal
-        show={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        student={selectedStudent}
-        onConfirm={handleDeleteStudent}
-      />
     </div>
   );
 };

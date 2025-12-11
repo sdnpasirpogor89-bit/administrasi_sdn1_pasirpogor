@@ -174,7 +174,7 @@ const Sidebar = ({
       className={`
       ${showCollapsed ? "w-20" : "w-72"} 
       bg-gradient-to-b from-red-950 via-red-900 to-red-950 
-      dark:from-slate-900 dark:via-slate-800 dark:to-slate-900
+      dark:bg-gradient-to-b dark:from-slate-900 dark:via-slate-800 dark:to-slate-900
       text-white flex flex-col 
       ${mobile ? "fixed" : "fixed"} 
       left-0 top-0 h-screen shadow-2xl z-50 
@@ -207,8 +207,12 @@ const Sidebar = ({
           {!mobile && (
             <button
               onClick={toggleSidebar}
-              className={`p-2 rounded-lg bg-red-700/40 dark:bg-slate-700/40 hover:bg-red-600/40 dark:hover:bg-slate-600/40 transition-all duration-300 border border-red-600/30 dark:border-slate-600/30 ${
+              className={`p-2 rounded-lg transition-all duration-300 border ${
                 showCollapsed ? "ml-0" : "ml-auto"
+              } ${
+                showCollapsed
+                  ? "bg-red-700/40 dark:bg-slate-700/40 hover:bg-red-600/40 dark:hover:bg-slate-600/40 border-red-600/30 dark:border-slate-600/30"
+                  : "bg-red-700/40 dark:bg-slate-700/40 hover:bg-red-600/40 dark:hover:bg-slate-600/40 border-red-600/30 dark:border-slate-600/30"
               }`}
               title={showCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
               <Menu size={16} className="transition-transform duration-300" />
@@ -267,7 +271,7 @@ const Sidebar = ({
                           }
                           ${
                             isActive
-                              ? "bg-red-500/30 dark:bg-slate-700/50 text-white font-semibold border-l-4 border-rose-400 dark:border-rose-500 shadow-lg"
+                              ? "bg-red-500/30 dark:bg-slate-700/50 text-white font-semibold border-l-4 border-rose-400 dark:border-blue-400 shadow-lg"
                               : "text-red-100/90 dark:text-slate-300/90 hover:bg-red-700/30 dark:hover:bg-slate-700/30 hover:text-white active:bg-red-600/40 dark:active:bg-slate-600/40"
                           }
                           ${showCollapsed ? "justify-center" : ""}
@@ -276,7 +280,7 @@ const Sidebar = ({
                         <IconComponent
                           size={mobile ? 20 : 18}
                           className={`flex-shrink-0 ${
-                            isActive ? "text-rose-300 dark:text-rose-400" : ""
+                            isActive ? "text-rose-300 dark:text-blue-400" : ""
                           }`}
                         />
                         {!showCollapsed && (
@@ -286,7 +290,7 @@ const Sidebar = ({
                         )}
 
                         {mobile && isActive && (
-                          <div className="ml-auto w-2 h-2 bg-rose-400 dark:bg-rose-500 rounded-full shadow-sm"></div>
+                          <div className="ml-auto w-2 h-2 bg-rose-400 dark:bg-blue-400 rounded-full shadow-sm"></div>
                         )}
                       </button>
 
@@ -329,7 +333,7 @@ const Sidebar = ({
                     {userData.role.replace("_", " ")}
                   </p>
                   {userData.kelas && (
-                    <p className="text-xs sm:text-sm text-rose-300 dark:text-rose-400 font-medium leading-tight">
+                    <p className="text-xs sm:text-sm text-rose-300 dark:text-blue-400 font-medium leading-tight">
                       Kelas {userData.kelas}
                     </p>
                   )}

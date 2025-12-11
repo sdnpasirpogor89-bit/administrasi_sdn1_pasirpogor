@@ -1,24 +1,29 @@
+/* src/index.css - VERSI LENGKAP TEMA MERAH GELAP RED-950 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Variables for Dark Mode - Updated with better naming */
+/* CSS Variables for Dark Mode - TEMA MERAH GELAP */
 @layer base {
   :root {
-    /* Light Mode Colors */
-    --color-bg-primary: 248 250 252; /* slate-50 */
+    /* LIGHT MODE - TEMA MERAH GELAP RED-950 */
+    --color-bg-primary: 254 242 242; /* red-50 */
     --color-bg-secondary: 255 255 255; /* white */
-    --color-bg-tertiary: 241 245 249; /* slate-100 */
-    --color-text-primary: 15 23 42; /* slate-900 */
-    --color-text-secondary: 51 65 85; /* slate-700 */
-    --color-text-tertiary: 71 85 105; /* slate-600 */
-    --color-border: 226 232 240; /* slate-200 */
-    --color-border-light: 241 245 249; /* slate-100 */
-    --color-shadow: 0 0% 0%; /* black for shadows */
+    --color-bg-tertiary: 254 226 226; /* red-100 */
+    --color-text-primary: 69 10 10; /* red-950 - Warna utama */
+    --color-text-secondary: 127 29 29; /* red-900 */
+    --color-text-tertiary: 185 28 28; /* red-700 */
+    --color-border: 252 165 165; /* red-300 */
+    --color-border-light: 254 202 202; /* red-200 */
+    --color-accent: 220 38 38; /* red-600 */
+    --color-success: 21 128 61; /* emerald-700 */
+    --color-warning: 180 83 9; /* amber-700 */
+    --color-danger: 185 28 28; /* red-700 */
+    --color-info: 29 78 216; /* blue-700 */
   }
 
   :root.dark {
-    /* Dark Mode Colors - Fixed: gunakan class .dark bukan selector .dark */
+    /* DARK MODE - Tetap abu-abu gelap */
     --color-bg-primary: 15 23 42; /* slate-900 */
     --color-bg-secondary: 30 41 59; /* slate-800 */
     --color-bg-tertiary: 51 65 85; /* slate-700 */
@@ -27,10 +32,14 @@
     --color-text-tertiary: 203 213 225; /* slate-300 */
     --color-border: 71 85 105; /* slate-600 */
     --color-border-light: 51 65 85; /* slate-700 */
-    --color-shadow: 0 0% 100%; /* white for shadows */
+    --color-accent: 96 165 250; /* blue-400 */
+    --color-success: 52 211 153; /* emerald-400 */
+    --color-warning: 251 191 36; /* amber-400 */
+    --color-danger: 248 113 113; /* red-400 */
+    --color-info: 96 165 250; /* blue-400 */
   }
 
-  /* System preference detection - HARUS di base */
+  /* System preference detection */
   @media (prefers-color-scheme: dark) {
     :root:not(.light) {
       color-scheme: dark;
@@ -38,7 +47,7 @@
   }
 }
 
-/* Global Base Styles - Diperbaiki untuk konsistensi */
+/* Global Base Styles - Diperbaiki untuk Tema Merah */
 @layer base {
   * {
     box-sizing: border-box;
@@ -48,7 +57,6 @@
 
   html {
     scroll-behavior: smooth;
-    /* Pastikan background warna konsisten */
     background-color: rgb(var(--color-bg-primary));
   }
 
@@ -65,18 +73,18 @@
     min-height: 100vh;
   }
 
-  /* Selection styles untuk konsistensi */
+  /* Selection styles untuk Tema Merah */
   ::selection {
-    background-color: rgba(59, 130, 246, 0.3); /* blue-500 dengan opacity */
+    background-color: rgba(220, 38, 38, 0.3); /* red-600 dengan opacity */
     color: rgb(var(--color-text-primary));
   }
 
   .dark ::selection {
-    background-color: rgba(59, 130, 246, 0.5);
+    background-color: rgba(59, 130, 246, 0.5); /* blue-500 untuk dark mode */
     color: rgb(var(--color-text-primary));
   }
 
-  /* Typography Scale - Diperbaiki dengan variabel */
+  /* Typography Scale - Warna sesuai tema */
   h1,
   h2,
   h3,
@@ -108,41 +116,27 @@
 
   p {
     color: rgb(var(--color-text-tertiary));
-    font-weight: theme(
-      "fontWeight.normal"
-    ); /* Changed from medium for better readability */
+    font-weight: theme("fontWeight.normal");
   }
 
   a {
-    color: theme("colors.blue.600");
+    color: rgb(var(--color-accent));
     text-decoration: none;
     transition: color 0.2s ease;
   }
 
-  .dark a {
-    color: theme("colors.blue.400");
-  }
-
   a:hover {
-    color: theme("colors.blue.700");
+    color: rgb(var(--color-text-tertiary));
   }
 
-  .dark a:hover {
-    color: theme("colors.blue.300");
-  }
-
-  /* Focus styles for accessibility - Diperbaiki untuk konsistensi */
+  /* Focus styles untuk Tema Merah */
   :focus-visible {
-    outline: 2px solid theme("colors.blue.500");
+    outline: 2px solid rgb(var(--color-accent));
     outline-offset: 2px;
     border-radius: theme("borderRadius.md");
   }
 
-  .dark :focus-visible {
-    outline-color: theme("colors.blue.400");
-  }
-
-  /* Placeholder konsisten */
+  /* Placeholder */
   ::placeholder {
     color: rgb(var(--color-text-tertiary));
     opacity: 0.7;
@@ -153,15 +147,15 @@
   }
 }
 
-/* Custom Components - Diperbaiki untuk menghindari konflik */
+/* Custom Components - Diperbaiki untuk Tema Merah */
 @layer components {
-  /* Primary Button Styles - Fixed hover states */
+  /* Primary Button Styles - Tema Merah */
   .btn-primary {
     @apply inline-flex items-center justify-center px-4 py-2.5;
     background: linear-gradient(
       to right,
-      theme("colors.blue.600"),
-      theme("colors.blue.700")
+      rgb(var(--color-accent)),
+      rgb(var(--color-text-tertiary))
     );
     color: white;
     font-weight: theme("fontWeight.semibold");
@@ -174,8 +168,8 @@
   .btn-primary:hover:not(:disabled) {
     background: linear-gradient(
       to right,
-      theme("colors.blue.700"),
-      theme("colors.blue.800")
+      rgb(var(--color-text-tertiary)),
+      rgb(153, 27, 27) /* red-800 */
     );
     box-shadow: theme("boxShadow.md");
     transform: translateY(-1px);
@@ -187,9 +181,9 @@
   }
 
   .btn-primary:focus-visible {
-    outline: 2px solid theme("colors.blue.500");
+    outline: 2px solid rgb(var(--color-accent));
     outline-offset: 2px;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--color-accent), 0.1);
   }
 
   .dark .btn-primary {
@@ -213,7 +207,7 @@
     transform: none !important;
   }
 
-  /* Secondary Button Styles - Fixed untuk konsistensi */
+  /* Secondary Button Styles */
   .btn-secondary {
     @apply inline-flex items-center justify-center px-4 py-2.5;
     background-color: rgb(var(--color-bg-secondary));
@@ -243,17 +237,17 @@
     border-color: rgb(var(--color-text-secondary));
   }
 
-  /* Card Component - Fixed untuk konsistensi */
+  /* Card Component - Tema Merah */
   .card {
     background-color: rgb(var(--color-bg-secondary));
     border: 1px solid rgb(var(--color-border));
     border-radius: theme("borderRadius.xl");
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(var(--color-shadow), 0.05);
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
 
   .card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(var(--color-shadow), 0.08);
     border-color: rgb(var(--color-text-tertiary));
   }
 
@@ -266,29 +260,7 @@
     border-color: rgb(var(--color-text-secondary));
   }
 
-  .card-elevated {
-    background-color: rgb(var(--color-bg-secondary));
-    border: 1px solid rgb(var(--color-border-light));
-    border-radius: theme("borderRadius.2xl");
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-  }
-
-  .card-elevated:hover:not(:disabled) {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  }
-
-  .dark .card-elevated {
-    border-color: rgb(var(--color-border));
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  }
-
-  .dark .card-elevated:hover:not(:disabled) {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Input Styles - Fixed untuk konsistensi */
+  /* Input Styles */
   .input-primary {
     @apply block w-full px-4 py-2.5;
     background-color: rgb(var(--color-bg-secondary));
@@ -305,20 +277,21 @@
   }
 
   .input-primary:focus {
-    border-color: theme("colors.blue.500");
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: rgb(var(--color-accent));
+    box-shadow: 0 0 0 3px rgba(var(--color-accent), 0.1);
     outline: none;
   }
 
   .dark .input-primary:focus {
+    border-color: theme("colors.blue.500");
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   }
 
-  /* Loading Spinner - Fixed untuk konsistensi */
+  /* Loading Spinner */
   .loading-spinner {
     @apply inline-block w-6 h-6 border-2 rounded-full animate-spin;
     border-color: rgb(var(--color-border));
-    border-top-color: theme("colors.blue.600");
+    border-top-color: rgb(var(--color-accent));
   }
 
   .dark .loading-spinner {
@@ -326,66 +299,66 @@
     border-top-color: theme("colors.blue.400");
   }
 
-  /* Badge Styles - Fixed untuk konsistensi */
+  /* Badge Styles - Warna sesuai tema */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border;
   }
 
   .badge-success {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: theme("colors.emerald.700");
-    border-color: rgba(16, 185, 129, 0.2);
+    background-color: rgba(var(--color-success), 0.1);
+    color: rgb(var(--color-success));
+    border-color: rgba(var(--color-success), 0.2);
   }
 
   .dark .badge-success {
-    background-color: rgba(16, 185, 129, 0.2);
+    background-color: rgba(52, 211, 153, 0.2);
     color: theme("colors.emerald.300");
-    border-color: rgba(16, 185, 129, 0.3);
+    border-color: rgba(52, 211, 153, 0.3);
   }
 
   .badge-warning {
-    background-color: rgba(245, 158, 11, 0.1);
-    color: theme("colors.amber.700");
-    border-color: rgba(245, 158, 11, 0.2);
+    background-color: rgba(var(--color-warning), 0.1);
+    color: rgb(var(--color-warning));
+    border-color: rgba(var(--color-warning), 0.2);
   }
 
   .dark .badge-warning {
-    background-color: rgba(245, 158, 11, 0.2);
+    background-color: rgba(251, 191, 36, 0.2);
     color: theme("colors.amber.300");
-    border-color: rgba(245, 158, 11, 0.3);
+    border-color: rgba(251, 191, 36, 0.3);
   }
 
   .badge-danger {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: theme("colors.red.700");
-    border-color: rgba(239, 68, 68, 0.2);
+    background-color: rgba(var(--color-danger), 0.1);
+    color: rgb(var(--color-danger));
+    border-color: rgba(var(--color-danger), 0.2);
   }
 
   .dark .badge-danger {
-    background-color: rgba(239, 68, 68, 0.2);
+    background-color: rgba(248, 113, 113, 0.2);
     color: theme("colors.red.300");
-    border-color: rgba(239, 68, 68, 0.3);
+    border-color: rgba(248, 113, 113, 0.3);
   }
 
   .badge-info {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: theme("colors.blue.700");
-    border-color: rgba(59, 130, 246, 0.2);
+    background-color: rgba(var(--color-info), 0.1);
+    color: rgb(var(--color-info));
+    border-color: rgba(var(--color-info), 0.2);
   }
 
   .dark .badge-info {
-    background-color: rgba(59, 130, 246, 0.2);
+    background-color: rgba(96, 165, 250, 0.2);
     color: theme("colors.blue.300");
-    border-color: rgba(59, 130, 246, 0.3);
+    border-color: rgba(96, 165, 250, 0.3);
   }
 
-  /* Table Styles - Fixed untuk konsistensi */
+  /* Table Styles */
   .table-container {
     background-color: rgb(var(--color-bg-secondary));
     border: 1px solid rgb(var(--color-border));
     border-radius: theme("borderRadius.lg");
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(var(--color-shadow), 0.05);
   }
 
   .table-header {
@@ -401,48 +374,16 @@
   .table-row:hover {
     background-color: rgb(var(--color-bg-tertiary));
   }
-
-  .table-row:last-child {
-    border-bottom: none;
-  }
-
-  .table-cell {
-    @apply px-6 py-4 text-sm;
-    color: rgb(var(--color-text-primary));
-    font-weight: theme("fontWeight.medium");
-  }
-
-  /* Shadow Variants - Fixed untuk konsistensi */
-  .shadow-smooth {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  .dark .shadow-smooth {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-  }
-
-  .shadow-elegant {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  }
-
-  .dark .shadow-elegant {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  }
 }
 
-/* Custom Utilities - Fixed untuk konsistensi */
+/* Custom Utilities */
 @layer utilities {
-  /* Text Utilities */
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  /* Gradient Text */
+  /* Text Gradient - Tema Merah */
   .text-gradient-primary {
     background: linear-gradient(
       to right,
-      theme("colors.blue.600"),
-      theme("colors.blue.700")
+      rgb(var(--color-accent)),
+      rgb(var(--color-text-tertiary))
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -460,67 +401,81 @@
     background-clip: text;
   }
 
-  /* Glass Effect */
-  .glass-effect {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .dark .glass-effect {
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Hover Effects - Fixed untuk konsistensi */
+  /* Hover Effects */
   .hover-lift {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(var(--color-shadow), 0.1);
   }
 
   .dark .hover-lift:hover {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   }
 
-  /* Focus Utility */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  /* Scrollbar untuk Tema Merah */
+  .scrollbar-red {
+    scrollbar-color: rgb(var(--color-border)) rgb(var(--color-bg-tertiary));
   }
 
-  .dark .focus-ring {
-    @apply focus:ring-offset-slate-900;
-  }
-
-  /* Disabled State */
-  .disabled {
-    @apply opacity-50 cursor-not-allowed pointer-events-none;
-  }
-}
-
-/* Scrollbar Styling - Fixed untuk konsistensi */
-@layer base {
-  ::-webkit-scrollbar {
+  .scrollbar-red::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
-  ::-webkit-scrollbar-track {
+  .scrollbar-red::-webkit-scrollbar-track {
     background: rgb(var(--color-bg-tertiary));
     border-radius: theme("borderRadius.full");
   }
 
-  ::-webkit-scrollbar-thumb {
+  .scrollbar-red::-webkit-scrollbar-thumb {
     background: rgb(var(--color-border));
     border-radius: theme("borderRadius.full");
-    transition: background-color 0.2s ease;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  .scrollbar-red::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-text-tertiary));
+  }
+}
+
+/* Responsive Typography untuk Mobile First */
+@layer base {
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+
+    h1 {
+      font-size: theme("fontSize.2xl");
+    }
+
+    h2 {
+      font-size: theme("fontSize.xl");
+    }
+
+    /* Better touch targets untuk mobile */
+    button,
+    .btn-primary,
+    .btn-secondary,
+    input[type="button"],
+    input[type="submit"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 1024px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 1025px) {
+    html {
+      font-size: 16px;
+    }
   }
 }
 
@@ -531,35 +486,20 @@
     color: black !important;
   }
 
-  .no-print {
-    display: none !important;
+  * {
+    color: black !important;
+    background: white !important;
   }
 }
 
-/* High Contrast Mode Support */
-@media (prefers-contrast: high) {
-  .btn-primary,
-  .btn-secondary,
-  .card,
-  .input-primary {
-    border-width: 2px !important;
-  }
-}
-
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  .animate-fade-in,
-  .animate-slide-up,
-  .animate-scale-in {
-    animation: none !important;
+/* Safe Area Support untuk Notch Phones */
+@supports (padding: max(0px)) {
+  body,
+  .header,
+  .footer {
+    padding-left: min(0px, env(safe-area-inset-left));
+    padding-right: min(0px, env(safe-area-inset-right));
+    padding-top: min(0px, env(safe-area-inset-top));
+    padding-bottom: min(0px, env(safe-area-inset-bottom));
   }
 }

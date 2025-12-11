@@ -1,5 +1,5 @@
-//[file name]: TeacherDashboard.js
-import React, { useState, useEffect, useLayoutEffect } from "react"; // ✅ TAMBAH useLayoutEffect
+//[file name]: TeacherDashboard.js - FULL DARK MODE & RED-950 THEME
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
   Users,
   GraduationCap,
@@ -19,12 +19,11 @@ import {
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 
-// Helper hook untuk mendeteksi Dark Mode (opsional, tapi baik untuk konsistensi)
+// Helper hook untuk mendeteksi Dark Mode
 const useDarkMode = () => {
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     const checkDark = () => {
-      // Cek apakah class 'dark' ada di html atau body
       if (
         document.documentElement.classList.contains("dark") ||
         document.body.classList.contains("dark")
@@ -37,7 +36,6 @@ const useDarkMode = () => {
 
     checkDark();
 
-    // Observer untuk mendeteksi perubahan class (saat mode diganti)
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === "class") {
@@ -53,29 +51,29 @@ const useDarkMode = () => {
   return isDark;
 };
 
-// Enhanced Stats Card Component (REVISI DARK MODE)
+// Enhanced Stats Card Component dengan tema merah
 const StatsCard = ({
   title,
   value,
   subtitle,
   icon: Icon,
-  color = "blue",
+  color = "red",
   isLoading = false,
 }) => {
   const colorClasses = {
-    blue: "border-l-blue-500",
-    green: "border-l-emerald-500",
-    purple: "border-l-purple-500",
-    orange: "border-l-orange-500",
-    red: "border-l-red-500",
+    red: "border-l-red-950 dark:border-l-red-700",
+    green: "border-l-emerald-600 dark:border-l-emerald-500",
+    purple: "border-l-purple-600 dark:border-l-purple-500",
+    orange: "border-l-orange-600 dark:border-l-orange-500",
+    blue: "border-l-blue-600 dark:border-l-blue-500",
   };
 
   const iconColorClasses = {
-    blue: "text-blue-500 dark:text-blue-400",
-    green: "text-emerald-500 dark:text-emerald-400",
-    purple: "text-purple-500 dark:text-purple-400",
-    orange: "text-orange-500 dark:text-orange-400",
-    red: "text-red-500 dark:text-red-400",
+    red: "text-red-950 dark:text-red-400",
+    green: "text-emerald-600 dark:text-emerald-400",
+    purple: "text-purple-600 dark:text-purple-400",
+    orange: "text-orange-600 dark:text-orange-400",
+    blue: "text-blue-600 dark:text-blue-400",
   };
 
   return (
@@ -112,7 +110,7 @@ const StatsCard = ({
   );
 };
 
-// Today's Schedule Card Component (REVISI DARK MODE)
+// Today's Schedule Card Component dengan tema merah
 const TodayScheduleCard = ({ schedule, isMobile }) => {
   const getDayName = () => {
     const days = [
@@ -198,9 +196,6 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
         sessionCount: sessionCount,
         sessions: sessions,
       });
-
-      i = j - 1;
-      sessionNumber = endSession + 1;
     }
 
     return grouped;
@@ -266,7 +261,7 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
       <div
         className={`space-y-3 ${
           isMobile ? "max-h-60" : "max-h-80"
-        } overflow-y-auto`}>
+        } overflow-y-auto pr-1`}>
         {groupedSchedule.map((group, index) => {
           const sessionLabel =
             group.sessionCount === 1
@@ -276,16 +271,16 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
           return (
             <div
               key={`grouped-${index}-${group.mapel}-${group.startSession}`}
-              className="flex items-center gap-3 sm:gap-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 border border-blue-100 dark:border-gray-600 rounded-lg hover:shadow-md transition-all duration-200">
-              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center">
-                <Clock size={20} className="text-blue-600 dark:text-blue-300" />
+              className="flex items-center gap-3 sm:gap-4 p-3 bg-gradient-to-r from-red-50 to-rose-50 dark:from-gray-700 dark:to-gray-800 border border-red-100 dark:border-gray-600 rounded-lg hover:shadow-md transition-all duration-200">
+              <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                <Clock size={20} className="text-red-950 dark:text-red-300" />
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">
                   {group.mapel}
                 </h4>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
                     <BookOpen size={10} />
                     Kelas {group.kelas}
                   </span>
@@ -307,7 +302,7 @@ const TodayScheduleCard = ({ schedule, isMobile }) => {
   );
 };
 
-// Absent Students Table Component (REVISI DARK MODE)
+// Absent Students Table Component
 const AbsentStudentsTable = ({
   absentStudents,
   isMobile,
@@ -323,19 +318,19 @@ const AbsentStudentsTable = ({
     const badges = {
       izin: {
         color:
-          "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-900",
+          "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-900",
         icon: "🟡",
         label: "Izin",
       },
       sakit: {
         color:
-          "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-900",
+          "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-900",
         icon: "🔵",
         label: "Sakit",
       },
       alpa: {
         color:
-          "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-900",
+          "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-900",
         icon: "🔴",
         label: "Alpa",
       },
@@ -372,7 +367,7 @@ const AbsentStudentsTable = ({
             <select
               value={selectedKelas}
               onChange={(e) => onKelasChange(e.target.value)}
-              className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all min-h-[44px] touch-manipulation">
+              className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all min-h-[44px] touch-manipulation w-full sm:w-auto">
               {allClasses.map((kelas) => (
                 <option key={kelas} value={kelas}>
                   Kelas {kelas}
@@ -436,13 +431,13 @@ const AbsentStudentsTable = ({
                   {filteredStudents.map((student, index) => (
                     <tr
                       key={student.nisn}
-                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
                         {index + 1}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          <div className="w-10 h-10 bg-gradient-to-br from-red-950 to-red-800 dark:from-red-700 dark:to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                             {student.nama_siswa
                               ? student.nama_siswa.charAt(0).toUpperCase()
                               : "?"}
@@ -458,7 +453,7 @@ const AbsentStudentsTable = ({
                         </div>
                       </td>
                       {isGuruMapel && (
-                        <td className="py-3 px-4 text-sm text-gray-600">
+                        <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-medium">
                             Kelas {student.kelas}
                           </span>
@@ -479,7 +474,7 @@ const AbsentStudentsTable = ({
                   key={student.nisn}
                   className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all">
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-red-950 to-red-800 dark:from-red-700 dark:to-red-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                       {student.nama_siswa
                         ? student.nama_siswa.charAt(0).toUpperCase()
                         : "?"}
@@ -513,7 +508,7 @@ const AbsentStudentsTable = ({
   );
 };
 
-// Quick Actions Component untuk Mobile (REVISI DARK MODE)
+// Quick Actions Component untuk Mobile
 const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
   return (
     <div className="mb-6">
@@ -525,8 +520,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
       <div className="grid grid-cols-3 gap-2 mb-3">
         <button
           onClick={() => handleNavigation("/attendance")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-green-50 dark:hover:bg-gray-700/50 hover:border-green-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👨‍🎓</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -536,8 +531,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 
         <button
           onClick={() => handleNavigation("/teacher-attendance")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:border-blue-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👨‍🏫</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -547,8 +542,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 
         <button
           onClick={() => handleNavigation("/grades")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-purple-50 dark:hover:bg-gray-700/50 hover:border-purple-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📊</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -561,8 +556,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
       <div className="grid grid-cols-3 gap-2 mb-3">
         <button
           onClick={() => handleNavigation("/teachers")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-orange-50 dark:hover:bg-gray-700/50 hover:border-orange-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👥</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -572,8 +567,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 
         <button
           onClick={() => handleNavigation("/classes")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-cyan-50 dark:hover:bg-gray-700/50 hover:border-cyan-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">🏫</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -583,8 +578,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 
         <button
           onClick={() => handleNavigation("/students")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-pink-50 dark:hover:bg-gray-700/50 hover:border-pink-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">👤</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -597,8 +592,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={() => handleNavigation("/catatan-siswa")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-yellow-50 dark:hover:bg-gray-700/50 hover:border-yellow-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📝</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -608,8 +603,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 
         <button
           onClick={() => handleNavigation("/schedule")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-gray-700/50 hover:border-indigo-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📅</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -619,8 +614,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 
         <button
           onClick={() => handleNavigation("/reports")}
-          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm">
-          <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center mb-2 shadow-md">
+          className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700/50 hover:border-red-300 transition-all duration-200 shadow-sm min-h-[88px] touch-manipulation active:scale-95">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-700 to-red-900 dark:from-red-600 dark:to-red-800 rounded-lg flex items-center justify-center mb-2 shadow-md">
             <span className="text-white text-lg">📄</span>
           </div>
           <span className="text-xs font-medium text-slate-800 dark:text-gray-200 text-center">
@@ -633,10 +628,8 @@ const QuickActionsMobile = ({ isGuruKelas, isGuruMapel, handleNavigation }) => {
 };
 
 const TeacherDashboard = ({ userData }) => {
-  // 🔥 FIX: Gunakan useLayoutEffect untuk device detection konsisten
   const [isMobile, setIsMobile] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false); // ✅ Tambah flag initialization
-
+  const [isInitialized, setIsInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedKelas, setSelectedKelas] = useState("");
@@ -658,22 +651,19 @@ const TeacherDashboard = ({ userData }) => {
   const isGuruMapel = userData.role === "guru_mapel";
   const isDark = useDarkMode();
 
-  // 🔥 FIX: Gunakan useLayoutEffect untuk update SEBELUM render visual
   useLayoutEffect(() => {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      setIsInitialized(true); // ✅ Tandai sudah initialized
+      setIsInitialized(true);
     };
 
-    // LANGSUNG eksekusi di awal
     checkDevice();
 
     window.addEventListener("resize", checkDevice);
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
-  // ✅ TAMBAH: useEffect untuk handle resize listener (opsional backup)
   useEffect(() => {
     if (!isInitialized) return;
 
@@ -689,7 +679,6 @@ const TeacherDashboard = ({ userData }) => {
   }, [isInitialized, isMobile]);
 
   const getTodayDate = () => {
-    // Get local date in YYYY-MM-DD format (Indonesia timezone)
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -710,7 +699,6 @@ const TeacherDashboard = ({ userData }) => {
     return days[new Date().getDay()];
   };
 
-  // 🔧 Fetch today's schedule
   const fetchTodaySchedule = async () => {
     try {
       const todayDay = getTodayDayName();
@@ -776,7 +764,6 @@ const TeacherDashboard = ({ userData }) => {
     navigate(path);
   };
 
-  // 🔥 FIXED: Fetch data untuk Guru Kelas
   const fetchGuruKelasDashboardData = async () => {
     try {
       const today = getTodayDate();
@@ -808,7 +795,6 @@ const TeacherDashboard = ({ userData }) => {
         return;
       }
 
-      // ✅ FIX: FILTER BY GURU_INPUT!
       const { data: todayAttendanceData, error: todayError } = await supabase
         .from("attendance")
         .select("nisn, nama_siswa, kelas, status, tanggal, guru_input")
@@ -839,7 +825,7 @@ const TeacherDashboard = ({ userData }) => {
       const transformedAbsentStudents = absentStudents.map((record) => ({
         nisn: record.nisn,
         nama_siswa: record.nama_siswa,
-        kelas: String(record.kelas), // ✅ CONVERT KE STRING
+        kelas: String(record.kelas),
         status: record.status,
       }));
 
@@ -992,7 +978,7 @@ const TeacherDashboard = ({ userData }) => {
   };
 
   useEffect(() => {
-    if (!isInitialized) return; // ✅ Tunggu sampai device detection selesai
+    if (!isInitialized) return;
 
     fetchDashboardData();
 
@@ -1001,14 +987,13 @@ const TeacherDashboard = ({ userData }) => {
     }, 300000);
 
     return () => clearInterval(interval);
-  }, [userData.role, userData.kelas, isInitialized]); // ✅ Tambah dependency isInitialized
+  }, [userData.role, userData.kelas, isInitialized]);
 
   if (loading || !isInitialized) {
-    // ✅ Tampilkan loading sampai semua initialized
     return (
-      <div className="flex items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-red-950 dark:border-red-400 mx-auto mb-4"></div>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium">
             Memuat data dashboard...
           </p>
@@ -1019,9 +1004,9 @@ const TeacherDashboard = ({ userData }) => {
 
   const renderGuruKelasDashboard = () => {
     return (
-      <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG (REVISI DARK MODE) */}
-        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl shadow-sm border border-blue-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-4 sm:space-y-6 pb-24 sm:pb-0">
+        {/* 🎯 HEADER SELAMAT DATANG */}
+        <div className="bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl shadow-sm border border-red-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
           <div>
             <div className="sm:whitespace-nowrap">
               <span className="text-xl font-semibold text-slate-800 dark:text-gray-200 block sm:inline-block">
@@ -1032,14 +1017,14 @@ const TeacherDashboard = ({ userData }) => {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-red-100/80 dark:bg-red-900/40 text-red-950 dark:text-red-300 border border-red-200/50 dark:border-red-900/50">
                 Guru Kelas {userData.kelas}
               </span>
             </div>
           </div>
         </div>
 
-        {/* HEADER JUDUL DASHBOARD (REVISI DARK MODE) */}
+        {/* HEADER JUDUL DASHBOARD */}
         <div className="flex items-center gap-3">
           <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
             Dashboard Guru Kelas {userData.kelas}
@@ -1050,7 +1035,7 @@ const TeacherDashboard = ({ userData }) => {
           </div>
         </div>
 
-        {/* AKSI CEPAT MOBILE - sudah direvisi di komponen QuickActionsMobile */}
+        {/* AKSI CEPAT MOBILE */}
         {isMobile && (
           <QuickActionsMobile
             isGuruKelas={isGuruKelas}
@@ -1065,7 +1050,7 @@ const TeacherDashboard = ({ userData }) => {
             value={dashboardData.totalStudents}
             subtitle="Siswa aktif"
             icon={Users}
-            color="blue"
+            color="red"
           />
           <StatsCard
             title="Hadir Hari Ini"
@@ -1079,7 +1064,7 @@ const TeacherDashboard = ({ userData }) => {
             value={dashboardData.tidakHadir}
             subtitle="Izin + Sakit + Alpa"
             icon={UserX}
-            color="red"
+            color="orange"
           />
           <StatsCard
             title="Tingkat Kehadiran"
@@ -1108,7 +1093,7 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop (REVISI DARK MODE) */}
+        {/* Aksi Cepat Desktop */}
         {!isMobile && (
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-6 leading-tight">
@@ -1117,7 +1102,7 @@ const TeacherDashboard = ({ userData }) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/students")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <Users
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1126,7 +1111,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <ClipboardList
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1137,7 +1122,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <BarChart3
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1146,7 +1131,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/reports")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <FileText
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1162,9 +1147,9 @@ const TeacherDashboard = ({ userData }) => {
 
   const renderGuruMapelDashboard = () => {
     return (
-      <div className="space-y-4 sm:space-y-6 pb-20 sm:pb-0">
-        {/* 🎯 HEADER SELAMAT DATANG (REVISI DARK MODE) */}
-        <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl shadow-sm border border-blue-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-4 sm:space-y-6 pb-24 sm:pb-0">
+        {/* 🎯 HEADER SELAMAT DATANG */}
+        <div className="bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl shadow-sm border border-red-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
               <h1 className="text-xl font-semibold text-slate-800 dark:text-gray-200">
@@ -1175,14 +1160,14 @@ const TeacherDashboard = ({ userData }) => {
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3">
-              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-blue-100/80 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50">
+              <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-red-100/80 dark:bg-red-900/40 text-red-950 dark:text-red-300 border border-red-200/50 dark:border-red-900/50">
                 Guru Mapel
               </span>
             </div>
           </div>
         </div>
 
-        {/* HEADER JUDUL DASHBOARD (REVISI DARK MODE) */}
+        {/* HEADER JUDUL DASHBOARD */}
         <div className="flex items-center gap-3">
           <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
             Dashboard Guru Mapel
@@ -1193,7 +1178,7 @@ const TeacherDashboard = ({ userData }) => {
           </div>
         </div>
 
-        {/* AKSI CEPAT MOBILE - sudah direvisi di komponen QuickActionsMobile */}
+        {/* AKSI CEPAT MOBILE */}
         {isMobile && (
           <QuickActionsMobile
             isGuruKelas={isGuruKelas}
@@ -1208,7 +1193,7 @@ const TeacherDashboard = ({ userData }) => {
             value={dashboardData.totalClasses}
             subtitle={`Kelas 1 - ${dashboardData.totalClasses}`}
             icon={GraduationCap}
-            color="blue"
+            color="red"
           />
           <StatsCard
             title="Total Siswa"
@@ -1222,9 +1207,8 @@ const TeacherDashboard = ({ userData }) => {
             value={dashboardData.tidakHadir}
             subtitle="Izin + Sakit + Alpa"
             icon={UserX}
-            color="red"
+            color="orange"
           />
-          {/* ✅ PERUBAHAN 4: Best Class untuk mobile */}
           <StatsCard
             title="Kelas Terbaik"
             value={
@@ -1234,7 +1218,7 @@ const TeacherDashboard = ({ userData }) => {
             }
             subtitle="Kehadiran tertinggi"
             icon={TrendingUp}
-            color="orange"
+            color="purple"
           />
         </div>
 
@@ -1246,7 +1230,7 @@ const TeacherDashboard = ({ userData }) => {
             allClasses={dashboardData.allClasses}
             selectedKelas={selectedKelas}
             onKelasChange={setSelectedKelas}
-            todayAttendance={dashboardData.todayAttendance} // ✅ FIX!
+            todayAttendance={dashboardData.todayAttendance}
             totalAttendanceRecords={dashboardData.totalAttendanceRecords}
           />
           <TodayScheduleCard
@@ -1255,7 +1239,7 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop (REVISI DARK MODE) */}
+        {/* Aksi Cepat Desktop */}
         {!isMobile && (
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-6 leading-tight">
@@ -1264,7 +1248,7 @@ const TeacherDashboard = ({ userData }) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/students")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <Users
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1273,7 +1257,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <ClipboardList
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1284,7 +1268,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <BarChart3
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1293,7 +1277,7 @@ const TeacherDashboard = ({ userData }) => {
               </button>
               <button
                 onClick={() => handleNavigation("/reports")}
-                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
+                className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <FileText
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
@@ -1308,19 +1292,20 @@ const TeacherDashboard = ({ userData }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 p-3 sm:p-6 lg:p-8">
       {isGuruKelas ? renderGuruKelasDashboard() : renderGuruMapelDashboard()}
 
-      {/* ✅ PERUBAHAN 3: SATU FLOATING BUTTON UNTUK SEMUA */}
-      <div className="fixed bottom-20 right-4 sm:hidden z-40">
+      {/* Floating Button untuk Mobile */}
+      <div className="fixed bottom-24 right-4 sm:hidden z-40">
         <button
           onClick={fetchDashboardData}
           disabled={refreshing}
-          className={`w-12 h-12 bg-blue-600 dark:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation ${
+          className={`w-12 h-12 bg-red-950 dark:bg-red-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center touch-manipulation active:scale-95 ${
             refreshing
-              ? "opacity-50"
-              : "hover:bg-blue-700 dark:hover:bg-blue-600 active:scale-95"
-          }`}>
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-red-900 dark:hover:bg-red-600"
+          }`}
+          aria-label="Refresh data dashboard">
           <RefreshCw size={18} className={refreshing ? "animate-spin" : ""} />
         </button>
       </div>

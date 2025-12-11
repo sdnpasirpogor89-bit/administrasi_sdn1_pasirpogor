@@ -13,22 +13,11 @@ const Logo = ({
   const [error, setError] = useState(null);
   const [useLocalFallback, setUseLocalFallback] = useState(false);
 
-  // Responsive size classes - Mobile First
   const sizeClasses = {
-    small: "w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16", // Minimum 48px di mobile
-    medium: "w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28",
-    large:
-      "w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 xl:w-36 xl:h-36",
-    xlarge:
-      "w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40",
-  };
-
-  // Responsive typography untuk fallback text
-  const textSizeClasses = {
-    small: "text-xs sm:text-sm",
-    medium: "text-sm sm:text-base",
-    large: "text-base sm:text-lg",
-    xlarge: "text-lg sm:text-xl",
+    small: "w-12 h-12",
+    medium: "w-20 h-20",
+    large: "w-28 h-28",
+    xlarge: "w-32 h-32",
   };
 
   useEffect(() => {
@@ -72,22 +61,12 @@ const Logo = ({
     }
   };
 
-  // Tampilkan loading state dengan dark mode support
+  // Tampilkan loading state
   if (loading) {
     return (
       <div
-        className={`
-          ${sizeClasses[size]} 
-          ${className} 
-          bg-gray-200 dark:bg-gray-800 
-          rounded-lg animate-pulse 
-          flex items-center justify-center
-          transition-colors duration-200
-        `}>
-        <div
-          className={`text-gray-500 dark:text-gray-400 ${textSizeClasses[size]}`}>
-          Loading...
-        </div>
+        className={`${sizeClasses[size]} ${className} bg-gray-200 rounded-lg animate-pulse flex items-center justify-center`}>
+        <div className="text-gray-400 text-xs">Loading...</div>
       </div>
     );
   }
@@ -98,13 +77,7 @@ const Logo = ({
       <img
         src="/logo_sekolah.png"
         alt="Logo Sekolah"
-        className={`
-          ${sizeClasses[size]} 
-          ${className} 
-          object-contain rounded-lg
-          transition-all duration-200
-          hover:scale-105 active:scale-95
-        `}
+        className={`${sizeClasses[size]} ${className} object-contain rounded-lg`}
         onError={(e) => {
           console.error("Error loading local logo, menggunakan emoji fallback");
           // Jika file lokal juga gagal, tampilkan emoji
@@ -112,8 +85,6 @@ const Logo = ({
           setError("Gagal memuat logo");
           setUseLocalFallback(false);
         }}
-        loading="lazy"
-        decoding="async"
       />
     );
   }
@@ -124,21 +95,13 @@ const Logo = ({
       <img
         src={logoData}
         alt="Logo Sekolah"
-        className={`
-          ${sizeClasses[size]} 
-          ${className} 
-          object-contain rounded-lg
-          transition-all duration-200
-          hover:scale-105 active:scale-95
-        `}
+        className={`${sizeClasses[size]} ${className} object-contain rounded-lg`}
         onError={(e) => {
           console.error("Error loading database logo, trying local fallback");
           // Jika logo dari database gagal, coba logo lokal
           setUseLocalFallback(true);
           e.target.style.display = "none";
         }}
-        loading="lazy"
-        decoding="async"
       />
     );
   }
@@ -147,32 +110,8 @@ const Logo = ({
   if (showFallback) {
     return (
       <div
-        className={`
-          ${sizeClasses[size]} 
-          ${className} 
-          bg-gradient-to-br from-red-950 to-red-800 
-          dark:from-gray-900 dark:to-gray-700
-          rounded-lg flex items-center justify-center 
-          text-white shadow-lg 
-          border-2 border-white/20 dark:border-gray-600/30
-          transition-all duration-200
-          hover:scale-105 active:scale-95
-          select-none
-        `}
-        role="img"
-        aria-label="School Emoji Fallback">
-        {/* Responsive emoji size */}
-        <span
-          className="
-          text-2xl 
-          sm:text-3xl 
-          md:text-4xl 
-          lg:text-5xl
-          transition-transform duration-200
-          hover:scale-110
-        ">
-          🏫
-        </span>
+        className={`${sizeClasses[size]} ${className} bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg flex items-center justify-center text-white shadow-lg border-2 border-white/30`}>
+        <span className="text-4xl">🏫</span>
       </div>
     );
   }

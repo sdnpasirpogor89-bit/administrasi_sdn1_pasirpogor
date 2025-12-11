@@ -1,4 +1,4 @@
-//[file name]: Dashboard.js - DARK MODE + RESPONSIVE + THEMA MERAH GELAP
+//[file name]: Dashboard.js - REVISED WITH DARK MODE & RESPONSIVE
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
   Users,
@@ -30,18 +30,18 @@ import {
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 
-// 🔥 Warna untuk chart yang konsisten dengan tema merah gelap
+// 🔥 FIX 1: Warna untuk chart yang konsisten dengan Tailwind
 const CHART_COLORS = {
-  hadir: { light: "#059669", dark: "#059669" }, // emerald-600
-  izin: { light: "#d97706", dark: "#d97706" }, // amber-600
-  sakit: { light: "#2563eb", dark: "#2563eb" }, // blue-600
-  alpa: { light: "#dc2626", dark: "#dc2626" }, // red-600
-  line: { light: "#dc2626", dark: "#ef4444" }, // red-600 -> red-500
-  grid: { light: "#fecaca", dark: "#4b5563" }, // red-200 -> gray-600
+  hadir: { light: "#10b981", dark: "#059669" }, // emerald-500 -> emerald-600
+  izin: { light: "#f59e0b", dark: "#d97706" }, // amber-500 -> amber-600
+  sakit: { light: "#3b82f6", dark: "#2563eb" }, // blue-500 -> blue-600
+  alpa: { light: "#ef4444", dark: "#dc2626" }, // red-500 -> red-600
+  line: { light: "#2563eb", dark: "#1d4ed8" }, // blue-600 -> blue-700
+  grid: { light: "#e5e7eb", dark: "#4b5563" }, // gray-200 -> gray-600
   tooltip: {
     bgLight: "#ffffff",
     bgDark: "#374151", // gray-700
-    borderLight: "#fca5a5", // red-300
+    borderLight: "#d1d5db", // gray-300
     borderDark: "#6b7280", // gray-500
   },
 };
@@ -82,7 +82,7 @@ const useDarkMode = () => {
   return isDark;
 };
 
-// Hook device detection yang lebih sederhana
+// 🔥 FIX 2: Hook device detection yang lebih sederhana
 const useDeviceDetection = () => {
   const [device, setDevice] = useState({
     isMobile: false,
@@ -125,7 +125,7 @@ const Dashboard = ({ userData }) => {
   const { isMobile, isTablet, isDesktop } = useDeviceDetection();
   const navigate = useNavigate();
 
-  // Function untuk responsive text sizing
+  // 🔥 FIX 3: Function untuk responsive text sizing
   const getTextSize = (size = "base") => {
     const sizes = {
       xs: isMobile ? "xs" : "sm",
@@ -557,53 +557,48 @@ const Dashboard = ({ userData }) => {
     return () => clearInterval(interval);
   }, [userData.role, userData.kelas]);
 
-  // 🔥 Stats Card Component dengan tema merah gelap
+  // 🔥 FIX 4: Responsive Stats Card Component dengan dark mode proper
   const StatsCard = ({
     title,
     value,
     subtitle,
     icon: Icon,
     trend,
-    color = "red",
+    color = "blue",
     isLoading = false,
   }) => {
     const colorClasses = {
-      red: {
-        bg: "from-red-600 to-red-700",
-        icon: "text-red-600 dark:text-red-400",
-        border: "border-red-200 dark:border-red-900",
+      blue: {
+        bg: "from-blue-500 to-blue-600",
+        icon: "text-blue-600 dark:text-blue-400",
       },
-      crimson: {
-        bg: "from-[#dc143c] to-[#b01030]",
-        icon: "text-[#dc143c] dark:text-red-300",
-        border: "border-red-300 dark:border-red-900",
+      green: {
+        bg: "from-emerald-500 to-emerald-600",
+        icon: "text-emerald-600 dark:text-emerald-400",
       },
-      rose: {
-        bg: "from-rose-600 to-rose-700",
-        icon: "text-rose-600 dark:text-rose-400",
-        border: "border-rose-200 dark:border-rose-900",
-      },
-      amber: {
-        bg: "from-amber-500 to-amber-600",
-        icon: "text-amber-600 dark:text-amber-400",
-        border: "border-amber-200 dark:border-amber-900",
+      purple: {
+        bg: "from-purple-500 to-purple-600",
+        icon: "text-purple-600 dark:text-purple-400",
       },
       orange: {
         bg: "from-orange-500 to-orange-600",
         icon: "text-orange-600 dark:text-orange-400",
-        border: "border-orange-200 dark:border-orange-900",
+      },
+      red: {
+        bg: "from-red-500 to-red-600",
+        icon: "text-red-600 dark:text-red-400",
       },
     };
 
-    const colorSet = colorClasses[color] || colorClasses.red;
+    const colorSet = colorClasses[color] || colorClasses.blue;
 
     return (
-      <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-sm border border-red-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 relative overflow-hidden h-full">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 relative overflow-hidden h-full">
         <div
           className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorSet.bg}`}></div>
 
         <div className="flex justify-between items-start mb-3">
-          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 p-2 sm:p-3 rounded-lg">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-2 sm:p-3 rounded-lg">
             <Icon
               size={isMobile ? 20 : isTablet ? 22 : 24}
               className={colorSet.icon}
@@ -629,9 +624,9 @@ const Dashboard = ({ userData }) => {
           <h3
             className={`${
               isMobile ? "text-2xl" : isTablet ? "text-3xl" : "text-4xl"
-            } font-bold text-red-950 dark:text-white mb-1`}>
+            } font-bold text-gray-900 dark:text-white mb-1`}>
             {isLoading ? (
-              <div className="bg-red-200 dark:bg-gray-600 animate-pulse h-8 w-16 rounded"></div>
+              <div className="bg-gray-200 dark:bg-gray-600 animate-pulse h-8 w-16 rounded"></div>
             ) : (
               value
             )}
@@ -639,14 +634,14 @@ const Dashboard = ({ userData }) => {
           <p
             className={`${getTextSize(
               "base"
-            )} font-semibold text-red-800 dark:text-gray-300 mb-1 truncate`}>
+            )} font-semibold text-gray-700 dark:text-gray-300 mb-1 truncate`}>
             {title}
           </p>
           {subtitle && (
             <p
               className={`${getTextSize(
                 "sm"
-              )} text-red-600 dark:text-gray-400 font-medium truncate`}>
+              )} text-gray-500 dark:text-gray-400 font-medium truncate`}>
               {subtitle}
             </p>
           )}
@@ -655,32 +650,32 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  // Mobile Class Card dengan tema merah gelap
+  // 🔥 FIX 5: Mobile Class Card dengan kontras dark mode yang lebih baik
   const MobileClassCard = ({ kelas, hadir, izin, sakit, alpa }) => {
     const total = hadir + izin + sakit + alpa;
     const attendanceRate = total > 0 ? Math.round((hadir / total) * 100) : 0;
 
     return (
-      <div className="bg-red-950/5 dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-red-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
-        <h4 className="font-bold text-red-950 dark:text-white mb-3 text-sm truncate">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
+        <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-sm truncate">
           {kelas}
         </h4>
         <div className="grid grid-cols-4 gap-2 text-center">
           {/* Hadir */}
-          <div className="bg-emerald-50 dark:bg-emerald-900/30 dark:border dark:border-emerald-800 rounded p-2">
-            <span className="block font-bold text-emerald-700 dark:text-emerald-300 text-sm">
+          <div className="bg-green-50 dark:bg-emerald-900/30 dark:border dark:border-emerald-800 rounded p-2">
+            <span className="block font-bold text-green-700 dark:text-emerald-300 text-sm">
               {hadir}
             </span>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs text-green-600 dark:text-emerald-400">
               Hadir
             </span>
           </div>
           {/* Izin */}
-          <div className="bg-amber-50 dark:bg-amber-900/30 dark:border dark:border-amber-800 rounded p-2">
-            <span className="block font-bold text-amber-700 dark:text-amber-300 text-sm">
+          <div className="bg-yellow-50 dark:bg-amber-900/30 dark:border dark:border-amber-800 rounded p-2">
+            <span className="block font-bold text-yellow-700 dark:text-amber-300 text-sm">
               {izin}
             </span>
-            <span className="text-xs text-amber-600 dark:text-amber-400">
+            <span className="text-xs text-yellow-600 dark:text-amber-400">
               Izin
             </span>
           </div>
@@ -701,12 +696,12 @@ const Dashboard = ({ userData }) => {
             <span className="text-xs text-red-600 dark:text-red-400">Alpa</span>
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t border-red-200 dark:border-gray-700">
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-red-600 dark:text-gray-300">
+            <span className="text-xs text-gray-600 dark:text-gray-300">
               Kehadiran
             </span>
-            <span className="font-bold text-red-950 dark:text-white">
+            <span className="font-bold text-gray-900 dark:text-white">
               {attendanceRate}%
             </span>
           </div>
@@ -715,13 +710,13 @@ const Dashboard = ({ userData }) => {
     );
   };
 
-  // Loading state
+  // 🔥 FIX 6: Loading state yang tidak bergantung pada device detection
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px] px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 dark:border-red-400 mx-auto mb-4"></div>
-          <p className="text-red-700 dark:text-gray-400 font-medium">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">
             Memuat data dashboard...
           </p>
         </div>
@@ -729,7 +724,7 @@ const Dashboard = ({ userData }) => {
     );
   }
 
-  // 🔥 Chart configuration yang konsisten dengan tema merah gelap
+  // 🔥 FIX 7: Chart configuration yang konsisten dengan dark mode
   const getChartStyles = () => {
     return {
       cartesianGrid: {
@@ -746,7 +741,7 @@ const Dashboard = ({ userData }) => {
         textColor: isDark ? "#f3f4f6" : "#111827",
       },
       text: {
-        fill: isDark ? "#9ca3af" : "#7f1d1d", // gray-400 / red-900
+        fill: isDark ? "#9ca3af" : "#6b7280", // gray-400 / gray-500
       },
     };
   };
@@ -760,7 +755,7 @@ const Dashboard = ({ userData }) => {
         <div className="space-y-4 sm:space-y-6">
           {/* Header dengan Device Indicator */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-red-700 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
               <span>
                 Tampilan {isMobile ? "Mobile" : isTablet ? "Tablet" : "Desktop"}
@@ -769,7 +764,7 @@ const Dashboard = ({ userData }) => {
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
+              className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
                 refreshing ? "opacity-70 cursor-not-allowed" : ""
               }`}
               aria-label="Refresh data dashboard">
@@ -788,41 +783,41 @@ const Dashboard = ({ userData }) => {
               value={dashboardData.totalStudents}
               subtitle="Siswa aktif"
               icon={Users}
-              color="red"
+              color="blue"
             />
             <StatsCard
               title="Total Guru"
               value={dashboardData.totalTeachers}
               subtitle="Guru aktif"
               icon={GraduationCap}
-              color="crimson"
+              color="green"
             />
             <StatsCard
               title="Kehadiran Hari Ini"
               value={dashboardData.todayAttendance}
               subtitle={`${dashboardData.attendanceRate}% dari total`}
               icon={UserCheck}
-              color="rose"
+              color="purple"
             />
             <StatsCard
               title="Total Kelas"
               value={dashboardData.totalClasses}
               subtitle="Kelas aktif"
               icon={GraduationCap}
-              color="amber"
+              color="orange"
             />
           </div>
 
           {/* Charts Section */}
           <div className="space-y-4 sm:space-y-6">
             {/* Class Attendance Chart */}
-            <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Kehadiran Per Kelas Hari Ini
                 </h3>
                 <button
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white text-sm font-semibold rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
                   aria-label="Export data kehadiran">
                   <Download size={16} />
                   Export
@@ -913,13 +908,13 @@ const Dashboard = ({ userData }) => {
             </div>
 
             {/* Weekly Trend Chart */}
-            <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Trend Kehadiran 7 Hari Terakhir
                 </h3>
                 <button
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white text-sm font-semibold rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
                   aria-label="Export data trend">
                   <Download size={16} />
                   Export
@@ -983,28 +978,28 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Aksi Cepat
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Input kehadiran siswa">
                 <ClipboardList size={isMobile ? 18 : 20} />
                 <span>Input Kehadiran</span>
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Input nilai siswa">
                 <BarChart3 size={isMobile ? 18 : 20} />
                 <span>Input Nilai</span>
               </button>
               <button
                 onClick={() => handleNavigation("/students")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Lihat data siswa">
                 <Users size={isMobile ? 18 : 20} />
                 <span>Lihat Data Siswa</span>
@@ -1027,7 +1022,7 @@ const Dashboard = ({ userData }) => {
         <div className="space-y-4 sm:space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-red-700 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
               <span>
                 Tampilan {isMobile ? "Mobile" : isTablet ? "Tablet" : "Desktop"}{" "}
@@ -1037,7 +1032,7 @@ const Dashboard = ({ userData }) => {
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
+              className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
                 refreshing ? "opacity-70 cursor-not-allowed" : ""
               }`}
               aria-label="Refresh data dashboard">
@@ -1056,41 +1051,41 @@ const Dashboard = ({ userData }) => {
               value={dashboardData.totalStudents}
               subtitle="Siswa aktif"
               icon={Users}
-              color="red"
+              color="blue"
             />
             <StatsCard
               title="Hadir Hari Ini"
               value={dashboardData.todayAttendance}
               subtitle={`Dari ${dashboardData.totalStudents} siswa`}
               icon={UserCheck}
-              color="crimson"
+              color="green"
             />
             <StatsCard
               title="Tingkat Kehadiran"
               value={`${dashboardData.attendanceRate}%`}
               subtitle="Hari ini"
               icon={BarChart3}
-              color="rose"
+              color="purple"
             />
             <StatsCard
               title="Siswa Alpa"
               value={kelasData.alpa}
               subtitle="Perlu perhatian"
               icon={Calendar}
-              color="amber"
+              color="red"
             />
           </div>
 
           {/* Charts Section */}
           <div className="space-y-4 sm:space-y-6">
             {/* Pie Chart for Class Attendance */}
-            <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-                <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                   Status Kehadiran - Kelas {userData.kelas}
                 </h3>
                 <button
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white text-sm font-semibold rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
                   aria-label="Export data kehadiran">
                   <Download size={16} />
                   Export
@@ -1160,8 +1155,8 @@ const Dashboard = ({ userData }) => {
             </div>
 
             {/* Weekly Trend */}
-            <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
-              <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white mb-4 sm:mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
                 Trend Kehadiran Kelas {userData.kelas}
               </h3>
               <div className={isMobile ? "h-72" : isTablet ? "h-80" : "h-96"}>
@@ -1222,28 +1217,28 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Aksi Cepat
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Input kehadiran siswa">
                 <ClipboardList size={isMobile ? 18 : 20} />
                 <span>Input Kehadiran</span>
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Input nilai siswa">
                 <BarChart3 size={isMobile ? 18 : 20} />
                 <span>Input Nilai</span>
               </button>
               <button
                 onClick={() => handleNavigation("/students")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Lihat data siswa">
                 <Users size={isMobile ? 18 : 20} />
                 <span>Data Siswa</span>
@@ -1273,7 +1268,7 @@ const Dashboard = ({ userData }) => {
         <div className="space-y-4 sm:space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-red-700 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               {isMobile ? <Smartphone size={16} /> : <Monitor size={16} />}
               <span>
                 Tampilan {isMobile ? "Mobile" : isTablet ? "Tablet" : "Desktop"}{" "}
@@ -1283,7 +1278,7 @@ const Dashboard = ({ userData }) => {
             <button
               onClick={fetchDashboardData}
               disabled={refreshing}
-              className={`flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
+              className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto ${
                 refreshing ? "opacity-70 cursor-not-allowed" : ""
               }`}
               aria-label="Refresh data dashboard">
@@ -1302,39 +1297,39 @@ const Dashboard = ({ userData }) => {
               value={dashboardData.totalClasses}
               subtitle={`Kelas 1 - ${dashboardData.totalClasses}`}
               icon={GraduationCap}
-              color="red"
+              color="blue"
             />
             <StatsCard
               title="Total Siswa"
               value={dashboardData.totalStudents}
               subtitle="Semua kelas"
               icon={Users}
-              color="crimson"
+              color="green"
             />
             <StatsCard
               title="Rata-rata Hadir"
               value={`${dashboardData.attendanceRate}%`}
               subtitle="Hari ini"
               icon={BarChart3}
-              color="rose"
+              color="purple"
             />
             <StatsCard
               title="Kelas Terbaik"
               value={bestClass ? bestClass.kelas.replace("Kelas ", "") : "N/A"}
               subtitle="Kehadiran tertinggi"
               icon={TrendingUp}
-              color="amber"
+              color="orange"
             />
           </div>
 
           {/* Class Comparison Chart */}
-          <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-              <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 Perbandingan Kehadiran Antar Kelas
               </h3>
               <button
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white text-sm font-semibold rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 min-h-[44px] w-full sm:w-auto"
                 aria-label="Export data perbandingan">
                 <Download size={16} />
                 Export
@@ -1446,8 +1441,8 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Class Summary */}
-          <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Ringkasan Per Kelas
             </h3>
             <div
@@ -1472,28 +1467,28 @@ const Dashboard = ({ userData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-red-950/5 dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-200 dark:border-gray-700">
-            <h3 className="text-lg sm:text-xl font-bold text-red-950 dark:text-white mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Aksi Cepat
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => handleNavigation("/attendance")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Input kehadiran siswa">
                 <ClipboardList size={isMobile ? 18 : 20} />
                 <span>Input Kehadiran</span>
               </button>
               <button
                 onClick={() => handleNavigation("/grades")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Input nilai siswa">
                 <BarChart3 size={isMobile ? 18 : 20} />
                 <span>Input Nilai</span>
               </button>
               <button
                 onClick={() => handleNavigation("/students")}
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-700 dark:to-gray-600 border border-red-200 dark:border-gray-600 rounded-xl text-red-800 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-red-600 hover:to-red-700 hover:text-white hover:border-red-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-semibold hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 hover:text-white hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 min-h-[60px] w-full text-sm sm:text-base"
                 aria-label="Lihat data siswa">
                 <Users size={isMobile ? 18 : 20} />
                 <span>Data Siswa</span>
@@ -1506,7 +1501,7 @@ const Dashboard = ({ userData }) => {
 
     return (
       <div className="text-center py-12 px-4">
-        <p className="text-red-700 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-gray-400">
           Dashboard content for {userData.role}
         </p>
       </div>
@@ -1514,7 +1509,7 @@ const Dashboard = ({ userData }) => {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 bg-gradient-to-b from-red-50/50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6">
       {renderDashboardByRole()}
     </div>
   );

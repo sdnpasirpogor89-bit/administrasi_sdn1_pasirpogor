@@ -10,20 +10,48 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// Compact Stats Card Component - DIPERBAIKI dengan tema merah
+// Hook sederhana untuk membaca status Dark Mode dari body/html class (Jika ada)
+// Untuk demonstrasi Dark Mode di Tailwind, ini adalah best practice.
+const useDarkModeStatus = () => {
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  useEffect(() => {
+    // Observer untuk mendeteksi perubahan class "dark" pada tag <html>
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.attributeName === "class" &&
+          mutation.target.tagName === "HTML"
+        ) {
+          setIsDarkMode(mutation.target.classList.contains("dark"));
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isDarkMode;
+};
+
+// Compact Stats Card Component - SUPPORT DARK MODE
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
-    red: "border-l-red-950 bg-gradient-to-r from-red-50 to-white dark:from-red-950/40 dark:to-gray-800",
+    blue: "border-l-blue-500 bg-gradient-to-r from-blue-50 to-white dark:from-blue-950 dark:to-gray-800",
     green:
-      "border-l-green-600 bg-gradient-to-r from-green-50 to-white dark:from-green-950/40 dark:to-gray-800",
+      "border-l-green-500 bg-gradient-to-r from-green-50 to-white dark:from-green-950 dark:to-gray-800",
     purple:
-      "border-l-purple-600 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/40 dark:to-gray-800",
+      "border-l-purple-500 bg-gradient-to-r from-purple-50 to-white dark:from-purple-950 dark:to-gray-800",
     orange:
-      "border-l-orange-600 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/40 dark:to-gray-800",
+      "border-l-orange-500 bg-gradient-to-r from-orange-50 to-white dark:from-orange-950 dark:to-gray-800",
   };
 
   const iconColorClasses = {
-    red: "text-red-950 dark:text-red-400",
+    blue: "text-blue-600 dark:text-blue-400",
     green: "text-green-600 dark:text-green-400",
     purple: "text-purple-600 dark:text-purple-400",
     orange: "text-orange-600 dark:text-orange-400",
@@ -34,14 +62,12 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
       className={`
         rounded-lg shadow-sm border-l-4 p-3 sm:p-4 transition-all duration-300
         ${colorClasses[color]} 
-        hover:shadow-md hover:scale-[1.02] active:scale-95
+        hover:shadow-md hover:scale-105 
         dark:bg-gray-800 dark:border-gray-700
-        min-h-[96px] flex flex-col justify-center
-        touch-manipulation
       `}>
       <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white leading-none mb-1">
+        <div>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             {number}
           </p>
           <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
@@ -50,28 +76,28 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
         </div>
         <Icon
           size={24}
-          className={`${iconColorClasses[color]} sm:w-7 sm:h-7 flex-shrink-0`}
+          className={`${iconColorClasses[color]} sm:w-7 sm:h-7`}
         />
       </div>
     </div>
   );
 };
 
-// Status Badge Component - DIPERBAIKI
+// Status Badge Component - SUPPORT DARK MODE
 const StatusBadge = ({ isActive }) => {
   return (
     <span
-      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border min-w-[70px] justify-center ${
+      className={`inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold ${
         isActive
-          ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700"
-          : "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
+          ? "bg-green-100 text-green-800 border border-green-200 dark:bg-green-800 dark:text-green-100 dark:border-green-700"
+          : "bg-red-100 text-red-800 border border-red-200 dark:bg-red-800 dark:text-red-100 dark:border-red-700"
       }`}>
       {isActive ? "Aktif" : "Tidak Aktif"}
     </span>
   );
 };
 
-// Teacher Card Component untuk Mobile - DIPERBAIKI
+// Teacher Card Component - SUPPORT DARK MODE
 const TeacherCard = ({ teacher, index }) => {
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
@@ -89,12 +115,12 @@ const TeacherCard = ({ teacher, index }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-all duration-300 dark:bg-gray-800 dark:border-gray-700 active:scale-[0.99] touch-manipulation">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 dark:bg-red-900/50">
-              <span className="text-red-950 font-bold text-sm sm:text-base dark:text-red-300">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 dark:bg-blue-900">
+              <span className="text-blue-600 font-bold text-xs sm:text-sm dark:text-blue-400">
                 {teacher.full_name
                   .split(" ")
                   .map((n) => n[0])
@@ -112,12 +138,12 @@ const TeacherCard = ({ teacher, index }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
             <div className="min-w-0">
               <p className="text-xs text-gray-500 font-medium dark:text-gray-400">
                 Tugas/Kelas
               </p>
-              <p className="text-sm font-semibold text-gray-800 truncate dark:text-gray-200">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate dark:text-gray-200">
                 {formatTeachingArea(teacher)}
               </p>
             </div>
@@ -125,7 +151,7 @@ const TeacherCard = ({ teacher, index }) => {
               <p className="text-xs text-gray-500 font-medium dark:text-gray-400">
                 Jumlah Siswa
               </p>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
                 {teacher.studentCount} siswa
               </p>
             </div>
@@ -133,12 +159,10 @@ const TeacherCard = ({ teacher, index }) => {
 
           <div className="flex items-center justify-between gap-2">
             <StatusBadge isActive={teacher.is_active} />
-            <button
-              className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 dark:hover:bg-gray-700"
-              aria-label={`Menu untuk ${teacher.full_name}`}>
+            <button className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 dark:hover:bg-gray-700">
               <MoreVertical
-                size={18}
-                className="text-gray-500 dark:text-gray-400"
+                size={16}
+                className="sm:w-[18px] sm:h-[18px] text-gray-500 dark:text-gray-400"
               />
             </button>
           </div>
@@ -148,13 +172,16 @@ const TeacherCard = ({ teacher, index }) => {
   );
 };
 
-// Main Teacher Component - DIPERBAIKI
+// Main Teacher Component - SUPPORT DARK MODE
 const Teacher = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Membaca status dark mode dari hook
+  const isDarkMode = useDarkModeStatus();
 
   const [stats, setStats] = useState({
     totalGuru: 0,
@@ -163,7 +190,7 @@ const Teacher = () => {
     guruMapel: 0,
   });
 
-  // Fungsi untuk mengurutkan guru
+  // Fungsi untuk mengurutkan guru (No changes)
   const sortTeachers = (teachersArray) => {
     return teachersArray.sort((a, b) => {
       if (
@@ -196,7 +223,7 @@ const Teacher = () => {
     });
   };
 
-  // Filter teachers
+  // Filter teachers (No changes)
   useEffect(() => {
     let result = teachers;
 
@@ -215,7 +242,7 @@ const Teacher = () => {
     setFilteredTeachers(result);
   }, [teachers, searchTerm, statusFilter]);
 
-  // Fetch data guru dari database
+  // Fetch data guru dari database (No changes)
   const fetchTeachers = async () => {
     try {
       setLoading(true);
@@ -291,7 +318,7 @@ const Teacher = () => {
     }
   };
 
-  // Format tampilan tugas/kelas
+  // Format tampilan tugas/kelas (No changes)
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
       return "Kepala Sekolah";
@@ -313,9 +340,9 @@ const Teacher = () => {
 
   if (loading) {
     return (
-      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto dark:bg-gray-900 min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center justify-center w-full max-w-md bg-white rounded-xl shadow-sm p-8 dark:bg-gray-800">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 border-3 border-red-100 border-t-red-950 rounded-full animate-spin mb-4 dark:border-red-900/50 dark:border-t-red-400"></div>
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto dark:bg-gray-900 min-h-screen">
+        <div className="flex flex-col items-center justify-center h-64 sm:h-96 bg-white rounded-xl shadow-sm dark:bg-gray-800">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-3 sm:mb-4"></div>
           <p className="text-sm sm:text-base text-gray-600 font-medium dark:text-gray-300">
             Memuat data guru...
           </p>
@@ -325,14 +352,15 @@ const Teacher = () => {
   }
 
   return (
+    // Background utama diubah untuk Dark Mode
     <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Compact Stats Cards */}
+      {/* Compact Stats Cards (Revisi ada di StatsCard Component) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <StatsCard
           icon={Users}
           number={stats.totalGuru}
           label="Total Guru"
-          color="red"
+          color="blue"
         />
         <StatsCard
           icon={UserCheck}
@@ -354,7 +382,7 @@ const Teacher = () => {
         />
       </div>
 
-      {/* Filter Section - DIPERBAIKI */}
+      {/* Filter Section - SUPPORT DARK MODE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4">
           {/* Search Input */}
@@ -362,15 +390,13 @@ const Teacher = () => {
             <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
               size={18}
-              aria-hidden="true"
             />
             <input
               type="text"
               placeholder="Cari nama guru..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 lg:py-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-sm sm:text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 touch-manipulation"
-              aria-label="Cari guru"
+              className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
           </div>
 
@@ -379,8 +405,7 @@ const Teacher = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 lg:py-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all text-sm sm:text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white touch-manipulation"
-              aria-label="Filter status guru">
+              className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2.5 lg:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white">
               <option value="all">Semua Status</option>
               <option value="active">Aktif</option>
               <option value="inactive">Tidak Aktif</option>
@@ -389,23 +414,18 @@ const Teacher = () => {
         </div>
       </div>
 
-      {/* Tabel Data Guru - DIPERBAIKI */}
+      {/* Tabel Data Guru - SUPPORT DARK MODE */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div className="p-4 sm:p-5 lg:p-6 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
-                Daftar Guru
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1 dark:text-gray-400">
-                Menampilkan {filteredTeachers.length} dari {teachers.length}{" "}
-                guru
-              </p>
-            </div>
-          </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+            Daftar Guru
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 dark:text-gray-400">
+            Menampilkan {filteredTeachers.length} dari {teachers.length} guru
+          </p>
         </div>
 
-        {/* Card View untuk Mobile/Tablet */}
+        {/* Card View (Mobile-First: Default, Sembunyikan di Large/Desktop) */}
         <div className="lg:hidden p-3 sm:p-4 space-y-3 sm:space-y-4">
           {filteredTeachers.length > 0 ? (
             filteredTeachers.map((teacher, index) => (
@@ -414,9 +434,8 @@ const Teacher = () => {
           ) : (
             <div className="text-center py-12 sm:py-16">
               <Users
-                size={48}
-                className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-4 dark:text-gray-600"
-                aria-hidden="true"
+                size={40}
+                className="sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3 sm:mb-4 dark:text-gray-600"
               />
               <p className="text-sm sm:text-base text-gray-500 font-medium dark:text-gray-400">
                 Tidak ada data guru yang cocok
@@ -425,28 +444,25 @@ const Teacher = () => {
           )}
         </div>
 
-        {/* Desktop Table View */}
+        {/* Desktop Table View (Sembunyikan di Mobile/Tablet, Tampilkan di Large/Desktop) */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-700 dark:border-gray-600">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[80px]">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   No.
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[200px]">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Nama Guru
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[150px]">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Tugas/Kelas
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[120px]">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Jumlah Siswa
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[120px]">
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300">
                   Status
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[80px]">
-                  Aksi
                 </th>
               </tr>
             </thead>
@@ -460,61 +476,34 @@ const Teacher = () => {
                       {index + 1}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 dark:bg-red-900/50">
-                          <span className="text-red-950 font-bold text-sm dark:text-red-300">
-                            {teacher.full_name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {teacher.full_name}
-                        </p>
-                      </div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {teacher.full_name}
+                      </p>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-700 font-medium dark:text-gray-300">
                         {formatTeachingArea(teacher)}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {teacher.studentCount} siswa
-                      </span>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                      {teacher.studentCount} siswa
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge isActive={teacher.is_active} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-700"
-                        aria-label={`Menu untuk ${teacher.full_name}`}>
-                        <MoreVertical
-                          size={18}
-                          className="text-gray-500 dark:text-gray-400"
-                        />
-                      </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center gap-4">
+                  <td colSpan="5" className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
                       <Users
-                        size={56}
+                        size={48}
                         className="text-gray-300 dark:text-gray-600"
-                        aria-hidden="true"
                       />
                       <div>
                         <p className="text-gray-500 font-medium dark:text-gray-400">
                           Tidak ada data guru yang cocok
-                        </p>
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-                          Coba ubah filter pencarian
                         </p>
                       </div>
                     </div>

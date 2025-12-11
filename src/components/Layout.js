@@ -248,8 +248,6 @@ const Layout = ({
 
       try {
         navigate(path);
-        // Using a short timeout to simulate a loading state or ensure navigation completes
-        // This is generally not needed if navigation is synchronous, but kept for logic fidelity
         setTimeout(() => setIsNavigating(false), 100);
       } catch (error) {
         console.error("Navigation error:", error);
@@ -400,32 +398,32 @@ const Layout = ({
         }
       `}</style>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation Modal - REVISI TEMA MERAH */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div
             className={`rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200 ${
-              darkMode ? "bg-slate-800" : "bg-white"
+              darkMode ? "bg-slate-800" : "bg-white border border-red-200"
             }`}>
             <div className="flex flex-col items-center px-6 pt-6 pb-4">
               <div
                 className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                  darkMode ? "bg-blue-900/30" : "bg-blue-100"
+                  darkMode ? "bg-red-900/30" : "bg-red-100"
                 }`}>
                 <LogOut
-                  className={darkMode ? "text-blue-400" : "text-blue-600"}
+                  className={darkMode ? "text-red-400" : "text-red-600"}
                   size={32}
                 />
               </div>
               <h3
                 className={`text-xl font-bold text-center ${
-                  darkMode ? "text-slate-100" : "text-gray-900"
+                  darkMode ? "text-slate-100" : "text-red-950"
                 }`}>
                 Keluar dari Sistem?
               </h3>
               <p
                 className={`text-center mt-2 ${
-                  darkMode ? "text-slate-300" : "text-gray-600"
+                  darkMode ? "text-slate-300" : "text-red-800"
                 }`}>
                 Anda harus login kembali untuk mengakses sistem
               </p>
@@ -437,7 +435,7 @@ const Layout = ({
                 className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-colors duration-150 ${
                   darkMode
                     ? "bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200"
-                    : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700"
+                    : "bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-800"
                 }`}>
                 Batal
               </button>
@@ -445,8 +443,8 @@ const Layout = ({
                 onClick={handleConfirmLogout}
                 className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-colors duration-150 ${
                   darkMode
-                    ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/30"
-                    : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-lg shadow-red-500/30"
+                    : "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-lg shadow-red-500/30"
                 }`}>
                 Keluar
               </button>
@@ -514,7 +512,7 @@ const Layout = ({
                   <div className="min-w-0 flex-1">
                     <h1
                       className={`text-lg font-bold truncate ${
-                        darkMode ? "text-slate-100" : "text-gray-900"
+                        darkMode ? "text-slate-100" : "text-red-950"
                       }`}>
                       {currentPageName}
                     </h1>
@@ -536,13 +534,13 @@ const Layout = ({
                     <div className="text-center">
                       <div
                         className={`font-mono font-bold text-sm leading-none ${
-                          darkMode ? "text-slate-100" : "text-gray-900"
+                          darkMode ? "text-slate-100" : "text-red-950"
                         }`}>
                         {formatTime(currentTime)}
                       </div>
                       <div
                         className={`text-xs font-medium mt-0.5 ${
-                          darkMode ? "text-slate-400" : "text-gray-600"
+                          darkMode ? "text-slate-400" : "text-red-700"
                         }`}>
                         {formatDate(currentTime)}
                       </div>
@@ -574,7 +572,7 @@ const Layout = ({
                           }`}>
                           <p
                             className={`font-semibold text-sm truncate ${
-                              darkMode ? "text-slate-100" : "text-gray-900"
+                              darkMode ? "text-slate-100" : "text-red-950"
                             }`}>
                             {userData.full_name || userData.username}
                           </p>
@@ -597,12 +595,12 @@ const Layout = ({
                             className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm transition-colors touch-manipulation ${
                               darkMode
                                 ? "text-slate-300 hover:bg-slate-700 active:bg-slate-600"
-                                : "text-gray-700 hover:bg-red-50 active:bg-red-100" // Light mode: red
+                                : "text-red-800 hover:bg-red-50 active:bg-red-100" // Light mode: red
                             }`}>
                             <Settings
                               size={18}
                               className={`flex-shrink-0 ${
-                                darkMode ? "text-slate-400" : "text-gray-500"
+                                darkMode ? "text-slate-400" : "text-red-600"
                               }`}
                             />
                             <span className="font-medium">Profile</span>
@@ -651,7 +649,7 @@ const Layout = ({
                   <div className="min-w-0 flex-1">
                     <h1
                       className={`text-xl font-bold truncate ${
-                        darkMode ? "text-slate-100" : "text-gray-900"
+                        darkMode ? "text-slate-100" : "text-red-950"
                       }`}>
                       {currentPageName}
                     </h1>
@@ -679,7 +677,7 @@ const Layout = ({
                           />
                           <span
                             className={`font-mono font-semibold text-base ${
-                              darkMode ? "text-slate-100" : "text-gray-900"
+                              darkMode ? "text-slate-100" : "text-red-950"
                             }`}>
                             {formatTime(currentTime)}
                           </span>
@@ -693,7 +691,7 @@ const Layout = ({
                           />
                           <span
                             className={
-                              darkMode ? "text-slate-400" : "text-gray-600"
+                              darkMode ? "text-slate-400" : "text-red-700"
                             }>
                             {formatDate(currentTime)}
                           </span>
@@ -733,7 +731,7 @@ const Layout = ({
                           }`}>
                           <p
                             className={`font-semibold text-sm truncate ${
-                              darkMode ? "text-slate-100" : "text-gray-900"
+                              darkMode ? "text-slate-100" : "text-red-950"
                             }`}>
                             {userData.full_name || userData.username}
                           </p>
@@ -756,7 +754,7 @@ const Layout = ({
                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                               darkMode
                                 ? "text-slate-300 hover:bg-slate-700"
-                                : "text-gray-700 hover:bg-red-50" // Light mode: red
+                                : "text-red-800 hover:bg-red-50" // Light mode: red
                             }`}>
                             <Settings size={16} />
                             <span className="font-medium">Profile</span>
@@ -792,7 +790,7 @@ const Layout = ({
                 <div className="flex flex-col min-w-0 flex-1">
                   <h1
                     className={`text-2xl font-bold truncate ${
-                      darkMode ? "text-slate-100" : "text-gray-900"
+                      darkMode ? "text-slate-100" : "text-red-950"
                     }`}>
                     {currentPageName}
                     {isNavigating && (
@@ -826,7 +824,7 @@ const Layout = ({
                         />
                         <span
                           className={`font-mono font-semibold text-base tracking-wide ${
-                            darkMode ? "text-slate-100" : "text-gray-900"
+                            darkMode ? "text-slate-100" : "text-red-950"
                           }`}>
                           {formatTime(currentTime)}
                         </span>
@@ -846,7 +844,7 @@ const Layout = ({
                         />
                         <span
                           className={
-                            darkMode ? "text-slate-400" : "text-gray-600"
+                            darkMode ? "text-slate-400" : "text-red-700"
                           }>
                           {formatDate(currentTime)}
                         </span>
@@ -879,13 +877,13 @@ const Layout = ({
                         }`}>
                         <p
                           className={`font-semibold text-sm truncate ${
-                            darkMode ? "text-slate-100" : "text-gray-900"
+                            darkMode ? "text-slate-100" : "text-red-950"
                           }`}>
                           {userData.full_name || userData.username}
                         </p>
                         <p
                           className={`text-xs capitalize ${
-                            darkMode ? "text-slate-400" : "text-gray-600" // Light mode tetap gray untuk text kecil
+                            darkMode ? "text-slate-400" : "text-red-700"
                           }`}>
                           {userData.role === "guru_kelas" && userData.kelas
                             ? `Guru Kelas ${userData.kelas}`
@@ -899,7 +897,7 @@ const Layout = ({
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
                             darkMode
                               ? "text-slate-300 hover:bg-slate-700 hover:text-blue-400"
-                              : "text-gray-700 hover:bg-red-50 hover:text-red-700" // Light mode: red
+                              : "text-red-800 hover:bg-red-50 hover:text-red-700" // Light mode: red
                           }`}>
                           <Settings size={16} className="flex-shrink-0" />
                           <span className="font-medium">Profile</span>
@@ -914,7 +912,7 @@ const Layout = ({
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
                             darkMode
                               ? "text-slate-300 hover:bg-red-900/20 hover:text-red-400"
-                              : "text-gray-700 hover:bg-red-50 hover:text-red-700" // Light mode: red
+                              : "text-red-800 hover:bg-red-50 hover:text-red-700" // Light mode: red
                           }`}>
                           <LogOut size={16} className="flex-shrink-0" />
                           <span className="font-medium">Logout</span>

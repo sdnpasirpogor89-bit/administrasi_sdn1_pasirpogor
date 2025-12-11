@@ -1,4 +1,4 @@
-// src/App.js - VERSI DENGAN DARK MODE + RESPONSIVE + TEMA MERAH GELAP
+// src/App.js - SD VERSION DENGAN MAINTENANCE MODE + WHITELIST + PRESENSI GURU + DARK MODE
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BrowserRouter as Router,
@@ -127,7 +127,7 @@ function App() {
   // ========== 🌙 DARK MODE STATE ==========
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("darkMode");
-    return saved ? JSON.parse(saved) : false;
+    return saved ? JSON.parse(saved) : false; // ← pake JSON.parse biar dapat boolean
   });
 
   // ========== MAINTENANCE MODE STATE ==========
@@ -140,11 +140,10 @@ function App() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light-mode-red");
     } else {
       document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light-mode-red");
     }
+    // HAPUS localStorage.setItem dari sini karena udah di toggleDarkMode
   }, [darkMode]);
 
   // ========== 🌙 TOGGLE DARK MODE FUNCTION ==========
@@ -152,7 +151,7 @@ function App() {
     setDarkMode((prev) => {
       const newValue = !prev;
       console.log("🌙 Toggling dark mode:", prev, "->", newValue);
-      localStorage.setItem("darkMode", newValue.toString());
+      localStorage.setItem("darkMode", newValue.toString()); // ← save langsung di sini
       return newValue;
     });
   }, []);
@@ -413,15 +412,10 @@ function App() {
   // ========== 7. LOADING STATE ==========
   if (loading || maintenanceLoading) {
     return (
-      <div className="min-h-screen bg-red-50 dark:bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-red-200 dark:border-gray-700 border-t-red-600 dark:border-t-red-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-red-700 dark:text-red-300 font-medium text-lg">
-            Checking session...
-          </p>
-          <p className="text-red-600 dark:text-red-400 text-sm mt-2">
-            Please wait
-          </p>
+          <div className="w-10 h-10 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Checking session...</p>
         </div>
       </div>
     );
@@ -442,7 +436,7 @@ function App() {
   // ========== 9. MAIN APP ==========
   return (
     <Router>
-      <div className="App min-h-screen bg-red-50 dark:bg-gray-900 transition-colors duration-200">
+      <div className="App min-h-screen bg-gray-50">
         <Routes>
           <Route
             path="/login"
