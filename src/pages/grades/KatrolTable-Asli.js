@@ -1,10 +1,7 @@
-import React, { useState } from "react";
-import { TrendingUp, X } from "lucide-react";
+import React from "react";
+import { TrendingUp } from "lucide-react";
 
 const KatrolTable = ({ data, kkm }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -25,135 +22,20 @@ const KatrolTable = ({ data, kkm }) => {
     return typeof nilai === "number" ? nilai.toFixed(2) : nilai;
   };
 
-  // Tampilkan modal detail
-  const handleShowDetail = (siswa) => {
-    setSelectedStudent(siswa);
-    setShowModal(true);
-  };
-
-  // Tutup modal
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedStudent(null);
-  };
-
-  // Data untuk modal
-  const getDetailData = (siswa) => [
-    { label: "NH1", asli: siswa.nilai.NH1, katrol: siswa.nilai_katrol?.NH1 },
-    { label: "NH2", asli: siswa.nilai.NH2, katrol: siswa.nilai_katrol?.NH2 },
-    { label: "NH3", asli: siswa.nilai.NH3, katrol: siswa.nilai_katrol?.NH3 },
-    { label: "NH4", asli: siswa.nilai.NH4, katrol: siswa.nilai_katrol?.NH4 },
-    { label: "NH5", asli: siswa.nilai.NH5, katrol: siswa.nilai_katrol?.NH5 },
-    { label: "UTS", asli: siswa.nilai.UTS, katrol: siswa.nilai_katrol?.UTS },
-    { label: "UAS", asli: siswa.nilai.UAS, katrol: siswa.nilai_katrol?.UAS },
-    {
-      label: "Rata NH",
-      asli: siswa.rata_NH_asli,
-      katrol: siswa.rata_NH_katrol,
-    },
-    {
-      label: "Nilai Akhir",
-      asli: siswa.nilai_akhir_asli,
-      katrol: siswa.nilai_akhir_katrol,
-    },
+  // Kolom yang akan ditampilkan di mobile (prioritas)
+  const mobileColumns = [
+    "No",
+    "Nama",
+    "NH1",
+    "NH1-K",
+    "UTS",
+    "UTS-K",
+    "Nilai Akhir",
+    "Nilai Akhir-K",
   ];
 
   return (
     <div className="w-full">
-      {/* Modal untuk Lihat Semua Nilai */}
-      {showModal && selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Detail Nilai - {selectedStudent.nama_siswa}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  NISN: {selectedStudent.nisn}
-                </p>
-              </div>
-              <button
-                onClick={handleCloseModal}
-                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-4">
-              <div className="space-y-3">
-                {getDetailData(selectedStudent).map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-3 gap-2 p-2 border-b border-gray-100 dark:border-gray-700">
-                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {item.label}
-                    </div>
-                    <div className="text-sm text-center text-gray-900 dark:text-gray-100">
-                      {formatNilai(item.asli)}
-                    </div>
-                    <div
-                      className={`text-sm text-center font-semibold ${
-                        item.katrol && item.asli && item.katrol > item.asli
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-gray-900 dark:text-gray-100"
-                      }`}>
-                      {formatNilai(item.katrol)}
-                      {isNaikSignificant(item.asli, item.katrol) && (
-                        <TrendingUp className="w-3 h-3 ml-1 inline" />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Status */}
-              <div className="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-gray-600 dark:text-gray-400">
-                    Status:
-                  </div>
-                  <div
-                    className={`font-semibold ${
-                      selectedStudent.status === "Tuntas"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}>
-                    {selectedStudent.status ||
-                      (selectedStudent.nilai_akhir_katrol >= kkm
-                        ? "Tuntas"
-                        : "Belum Tuntas")}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-400">
-                    Kenaikan:
-                  </div>
-                  <div className="font-semibold text-blue-600 dark:text-blue-400">
-                    {selectedStudent.nilai_akhir_asli &&
-                    selectedStudent.nilai_akhir_katrol
-                      ? `${(
-                          selectedStudent.nilai_akhir_katrol -
-                          selectedStudent.nilai_akhir_asli
-                        ).toFixed(1)} poin`
-                      : "-"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-              <button
-                onClick={handleCloseModal}
-                className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Desktop/Large Table */}
       <div className="hidden lg:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -511,13 +393,15 @@ const KatrolTable = ({ data, kkm }) => {
                 </div>
               </div>
 
-              {/* TOMBOL YANG DIPERBAIKI */}
+              {/* Button untuk lihat detail */}
               <div className="col-span-2 md:col-span-2">
                 <button
-                  onClick={() => handleShowDetail(siswa)}
-                  className="w-full mt-2 py-2 px-3 text-sm bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors flex items-center justify-center gap-2">
-                  <span>Lihat Semua Nilai</span>
-                  <span>→</span>
+                  className="w-full mt-2 text-xs text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                  onClick={() => {
+                    // Di sini bisa tambahkan modal atau expand untuk lihat semua nilai
+                    console.log("Lihat detail untuk", siswa.nama_siswa);
+                  }}>
+                  Lihat semua nilai →
                 </button>
               </div>
             </div>

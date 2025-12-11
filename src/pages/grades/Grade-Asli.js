@@ -387,6 +387,7 @@ const Grade = ({ userData: initialUserData }) => {
             nilai: parseFloat(nilai),
             guru_input: userData.name || userData.username,
             tanggal: new Date().toISOString().split("T")[0],
+            existingId: student.grades[`${type}_id`],
           });
         }
       });
@@ -410,42 +411,163 @@ const Grade = ({ userData: initialUserData }) => {
 
     setSaving(true);
     try {
-      console.log(
-        `💾 Menyimpan ${allDataToSave.length} nilai dengan BATCH UPSERT...`
-      );
+      // Pisahkan data baru vs update
+      const newData = [];
+      const updateData = [];
 
-      const { data, error } = await supabase
-        .from("nilai")
-        .upsert(allDataToSave, {
-          onConflict: "nisn,kelas,mata_pelajaran,jenis_nilai",
-        })
-        .select();
-
-      if (error) {
-        console.error("❌ Upsert error:", error);
-        // Fallback ke offlineSync
-        const syncResult = await saveWithSync("nilai", allDataToSave);
-        if (syncResult.success) {
-          showMessage(
-            `✅ ${
-              syncResult.syncedCount || allDataToSave.length
-            } nilai berhasil disimpan!`,
-            "success"
-          );
-          clearDraft();
+      allDataToSave.forEach((data) => {
+        if (
+          data.existingId &&
+          data.existingId !== null &&
+          data.existingId !== undefined &&
+          data.existingId !== ""
+        ) {
+          updateData.push(data);
         } else {
-          showMessage("❌ Gagal menyimpan data!", "error");
+          const { existingId, ...newRecord } = data;
+          newData.push(newRecord);
         }
-      } else {
-        const successCount = data?.length || allDataToSave.length;
+      });
+
+      console.log(`📊 New: ${newData.length}, Update: ${updateData.length}`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // INSERT new data - ⚠️ GUNAKAN "nilai"
+      if (newData.length > 0) {
+        try {
+          const { data: inserted, error } = await supabase
+            .from("nilai")
+            .insert(newData)
+            .select();
+
+          if (error) {
+            console.error("Insert error:", error);
+            // Fallback ke offlineSync
+            const insertResult = await saveWithSync("nilai", newData);
+            if (insertResult.success) {
+              successCount += insertResult.syncedCount || newData.length;
+            } else {
+              failCount += newData.length;
+            }
+          } else {
+            successCount += inserted?.length || newData.length;
+          }
+        } catch (insertError) {
+          console.error("Insert failed:", insertError);
+          failCount += newData.length;
+        }
+      }
+
+      // UPDATE existing data - ⚠️ GUNAKAN "nilai"
+      if (updateData.length > 0) {
+        for (const data of updateData) {
+          try {
+            // Coba update dengan composite key
+            const { data: updated, error } = await supabase
+              .from("nilai")
+              .update({
+                nilai: data.nilai,
+                guru_input: data.guru_input,
+                tanggal: data.tanggal,
+                updated_at: new Date().toISOString(),
+              })
+              .match({
+                nisn: data.nisn,
+                kelas: data.kelas,
+                mata_pelajaran: data.mata_pelajaran,
+                jenis_nilai: data.jenis_nilai,
+              })
+              .select();
+
+            if (error) {
+              console.error(
+                `Update error for ${data.nisn} - ${data.jenis_nilai}:`,
+                error
+              );
+
+              // Fallback: coba pake existingId
+              if (data.existingId) {
+                const { data: updated2, error: error2 } = await supabase
+                  .from("nilai")
+                  .update({
+                    nilai: data.nilai,
+                    guru_input: data.guru_input,
+                    tanggal: data.tanggal,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", data.existingId)
+                  .select();
+
+                if (error2) {
+                  throw error2;
+                }
+                if (updated2 && updated2.length > 0) {
+                  successCount++;
+                } else {
+                  failCount++;
+                }
+              } else {
+                failCount++;
+              }
+            } else if (updated && updated.length > 0) {
+              successCount++;
+            } else {
+              // Jika update ga nemu data, insert baru
+              console.warn(
+                `⚠️ No record found for update, trying insert: ${data.nama_siswa} - ${data.jenis_nilai}`
+              );
+
+              const { data: inserted, error: insertError } = await supabase
+                .from("nilai")
+                .insert([
+                  {
+                    nisn: data.nisn,
+                    nama_siswa: data.nama_siswa,
+                    kelas: data.kelas,
+                    mata_pelajaran: data.mata_pelajaran,
+                    jenis_nilai: data.jenis_nilai,
+                    nilai: data.nilai,
+                    guru_input: data.guru_input,
+                    tanggal: data.tanggal,
+                  },
+                ])
+                .select();
+
+              if (insertError) {
+                failCount++;
+              } else {
+                successCount++;
+              }
+            }
+          } catch (error) {
+            console.error(
+              `Update failed for ${data.nama_siswa} - ${data.jenis_nilai}:`,
+              error
+            );
+            failCount++;
+          }
+        }
+      }
+
+      // Show result
+      if (successCount > 0 && failCount === 0) {
         showMessage(`✅ ${successCount} nilai berhasil disimpan!`, "success");
-        clearDraft();
+        clearDraft(); // ===== TAMBAHKAN INI =====
+      } else if (successCount > 0 && failCount > 0) {
+        showMessage(
+          `⚠️ ${successCount} berhasil, ${failCount} gagal disimpan!`,
+          "warning"
+        );
+      } else {
+        showMessage(`❌ Gagal menyimpan ${failCount} nilai!`, "error");
       }
 
       // Refresh data
       await loadAllGrades();
     } catch (error) {
-      console.error("❌ Error saving grades:", error);
+      console.error("Error saving grades:", error);
       showMessage("Error menyimpan data: " + error.message, "error");
     } finally {
       setSaving(false);

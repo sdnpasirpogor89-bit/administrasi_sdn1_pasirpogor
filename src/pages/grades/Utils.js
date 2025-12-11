@@ -819,8 +819,8 @@ export const exportLeger = async (
       }
     });
 
-    // Buat array data leger untuk sheet 1 (urut nama)
-    const legerDataNama = [];
+    // Buat array data leger
+    const legerData = [];
 
     siswaOrder.forEach((nisn, index) => {
       const siswa = siswaMap.get(nisn);
@@ -844,7 +844,7 @@ export const exportLeger = async (
       const rataRata =
         nilaiValid.length > 0 ? (jumlah / nilaiValid.length).toFixed(2) : null;
 
-      legerDataNama.push({
+      legerData.push({
         no: index + 1,
         nisn: siswa.nisn,
         nama_siswa: siswa.nama_siswa,
@@ -859,25 +859,27 @@ export const exportLeger = async (
         pjok: siswa.pjok || "-",
         jumlah: jumlah || "-",
         rata_rata: rataRata || "-",
-        jumlah_num: jumlah || 0,
-        rata_rata_num: rataRata ? parseFloat(rataRata) : 0,
       });
     });
 
-    // Buat data untuk sheet 2 (urut nilai)
-    const legerDataNilai = [...legerDataNama].filter(
-      (item) => item.jumlah !== "-" && item.rata_rata !== "-"
-    );
+    // Buat data untuk sheet peringkat
+    const legerPeringkat = [...legerData]
+      .filter((item) => item.jumlah !== "-" && item.rata_rata !== "-")
+      .map((item) => ({
+        ...item,
+        jumlah_num: item.jumlah !== "-" ? item.jumlah : 0,
+        rata_rata_num: item.rata_rata !== "-" ? parseFloat(item.rata_rata) : 0,
+      }));
 
     // Sort berdasarkan pilihan
     if (sortBy === "jumlah") {
-      legerDataNilai.sort((a, b) => b.jumlah_num - a.jumlah_num);
+      legerPeringkat.sort((a, b) => b.jumlah_num - a.jumlah_num);
     } else {
-      legerDataNilai.sort((a, b) => b.rata_rata_num - a.rata_rata_num);
+      legerPeringkat.sort((a, b) => b.rata_rata_num - a.rata_rata_num);
     }
 
-    // Update nomor urut untuk sheet peringkat
-    legerDataNilai.forEach((item, index) => {
+    // Update nomor urut untuk peringkat
+    legerPeringkat.forEach((item, index) => {
       item.no = index + 1;
     });
 
@@ -896,6 +898,7 @@ export const exportLeger = async (
           semester ? ` - Semester ${semester}` : ""
         }`,
       ],
+      ["(Diurutkan berdasarkan Nama Siswa)"],
       [""],
     ];
 
@@ -906,7 +909,7 @@ export const exportLeger = async (
       wsNilai.mergeCells(`A${rowNilai - 1}:N${rowNilai - 1}`);
       r.getCell(1).font = {
         bold: true,
-        size: rowNilai <= 3 ? 14 : 11,
+        size: rowNilai <= 4 ? 14 : 11,
         name: "Calibri",
       };
       r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
@@ -975,7 +978,7 @@ export const exportLeger = async (
     rowNilai++;
 
     // Data rows Sheet 1
-    legerDataNama.forEach((row, index) => {
+    legerData.forEach((row, index) => {
       const r = wsNilai.addRow([
         row.no,
         row.nisn,
@@ -1045,6 +1048,11 @@ export const exportLeger = async (
           semester ? ` - Semester ${semester}` : ""
         }`,
       ],
+      [
+        `(Diurutkan berdasarkan ${
+          sortBy === "jumlah" ? "Jumlah Nilai" : "Rata-rata Nilai"
+        } - Tertinggi ke Terendah)`,
+      ],
       [""],
     ];
 
@@ -1055,13 +1063,13 @@ export const exportLeger = async (
       wsPeringkat.mergeCells(`A${rowPeringkat - 1}:N${rowPeringkat - 1}`);
       r.getCell(1).font = {
         bold: true,
-        size: rowPeringkat <= 3 ? 14 : 11,
+        size: rowPeringkat <= 4 ? 14 : 11,
         name: "Calibri",
       };
       r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
     });
 
-    // Table headers Sheet 2
+    // Table headers Sheet 2 - TANPA KOLOM PERINGKAT
     const headersPeringkat = [
       "No",
       "NISN",
@@ -1087,7 +1095,7 @@ export const exportLeger = async (
       cell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "FFE2EFDA" },
+        fgColor: { argb: "FFE2EFDA" }, // Warna hijau muda untuk beda
       };
       cell.font = { bold: true, size: 10 };
       cell.alignment = {
@@ -1105,26 +1113,26 @@ export const exportLeger = async (
 
     // Column widths Sheet 2
     wsPeringkat.columns = [
-      { width: 5 },
-      { width: 14 },
-      { width: 33 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 13 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 10 },
-      { width: 11 },
+      { width: 5 }, // No
+      { width: 14 }, // NISN
+      { width: 33 }, // Nama Siswa
+      { width: 9 }, // B.Indo
+      { width: 9 }, // B.Ing
+      { width: 9 }, // B.Sunda
+      { width: 9 }, // MTK
+      { width: 9 }, // IPAS
+      { width: 13 }, // Pancasila
+      { width: 9 }, // Senbud
+      { width: 9 }, // PABP
+      { width: 9 }, // PJOK
+      { width: 10 }, // Jumlah
+      { width: 11 }, // Rata-rata
     ];
 
     rowPeringkat++;
 
     // Data rows Sheet 2
-    legerDataNilai.forEach((row, index) => {
+    legerPeringkat.forEach((row, index) => {
       const r = wsPeringkat.addRow([
         row.no,
         row.nisn,
@@ -1152,6 +1160,29 @@ export const exportLeger = async (
 
         if (colNumber === 1) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
+          // Highlight 3 besar
+          if (index < 3) {
+            cell.font = { bold: true, size: 11 };
+            if (index === 0) {
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFFFD700" },
+              }; // Emas
+            } else if (index === 1) {
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFC0C0C0" },
+              }; // Perak
+            } else if (index === 2) {
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFCD7F32" },
+              }; // Perunggu
+            }
+          }
         } else if (colNumber === 2) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
           cell.numFmt = "@";
@@ -1172,7 +1203,21 @@ export const exportLeger = async (
           }
         }
 
-        if (index % 2 !== 0) {
+        // Highlight baris 3 besar dengan warna berbeda
+        if (index < 3 && colNumber > 1) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: {
+              argb:
+                index === 0
+                  ? "FFFFFFCC"
+                  : index === 1
+                  ? "FFE8E8E8"
+                  : "FFF5E6CC",
+            },
+          };
+        } else if (index % 2 !== 0) {
           cell.fill = {
             type: "pattern",
             pattern: "solid",
@@ -1200,8 +1245,8 @@ export const exportLeger = async (
 
     return {
       success: true,
-      count: legerDataNama.length,
-      peringkatCount: legerDataNilai.length,
+      count: legerData.length,
+      peringkatCount: legerPeringkat.length,
       sortBy: sortBy,
     };
   } catch (error) {
