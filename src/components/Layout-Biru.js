@@ -295,7 +295,7 @@ const Layout = ({
     return sidebarCollapsed ? "ml-20" : "ml-72";
   };
 
-  // 櫨 COOL DARK MODE TOGGLE COMPONENT - Updated with red theme only for light mode
+  // 櫨 COOL DARK MODE TOGGLE COMPONENT
   const CoolDarkModeToggle = ({ size = "default" }) => {
     const sizes = {
       small: { container: "w-14 h-7", circle: "w-5 h-5", icon: 12 },
@@ -312,8 +312,8 @@ const Layout = ({
           currentSize.container
         } rounded-full transition-all duration-500 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 ${
           darkMode
-            ? "bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900" // Dark mode tetap slate
-            : "bg-gradient-to-r from-red-500 via-red-400 to-red-300" // Light mode jadi merah
+            ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"
+            : "bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400"
         }`}
         aria-label="Toggle Dark Mode"
         title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
@@ -333,7 +333,7 @@ const Layout = ({
               {[...Array(8)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute w-0.5 h-1 bg-red-200 rounded-full"
+                  className="absolute w-0.5 h-1 bg-yellow-200 rounded-full"
                   style={{
                     top: "50%",
                     left: "50%",
@@ -362,13 +362,13 @@ const Layout = ({
           {darkMode ? (
             <Moon
               size={currentSize.icon}
-              className="text-slate-700 animate-spin-slow"
+              className="text-indigo-600 animate-spin-slow"
               fill="currentColor"
             />
           ) : (
             <Sun
               size={currentSize.icon}
-              className="text-red-500 animate-pulse"
+              className="text-orange-500 animate-pulse"
             />
           )}
         </div>
@@ -377,12 +377,7 @@ const Layout = ({
   };
 
   return (
-    <div
-      className={`flex min-h-screen transition-colors duration-300 ${
-        darkMode
-          ? "bg-slate-900" // Dark mode: tetap slate
-          : "bg-red-50" // Light mode: merah
-      }`}>
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-300">
       {/* Add custom animations */}
       <style>{`
         @keyframes spin-slow {
@@ -403,30 +398,18 @@ const Layout = ({
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div
-            className={`rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200 ${
-              darkMode ? "bg-slate-800" : "bg-white"
-            }`}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center px-6 pt-6 pb-4">
-              <div
-                className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                  darkMode ? "bg-blue-900/30" : "bg-blue-100"
-                }`}>
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
                 <LogOut
-                  className={darkMode ? "text-blue-400" : "text-blue-600"}
+                  className="text-blue-600 dark:text-blue-400"
                   size={32}
                 />
               </div>
-              <h3
-                className={`text-xl font-bold text-center ${
-                  darkMode ? "text-slate-100" : "text-gray-900"
-                }`}>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 text-center">
                 Keluar dari Sistem?
               </h3>
-              <p
-                className={`text-center mt-2 ${
-                  darkMode ? "text-slate-300" : "text-gray-600"
-                }`}>
+              <p className="text-gray-600 dark:text-slate-300 text-center mt-2">
                 Anda harus login kembali untuk mengakses sistem
               </p>
             </div>
@@ -434,20 +417,12 @@ const Layout = ({
             <div className="flex gap-3 px-6 pb-6">
               <button
                 onClick={handleCancelLogout}
-                className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-colors duration-150 ${
-                  darkMode
-                    ? "bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200"
-                    : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700"
-                }`}>
+                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 active:bg-gray-300 dark:active:bg-slate-500 text-gray-700 dark:text-slate-200 font-semibold rounded-xl transition-colors duration-150">
                 Batal
               </button>
               <button
                 onClick={handleConfirmLogout}
-                className={`flex-1 px-4 py-3 font-semibold rounded-xl transition-colors duration-150 ${
-                  darkMode
-                    ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/30"
-                    : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/30"
-                }`}>
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-xl transition-colors duration-150 shadow-lg shadow-blue-500/30">
                 Keluar
               </button>
             </div>
@@ -489,12 +464,7 @@ const Layout = ({
       <div
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${getSidebarMargin()}`}>
         {/* Header */}
-        <header
-          className={`border-b sticky top-0 z-30 shadow-sm transition-colors duration-300 ${
-            darkMode
-              ? "bg-slate-800 border-slate-700" // Dark mode
-              : "bg-white border-red-200" // Light mode: border merah
-          }`}>
+        <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm transition-colors duration-300">
           {/* Mobile Header */}
           {isMobile && (
             <div className="px-4 py-2.5">
@@ -502,20 +472,13 @@ const Layout = ({
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <button
                     onClick={handleToggleMobileSidebar}
-                    className={`w-11 h-11 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation shadow-md ${
-                      darkMode
-                        ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800" // Dark mode: blue
-                        : "bg-red-600 hover:bg-red-700 active:bg-red-800" // Light mode: red
-                    }`}
+                    className="w-11 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white transition-colors flex items-center justify-center touch-manipulation shadow-md"
                     aria-label="Menu">
                     <Menu size={20} strokeWidth={2} />
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <h1
-                      className={`text-lg font-bold truncate ${
-                        darkMode ? "text-slate-100" : "text-gray-900"
-                      }`}>
+                    <h1 className="text-lg font-bold text-gray-900 dark:text-slate-100 truncate">
                       {currentPageName}
                     </h1>
                   </div>
@@ -527,23 +490,12 @@ const Layout = ({
                     <CoolDarkModeToggle size="small" />
                   </div>
 
-                  <div
-                    className={`border rounded-lg px-2.5 py-1.5 min-w-0 ${
-                      darkMode
-                        ? "bg-slate-700 border-slate-600"
-                        : "bg-red-50 border-red-200" // Light mode: merah
-                    }`}>
+                  <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 min-w-0">
                     <div className="text-center">
-                      <div
-                        className={`font-mono font-bold text-sm leading-none ${
-                          darkMode ? "text-slate-100" : "text-gray-900"
-                        }`}>
+                      <div className="font-mono font-bold text-gray-900 dark:text-slate-100 text-sm leading-none">
                         {formatTime(currentTime)}
                       </div>
-                      <div
-                        className={`text-xs font-medium mt-0.5 ${
-                          darkMode ? "text-slate-400" : "text-gray-600"
-                        }`}>
+                      <div className="text-xs text-gray-600 dark:text-slate-400 font-medium mt-0.5">
                         {formatDate(currentTime)}
                       </div>
                     </div>
@@ -552,36 +504,18 @@ const Layout = ({
                   <div className="relative" ref={profileDropdownRef}>
                     <button
                       onClick={handleToggleProfileDropdown}
-                      className={`w-11 h-11 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation shadow-md ${
-                        darkMode
-                          ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                          : "bg-red-600 hover:bg-red-700 active:bg-red-800" // Light mode: red
-                      }`}
+                      className="w-11 h-11 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation shadow-md"
                       aria-label="Profile">
                       <User size={18} strokeWidth={2} />
                     </button>
 
                     {showProfileDropdown && (
-                      <div
-                        className={`absolute right-0 top-full mt-2 w-64 border rounded-xl shadow-xl z-50 animate-in slide-in-from-top-2 duration-200 ${
-                          darkMode
-                            ? "bg-slate-800 border-slate-700"
-                            : "bg-white border-red-200" // Light mode
-                        }`}>
-                        <div
-                          className={`px-4 py-3 border-b ${
-                            darkMode ? "border-slate-700" : "border-red-100"
-                          }`}>
-                          <p
-                            className={`font-semibold text-sm truncate ${
-                              darkMode ? "text-slate-100" : "text-gray-900"
-                            }`}>
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50 animate-in slide-in-from-top-2 duration-200">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                             {userData.full_name || userData.username}
                           </p>
-                          <p
-                            className={`text-xs capitalize truncate ${
-                              darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
-                            }`}>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 capitalize truncate">
                             {userData.role === "guru_kelas" && userData.kelas
                               ? `Guru Kelas ${userData.kelas}`
                               : userData.role.replace("_", " ")}
@@ -594,32 +528,19 @@ const Layout = ({
                               navigate("/settings");
                               setShowProfileDropdown(false);
                             }}
-                            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm transition-colors touch-manipulation ${
-                              darkMode
-                                ? "text-slate-300 hover:bg-slate-700 active:bg-slate-600"
-                                : "text-gray-700 hover:bg-red-50 active:bg-red-100" // Light mode: red
-                            }`}>
+                            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 active:bg-blue-100 dark:active:bg-slate-600 transition-colors touch-manipulation">
                             <Settings
                               size={18}
-                              className={`flex-shrink-0 ${
-                                darkMode ? "text-slate-400" : "text-gray-500"
-                              }`}
+                              className="flex-shrink-0 text-gray-500 dark:text-slate-400"
                             />
                             <span className="font-medium">Profile</span>
                           </button>
 
-                          <div
-                            className={`border-t my-1 ${
-                              darkMode ? "border-slate-700" : "border-red-100"
-                            }`}></div>
+                          <div className="border-t border-gray-100 dark:border-slate-700 my-1"></div>
 
                           <button
                             onClick={handleLogoutClick}
-                            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm transition-colors touch-manipulation ${
-                              darkMode
-                                ? "text-red-400 hover:bg-red-900/20 active:bg-red-900/30"
-                                : "text-red-600 hover:bg-red-50 active:bg-red-100" // Light mode: red
-                            }`}>
+                            className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:bg-red-100 dark:active:bg-red-900/30 transition-colors touch-manipulation">
                             <LogOut size={18} className="flex-shrink-0" />
                             <span className="font-medium">Logout</span>
                           </button>
@@ -639,20 +560,13 @@ const Layout = ({
                 <div className="flex items-center gap-4 min-w-0 flex-1">
                   <button
                     onClick={handleToggleMobileSidebar}
-                    className={`w-10 h-10 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation ${
-                      darkMode
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "bg-red-600 hover:bg-red-700" // Light mode: red
-                    }`}
+                    className="w-10 h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center justify-center touch-manipulation"
                     aria-label="Menu">
                     <Menu size={20} />
                   </button>
 
                   <div className="min-w-0 flex-1">
-                    <h1
-                      className={`text-xl font-bold truncate ${
-                        darkMode ? "text-slate-100" : "text-gray-900"
-                      }`}>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 truncate">
                       {currentPageName}
                     </h1>
                   </div>
@@ -662,41 +576,24 @@ const Layout = ({
                   {/* 櫨 COOL DARK MODE TOGGLE - TABLET */}
                   <CoolDarkModeToggle size="default" />
 
-                  <div
-                    className={`border rounded-xl px-4 py-2.5 ${
-                      darkMode
-                        ? "bg-slate-700 border-slate-600"
-                        : "bg-red-50 border-red-200" // Light mode: red
-                    }`}>
+                  <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5">
                     <div className="flex items-center gap-3">
                       <div className="text-center">
                         <div className="flex items-center gap-2">
                           <Clock
                             size={16}
-                            className={
-                              darkMode ? "text-blue-400" : "text-red-600"
-                            } // Light mode: red
+                            className="text-blue-600 dark:text-blue-400"
                           />
-                          <span
-                            className={`font-mono font-semibold text-base ${
-                              darkMode ? "text-slate-100" : "text-gray-900"
-                            }`}>
+                          <span className="font-mono font-semibold text-gray-900 dark:text-slate-100 text-base">
                             {formatTime(currentTime)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm mt-1">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-slate-400 text-sm mt-1">
                           <Calendar
                             size={14}
-                            className={
-                              darkMode ? "text-blue-400" : "text-red-600"
-                            } // Light mode: red
+                            className="text-blue-600 dark:text-blue-400"
                           />
-                          <span
-                            className={
-                              darkMode ? "text-slate-400" : "text-gray-600"
-                            }>
-                            {formatDate(currentTime)}
-                          </span>
+                          <span>{formatDate(currentTime)}</span>
                         </div>
                       </div>
                     </div>
@@ -705,11 +602,7 @@ const Layout = ({
                   <div className="relative" ref={profileDropdownRef}>
                     <button
                       onClick={handleToggleProfileDropdown}
-                      className={`px-4 py-2.5 rounded-xl text-white transition-colors flex items-center gap-2 touch-manipulation ${
-                        darkMode
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-red-600 hover:bg-red-700" // Light mode: red
-                      }`}>
+                      className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-white transition-colors flex items-center gap-2 touch-manipulation">
                       <User size={16} />
                       <span className="text-sm font-medium">Profile</span>
                       <ChevronDown
@@ -721,26 +614,12 @@ const Layout = ({
                     </button>
 
                     {showProfileDropdown && (
-                      <div
-                        className={`absolute right-0 top-full mt-2 w-64 border rounded-xl shadow-xl z-50 ${
-                          darkMode
-                            ? "bg-slate-800 border-slate-700"
-                            : "bg-white border-red-200" // Light mode
-                        }`}>
-                        <div
-                          className={`px-4 py-3 border-b ${
-                            darkMode ? "border-slate-700" : "border-red-100"
-                          }`}>
-                          <p
-                            className={`font-semibold text-sm truncate ${
-                              darkMode ? "text-slate-100" : "text-gray-900"
-                            }`}>
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                             {userData.full_name || userData.username}
                           </p>
-                          <p
-                            className={`text-xs capitalize ${
-                              darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
-                            }`}>
+                          <p className="text-xs text-blue-600 dark:text-blue-400 capitalize">
                             {userData.role === "guru_kelas" && userData.kelas
                               ? `Guru Kelas ${userData.kelas}`
                               : userData.role.replace("_", " ")}
@@ -753,26 +632,14 @@ const Layout = ({
                               navigate("/settings");
                               setShowProfileDropdown(false);
                             }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                              darkMode
-                                ? "text-slate-300 hover:bg-slate-700"
-                                : "text-gray-700 hover:bg-red-50" // Light mode: red
-                            }`}>
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
                             <Settings size={16} />
                             <span className="font-medium">Profile</span>
                           </button>
-                          <hr
-                            className={`my-1 ${
-                              darkMode ? "border-slate-700" : "border-red-100"
-                            }`}
-                          />
+                          <hr className="my-1 border-gray-100 dark:border-slate-700" />
                           <button
                             onClick={handleLogoutClick}
-                            className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                              darkMode
-                                ? "text-red-400 hover:bg-red-900/20"
-                                : "text-red-600 hover:bg-red-50" // Light mode: red
-                            }`}>
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                             <LogOut size={16} />
                             <span className="font-medium">Logout</span>
                           </button>
@@ -790,16 +657,10 @@ const Layout = ({
             <div className="px-8 py-5">
               <div className="flex justify-between items-center">
                 <div className="flex flex-col min-w-0 flex-1">
-                  <h1
-                    className={`text-2xl font-bold truncate ${
-                      darkMode ? "text-slate-100" : "text-gray-900"
-                    }`}>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 truncate">
                     {currentPageName}
                     {isNavigating && (
-                      <span
-                        className={`ml-2 text-sm font-normal ${
-                          darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
-                        }`}>
+                      <span className="ml-2 text-sm text-blue-600 dark:text-blue-400 font-normal">
                         Loading...
                       </span>
                     )}
@@ -810,83 +671,44 @@ const Layout = ({
                   {/* 櫨 COOL DARK MODE TOGGLE - DESKTOP */}
                   <CoolDarkModeToggle size="large" />
 
-                  <div
-                    className={`border rounded-xl px-4 py-3 shadow-sm ${
-                      darkMode
-                        ? "bg-gradient-to-br from-slate-700 to-slate-800 border-slate-600"
-                        : "bg-gradient-to-br from-red-50 to-red-100 border-red-300" // Light mode: red
-                    }`}>
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700 dark:to-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl px-4 py-3 shadow-sm">
                     <div className="flex flex-col space-y-1">
                       <div className="flex items-center gap-2">
                         <Clock
                           size={14}
-                          className={`flex-shrink-0 ${
-                            darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
-                          }`}
+                          className="text-blue-600 dark:text-blue-400 flex-shrink-0"
                         />
-                        <span
-                          className={`font-mono font-semibold text-base tracking-wide ${
-                            darkMode ? "text-slate-100" : "text-gray-900"
-                          }`}>
+                        <span className="font-mono font-semibold text-gray-900 dark:text-slate-100 text-base tracking-wide">
                           {formatTime(currentTime)}
                         </span>
-                        <span
-                          className={`text-white text-xs font-semibold px-1.5 py-0.5 rounded ${
-                            darkMode ? "bg-blue-500" : "bg-red-500" // Light mode: red
-                          }`}>
+                        <span className="bg-emerald-500 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
                           WIB
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm font-medium">
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-slate-400 text-sm font-medium">
                         <Calendar
                           size={14}
-                          className={`flex-shrink-0 ${
-                            darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
-                          }`}
+                          className="text-blue-600 dark:text-blue-400 flex-shrink-0"
                         />
-                        <span
-                          className={
-                            darkMode ? "text-slate-400" : "text-gray-600"
-                          }>
-                          {formatDate(currentTime)}
-                        </span>
+                        <span>{formatDate(currentTime)}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="relative group">
-                    <button
-                      className={`px-4 py-2 rounded-xl transition-colors duration-200 flex items-center justify-center ${
-                        darkMode
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-red-600 hover:bg-red-700" // Light mode: red
-                      }`}>
+                    <button className="px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors duration-200 bg-blue-600 flex items-center justify-center">
                       <User size={16} className="mr-2" />
                       <span className="text-sm font-medium text-white">
                         Profile
                       </span>
                     </button>
 
-                    <div
-                      className={`absolute right-0 top-full mt-2 w-64 border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-200 z-50 ${
-                        darkMode
-                          ? "bg-slate-800 border-slate-700"
-                          : "bg-white border-red-200" // Light mode
-                      }`}>
-                      <div
-                        className={`px-4 py-3 border-b ${
-                          darkMode ? "border-slate-700" : "border-red-100"
-                        }`}>
-                        <p
-                          className={`font-semibold text-sm truncate ${
-                            darkMode ? "text-slate-100" : "text-gray-900"
-                          }`}>
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-200 z-50">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                           {userData.full_name || userData.username}
                         </p>
-                        <p
-                          className={`text-xs capitalize ${
-                            darkMode ? "text-slate-400" : "text-gray-600" // Light mode tetap gray untuk text kecil
-                          }`}>
+                        <p className="text-xs text-gray-600 dark:text-slate-400 capitalize">
                           {userData.role === "guru_kelas" && userData.kelas
                             ? `Guru Kelas ${userData.kelas}`
                             : userData.role.replace("_", " ")}
@@ -896,26 +718,14 @@ const Layout = ({
                       <div className="py-2">
                         <button
                           onClick={() => navigate("/settings")}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
-                            darkMode
-                              ? "text-slate-300 hover:bg-slate-700 hover:text-blue-400"
-                              : "text-gray-700 hover:bg-red-50 hover:text-red-700" // Light mode: red
-                          }`}>
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-700 dark:hover:text-blue-400 transition-colors duration-150">
                           <Settings size={16} className="flex-shrink-0" />
                           <span className="font-medium">Profile</span>
                         </button>
-                        <hr
-                          className={`my-1 ${
-                            darkMode ? "border-slate-700" : "border-red-100"
-                          }`}
-                        />
+                        <hr className="my-1 border-gray-100 dark:border-slate-700" />
                         <button
                           onClick={handleLogoutClick}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
-                            darkMode
-                              ? "text-slate-300 hover:bg-red-900/20 hover:text-red-400"
-                              : "text-gray-700 hover:bg-red-50 hover:text-red-700" // Light mode: red
-                          }`}>
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-400 transition-colors duration-150">
                           <LogOut size={16} className="flex-shrink-0" />
                           <span className="font-medium">Logout</span>
                         </button>
@@ -930,10 +740,8 @@ const Layout = ({
 
         {/* Main Content */}
         <main
-          className={`flex-1 overflow-y-auto transition-colors duration-300 ${
+          className={`flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-900 transition-colors duration-300 ${
             isMobile ? "p-3" : isTablet ? "p-6" : "p-8"
-          } ${
-            darkMode ? "bg-slate-900" : "bg-red-50" // Light mode: merah
           }`}>
           {children}
         </main>

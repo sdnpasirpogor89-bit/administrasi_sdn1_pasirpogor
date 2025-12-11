@@ -155,7 +155,7 @@ export const exportToExcelMultiSheet = async (
   const ws1 = workbook.addWorksheet("Data Lengkap");
 
   const headerData1 = [
-    ["SDN 1 PASIRPOGOR"],
+    ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
     [`REKAPITULASI NILAI KATROL - ${mapel.toUpperCase()}`],
     [`KELAS ${kelas}`],
     ["Tahun Ajaran: 2025/2026"],
@@ -307,7 +307,7 @@ export const exportToExcelMultiSheet = async (
   const ws2 = workbook.addWorksheet("Katrol Akhir");
 
   const headerData2 = [
-    ["SDN 1 PASIRPOGOR"],
+    ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
     [`NILAI KATROL AKHIR - ${mapel.toUpperCase()}`],
     [`KELAS ${kelas}`],
     ["Tahun Ajaran: 2025/2026"],
@@ -456,7 +456,7 @@ export const exportToExcel = async (
   const numColumns = type === "lengkap" ? 21 : 11;
 
   const headerData = [
-    ["SDN 1 PASIRPOGOR"],
+    ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
     [`REKAPITULASI NILAI KATROL - ${mapel.toUpperCase()}`],
     [`KELAS ${kelas}`],
     ["Tahun Ajaran: 2025/2026"],
@@ -891,7 +891,7 @@ export const exportLeger = async (
 
     // Header Sheet 1
     const headerNilai = [
-      ["SDN 1 PASIRPOGOR"],
+      ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
       [`LEGER NILAI - KELAS ${kelas}`],
       [
         `Tahun Ajaran: ${tahunAjaran || "2025/2026"}${
@@ -1041,7 +1041,7 @@ export const exportLeger = async (
 
     // Header Sheet 2
     const headerPeringkat = [
-      ["SDN 1 PASIRPOGOR"],
+      ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
       [`LEGER PERINGKAT - KELAS ${kelas}`],
       [
         `Tahun Ajaran: ${tahunAjaran || "2025/2026"}${

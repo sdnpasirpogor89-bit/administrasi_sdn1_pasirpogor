@@ -13,20 +13,6 @@ export const Login = ({ onLogin, onShowToast }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [errors, setErrors] = useState({});
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Check dark mode preference
-  useEffect(() => {
-    const darkModeMediaQuery = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    );
-    setIsDarkMode(darkModeMediaQuery.matches);
-
-    const handleChange = (e) => setIsDarkMode(e.matches);
-    darkModeMediaQuery.addEventListener("change", handleChange);
-
-    return () => darkModeMediaQuery.removeEventListener("change", handleChange);
-  }, []);
 
   useEffect(() => {
     const img = new Image();
@@ -125,42 +111,13 @@ export const Login = ({ onLogin, onShowToast }) => {
     setShowPassword(!showPassword);
   };
 
-  // Background gradient based on dark mode
-  const getBackgroundGradient = () => {
-    return isDarkMode
-      ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-      : "bg-gradient-to-br from-red-950 via-red-900 to-red-950";
-  };
-
-  // Blob colors based on dark mode
-  const getBlobColors = () => {
-    if (isDarkMode) {
-      return {
-        first: "bg-slate-700",
-        second: "bg-slate-600",
-        third: "bg-slate-500",
-      };
-    }
-    return {
-      first: "bg-red-600",
-      second: "bg-red-700",
-      third: "bg-red-500",
-    };
-  };
-
-  const blobColors = getBlobColors();
-
   return (
-    <div
-      className={`min-h-screen flex flex-col ${getBackgroundGradient()} relative overflow-hidden`}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
       {/* Animated background patterns */}
       <div className="absolute inset-0 opacity-30">
-        <div
-          className={`absolute top-0 -left-4 w-72 h-72 ${blobColors.first} rounded-full mix-blend-multiply filter blur-xl animate-blob`}></div>
-        <div
-          className={`absolute top-0 -right-4 w-72 h-72 ${blobColors.second} rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000`}></div>
-        <div
-          className={`absolute -bottom-8 left-20 w-72 h-72 ${blobColors.third} rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000`}></div>
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
       </div>
 
       <style>{`
@@ -203,12 +160,7 @@ export const Login = ({ onLogin, onShowToast }) => {
             backgroundRepeat: "no-repeat",
           }}>
           {!imageLoaded && (
-            <div
-              className={`absolute inset-0 flex items-center justify-center ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
-                  : "bg-gradient-to-br from-red-900 via-red-800 to-red-900"
-              }`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-blue-900 flex items-center justify-center">
               <div className="relative">
                 <div className="w-16 h-16 border-4 border-white/20 border-t-white/80 rounded-full animate-spin"></div>
               </div>
@@ -216,35 +168,16 @@ export const Login = ({ onLogin, onShowToast }) => {
           )}
 
           {/* Gradient overlays */}
-          <div
-            className={`absolute inset-0 ${
-              isDarkMode
-                ? "bg-gradient-to-br from-slate-900/40 via-slate-800/30 to-slate-700/40"
-                : "bg-gradient-to-br from-red-900/40 via-red-800/30 to-red-700/40"
-            }`}></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-purple-900/30 to-pink-900/40"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.3)_100%)]"></div>
         </div>
 
         {/* FORM SECTION */}
-        <div
-          className={`flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden flex-1 lg:flex-[2] backdrop-blur-xl ${
-            isDarkMode
-              ? "bg-gradient-to-br from-slate-900/50 to-slate-800/50"
-              : "bg-gradient-to-br from-red-950/50 to-red-900/50"
-          }`}>
+        <div className="flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden flex-1 lg:flex-[2] bg-gradient-to-br from-slate-900/50 to-blue-900/50 backdrop-blur-xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
           <div
-            className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl animate-pulse ${
-              isDarkMode
-                ? "bg-gradient-to-br from-slate-600/20 to-slate-500/20"
-                : "bg-gradient-to-br from-red-500/20 to-red-600/20"
-            }`}></div>
-          <div
-            className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl animate-pulse ${
-              isDarkMode
-                ? "bg-gradient-to-tr from-slate-500/20 to-slate-400/20"
-                : "bg-gradient-to-tr from-red-600/20 to-red-500/20"
-            }`}
+            className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse"
             style={{ animationDelay: "1s" }}></div>
 
           <form
@@ -254,18 +187,8 @@ export const Login = ({ onLogin, onShowToast }) => {
                 : "opacity-0 translate-x-12"
             }`}
             onSubmit={handleSubmit}>
-            <div
-              className={`backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border shadow-2xl relative overflow-hidden group transition-all duration-500 hover:scale-[1.02] ${
-                isDarkMode
-                  ? "bg-slate-800/30 border-slate-600/30 hover:bg-slate-800/40 hover:shadow-slate-500/20"
-                  : "bg-white/10 border-red-200/30 hover:bg-white/[0.12] hover:shadow-red-500/20"
-              }`}>
-              <div
-                className={`absolute inset-0 rounded-3xl bg-gradient-to-r transition-all duration-500 -z-10 ${
-                  isDarkMode
-                    ? "from-slate-600/0 via-slate-500/0 to-slate-400/0 group-hover:from-slate-600/20 group-hover:via-slate-500/20 group-hover:to-slate-400/20"
-                    : "from-red-500/0 via-red-600/0 to-red-500/0 group-hover:from-red-500/20 group-hover:via-red-600/20 group-hover:to-red-500/20"
-                }`}></div>
+            <div className="bg-white/10 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl relative overflow-hidden group hover:bg-white/[0.12] transition-all duration-500 hover:scale-[1.02] hover:shadow-blue-500/20">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-blue-500/20 group-hover:via-purple-500/20 group-hover:to-pink-500/20 transition-all duration-500 -z-10"></div>
 
               {/* Header */}
               <div className="text-center mb-8 relative">
@@ -275,27 +198,16 @@ export const Login = ({ onLogin, onShowToast }) => {
                       size="medium"
                       className="opacity-90 drop-shadow-2xl transition-transform duration-300 group-hover/logo:scale-110"
                     />
-                    <div
-                      className={`absolute inset-0 blur-xl rounded-full scale-150 transition-all duration-300 ${
-                        isDarkMode
-                          ? "bg-slate-400/20 group-hover/logo:bg-slate-400/30"
-                          : "bg-red-400/20 group-hover/logo:bg-red-400/30"
-                      }`}></div>
+                    <div className="absolute inset-0 bg-blue-400/20 blur-xl rounded-full scale-150 group-hover/logo:bg-blue-400/30 transition-all duration-300"></div>
                   </div>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-lg">
                   Selamat Datang
                 </h2>
-                <p
-                  className={`text-sm sm:text-base ${
-                    isDarkMode ? "text-slate-300/80" : "text-red-200/80"
-                  }`}>
+                <p className="text-blue-200/80 text-sm sm:text-base">
                   Silakan Masuk Ke Akun Anda
                 </p>
-                <div
-                  className={`mt-3 w-16 h-1 mx-auto bg-gradient-to-r from-transparent rounded-full ${
-                    isDarkMode ? "via-slate-400/50" : "via-red-400/50"
-                  } to-transparent`}></div>
+                <div className="mt-3 w-16 h-1 mx-auto bg-gradient-to-r from-transparent via-blue-400/50 to-transparent rounded-full"></div>
               </div>
 
               {/* Username Field */}
@@ -308,24 +220,17 @@ export const Login = ({ onLogin, onShowToast }) => {
                     type="text"
                     id="username"
                     autoComplete="off"
-                    className={`w-full px-4 py-3.5 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 focus:outline-none hover:border-white/30 ${
+                    className={`w-full px-4 py-3.5 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
                       errors.username
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
-                        : isDarkMode
-                        ? "border-slate-500/30 focus:border-slate-400/50 focus:shadow-lg focus:shadow-slate-500/20"
-                        : "border-red-200/30 focus:border-red-400/50 focus:shadow-lg focus:shadow-red-500/20"
-                    }`}
+                        : "border-white/20 focus:border-blue-400/50 focus:shadow-lg focus:shadow-blue-500/20"
+                    } focus:outline-none hover:border-white/30`}
                     placeholder="Masukkan username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
                   />
-                  <div
-                    className={`absolute inset-0 rounded-xl bg-gradient-to-r transition-all duration-300 pointer-events-none ${
-                      isDarkMode
-                        ? "from-slate-500/0 to-slate-400/0 group-hover/input:from-slate-500/5 group-hover/input:to-slate-400/5"
-                        : "from-red-500/0 to-red-600/0 group-hover/input:from-red-500/5 group-hover/input:to-red-600/5"
-                    }`}></div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover/input:from-blue-500/5 group-hover/input:to-purple-500/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
                 {errors.username && (
                   <div className="text-red-300 text-sm mt-2 flex items-center font-medium animate-pulse">
@@ -345,13 +250,11 @@ export const Login = ({ onLogin, onShowToast }) => {
                     type={showPassword ? "text" : "password"}
                     id="password"
                     autoComplete="off"
-                    className={`w-full px-4 py-3.5 pr-12 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 focus:outline-none hover:border-white/30 ${
+                    className={`w-full px-4 py-3.5 pr-12 bg-white/10 backdrop-blur-sm border-2 rounded-xl text-white placeholder-white/40 transition-all duration-300 ${
                       errors.password
                         ? "border-red-400/50 shadow-lg shadow-red-500/20"
-                        : isDarkMode
-                        ? "border-slate-500/30 focus:border-slate-400/50 focus:shadow-lg focus:shadow-slate-500/20"
-                        : "border-red-200/30 focus:border-red-500/50 focus:shadow-lg focus:shadow-red-500/20"
-                    }`}
+                        : "border-white/20 focus:border-purple-400/50 focus:shadow-lg focus:shadow-purple-500/20"
+                    } focus:outline-none hover:border-white/30`}
                     placeholder="Masukkan password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -363,12 +266,7 @@ export const Login = ({ onLogin, onShowToast }) => {
                     onClick={togglePasswordVisibility}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                  <div
-                    className={`absolute inset-0 rounded-xl bg-gradient-to-r transition-all duration-300 pointer-events-none ${
-                      isDarkMode
-                        ? "from-slate-400/0 to-slate-500/0 group-hover/input:from-slate-400/5 group-hover/input:to-slate-500/5"
-                        : "from-red-600/0 to-red-500/0 group-hover/input:from-red-600/5 group-hover/input:to-red-500/5"
-                    }`}></div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover/input:from-purple-500/5 group-hover/input:to-pink-500/5 transition-all duration-300 pointer-events-none"></div>
                 </div>
                 {errors.password && (
                   <div className="text-red-300 text-sm mt-2 flex items-center font-medium animate-pulse">
@@ -380,12 +278,7 @@ export const Login = ({ onLogin, onShowToast }) => {
 
               {/* Error Message */}
               {errors.general && (
-                <div
-                  className={`mb-5 p-4 backdrop-blur-sm border rounded-xl text-sm font-medium shadow-lg animate-pulse ${
-                    isDarkMode
-                      ? "bg-red-500/10 border-red-400/20 text-red-300 shadow-red-500/5"
-                      : "bg-red-500/20 border-red-400/30 text-red-200 shadow-red-500/10"
-                  }`}>
+                <div className="mb-5 p-4 bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-200 rounded-xl text-sm font-medium shadow-lg shadow-red-500/10 animate-pulse">
                   ⚠️ {errors.general}
                 </div>
               )}
@@ -398,11 +291,7 @@ export const Login = ({ onLogin, onShowToast }) => {
                     id="remember"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className={`w-4 h-4 rounded bg-white/10 border-2 focus:outline-none focus:ring-2 transition-all cursor-pointer ${
-                      isDarkMode
-                        ? "border-slate-400/30 checked:bg-slate-500 checked:border-slate-500 focus:ring-slate-400/50"
-                        : "border-white/30 checked:bg-red-500 checked:border-red-500 focus:ring-red-400/50"
-                    }`}
+                    className="w-4 h-4 rounded bg-white/10 border-2 border-white/30 checked:bg-blue-500 checked:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all cursor-pointer"
                   />
                   <span className="text-sm text-white/80 group-hover/check:text-white transition-colors select-none">
                     Ingat saya
@@ -410,11 +299,7 @@ export const Login = ({ onLogin, onShowToast }) => {
                 </label>
                 <a
                   href="#"
-                  className={`text-sm font-medium hover:underline transition-colors ${
-                    isDarkMode
-                      ? "text-slate-300 hover:text-slate-200"
-                      : "text-red-300 hover:text-red-200"
-                  }`}>
+                  className="text-sm text-blue-300 hover:text-blue-200 transition-colors font-medium hover:underline">
                   Lupa password?
                 </a>
               </div>
@@ -422,11 +307,7 @@ export const Login = ({ onLogin, onShowToast }) => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className={`relative w-full py-4 rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden ${
-                  isDarkMode
-                    ? "bg-gradient-to-r from-slate-700 via-slate-600 to-slate-500 hover:from-slate-600 hover:via-slate-500 hover:to-slate-400 shadow-slate-900/40 hover:shadow-slate-800/60"
-                    : "bg-gradient-to-r from-red-900 via-red-800 to-red-700 hover:from-red-800 hover:via-red-700 hover:to-red-600 shadow-red-900/40 hover:shadow-red-800/60"
-                } disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed`}
+                className="relative w-full py-4 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 hover:from-blue-800 hover:via-blue-700 hover:to-blue-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-500 flex items-center justify-center shadow-xl shadow-blue-900/40 hover:shadow-2xl hover:shadow-blue-800/60 hover:scale-[1.02] active:scale-[0.98] group/btn overflow-hidden"
                 disabled={isLoading}>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
 
