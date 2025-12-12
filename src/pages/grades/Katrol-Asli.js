@@ -45,19 +45,6 @@ const Katrol = ({ userData: initialUserData }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [activeAcademicYear, setActiveAcademicYear] = useState(null);
 
-  // 🔥 BARU: State untuk deteksi kolom NH dinamis
-  const [availableNH, setAvailableNH] = useState([
-    "NH1",
-    "NH2",
-    "NH3",
-    "NH4",
-    "NH5",
-  ]);
-
-  // 🔥 BARU: State untuk fix bug input KKM (problem "075")
-  const [kkmInput, setKkmInput] = useState("70");
-  const [nilaiMaksimalInput, setNilaiMaksimalInput] = useState("90");
-
   const mataPelajaranGuruKelas = [
     "Bahasa Indonesia",
     "Bahasa Inggris",
@@ -157,10 +144,6 @@ const Katrol = ({ userData: initialUserData }) => {
           setNilaiMaksimal(90);
           setOriginalKkm(70);
           setOriginalNilaiMaksimal(90);
-
-          // 🔥 BARU: Reset string inputs
-          setKkmInput("70");
-          setNilaiMaksimalInput("90");
           return;
         }
 
@@ -170,10 +153,6 @@ const Katrol = ({ userData: initialUserData }) => {
           setOriginalKkm(data.kkm);
           setOriginalNilaiMaksimal(data.nilai_maksimal);
           setSettingsChanged(false);
-
-          // 🔥 BARU: Sync string inputs untuk fix bug "075"
-          setKkmInput(String(data.kkm));
-          setNilaiMaksimalInput(String(data.nilai_maksimal));
         }
       } catch (error) {
         console.error("Error:", error);
@@ -181,10 +160,6 @@ const Katrol = ({ userData: initialUserData }) => {
         setNilaiMaksimal(90);
         setOriginalKkm(70);
         setOriginalNilaiMaksimal(90);
-
-        // 🔥 BARU: Reset string inputs
-        setKkmInput("70");
-        setNilaiMaksimalInput("90");
       } finally {
         setLoadingSettings(false);
       }
@@ -199,12 +174,8 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   const handleKkmChange = (value) => {
-    // 🔥 PERBAIKAN: Simpan raw input sebagai string untuk fix bug "075"
-    setKkmInput(value);
-
-    // Parse jadi number untuk logic
-    const numValue = value === "" ? 0 : parseInt(value);
-    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+    const numValue = parseInt(value) || 0;
+    if (numValue >= 0 && numValue <= 100) {
       setKkm(numValue);
       setSettingsChanged(
         numValue !== originalKkm || nilaiMaksimal !== originalNilaiMaksimal
@@ -213,12 +184,8 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   const handleNilaiMaksimalChange = (value) => {
-    // 🔥 PERBAIKAN: Simpan raw input sebagai string untuk fix bug "075"
-    setNilaiMaksimalInput(value);
-
-    // Parse jadi number untuk logic
-    const numValue = value === "" ? 0 : parseInt(value);
-    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+    const numValue = parseInt(value) || 0;
+    if (numValue >= 0 && numValue <= 100) {
       setNilaiMaksimal(numValue);
       setSettingsChanged(
         kkm !== originalKkm || numValue !== originalNilaiMaksimal
@@ -414,29 +381,6 @@ const Katrol = ({ userData: initialUserData }) => {
 
       console.log(`✅ Ditemukan ${nilaiData?.length || 0} data nilai`);
 
-      // 🔥 BARU: Deteksi kolom NH yang ada datanya
-      const nhColumns = new Set();
-      if (nilaiData && nilaiData.length > 0) {
-        nilaiData.forEach((item) => {
-          if (item.jenis_nilai?.startsWith("NH")) {
-            nhColumns.add(item.jenis_nilai);
-          }
-        });
-      }
-
-      // Sort NH columns (NH1, NH2, NH3, dst)
-      const detectedNH = Array.from(nhColumns).sort();
-
-      // Set available NH, default ke semua kalau ga ada data
-      setAvailableNH(
-        detectedNH.length > 0 ? detectedNH : ["NH1", "NH2", "NH3", "NH4", "NH5"]
-      );
-
-      console.log(
-        `📊 Kolom NH terdeteksi:`,
-        detectedNH.length > 0 ? detectedNH : "Semua (NH1-NH5)"
-      );
-
       const previewData = siswaData.map((siswa) => {
         const nilaiSiswa =
           nilaiData?.filter((n) => n.nisn === siswa.nisn) || [];
@@ -543,21 +487,6 @@ const Katrol = ({ userData: initialUserData }) => {
         .eq("mata_pelajaran", selectedSubject);
 
       if (nilaiError) throw nilaiError;
-
-      // 🔥 BARU: Deteksi kolom NH untuk proses katrol juga
-      const nhColumns = new Set();
-      if (nilaiData && nilaiData.length > 0) {
-        nilaiData.forEach((item) => {
-          if (item.jenis_nilai?.startsWith("NH")) {
-            nhColumns.add(item.jenis_nilai);
-          }
-        });
-      }
-
-      const detectedNH = Array.from(nhColumns).sort();
-      setAvailableNH(
-        detectedNH.length > 0 ? detectedNH : ["NH1", "NH2", "NH3", "NH4", "NH5"]
-      );
 
       const previewData = siswaData.map((siswa) => {
         return {
@@ -745,13 +674,11 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setExporting(true);
     try {
-      // ✅ PERBAIKAN: Urutan parameter yang BENAR sesuai Utils.js
       await exportToExcelMultiSheet(
-        hasilKatrol, // data
-        selectedSubject, // mapel
-        selectedClass, // kelas
-        availableNH, // ← availableNH di parameter ke-4 ✅
-        userData // ← userData di parameter ke-5 ✅
+        hasilKatrol,
+        selectedSubject,
+        selectedClass,
+        userData
       );
       showMessage("✅ Berhasil export Nilai Katrol", "success");
     } catch (error) {
@@ -903,7 +830,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 type="number"
                 min="0"
                 max="100"
-                value={kkmInput}
+                value={kkm}
                 onChange={(e) => handleKkmChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
                 className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800 transition-colors"
@@ -920,7 +847,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 type="number"
                 min="0"
                 max="100"
-                value={nilaiMaksimalInput}
+                value={nilaiMaksimal}
                 onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
                 className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800 transition-colors"
@@ -1044,7 +971,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 ) : (
                   <>
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan KKM</span>
+                    <span>Simpan Pengaturan KKM</span>
                   </>
                 )}
               </button>
@@ -1130,14 +1057,21 @@ const Katrol = ({ userData: initialUserData }) => {
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                             Nama Siswa
                           </th>
-                          {/* 🔥 BARU: Render kolom NH secara dinamis */}
-                          {availableNH.map((nh) => (
-                            <th
-                              key={nh}
-                              className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                              {nh}
-                            </th>
-                          ))}
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH1
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH2
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH3
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH4
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH5
+                          </th>
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                             UTS
                           </th>
@@ -1160,14 +1094,21 @@ const Katrol = ({ userData: initialUserData }) => {
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                               {item.nama_siswa}
                             </td>
-                            {/* 🔥 BARU: Render nilai NH secara dinamis */}
-                            {availableNH.map((nh) => (
-                              <td
-                                key={nh}
-                                className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                                {item.nilai?.[nh] || "-"}
-                              </td>
-                            ))}
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH1 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH2 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH3 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH4 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH5 || "-"}
+                            </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                               {item.nilai?.UTS || "-"}
                             </td>
@@ -1223,7 +1164,7 @@ const Katrol = ({ userData: initialUserData }) => {
               </div>
 
               {/* 🔥 CATATAN: KatrolTable akan menampilkan BOTH nilai asli dan nilai katrol */}
-              <KatrolTable data={hasilKatrol} availableNH={availableNH} />
+              <KatrolTable data={hasilKatrol} />
 
               <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                 <p className="mb-1">

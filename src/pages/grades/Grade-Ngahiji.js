@@ -752,7 +752,21 @@ const Grade = ({ userData: initialUserData }) => {
                     Import Excel
                   </button>
 
-                  {/* ❌ TOMBOL "KATROL NILAI" DIHAPUS dari sini */}
+                  <Link
+                    to="/grades/katrol"
+                    state={{
+                      userData,
+                      selectedClass:
+                        selectedClass ||
+                        (userData?.role === "guru_kelas"
+                          ? String(userData.kelas)
+                          : ""),
+                      selectedSubject: selectedSubject || "",
+                    }}
+                    className="w-full sm:w-auto bg-purple-600 dark:bg-purple-700 hover:bg-purple-700 dark:hover:bg-purple-600 text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-center text-sm sm:text-base touch-manipulation min-h-[44px] active:scale-[0.98]">
+                    <Calculator className="w-4 h-4" />
+                    Katrol Nilai
+                  </Link>
                 </div>
               </div>
             </div>

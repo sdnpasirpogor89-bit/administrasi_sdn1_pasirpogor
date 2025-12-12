@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { TrendingUp, X, ChevronRight } from "lucide-react";
 
-const KatrolTable = ({
-  data,
-  kkm,
-  availableNH = ["NH1", "NH2", "NH3", "NH4", "NH5"],
-}) => {
+const KatrolTable = ({ data, kkm }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
@@ -48,29 +44,25 @@ const KatrolTable = ({
   };
 
   // Data untuk modal
-  const getDetailData = (siswa) => {
-    const detailItems = availableNH.map((nh) => ({
-      label: nh,
-      asli: siswa.nilai[nh],
-      katrol: siswa.nilai_katrol?.[nh],
-    }));
-
-    return [
-      ...detailItems,
-      { label: "UTS", asli: siswa.nilai.UTS, katrol: siswa.nilai_katrol?.UTS },
-      { label: "UAS", asli: siswa.nilai.UAS, katrol: siswa.nilai_katrol?.UAS },
-      {
-        label: "Rata NH",
-        asli: siswa.rata_NH_asli,
-        katrol: siswa.rata_NH_katrol,
-      },
-      {
-        label: "Nilai Akhir",
-        asli: siswa.nilai_akhir_asli,
-        katrol: siswa.nilai_akhir_katrol,
-      },
-    ];
-  };
+  const getDetailData = (siswa) => [
+    { label: "NH1", asli: siswa.nilai.NH1, katrol: siswa.nilai_katrol?.NH1 },
+    { label: "NH2", asli: siswa.nilai.NH2, katrol: siswa.nilai_katrol?.NH2 },
+    { label: "NH3", asli: siswa.nilai.NH3, katrol: siswa.nilai_katrol?.NH3 },
+    { label: "NH4", asli: siswa.nilai.NH4, katrol: siswa.nilai_katrol?.NH4 },
+    { label: "NH5", asli: siswa.nilai.NH5, katrol: siswa.nilai_katrol?.NH5 },
+    { label: "UTS", asli: siswa.nilai.UTS, katrol: siswa.nilai_katrol?.UTS },
+    { label: "UAS", asli: siswa.nilai.UAS, katrol: siswa.nilai_katrol?.UAS },
+    {
+      label: "Rata NH",
+      asli: siswa.rata_NH_asli,
+      katrol: siswa.rata_NH_katrol,
+    },
+    {
+      label: "Nilai Akhir",
+      asli: siswa.nilai_akhir_asli,
+      katrol: siswa.nilai_akhir_katrol,
+    },
+  ];
 
   return (
     <div className="w-full">
@@ -214,19 +206,36 @@ const KatrolTable = ({
               <th className="px-4 py-3 text-left text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 min-w-[180px]">
                 Nama Siswa
               </th>
-
-              {/* 🔥 BARU: Render header NH secara dinamis */}
-              {availableNH.map((nh) => (
-                <React.Fragment key={nh}>
-                  <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
-                    {nh}
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
-                    {nh}-K
-                  </th>
-                </React.Fragment>
-              ))}
-
+              <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
+                NH1
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                NH1-K
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
+                NH2
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                NH2-K
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
+                NH3
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                NH3-K
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
+                NH4
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                NH4-K
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
+                NH5
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                NH5-K
+              </th>
               <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
                 UTS
               </th>
@@ -273,30 +282,95 @@ const KatrolTable = ({
                   {siswa.nama_siswa}
                 </td>
 
-                {/* 🔥 BARU: Render nilai NH secara dinamis */}
-                {availableNH.map((nh) => (
-                  <React.Fragment key={nh}>
-                    {/* Nilai Asli */}
-                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
-                      {formatNilai(siswa.nilai[nh])}
-                    </td>
+                {/* NH1 */}
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
+                  {formatNilai(siswa.nilai.NH1)}
+                </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.NH1)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.NH1,
+                      siswa.nilai_katrol?.NH1
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </td>
 
-                    {/* Nilai Katrol */}
-                    <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
-                      <div className="flex items-center justify-center gap-1">
-                        <span className="font-semibold text-green-700 dark:text-green-400">
-                          {formatNilai(siswa.nilai_katrol?.[nh])}
-                        </span>
-                        {isNaikSignificant(
-                          siswa.nilai[nh],
-                          siswa.nilai_katrol?.[nh]
-                        ) && (
-                          <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
-                        )}
-                      </div>
-                    </td>
-                  </React.Fragment>
-                ))}
+                {/* NH2 */}
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
+                  {formatNilai(siswa.nilai.NH2)}
+                </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.NH2)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.NH2,
+                      siswa.nilai_katrol?.NH2
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </td>
+
+                {/* NH3 */}
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
+                  {formatNilai(siswa.nilai.NH3)}
+                </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.NH3)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.NH3,
+                      siswa.nilai_katrol?.NH3
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </td>
+
+                {/* NH4 */}
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
+                  {formatNilai(siswa.nilai.NH4)}
+                </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.NH4)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.NH4,
+                      siswa.nilai_katrol?.NH4
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </td>
+
+                {/* NH5 */}
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
+                  {formatNilai(siswa.nilai.NH5)}
+                </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.NH5)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.NH5,
+                      siswa.nilai_katrol?.NH5
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </td>
 
                 {/* UTS */}
                 <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
@@ -416,29 +490,27 @@ const KatrolTable = ({
             {/* Content Grid */}
             <div className="p-3 sm:p-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                {/* 🔥 BARU: Render NH dinamis untuk mobile (hanya tampilkan 2 pertama) */}
-                {availableNH.slice(0, 2).map((nh) => (
-                  <div key={nh} className="space-y-1">
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {nh}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-900 dark:text-gray-300">
-                        {formatNilai(siswa.nilai[nh])}
-                      </span>
-                      <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                      <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                        {formatNilai(siswa.nilai_katrol?.[nh])}
-                      </span>
-                      {isNaikSignificant(
-                        siswa.nilai[nh],
-                        siswa.nilai_katrol?.[nh]
-                      ) && (
-                        <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                      )}
-                    </div>
+                {/* NH1 */}
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    NH1
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-900 dark:text-gray-300">
+                      {formatNilai(siswa.nilai.NH1)}
+                    </span>
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.NH1)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.NH1,
+                      siswa.nilai_katrol?.NH1
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    )}
+                  </div>
+                </div>
 
                 {/* UTS */}
                 <div className="space-y-1">
@@ -461,55 +533,27 @@ const KatrolTable = ({
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Tampilkan NH lain jika ada lebih dari 2 */}
-              {availableNH.length > 2 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                  {availableNH.slice(2, 5).map((nh) => (
-                    <div key={nh} className="space-y-1">
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {nh}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-900 dark:text-gray-300">
-                          {formatNilai(siswa.nilai[nh])}
-                        </span>
-                        <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                        <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                          {formatNilai(siswa.nilai_katrol?.[nh])}
-                        </span>
-                        {isNaikSignificant(
-                          siswa.nilai[nh],
-                          siswa.nilai_katrol?.[nh]
-                        ) && (
-                          <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* UAS */}
-              <div className="mb-4">
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  UAS
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-900 dark:text-gray-300">
-                    {formatNilai(siswa.nilai.UAS)}
-                  </span>
-                  <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-                    {formatNilai(siswa.nilai_katrol?.UAS)}
-                  </span>
-                  {isNaikSignificant(
-                    siswa.nilai.UAS,
-                    siswa.nilai_katrol?.UAS
-                  ) && (
-                    <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
-                  )}
+                {/* UAS */}
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    UAS
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-900 dark:text-gray-300">
+                      {formatNilai(siswa.nilai.UAS)}
+                    </span>
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.UAS)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.UAS,
+                      siswa.nilai_katrol?.UAS
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    )}
+                  </div>
                 </div>
               </div>
 

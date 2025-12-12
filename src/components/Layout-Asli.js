@@ -169,7 +169,7 @@ const Layout = ({
     });
   };
 
-  // Get current page name from location - ✅ UPDATED FOR SUBMENU
+  // Get current page name from location
   const getCurrentPageName = () => {
     const pathMap = {
       "/dashboard": "Dashboard",
@@ -178,8 +178,7 @@ const Layout = ({
       "/teachers": "Data Guru",
       "/attendance": "Presensi Siswa",
       "/teacher-attendance": "Presensi Guru",
-      "/grades": "Nilai Asli", // ✅ UPDATED
-      "/grades/katrol": "Nilai Katrol", // ✅ ADDED
+      "/grades": "Nilai Siswa",
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
       "/spmb": "SPMB",
@@ -190,7 +189,7 @@ const Layout = ({
     return pathMap[location.pathname] || "Dashboard";
   };
 
-  // Mobile-optimized page names - ✅ UPDATED FOR SUBMENU
+  // Mobile-optimized page names
   const getMobilePageName = () => {
     const mobileNames = {
       "/dashboard": "Dashboard",
@@ -199,8 +198,7 @@ const Layout = ({
       "/teachers": "Guru",
       "/attendance": "Presensi",
       "/teacher-attendance": "Presensi Guru",
-      "/grades": "Nilai Asli", // ✅ UPDATED
-      "/grades/katrol": "Nilai Katrol", // ✅ ADDED
+      "/grades": "Nilai",
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
       "/spmb": "SPMB",
@@ -213,13 +211,12 @@ const Layout = ({
 
   const currentPageName = isMobile ? getMobilePageName() : getCurrentPageName();
 
-  // Simplified navigation - ✅ UPDATED FOR SUBMENU
+  // Simplified navigation
   const handleMenuClick = useCallback(
     (menuName) => {
       if (isNavigating) return;
 
       const pathMap = {
-        // Main menu
         Dashboard: "/dashboard",
         "Data Siswa": "/students",
         Siswa: "/students",
@@ -230,14 +227,8 @@ const Layout = ({
         "Presensi Siswa": "/attendance",
         "Presensi Guru": "/teacher-attendance",
         Presensi: "/attendance",
-
-        // ✅ UPDATED: Nilai submenu mapping
-        "Nilai Asli": "/grades", // ✅ ADD
-        "Nilai Katrol": "/grades/katrol", // ✅ ADD
-        "Nilai Siswa": "/grades", // ✅ KEEP for parent menu
-        Nilai: "/grades", // ✅ KEEP for mobile
-
-        // Other menus
+        "Nilai Siswa": "/grades",
+        Nilai: "/grades",
         "Catatan Siswa": "/catatan-siswa",
         Catatan: "/catatan-siswa",
         "Jadwal Pelajaran": "/schedule",
@@ -319,8 +310,8 @@ const Layout = ({
           currentSize.container
         } rounded-full transition-all duration-500 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 ${
           darkMode
-            ? "bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900"
-            : "bg-gradient-to-r from-red-500 via-red-400 to-red-300"
+            ? "bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900" // Dark mode tetap slate
+            : "bg-gradient-to-r from-red-500 via-red-400 to-red-300" // Light mode jadi merah
         }`}
         aria-label="Toggle Dark Mode"
         title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
@@ -386,7 +377,9 @@ const Layout = ({
   return (
     <div
       className={`flex min-h-screen transition-colors duration-300 ${
-        darkMode ? "bg-slate-900" : "bg-red-50"
+        darkMode
+          ? "bg-slate-900" // Dark mode: tetap slate
+          : "bg-red-50" // Light mode: merah
       }`}>
       {/* Add custom animations */}
       <style>{`
@@ -497,8 +490,8 @@ const Layout = ({
         <header
           className={`border-b sticky top-0 z-30 shadow-sm transition-colors duration-300 ${
             darkMode
-              ? "bg-slate-800 border-slate-700"
-              : "bg-white border-red-200"
+              ? "bg-slate-800 border-slate-700" // Dark mode
+              : "bg-white border-red-200" // Light mode: border merah
           }`}>
           {/* Mobile Header */}
           {isMobile && (
@@ -509,8 +502,8 @@ const Layout = ({
                     onClick={handleToggleMobileSidebar}
                     className={`w-11 h-11 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation shadow-md ${
                       darkMode
-                        ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                        : "bg-red-600 hover:bg-red-700 active:bg-red-800"
+                        ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800" // Dark mode: blue
+                        : "bg-red-600 hover:bg-red-700 active:bg-red-800" // Light mode: red
                     }`}
                     aria-label="Menu">
                     <Menu size={20} strokeWidth={2} />
@@ -527,7 +520,7 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* COOL DARK MODE TOGGLE - MOBILE */}
+                  {/* 櫨 COOL DARK MODE TOGGLE - MOBILE */}
                   <div onClick={(e) => e.stopPropagation()}>
                     <CoolDarkModeToggle size="small" />
                   </div>
@@ -536,7 +529,7 @@ const Layout = ({
                     className={`border rounded-lg px-2.5 py-1.5 min-w-0 ${
                       darkMode
                         ? "bg-slate-700 border-slate-600"
-                        : "bg-red-50 border-red-200"
+                        : "bg-red-50 border-red-200" // Light mode: merah
                     }`}>
                     <div className="text-center">
                       <div
@@ -560,7 +553,7 @@ const Layout = ({
                       className={`w-11 h-11 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation shadow-md ${
                         darkMode
                           ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-                          : "bg-red-600 hover:bg-red-700 active:bg-red-800"
+                          : "bg-red-600 hover:bg-red-700 active:bg-red-800" // Light mode: red
                       }`}
                       aria-label="Profile">
                       <User size={18} strokeWidth={2} />
@@ -571,7 +564,7 @@ const Layout = ({
                         className={`absolute right-0 top-full mt-2 w-64 border rounded-xl shadow-xl z-50 animate-in slide-in-from-top-2 duration-200 ${
                           darkMode
                             ? "bg-slate-800 border-slate-700"
-                            : "bg-white border-red-200"
+                            : "bg-white border-red-200" // Light mode
                         }`}>
                         <div
                           className={`px-4 py-3 border-b ${
@@ -585,7 +578,7 @@ const Layout = ({
                           </p>
                           <p
                             className={`text-xs capitalize truncate ${
-                              darkMode ? "text-blue-400" : "text-red-600"
+                              darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
                             }`}>
                             {userData.role === "guru_kelas" && userData.kelas
                               ? `Guru Kelas ${userData.kelas}`
@@ -602,7 +595,7 @@ const Layout = ({
                             className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm transition-colors touch-manipulation ${
                               darkMode
                                 ? "text-slate-300 hover:bg-slate-700 active:bg-slate-600"
-                                : "text-red-800 hover:bg-red-50 active:bg-red-100"
+                                : "text-red-800 hover:bg-red-50 active:bg-red-100" // Light mode: red
                             }`}>
                             <Settings
                               size={18}
@@ -623,7 +616,7 @@ const Layout = ({
                             className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm transition-colors touch-manipulation ${
                               darkMode
                                 ? "text-red-400 hover:bg-red-900/20 active:bg-red-900/30"
-                                : "text-red-600 hover:bg-red-50 active:bg-red-100"
+                                : "text-red-600 hover:bg-red-50 active:bg-red-100" // Light mode: red
                             }`}>
                             <LogOut size={18} className="flex-shrink-0" />
                             <span className="font-medium">Logout</span>
@@ -647,7 +640,7 @@ const Layout = ({
                     className={`w-10 h-10 rounded-lg text-white transition-colors flex items-center justify-center touch-manipulation ${
                       darkMode
                         ? "bg-blue-600 hover:bg-blue-700"
-                        : "bg-red-600 hover:bg-red-700"
+                        : "bg-red-600 hover:bg-red-700" // Light mode: red
                     }`}
                     aria-label="Menu">
                     <Menu size={20} />
@@ -664,14 +657,14 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  {/* COOL DARK MODE TOGGLE - TABLET */}
+                  {/* 櫨 COOL DARK MODE TOGGLE - TABLET */}
                   <CoolDarkModeToggle size="default" />
 
                   <div
                     className={`border rounded-xl px-4 py-2.5 ${
                       darkMode
                         ? "bg-slate-700 border-slate-600"
-                        : "bg-red-50 border-red-200"
+                        : "bg-red-50 border-red-200" // Light mode: red
                     }`}>
                     <div className="flex items-center gap-3">
                       <div className="text-center">
@@ -680,7 +673,7 @@ const Layout = ({
                             size={16}
                             className={
                               darkMode ? "text-blue-400" : "text-red-600"
-                            }
+                            } // Light mode: red
                           />
                           <span
                             className={`font-mono font-semibold text-base ${
@@ -694,7 +687,7 @@ const Layout = ({
                             size={14}
                             className={
                               darkMode ? "text-blue-400" : "text-red-600"
-                            }
+                            } // Light mode: red
                           />
                           <span
                             className={
@@ -713,7 +706,7 @@ const Layout = ({
                       className={`px-4 py-2.5 rounded-xl text-white transition-colors flex items-center gap-2 touch-manipulation ${
                         darkMode
                           ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-red-600 hover:bg-red-700"
+                          : "bg-red-600 hover:bg-red-700" // Light mode: red
                       }`}>
                       <User size={16} />
                       <span className="text-sm font-medium">Profile</span>
@@ -730,7 +723,7 @@ const Layout = ({
                         className={`absolute right-0 top-full mt-2 w-64 border rounded-xl shadow-xl z-50 ${
                           darkMode
                             ? "bg-slate-800 border-slate-700"
-                            : "bg-white border-red-200"
+                            : "bg-white border-red-200" // Light mode
                         }`}>
                         <div
                           className={`px-4 py-3 border-b ${
@@ -744,7 +737,7 @@ const Layout = ({
                           </p>
                           <p
                             className={`text-xs capitalize ${
-                              darkMode ? "text-blue-400" : "text-red-600"
+                              darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
                             }`}>
                             {userData.role === "guru_kelas" && userData.kelas
                               ? `Guru Kelas ${userData.kelas}`
@@ -761,7 +754,7 @@ const Layout = ({
                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                               darkMode
                                 ? "text-slate-300 hover:bg-slate-700"
-                                : "text-red-800 hover:bg-red-50"
+                                : "text-red-800 hover:bg-red-50" // Light mode: red
                             }`}>
                             <Settings size={16} />
                             <span className="font-medium">Profile</span>
@@ -776,7 +769,7 @@ const Layout = ({
                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                               darkMode
                                 ? "text-red-400 hover:bg-red-900/20"
-                                : "text-red-600 hover:bg-red-50"
+                                : "text-red-600 hover:bg-red-50" // Light mode: red
                             }`}>
                             <LogOut size={16} />
                             <span className="font-medium">Logout</span>
@@ -803,7 +796,7 @@ const Layout = ({
                     {isNavigating && (
                       <span
                         className={`ml-2 text-sm font-normal ${
-                          darkMode ? "text-blue-400" : "text-red-600"
+                          darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
                         }`}>
                         Loading...
                       </span>
@@ -812,21 +805,21 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-6">
-                  {/* COOL DARK MODE TOGGLE - DESKTOP */}
+                  {/* 櫨 COOL DARK MODE TOGGLE - DESKTOP */}
                   <CoolDarkModeToggle size="large" />
 
                   <div
                     className={`border rounded-xl px-4 py-3 shadow-sm ${
                       darkMode
                         ? "bg-gradient-to-br from-slate-700 to-slate-800 border-slate-600"
-                        : "bg-gradient-to-br from-red-50 to-red-100 border-red-300"
+                        : "bg-gradient-to-br from-red-50 to-red-100 border-red-300" // Light mode: red
                     }`}>
                     <div className="flex flex-col space-y-1">
                       <div className="flex items-center gap-2">
                         <Clock
                           size={14}
                           className={`flex-shrink-0 ${
-                            darkMode ? "text-blue-400" : "text-red-600"
+                            darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
                           }`}
                         />
                         <span
@@ -837,7 +830,7 @@ const Layout = ({
                         </span>
                         <span
                           className={`text-white text-xs font-semibold px-1.5 py-0.5 rounded ${
-                            darkMode ? "bg-blue-500" : "bg-red-500"
+                            darkMode ? "bg-blue-500" : "bg-red-500" // Light mode: red
                           }`}>
                           WIB
                         </span>
@@ -846,7 +839,7 @@ const Layout = ({
                         <Calendar
                           size={14}
                           className={`flex-shrink-0 ${
-                            darkMode ? "text-blue-400" : "text-red-600"
+                            darkMode ? "text-blue-400" : "text-red-600" // Light mode: red
                           }`}
                         />
                         <span
@@ -864,7 +857,7 @@ const Layout = ({
                       className={`px-4 py-2 rounded-xl transition-colors duration-200 flex items-center justify-center ${
                         darkMode
                           ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-red-600 hover:bg-red-700"
+                          : "bg-red-600 hover:bg-red-700" // Light mode: red
                       }`}>
                       <User size={16} className="mr-2" />
                       <span className="text-sm font-medium text-white">
@@ -876,7 +869,7 @@ const Layout = ({
                       className={`absolute right-0 top-full mt-2 w-64 border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-200 z-50 ${
                         darkMode
                           ? "bg-slate-800 border-slate-700"
-                          : "bg-white border-red-200"
+                          : "bg-white border-red-200" // Light mode
                       }`}>
                       <div
                         className={`px-4 py-3 border-b ${
@@ -904,7 +897,7 @@ const Layout = ({
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
                             darkMode
                               ? "text-slate-300 hover:bg-slate-700 hover:text-blue-400"
-                              : "text-red-800 hover:bg-red-50 hover:text-red-700"
+                              : "text-red-800 hover:bg-red-50 hover:text-red-700" // Light mode: red
                           }`}>
                           <Settings size={16} className="flex-shrink-0" />
                           <span className="font-medium">Profile</span>
@@ -919,7 +912,7 @@ const Layout = ({
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-150 ${
                             darkMode
                               ? "text-slate-300 hover:bg-red-900/20 hover:text-red-400"
-                              : "text-red-800 hover:bg-red-50 hover:text-red-700"
+                              : "text-red-800 hover:bg-red-50 hover:text-red-700" // Light mode: red
                           }`}>
                           <LogOut size={16} className="flex-shrink-0" />
                           <span className="font-medium">Logout</span>
@@ -937,7 +930,9 @@ const Layout = ({
         <main
           className={`flex-1 overflow-y-auto transition-colors duration-300 ${
             isMobile ? "p-3" : isTablet ? "p-6" : "p-8"
-          } ${darkMode ? "bg-slate-900" : "bg-red-50"}`}>
+          } ${
+            darkMode ? "bg-slate-900" : "bg-red-50" // Light mode: merah
+          }`}>
           {children}
         </main>
       </div>

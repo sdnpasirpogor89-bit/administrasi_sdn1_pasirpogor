@@ -18,7 +18,6 @@ import {
   CalendarDays,
   Clock,
   ClipboardCheck,
-  ChevronDown, // ✅ TAMBAHAN BARU
 } from "lucide-react";
 
 const Sidebar = ({
@@ -31,7 +30,6 @@ const Sidebar = ({
   onClose,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
-  const [openSubmenus, setOpenSubmenus] = useState({}); // ✅ STATE BARU UNTUK SUBMENU
 
   useEffect(() => {
     if (!mobile) {
@@ -63,15 +61,7 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
-          {
-            name: "Nilai Siswa",
-            icon: BarChart3,
-            hasSubmenu: true, // ✅ FLAG SUBMENU
-            submenu: [
-              { name: "Nilai Asli", path: "/grades" },
-              { name: "Nilai Katrol", path: "/grades/katrol" },
-            ],
-          },
+          { name: "Nilai Siswa", icon: BarChart3 },
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
           { name: "Laporan", icon: FileText },
@@ -109,15 +99,7 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
-          {
-            name: "Nilai Siswa",
-            icon: BarChart3,
-            hasSubmenu: true, // ✅ FLAG SUBMENU
-            submenu: [
-              { name: "Nilai Asli", path: "/grades" },
-              { name: "Nilai Katrol", path: "/grades/katrol" },
-            ],
-          },
+          { name: "Nilai Siswa", icon: BarChart3 },
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
           { name: "Laporan", icon: FileText },
@@ -147,15 +129,7 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
-          {
-            name: "Nilai Siswa",
-            icon: BarChart3,
-            hasSubmenu: true, // ✅ FLAG SUBMENU
-            submenu: [
-              { name: "Nilai Asli", path: "/grades" },
-              { name: "Nilai Katrol", path: "/grades/katrol" },
-            ],
-          },
+          { name: "Nilai Siswa", icon: BarChart3 },
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
           { name: "Laporan", icon: FileText },
@@ -166,18 +140,7 @@ const Sidebar = ({
 
   const menuSections = menuConfig[userData.role] || [];
 
-  // ✅ UPDATED: Handle menu click dengan support submenu
-  const handleMenuClick = (menuName, hasSubmenu = false) => {
-    // Jika menu punya submenu, toggle dropdown
-    if (hasSubmenu) {
-      setOpenSubmenus((prev) => ({
-        ...prev,
-        [menuName]: !prev[menuName],
-      }));
-      return; // Jangan panggil onMenuClick untuk parent
-    }
-
-    // Menu biasa atau submenu item
+  const handleMenuClick = (menuName) => {
     if (onMenuClick) {
       onMenuClick(menuName);
     }
@@ -293,14 +256,11 @@ const Sidebar = ({
                 {section.items.map((item) => {
                   const IconComponent = item.icon;
                   const isActive = currentPage === item.name;
-                  const hasSubmenu = item.hasSubmenu && item.submenu; // ✅ CEK SUBMENU
-                  const isSubmenuOpen = openSubmenus[item.name]; // ✅ CEK STATUS OPEN
 
                   return (
                     <li key={item.name} className="relative group">
-                      {/* ✅ PARENT MENU BUTTON */}
                       <button
-                        onClick={() => handleMenuClick(item.name, hasSubmenu)}
+                        onClick={() => handleMenuClick(item.name)}
                         className={`
                           w-full flex items-center gap-3 sm:gap-3 px-3 sm:px-3 py-2 sm:py-2 rounded-lg text-left
                           transition-all duration-200 touch-manipulation
@@ -324,67 +284,15 @@ const Sidebar = ({
                           }`}
                         />
                         {!showCollapsed && (
-                          <>
-                            <span className="text-sm sm:text-base font-medium leading-tight flex-1">
-                              {item.name}
-                            </span>
-                            {/* ✅ ARROW ICON untuk submenu */}
-                            {hasSubmenu && (
-                              <ChevronDown
-                                size={16}
-                                className={`flex-shrink-0 transition-transform duration-200 ${
-                                  isSubmenuOpen ? "rotate-180" : ""
-                                }`}
-                              />
-                            )}
-                          </>
+                          <span className="text-sm sm:text-base font-medium leading-tight">
+                            {item.name}
+                          </span>
                         )}
 
-                        {mobile && isActive && !hasSubmenu && (
+                        {mobile && isActive && (
                           <div className="ml-auto w-2 h-2 bg-rose-400 dark:bg-blue-400 rounded-full shadow-sm"></div>
                         )}
                       </button>
-
-                      {/* ✅ RENDER SUBMENU ITEMS */}
-                      {hasSubmenu && isSubmenuOpen && !showCollapsed && (
-                        <ul className="mt-1 space-y-0.5 pl-8">
-                          {item.submenu.map((subItem) => {
-                            const isSubActive = currentPage === subItem.name;
-                            return (
-                              <li key={subItem.name}>
-                                <button
-                                  onClick={() => handleMenuClick(subItem.name)}
-                                  className={`
-                                    w-full flex items-center gap-2 px-3 py-2 rounded-lg 
-                                    text-left text-sm transition-all duration-200
-                                    ${
-                                      mobile
-                                        ? "min-h-[42px] active:scale-[0.98]"
-                                        : "min-h-[38px]"
-                                    }
-                                    ${
-                                      isSubActive
-                                        ? "bg-red-500/30 dark:bg-slate-700/50 text-white font-semibold"
-                                        : "text-red-100/90 dark:text-slate-300/90 hover:bg-red-700/30 dark:hover:bg-slate-700/30 hover:text-white"
-                                    }
-                                  `}>
-                                  <div
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                      isSubActive
-                                        ? "bg-rose-400 dark:bg-blue-400"
-                                        : "bg-current"
-                                    }`}
-                                  />
-                                  <span className="flex-1">{subItem.name}</span>
-                                  {mobile && isSubActive && (
-                                    <div className="w-2 h-2 bg-rose-400 dark:bg-blue-400 rounded-full shadow-sm"></div>
-                                  )}
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
 
                       {/* Tooltip for collapsed desktop mode */}
                       {showCollapsed && !mobile && (

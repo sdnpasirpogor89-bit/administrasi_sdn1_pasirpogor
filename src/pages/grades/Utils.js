@@ -5,46 +5,63 @@
 import ExcelJS from "exceljs";
 
 // ========================================
-// 2. GROUP DATA BY NISN
+// HELPER: DETECT AVAILABLE NH COLUMNS
+// ========================================
+export const detectAvailableNH = (data) => {
+  if (!data || data.length === 0) return ["NH1", "NH2", "NH3", "NH4", "NH5"];
+
+  // Ambil item pertama untuk deteksi kolom
+  const firstItem = data[0];
+
+  // Cari semua kolom yang mengandung 'NH' di properti nilai
+  const allKeys = Object.keys(firstItem.nilai || {});
+  const nhColumns = allKeys
+    .filter((key) => key.toUpperCase().startsWith("NH"))
+    .sort(); // Urutkan: NH1, NH2, NH3, etc.
+
+  return nhColumns.length > 0 ? nhColumns : ["NH1", "NH2", "NH3", "NH4", "NH5"];
+};
+
+// ========================================
+// 2. GROUP DATA BY NISN (DINAMIS)
 // ========================================
 export const groupDataByNISN = (rawData) => {
   const grouped = {};
 
+  // Deteksi kolom NH yang ada di rawData
+  if (!rawData || rawData.length === 0) return [];
+
+  const firstItem = rawData[0];
+  const availableColumns = Object.keys(firstItem).filter(
+    (key) =>
+      key.toLowerCase().includes("nh") ||
+      key.toLowerCase().includes("uts") ||
+      key.toLowerCase().includes("uas")
+  );
+
   rawData.forEach((item) => {
     if (!grouped[item.nisn]) {
+      // Buat struktur nilai dinamis
+      const nilaiObj = {};
+
+      // Tambahkan kolom NH yang tersedia
+      availableColumns.forEach((col) => {
+        const key = col.toUpperCase();
+        const value = item[col];
+
+        if (key.startsWith("NH")) {
+          nilaiObj[key] =
+            value !== null && value !== undefined ? Math.round(value) : null;
+        } else if (key === "UTS" || key === "UAS") {
+          nilaiObj[key] =
+            value !== null && value !== undefined ? Math.round(value) : null;
+        }
+      });
+
       grouped[item.nisn] = {
         nisn: item.nisn,
         nama_siswa: item.nama_siswa,
-        nilai: {
-          NH1:
-            item.nh1 !== null && item.nh1 !== undefined
-              ? Math.round(item.nh1)
-              : null, // ✅ DIBULATKAN
-          NH2:
-            item.nh2 !== null && item.nh2 !== undefined
-              ? Math.round(item.nh2)
-              : null, // ✅ DIBULATKAN
-          NH3:
-            item.nh3 !== null && item.nh3 !== undefined
-              ? Math.round(item.nh3)
-              : null, // ✅ DIBULATKAN
-          NH4:
-            item.nh4 !== null && item.nh4 !== undefined
-              ? Math.round(item.nh4)
-              : null, // ✅ DIBULATKAN
-          NH5:
-            item.nh5 !== null && item.nh5 !== undefined
-              ? Math.round(item.nh5)
-              : null, // ✅ DIBULATKAN
-          UTS:
-            item.uts !== null && item.uts !== undefined
-              ? Math.round(item.uts)
-              : null, // ✅ DIBULATKAN
-          UAS:
-            item.uas !== null && item.uas !== undefined
-              ? Math.round(item.uas)
-              : null, // ✅ DIBULATKAN
-        },
+        nilai: nilaiObj,
         nilai_katrol: {},
       };
     }
@@ -54,7 +71,7 @@ export const groupDataByNISN = (rawData) => {
 };
 
 // ========================================
-// 3. KATROL NILAI PER JENIS
+// 3. KATROL NILAI PER JENIS (SAMA)
 // ========================================
 export const katrolNilaiPerJenis = (
   dataSiswa,
@@ -105,13 +122,29 @@ export const katrolNilaiPerJenis = (
 };
 
 // ========================================
-// 4. PROSES KATROL SEMUA JENIS NILAI
+// 4. PROSES KATROL SEMUA JENIS NILAI (DINAMIS)
 // ========================================
-export const prosesKatrolSemua = (dataSiswa, kkm, maxNilai = 90) => {
-  const jenisNilai = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
+export const prosesKatrolSemua = (
+  dataSiswa,
+  kkm,
+  maxNilai = 90,
+  availableNH = null
+) => {
+  // Gunakan availableNH jika diberikan, kalau tidak deteksi otomatis
+  let jenisNilaiArray;
+
+  if (availableNH && Array.isArray(availableNH)) {
+    // Tambahkan UTS dan UAS ke array jenis nilai
+    jenisNilaiArray = [...availableNH, "UTS", "UAS"];
+  } else {
+    // Deteksi otomatis dari data
+    const nhColumns = detectAvailableNH(dataSiswa);
+    jenisNilaiArray = [...nhColumns, "UTS", "UAS"];
+  }
+
   let hasil = [...dataSiswa];
 
-  jenisNilai.forEach((jenis) => {
+  jenisNilaiArray.forEach((jenis) => {
     hasil = katrolNilaiPerJenis(hasil, jenis, kkm, maxNilai);
   });
 
@@ -119,20 +152,24 @@ export const prosesKatrolSemua = (dataSiswa, kkm, maxNilai = 90) => {
 };
 
 // ========================================
-// 5. HITUNG NILAI AKHIR
+// 5. HITUNG NILAI AKHIR (DINAMIS)
 // ========================================
-export const hitungNilaiAkhir = (dataSiswa) => {
-  return dataSiswa.map((siswa) => {
-    const jenisNH = ["NH1", "NH2", "NH3", "NH4", "NH5"];
+export const hitungNilaiAkhir = (dataSiswa, availableNH = null) => {
+  // Tentukan kolom NH yang akan diproses
+  const nhColumns = availableNH || detectAvailableNH(dataSiswa);
 
-    const nilaiNH_asli = jenisNH
+  return dataSiswa.map((siswa) => {
+    // Nilai NH asli
+    const nilaiNH_asli = nhColumns
       .map((jenis) => siswa.nilai[jenis])
       .filter((n) => n !== undefined && n !== null && !isNaN(n));
 
-    const nilaiNH_katrol = jenisNH
+    // Nilai NH katrol
+    const nilaiNH_katrol = nhColumns
       .map((jenis) => siswa.nilai_katrol?.[jenis])
       .filter((n) => n !== undefined && n !== null && !isNaN(n));
 
+    // Hitung rata-rata
     const rataNH_asli =
       nilaiNH_asli.length > 0
         ? nilaiNH_asli.reduce((sum, n) => sum + n, 0) / nilaiNH_asli.length
@@ -154,6 +191,8 @@ export const hitungNilaiAkhir = (dataSiswa) => {
 
     return {
       ...siswa,
+      // Simpan informasi kolom NH yang digunakan
+      _nh_columns: nhColumns,
       // ✅ SEMUA DIBULATKAN jadi 2 angka integer
       rata_NH_asli: Math.round(rataNH_asli),
       rata_NH_katrol: Math.round(rataNH_katrol),
@@ -164,19 +203,38 @@ export const hitungNilaiAkhir = (dataSiswa) => {
 };
 
 // ========================================
-// 6. EXPORT TO EXCEL - MULTI SHEET
+// 6. EXPORT TO EXCEL - MULTI SHEET (DINAMIS)
 // ========================================
 export const exportToExcelMultiSheet = async (
   data,
   mapel,
   kelas,
+  availableNH = null,
   userData = {}
 ) => {
   const workbook = new ExcelJS.Workbook();
 
+  // Deteksi kolom NH yang tersedia
+  const nhColumns = availableNH || detectAvailableNH(data);
+
+  // 🛡️ PROTEKSI: Validasi bahwa nhColumns adalah array
+  if (!Array.isArray(nhColumns)) {
+    console.error("❌ nhColumns bukan array, diterima:", nhColumns);
+    console.error("❌ availableNH:", availableNH);
+    throw new Error("Parameter nhColumns harus berupa array!");
+  }
+
+  if (nhColumns.length === 0) {
+    console.warn("⚠️ nhColumns kosong, menggunakan default");
+    nhColumns = ["NH1", "NH2", "NH3", "NH4", "NH5"];
+  }
+
+  console.log("📊 Menggunakan kolom NH:", nhColumns);
+
   // ==================== SHEET 1: DATA LENGKAP ====================
   const ws1 = workbook.addWorksheet("Data Lengkap");
 
+  // Header tetap sama
   const headerData1 = [
     ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
     [`REKAPITULASI NILAI KATROL - ${mapel.toUpperCase()}`],
@@ -189,7 +247,10 @@ export const exportToExcelMultiSheet = async (
   headerData1.forEach((rowData) => {
     const r = ws1.getRow(row1++);
     r.getCell(1).value = rowData[0];
-    ws1.mergeCells(`A${row1 - 1}:U${row1 - 1}`);
+    // Merge cells dinamis berdasarkan jumlah kolom
+    const totalColumns = 3 + nhColumns.length * 2 + 4 + 4; // No+NISN+Nama + (NH*2) + (UTS*2) + (UAS*2) + RataNH*2 + NilaiAkhir*2
+    const endColumn = String.fromCharCode(64 + totalColumns);
+    ws1.mergeCells(`A${row1 - 1}:${endColumn}${row1 - 1}`);
     r.getCell(1).font = {
       bold: true,
       size: row1 <= 3 ? 14 : 11,
@@ -198,20 +259,17 @@ export const exportToExcelMultiSheet = async (
     r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
   });
 
-  const headers1 = [
-    "No",
-    "NISN",
-    "Nama Siswa",
-    "NH1",
-    "NH1-K",
-    "NH2",
-    "NH2-K",
-    "NH3",
-    "NH3-K",
-    "NH4",
-    "NH4-K",
-    "NH5",
-    "NH5-K",
+  // Buat headers dinamis
+  const headers1 = ["No", "NISN", "Nama Siswa"];
+
+  // Tambahkan kolom NH dinamis
+  nhColumns.forEach((nh) => {
+    headers1.push(nh);
+    headers1.push(`${nh}-K`);
+  });
+
+  // Tambahkan kolom tetap
+  headers1.push(
     "UTS",
     "UTS-K",
     "UAS",
@@ -219,8 +277,8 @@ export const exportToExcelMultiSheet = async (
     "Rata NH",
     "Rata NH-K",
     "Nilai Akhir",
-    "Nilai Akhir-K",
-  ];
+    "Nilai Akhir-K"
+  );
 
   const headerRow1 = ws1.getRow(row1);
   headerRow1.values = headers1;
@@ -246,47 +304,47 @@ export const exportToExcelMultiSheet = async (
     };
   });
 
-  ws1.columns = [
-    { width: 5 },
-    { width: 12 },
-    { width: 40 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 10 },
-    { width: 10 },
-    { width: 12 },
-    { width: 12 },
+  // Set column widths dinamis
+  const columnWidths = [
+    { width: 5 }, // No
+    { width: 12 }, // NISN
+    { width: 40 }, // Nama
   ];
+
+  // Lebar untuk kolom NH (asli dan katrol)
+  nhColumns.forEach(() => {
+    columnWidths.push({ width: 8 }); // NH asli
+    columnWidths.push({ width: 8 }); // NH-K
+  });
+
+  // Lebar untuk kolom tetap
+  columnWidths.push(
+    { width: 8 }, // UTS
+    { width: 8 }, // UTS-K
+    { width: 8 }, // UAS
+    { width: 8 }, // UAS-K
+    { width: 10 }, // Rata NH
+    { width: 10 }, // Rata NH-K
+    { width: 12 }, // Nilai Akhir
+    { width: 12 } // Nilai Akhir-K
+  );
+
+  ws1.columns = columnWidths;
 
   row1++;
 
+  // Isi data
   data.forEach((siswa, index) => {
-    const r = ws1.addRow([
-      index + 1,
-      siswa.nisn,
-      siswa.nama_siswa,
-      siswa.nilai.NH1 || "",
-      siswa.nilai_katrol?.NH1 || "",
-      siswa.nilai.NH2 || "",
-      siswa.nilai_katrol?.NH2 || "",
-      siswa.nilai.NH3 || "",
-      siswa.nilai_katrol?.NH3 || "",
-      siswa.nilai.NH4 || "",
-      siswa.nilai_katrol?.NH4 || "",
-      siswa.nilai.NH5 || "",
-      siswa.nilai_katrol?.NH5 || "",
+    const rowData = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+    // Data NH dinamis
+    nhColumns.forEach((nh) => {
+      rowData.push(siswa.nilai[nh] || "");
+      rowData.push(siswa.nilai_katrol?.[nh] || "");
+    });
+
+    // Data tetap
+    rowData.push(
       siswa.nilai.UTS || "",
       siswa.nilai_katrol?.UTS || "",
       siswa.nilai.UAS || "",
@@ -294,8 +352,10 @@ export const exportToExcelMultiSheet = async (
       siswa.rata_NH_asli || "",
       siswa.rata_NH_katrol || "",
       siswa.nilai_akhir_asli || "",
-      siswa.nilai_akhir_katrol || "",
-    ]);
+      siswa.nilai_akhir_katrol || ""
+    );
+
+    const r = ws1.addRow(rowData);
 
     r.eachCell((cell, colNumber) => {
       cell.border = {
@@ -307,11 +367,8 @@ export const exportToExcelMultiSheet = async (
 
       if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-
-        // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
-        cell.numFmt = "0";
-
-        if (colNumber === 21) cell.font = { bold: true };
+        cell.numFmt = "0"; // Format integer
+        if (colNumber === headers1.length) cell.font = { bold: true };
       } else {
         cell.alignment = {
           vertical: "middle",
@@ -344,7 +401,9 @@ export const exportToExcelMultiSheet = async (
   headerData2.forEach((rowData) => {
     const r = ws2.getRow(row2++);
     r.getCell(1).value = rowData[0];
-    ws2.mergeCells(`A${row2 - 1}:K${row2 - 1}`);
+    const totalColumns2 = 3 + nhColumns.length + 3; // No+NISN+Nama + NH + UTS+UAS+NilaiAkhir
+    const endColumn2 = String.fromCharCode(64 + totalColumns2);
+    ws2.mergeCells(`A${row2 - 1}:${endColumn2}${row2 - 1}`);
     r.getCell(1).font = {
       bold: true,
       size: row2 <= 3 ? 14 : 11,
@@ -353,19 +412,12 @@ export const exportToExcelMultiSheet = async (
     r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
   });
 
-  const headers2 = [
-    "No",
-    "NISN",
-    "Nama Siswa",
-    "NH1-K",
-    "NH2-K",
-    "NH3-K",
-    "NH4-K",
-    "NH5-K",
-    "UTS-K",
-    "UAS-K",
-    "Nilai Akhir-K",
-  ];
+  // Headers untuk sheet 2
+  const headers2 = ["No", "NISN", "Nama Siswa"];
+  nhColumns.forEach((nh) => {
+    headers2.push(`${nh}-K`);
+  });
+  headers2.push("UTS-K", "UAS-K", "Nilai Akhir-K");
 
   const headerRow2 = ws2.getRow(row2);
   headerRow2.values = headers2;
@@ -391,36 +443,34 @@ export const exportToExcelMultiSheet = async (
     };
   });
 
-  ws2.columns = [
-    { width: 5 },
-    { width: 12 },
-    { width: 40 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 8 },
-    { width: 12 },
-  ];
+  // Column widths untuk sheet 2
+  const columnWidths2 = [{ width: 5 }, { width: 12 }, { width: 40 }];
+
+  nhColumns.forEach(() => {
+    columnWidths2.push({ width: 8 });
+  });
+
+  columnWidths2.push({ width: 8 }, { width: 8 }, { width: 12 });
+
+  ws2.columns = columnWidths2;
 
   row2++;
 
+  // Data untuk sheet 2
   data.forEach((siswa, index) => {
-    const r = ws2.addRow([
-      index + 1,
-      siswa.nisn,
-      siswa.nama_siswa,
-      siswa.nilai_katrol?.NH1 || "",
-      siswa.nilai_katrol?.NH2 || "",
-      siswa.nilai_katrol?.NH3 || "",
-      siswa.nilai_katrol?.NH4 || "",
-      siswa.nilai_katrol?.NH5 || "",
+    const rowData2 = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+    nhColumns.forEach((nh) => {
+      rowData2.push(siswa.nilai_katrol?.[nh] || "");
+    });
+
+    rowData2.push(
       siswa.nilai_katrol?.UTS || "",
       siswa.nilai_katrol?.UAS || "",
-      siswa.nilai_akhir_katrol || "",
-    ]);
+      siswa.nilai_akhir_katrol || ""
+    );
+
+    const r = ws2.addRow(rowData2);
 
     r.eachCell((cell, colNumber) => {
       cell.border = {
@@ -432,9 +482,8 @@ export const exportToExcelMultiSheet = async (
 
       if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-        // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
         cell.numFmt = "0";
-        if (colNumber === 11) cell.font = { bold: true };
+        if (colNumber === headers2.length) cell.font = { bold: true };
       } else {
         cell.alignment = {
           vertical: "middle",
@@ -468,19 +517,26 @@ export const exportToExcelMultiSheet = async (
 };
 
 // ========================================
-// 7. EXPORT TO EXCEL - SINGLE SHEET
+// 7. EXPORT TO EXCEL - SINGLE SHEET (DINAMIS)
 // ========================================
 export const exportToExcel = async (
   data,
   mapel,
   kelas,
   type = "lengkap",
+  availableNH = null,
   userData = {}
 ) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Nilai Katrol");
 
-  const numColumns = type === "lengkap" ? 21 : 11;
+  const nhColumns = availableNH || detectAvailableNH(data);
+
+  // Hitung jumlah kolom dinamis
+  const numColumns =
+    type === "lengkap"
+      ? 3 + nhColumns.length * 2 + 4 + 4 // No+NISN+Nama + (NH*2) + UTS*2 + UAS*2 + RataNH*2 + NilaiAkhir*2
+      : 3 + nhColumns.length + 3; // No+NISN+Nama + NH-K + UTS-K + UAS-K + NilaiAkhir-K
 
   const headerData = [
     ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
@@ -508,20 +564,15 @@ export const exportToExcel = async (
   });
 
   if (type === "lengkap") {
-    const tableHeaders = [
-      "No",
-      "NISN",
-      "Nama Siswa",
-      "NH1",
-      "NH1-K",
-      "NH2",
-      "NH2-K",
-      "NH3",
-      "NH3-K",
-      "NH4",
-      "NH4-K",
-      "NH5",
-      "NH5-K",
+    // Buat headers dinamis untuk tipe lengkap
+    const tableHeaders = ["No", "NISN", "Nama Siswa"];
+
+    nhColumns.forEach((nh) => {
+      tableHeaders.push(nh);
+      tableHeaders.push(`${nh}-K`);
+    });
+
+    tableHeaders.push(
       "UTS",
       "UTS-K",
       "UAS",
@@ -529,8 +580,8 @@ export const exportToExcel = async (
       "Rata NH",
       "Rata NH-K",
       "Nilai Akhir",
-      "Nilai Akhir-K",
-    ];
+      "Nilai Akhir-K"
+    );
 
     const headerRow = worksheet.getRow(currentRow);
     headerRow.values = tableHeaders;
@@ -556,20 +607,12 @@ export const exportToExcel = async (
       };
     });
 
-    worksheet.columns = [
-      { width: 5 },
-      { width: 12 },
-      { width: 40 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
+    // Set column widths dinamis
+    const widths = [{ width: 5 }, { width: 12 }, { width: 40 }];
+    nhColumns.forEach(() => {
+      widths.push({ width: 8 }, { width: 8 });
+    });
+    widths.push(
       { width: 8 },
       { width: 8 },
       { width: 8 },
@@ -577,26 +620,23 @@ export const exportToExcel = async (
       { width: 10 },
       { width: 10 },
       { width: 12 },
-      { width: 12 },
-    ];
+      { width: 12 }
+    );
+
+    worksheet.columns = widths;
 
     currentRow++;
 
+    // Isi data
     data.forEach((siswa, index) => {
-      const row = worksheet.addRow([
-        index + 1,
-        siswa.nisn,
-        siswa.nama_siswa,
-        siswa.nilai.NH1 || "",
-        siswa.nilai_katrol?.NH1 || "",
-        siswa.nilai.NH2 || "",
-        siswa.nilai_katrol?.NH2 || "",
-        siswa.nilai.NH3 || "",
-        siswa.nilai_katrol?.NH3 || "",
-        siswa.nilai.NH4 || "",
-        siswa.nilai_katrol?.NH4 || "",
-        siswa.nilai.NH5 || "",
-        siswa.nilai_katrol?.NH5 || "",
+      const rowData = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+      nhColumns.forEach((nh) => {
+        rowData.push(siswa.nilai[nh] || "");
+        rowData.push(siswa.nilai_katrol?.[nh] || "");
+      });
+
+      rowData.push(
         siswa.nilai.UTS || "",
         siswa.nilai_katrol?.UTS || "",
         siswa.nilai.UAS || "",
@@ -604,8 +644,10 @@ export const exportToExcel = async (
         siswa.rata_NH_asli || "",
         siswa.rata_NH_katrol || "",
         siswa.nilai_akhir_asli || "",
-        siswa.nilai_akhir_katrol || "",
-      ]);
+        siswa.nilai_akhir_katrol || ""
+      );
+
+      const row = worksheet.addRow(rowData);
 
       row.eachCell((cell, colNumber) => {
         cell.border = {
@@ -617,7 +659,6 @@ export const exportToExcel = async (
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
           cell.numFmt = "0";
           if (colNumber === numColumns) cell.font = { bold: true };
         } else {
@@ -639,19 +680,12 @@ export const exportToExcel = async (
       currentRow++;
     });
   } else {
-    const tableHeaders = [
-      "No",
-      "NISN",
-      "Nama Siswa",
-      "NH1-K",
-      "NH2-K",
-      "NH3-K",
-      "NH4-K",
-      "NH5-K",
-      "UTS-K",
-      "UAS-K",
-      "Nilai Akhir-K",
-    ];
+    // Tipe singkat/katrol akhir
+    const tableHeaders = ["No", "NISN", "Nama Siswa"];
+    nhColumns.forEach((nh) => {
+      tableHeaders.push(`${nh}-K`);
+    });
+    tableHeaders.push("UTS-K", "UAS-K", "Nilai Akhir-K");
 
     const headerRow = worksheet.getRow(currentRow);
     headerRow.values = tableHeaders;
@@ -677,36 +711,32 @@ export const exportToExcel = async (
       };
     });
 
-    worksheet.columns = [
-      { width: 5 },
-      { width: 12 },
-      { width: 40 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 8 },
-      { width: 12 },
-    ];
+    // Column widths
+    const widths = [{ width: 5 }, { width: 12 }, { width: 40 }];
+    nhColumns.forEach(() => {
+      widths.push({ width: 8 });
+    });
+    widths.push({ width: 8 }, { width: 8 }, { width: 12 });
+
+    worksheet.columns = widths;
 
     currentRow++;
 
+    // Isi data
     data.forEach((siswa, index) => {
-      const row = worksheet.addRow([
-        index + 1,
-        siswa.nisn,
-        siswa.nama_siswa,
-        siswa.nilai_katrol?.NH1 || "",
-        siswa.nilai_katrol?.NH2 || "",
-        siswa.nilai_katrol?.NH3 || "",
-        siswa.nilai_katrol?.NH4 || "",
-        siswa.nilai_katrol?.NH5 || "",
+      const rowData = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+      nhColumns.forEach((nh) => {
+        rowData.push(siswa.nilai_katrol?.[nh] || "");
+      });
+
+      rowData.push(
         siswa.nilai_katrol?.UTS || "",
         siswa.nilai_katrol?.UAS || "",
-        siswa.nilai_akhir_katrol || "",
-      ]);
+        siswa.nilai_akhir_katrol || ""
+      );
+
+      const row = worksheet.addRow(rowData);
 
       row.eachCell((cell, colNumber) => {
         cell.border = {
@@ -718,7 +748,6 @@ export const exportToExcel = async (
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
           cell.numFmt = "0";
           if (colNumber === numColumns) cell.font = { bold: true };
         } else {
@@ -759,7 +788,7 @@ export const exportToExcel = async (
 };
 
 // ========================================
-// 8. EXPORT LEGER
+// 8. EXPORT LEGER (TETAP SAMA - tidak berhubungan dengan NH)
 // ========================================
 export const exportLeger = async (
   kelas,
@@ -830,7 +859,7 @@ export const exportLeger = async (
       const siswaData = siswaMap.get(item.nisn);
       const shorthand = mapelMapping[item.mata_pelajaran];
       if (shorthand) {
-        siswaData[shorthand] = item.nilai_akhir; // Sudah integer dari database
+        siswaData[shorthand] = item.nilai_akhir;
       }
     });
 
@@ -857,7 +886,7 @@ export const exportLeger = async (
           ? nilaiValid.reduce((sum, n) => sum + n, 0)
           : null;
       const rataRata =
-        nilaiValid.length > 0 ? Math.round(jumlah / nilaiValid.length) : null; // ✅ DIBULATKAN
+        nilaiValid.length > 0 ? Math.round(jumlah / nilaiValid.length) : null;
 
       legerData.push({
         no: index + 1,
@@ -1030,7 +1059,6 @@ export const exportLeger = async (
           cell.alignment = { vertical: "middle", horizontal: "center" };
 
           if (cell.value !== "-" && typeof cell.value === "number") {
-            // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
             cell.numFmt = "0";
             if (colNumber === 14 || colNumber === 13) {
               cell.font = { bold: true };
@@ -1172,7 +1200,6 @@ export const exportLeger = async (
 
         if (colNumber === 1) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          // Highlight 3 besar
           if (index < 3) {
             cell.font = { bold: true, size: 11 };
             if (index === 0) {
@@ -1204,7 +1231,6 @@ export const exportLeger = async (
           cell.alignment = { vertical: "middle", horizontal: "center" };
 
           if (cell.value !== "-" && typeof cell.value === "number") {
-            // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
             cell.numFmt = "0";
             if (colNumber === 14 || colNumber === 13) {
               cell.font = { bold: true };
@@ -1212,7 +1238,7 @@ export const exportLeger = async (
           }
         }
 
-        // Highlight baris 3 besar dengan warna berbeda
+        // Highlight baris 3 besar
         if (index < 3 && colNumber > 1) {
           cell.fill = {
             type: "pattern",
