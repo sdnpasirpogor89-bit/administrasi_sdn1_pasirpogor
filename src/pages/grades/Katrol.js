@@ -266,33 +266,71 @@ const Katrol = ({ userData: initialUserData }) => {
           `✅ Ditemukan ${katrolData.length} data KATROL (sudah diproses)`
         );
 
-        // Format data katrol ke format hasilKatrol
-        const formattedKatrol = katrolData.map((item) => ({
-          nisn: item.nisn,
-          nama_siswa: item.nama_siswa,
-          nilai: {
-            NH1: null, // Nilai original tidak perlu ditampilkan
+        // 🔥 PERBAIKAN: Ambil juga nilai ASLI untuk perbandingan
+        const { data: nilaiAsliData, error: nilaiAsliError } = await supabase
+          .from("nilai")
+          .select("*")
+          .eq("kelas", selectedClass)
+          .eq("mata_pelajaran", selectedSubject);
+
+        if (nilaiAsliError) {
+          console.error("Error mengambil nilai asli:", nilaiAsliError);
+        }
+
+        // Format data katrol DENGAN NILAI ASLI
+        const formattedKatrol = katrolData.map((item) => {
+          // Cari nilai asli untuk siswa ini
+          const nilaiAsliSiswa =
+            nilaiAsliData?.filter((n) => n.nisn === item.nisn) || [];
+
+          // Inisialisasi nilai asli
+          const nilaiAsli = {
+            NH1: null,
             NH2: null,
             NH3: null,
             NH4: null,
             NH5: null,
             UTS: null,
             UAS: null,
-          },
-          nilai_katrol: {
-            NH1: item.nh1_katrol,
-            NH2: item.nh2_katrol,
-            NH3: item.nh3_katrol,
-            NH4: item.nh4_katrol,
-            NH5: item.nh5_katrol,
-            UTS: item.uts_katrol,
-            UAS: item.uas_katrol,
-          },
-          rata_NH_katrol: item.rata_nh_katrol,
-          nilai_akhir_asli: item.nilai_mentah,
-          nilai_akhir_katrol: item.nilai_akhir,
-          status: item.status,
-        }));
+          };
+
+          // Isi nilai asli dari database
+          nilaiAsliSiswa.forEach((nilaiItem) => {
+            if (nilaiItem.jenis_nilai === "NH1")
+              nilaiAsli.NH1 = nilaiItem.nilai;
+            if (nilaiItem.jenis_nilai === "NH2")
+              nilaiAsli.NH2 = nilaiItem.nilai;
+            if (nilaiItem.jenis_nilai === "NH3")
+              nilaiAsli.NH3 = nilaiItem.nilai;
+            if (nilaiItem.jenis_nilai === "NH4")
+              nilaiAsli.NH4 = nilaiItem.nilai;
+            if (nilaiItem.jenis_nilai === "NH5")
+              nilaiAsli.NH5 = nilaiItem.nilai;
+            if (nilaiItem.jenis_nilai === "UTS")
+              nilaiAsli.UTS = nilaiItem.nilai;
+            if (nilaiItem.jenis_nilai === "UAS")
+              nilaiAsli.UAS = nilaiItem.nilai;
+          });
+
+          return {
+            nisn: item.nisn,
+            nama_siswa: item.nama_siswa,
+            nilai: nilaiAsli, // ✅ NILAI ASLI DIPERTAHANKAN
+            nilai_katrol: {
+              NH1: item.nh1_katrol,
+              NH2: item.nh2_katrol,
+              NH3: item.nh3_katrol,
+              NH4: item.nh4_katrol,
+              NH5: item.nh5_katrol,
+              UTS: item.uts_katrol,
+              UAS: item.uas_katrol,
+            },
+            rata_NH_katrol: item.rata_nh_katrol,
+            nilai_akhir_asli: item.nilai_mentah,
+            nilai_akhir_katrol: item.nilai_akhir,
+            status: item.status,
+          };
+        });
 
         formattedKatrol.sort((a, b) =>
           a.nama_siswa.localeCompare(b.nama_siswa)
@@ -304,7 +342,7 @@ const Katrol = ({ userData: initialUserData }) => {
         setDataGrouped([]);
 
         showMessage(
-          `✅ Berhasil memuat ${formattedKatrol.length} data nilai KATROL (sudah diproses sebelumnya)`,
+          `✅ Berhasil memuat ${formattedKatrol.length} data nilai KATROL (sudah diproses sebelumnya) + NILAI ASLI`,
           "success"
         );
         return; // STOP DI SINI, jangan load nilai original
@@ -433,7 +471,6 @@ const Katrol = ({ userData: initialUserData }) => {
     try {
       console.log("📄 Memulai proses katrol...");
 
-      // 🔥 LOAD ULANG NILAI ORIGINAL DARI DATABASE
       const { data: siswaData, error: siswaError } = await supabase
         .from("students")
         .select("nisn, nama_siswa")
@@ -451,7 +488,6 @@ const Katrol = ({ userData: initialUserData }) => {
 
       if (nilaiError) throw nilaiError;
 
-      // Format data
       const previewData = siswaData.map((siswa) => {
         return {
           nisn: siswa.nisn,
@@ -505,7 +541,6 @@ const Katrol = ({ userData: initialUserData }) => {
         nilai_katrol: {},
       }));
 
-      // Proses katrol
       const katrol = prosesKatrolSemua(dataForGrouping, kkm, nilaiMaksimal);
       const hasil = hitungNilaiAkhir(katrol);
 
@@ -690,14 +725,14 @@ const Katrol = ({ userData: initialUserData }) => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-4 sm:p-6 text-white">
+        <div className="bg-gradient-to-r from-red-600 to-red-700 dark:from-red-950 dark:to-red-900 rounded-xl shadow-lg p-4 sm:p-6 text-white">
           <div className="flex items-center gap-2 sm:gap-3 mb-2">
             <Calculator className="w-6 h-6 sm:w-8 sm:h-8" />
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
               Katrol Nilai
             </h1>
           </div>
-          <p className="text-sm sm:text-base text-blue-100">
+          <p className="text-sm sm:text-base text-red-100 dark:text-red-200">
             {userData?.role === "guru_kelas"
               ? `Guru Kelas ${selectedClass || userData?.kelas}`
               : `Guru ${userData?.mata_pelajaran}`}
@@ -708,8 +743,8 @@ const Katrol = ({ userData: initialUserData }) => {
       {/* Academic Year Info */}
       {activeAcademicYear && (
         <div className="max-w-7xl mx-auto mb-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
-            <span className="text-blue-800 dark:text-blue-300 font-medium">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm">
+            <span className="text-red-800 dark:text-red-300 font-medium">
               📅 Tahun Ajaran Aktif: {activeAcademicYear.year} - Semester{" "}
               {activeAcademicYear.semester}
             </span>
@@ -719,9 +754,9 @@ const Katrol = ({ userData: initialUserData }) => {
 
       {/* Filter Section */}
       <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 dark:text-gray-200">
-            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-500" />
             Filter Data
           </h2>
 
@@ -732,7 +767,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 Kelas
               </label>
               {userData?.role === "guru_kelas" ? (
-                <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
+                <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
                   <span className="font-semibold">Kelas {selectedClass}</span>
                 </div>
               ) : (
@@ -745,7 +780,7 @@ const Katrol = ({ userData: initialUserData }) => {
                     setDataGrouped([]);
                     setShowPreview(false);
                   }}
-                  className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 dark:text-gray-200">
+                  className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 transition-colors">
                   <option value="">Pilih Kelas</option>
                   {availableClasses.map((kelas) => (
                     <option key={kelas} value={kelas}>
@@ -762,7 +797,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 Mata Pelajaran
               </label>
               {userData?.role === "guru_mapel" ? (
-                <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
+                <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
                   <span className="font-semibold">{selectedSubject}</span>
                 </div>
               ) : (
@@ -775,7 +810,7 @@ const Katrol = ({ userData: initialUserData }) => {
                     setDataGrouped([]);
                     setShowPreview(false);
                   }}
-                  className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 dark:text-gray-200">
+                  className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 transition-colors">
                   <option value="">Pilih Mata Pelajaran</option>
                   {availableSubjects.map((mapel) => (
                     <option key={mapel} value={mapel}>
@@ -798,7 +833,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 value={kkm}
                 onChange={(e) => handleKkmChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
-                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800"
+                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800 transition-colors"
                 placeholder="KKM"
               />
             </div>
@@ -815,7 +850,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 value={nilaiMaksimal}
                 onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
-                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800"
+                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800 transition-colors"
                 placeholder="Nilai Max"
               />
             </div>
@@ -848,7 +883,7 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Mobile Responsive */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
             {/* Tombol Muat Data */}
             <button
@@ -859,7 +894,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 loading ||
                 kkm > nilaiMaksimal
               }
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
               {loading ? (
                 <>
                   <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -873,7 +908,7 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
-            {/* Tombol Proses Katrol - SELALU MUNCUL kalau udah pilih kelas & mapel */}
+            {/* Tombol Proses Katrol */}
             <button
               onClick={prosesKatrol}
               disabled={
@@ -882,7 +917,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 processing ||
                 kkm > nilaiMaksimal
               }
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
               {processing ? (
                 <>
                   <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -905,7 +940,7 @@ const Katrol = ({ userData: initialUserData }) => {
               <button
                 onClick={saveKatrolToDatabase}
                 disabled={saving}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
                 {saving ? (
                   <>
                     <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -914,7 +949,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 ) : (
                   <>
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan Nilai Katrol</span>
+                    <span>Simpan Katrol</span>
                   </>
                 )}
               </button>
@@ -927,7 +962,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 disabled={
                   savingSettings || kkm > nilaiMaksimal || !settingsChanged
                 }
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
                 {savingSettings ? (
                   <>
                     <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -948,7 +983,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 <button
                   onClick={handleExport}
                   disabled={exporting}
-                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
                   <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>Export Nilai Katrol</span>
                 </button>
@@ -960,7 +995,7 @@ const Katrol = ({ userData: initialUserData }) => {
               <button
                 onClick={handleExportLeger}
                 disabled={exportingLeger}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 text-sm sm:text-base bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
                 {exportingLeger ? (
                   <>
                     <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -984,8 +1019,8 @@ const Katrol = ({ userData: initialUserData }) => {
           <div
             className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
               message.type === "success"
-                ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400"
-                : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400"
+                ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-800"
+                : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-800"
             }`}>
             {message.type === "success" ? (
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 sm:mt-0" />
@@ -1002,89 +1037,93 @@ const Katrol = ({ userData: initialUserData }) => {
         {/* Preview Table */}
         {showPreview && dataGrouped.length > 0 && (
           <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 mb-4">
               <h3 className="text-lg font-semibold mb-4 dark:text-gray-200 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-blue-600" />
+                <Eye className="w-5 h-5 text-red-600 dark:text-red-500" />
                 Preview Data Nilai ({dataGrouped.length} siswa)
               </h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        No
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        NISN
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Nama Siswa
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        NH1
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        NH2
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        NH3
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        NH4
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        NH5
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        UTS
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        UAS
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {dataGrouped.slice(0, 10).map((item, index) => (
-                      <tr
-                        key={item.nisn}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {index + 1}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
-                          {item.nisn}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nama_siswa}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.NH1 || "-"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.NH2 || "-"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.NH3 || "-"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.NH4 || "-"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.NH5 || "-"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.UTS || "-"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                          {item.nilai?.UAS || "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-full inline-block align-middle">
+                  <div className="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            No
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NISN
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            Nama Siswa
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH1
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH2
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH3
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH4
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            NH5
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            UTS
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                            UAS
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {dataGrouped.slice(0, 10).map((item, index) => (
+                          <tr
+                            key={item.nisn}
+                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {index + 1}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
+                              {item.nisn}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nama_siswa}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH1 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH2 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH3 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH4 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.NH5 || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.UTS || "-"}
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                              {item.nilai?.UAS || "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
               {dataGrouped.length > 10 && (
-                <div className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 px-2">
                   Menampilkan 10 dari {dataGrouped.length} siswa. Gunakan tombol
                   "Proses Katrol" untuk melihat hasil lengkap.
                 </div>
@@ -1096,23 +1135,23 @@ const Katrol = ({ userData: initialUserData }) => {
         {/* Results Table */}
         {hasilKatrol.length > 0 && (
           <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                 <h3 className="text-lg font-semibold dark:text-gray-200 flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-green-600" />
+                  <Calculator className="w-5 h-5 text-green-600 dark:text-green-500" />
                   Hasil Katrol Nilai ({hasilKatrol.length} siswa)
                 </h3>
                 <div className="flex items-center gap-2 text-sm">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-600 dark:text-gray-400">
+                    <span className="text-gray-700 dark:text-gray-400">
                       Tuntas (
                       {hasilKatrol.filter((h) => h.status === "Tuntas").length})
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-gray-600 dark:text-gray-400">
+                    <span className="text-gray-700 dark:text-gray-400">
                       Belum Tuntas (
                       {
                         hasilKatrol.filter((h) => h.status === "Belum Tuntas")
@@ -1124,18 +1163,22 @@ const Katrol = ({ userData: initialUserData }) => {
                 </div>
               </div>
 
+              {/* 🔥 CATATAN: KatrolTable akan menampilkan BOTH nilai asli dan nilai katrol */}
               <KatrolTable data={hasilKatrol} />
 
-              <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                <p>
-                  • KKM: {kkm} | Nilai Maksimal: {nilaiMaksimal}
+              <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mb-1">
+                  • KKM: <span className="font-semibold">{kkm}</span> | Nilai
+                  Maksimal:{" "}
+                  <span className="font-semibold">{nilaiMaksimal}</span>
                 </p>
-                <p>
-                  • Proses katrol menggunakan rumus:{" "}
-                  <span className="font-mono">
-                    Nilai Akhir = KKM + ((Nilai Mentah - Min) / (Max - Min)) ×
-                    (Nilai Maksimal - KKM)
-                  </span>
+                <p className="font-mono text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                  Nilai Akhir = KKM + ((Nilai Mentah - Min) / (Max - Min)) ×
+                  (Nilai Maksimal - KKM)
+                </p>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                  💡 <strong>Nilai Asli</strong> ditampilkan untuk perbandingan
+                  dengan <strong>Nilai Katrol</strong>
                 </p>
               </div>
             </div>
@@ -1148,16 +1191,22 @@ const Katrol = ({ userData: initialUserData }) => {
           dataGrouped.length === 0 &&
           selectedClass &&
           selectedSubject && (
-            <div className="text-center py-12">
-              <div className="max-w-md mx-auto">
-                <Calculator className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <div className="text-center py-12 sm:py-16">
+              <div className="max-w-md mx-auto px-4">
+                <Calculator className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
                   Belum Ada Data
                 </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Pilih kelas dan mata pelajaran, lalu klik "Muat Data" untuk
                   memulai proses katrol.
                 </p>
+                <button
+                  onClick={fetchDataNilai}
+                  disabled={!selectedClass || !selectedSubject}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  Muat Data Sekarang
+                </button>
               </div>
             </div>
           )}

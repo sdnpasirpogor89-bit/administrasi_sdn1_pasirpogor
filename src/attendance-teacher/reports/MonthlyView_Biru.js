@@ -139,30 +139,18 @@ const MonthlyView = ({ currentUser }) => {
 
     const badges = {
       hadir: {
-        bg: "bg-red-500 dark:bg-red-600", // CHANGED: green -> red
+        bg: "bg-green-500 dark:bg-green-600",
         text: "H",
         title: "Hadir",
       },
-      izin: {
-        bg: "bg-amber-500 dark:bg-amber-600", // CHANGED: blue -> amber
-        text: "I",
-        title: "Izin",
-      },
+      izin: { bg: "bg-blue-500 dark:bg-blue-600", text: "I", title: "Izin" },
       sakit: {
-        bg: "bg-orange-500 dark:bg-orange-600", // CHANGED: yellow -> orange
+        bg: "bg-yellow-500 dark:bg-yellow-600",
         text: "S",
         title: "Sakit",
       },
-      alpa: {
-        bg: "bg-rose-500 dark:bg-rose-600", // CHANGED: red -> rose
-        text: "A",
-        title: "Alpha",
-      },
-      alpha: {
-        bg: "bg-rose-500 dark:bg-rose-600", // CHANGED: red -> rose
-        text: "A",
-        title: "Alpha",
-      },
+      alpa: { bg: "bg-red-500 dark:bg-red-600", text: "A", title: "Alpha" },
+      alpha: { bg: "bg-red-500 dark:bg-red-600", text: "A", title: "Alpha" },
     };
 
     return (
@@ -223,32 +211,30 @@ const MonthlyView = ({ currentUser }) => {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 dark:bg-gray-800 dark:shadow-xl">
+    <div className="bg-white rounded-xl shadow-lg p-6 dark:bg-gray-800 dark:shadow-xl">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <Calendar className="text-red-600 dark:text-red-400" size={24} />
+          <Calendar className="text-blue-600 dark:text-blue-400" size={24} />
           <h2 className="text-xl font-bold text-gray-800 dark:text-white">
             Laporan Bulanan
           </h2>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex items-center gap-3">
           {/* Month Navigation */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 dark:bg-gray-700">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 dark:bg-gray-700">
             <button
               onClick={handlePrevMonth}
-              className="p-3 hover:bg-white rounded transition-all min-w-[44px] min-h-[44px] flex items-center justify-center dark:hover:bg-gray-600"
-              aria-label="Bulan sebelumnya">
+              className="p-2 hover:bg-white rounded transition-all dark:hover:bg-gray-600">
               <ChevronLeft size={20} className="dark:text-gray-300" />
             </button>
-            <span className="px-3 sm:px-4 font-semibold text-gray-800 min-w-[150px] sm:min-w-[180px] text-center dark:text-white">
+            <span className="px-4 font-semibold text-gray-800 min-w-[180px] text-center dark:text-white">
               {months[selectedMonth]} {selectedYear}
             </span>
             <button
               onClick={handleNextMonth}
-              className="p-3 hover:bg-white rounded transition-all min-w-[44px] min-h-[44px] flex items-center justify-center dark:hover:bg-gray-600"
-              aria-label="Bulan selanjutnya">
+              className="p-2 hover:bg-white rounded transition-all dark:hover:bg-gray-600">
               <ChevronRight size={20} className="dark:text-gray-300" />
             </button>
           </div>
@@ -256,10 +242,9 @@ const MonthlyView = ({ currentUser }) => {
           {/* Export Button */}
           <button
             onClick={() => setShowExport(true)}
-            className="px-4 py-2 min-h-[44px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all flex items-center gap-2 dark:bg-green-700 dark:hover:bg-green-800">
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all flex items-center gap-2 dark:bg-green-700 dark:hover:bg-green-800">
             <Download size={20} />
-            <span className="hidden sm:inline">Export Excel</span>
-            <span className="sm:hidden">Export</span>
+            Export Excel
           </button>
         </div>
       </div>
@@ -276,7 +261,7 @@ const MonthlyView = ({ currentUser }) => {
             placeholder="Cari nama guru..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 dark:focus:ring-red-600 dark:focus:border-red-600"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
           />
         </div>
       </div>
@@ -284,7 +269,7 @@ const MonthlyView = ({ currentUser }) => {
       {/* Loading State */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto dark:border-red-400"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto dark:border-blue-400"></div>
           <p className="text-gray-600 mt-4 dark:text-gray-300">
             Memuat data...
           </p>
@@ -292,7 +277,7 @@ const MonthlyView = ({ currentUser }) => {
       ) : (
         /* Table */
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[800px]">
+          <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-900">
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-gray-100 z-10 min-w-[200px] dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300">
@@ -379,27 +364,19 @@ const MonthlyView = ({ currentUser }) => {
                         );
                       })}
                       <td className="border border-gray-300 px-4 py-3 text-center font-semibold text-sm dark:border-gray-600">
-                        <span className="text-red-600 dark:text-red-400">
-                          {" "}
-                          {/* CHANGED: green -> red */}
+                        <span className="text-green-600 dark:text-green-400">
                           {stats.hadir}
                         </span>
                         /
-                        <span className="text-amber-600 dark:text-amber-400">
-                          {" "}
-                          {/* CHANGED: blue -> amber */}
+                        <span className="text-blue-600 dark:text-blue-400">
                           {stats.izin}
                         </span>
                         /
-                        <span className="text-orange-600 dark:text-orange-400">
-                          {" "}
-                          {/* CHANGED: yellow -> orange */}
+                        <span className="text-yellow-600 dark:text-yellow-400">
                           {stats.sakit}
                         </span>
                         /
-                        <span className="text-rose-600 dark:text-rose-400">
-                          {" "}
-                          {/* CHANGED: red -> rose */}
+                        <span className="text-red-600 dark:text-red-400">
                           {stats.alpa}
                         </span>
                       </td>
@@ -413,43 +390,43 @@ const MonthlyView = ({ currentUser }) => {
       )}
 
       {/* Legend */}
-      <div className="mt-6 flex flex-wrap gap-3 sm:gap-4 text-sm">
+      <div className="mt-6 flex flex-wrap gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <span className="bg-red-500 dark:bg-red-600 text-white font-bold text-xs px-2 py-1 rounded min-w-[24px] text-center">
+          <span className="bg-green-500 dark:bg-green-600 text-white font-bold text-xs px-2 py-1 rounded">
             H
           </span>
           <span className="text-gray-600 dark:text-gray-300">Hadir</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-amber-500 dark:bg-amber-600 text-white font-bold text-xs px-2 py-1 rounded min-w-[24px] text-center">
+          <span className="bg-blue-500 dark:bg-blue-600 text-white font-bold text-xs px-2 py-1 rounded">
             I
           </span>
           <span className="text-gray-600 dark:text-gray-300">Izin</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-orange-500 dark:bg-orange-600 text-white font-bold text-xs px-2 py-1 rounded min-w-[24px] text-center">
+          <span className="bg-yellow-500 dark:bg-yellow-600 text-white font-bold text-xs px-2 py-1 rounded">
             S
           </span>
           <span className="text-gray-600 dark:text-gray-300">Sakit</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-rose-500 dark:bg-rose-600 text-white font-bold text-xs px-2 py-1 rounded min-w-[24px] text-center">
+          <span className="bg-red-500 dark:bg-red-600 text-white font-bold text-xs px-2 py-1 rounded">
             A
           </span>
           <span className="text-gray-600 dark:text-gray-300">Alpha</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs px-2 py-1 rounded min-w-[24px] text-center">
+          <span className="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-xs px-2 py-1 rounded">
             -
           </span>
           <span className="text-gray-600 dark:text-gray-300">Belum Absen</span>
         </div>
-        <div className="flex items-center gap-2 pl-3 border-l-2 border-gray-300 dark:border-gray-600">
-          <span className="bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold text-xs px-2 py-1 rounded min-w-[24px] text-center">
+        <div className="flex items-center gap-2 pl-4 border-l-2 border-gray-300 dark:border-gray-600">
+          <span className="bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold text-xs px-2 py-1 rounded">
             🏠
           </span>
           <span className="text-gray-600 dark:text-gray-300">
-            Weekend / Libur
+            Weekend / Libur Nasional
           </span>
         </div>
       </div>

@@ -35,26 +35,74 @@ const normalizeStatus = (status) => {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 };
 
-// Helper untuk status badge - UPDATE DARK MODE
+// Helper untuk status badge - OPTIMIZED DARK MODE
 const getStatusBadge = (status, isDarkMode = false) => {
   if (!status)
-    return <span className="text-gray-400 dark:text-gray-500">-</span>;
+    return <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>;
 
   const normalizedStatus = normalizeStatus(status);
 
   const statusMap = {
-    hadir: { text: "H", color: "bg-green-500 text-white dark:bg-green-600" },
-    sakit: { text: "S", color: "bg-yellow-500 text-white dark:bg-yellow-600" },
-    izin: { text: "I", color: "bg-blue-500 text-white dark:bg-blue-600" },
-    alpa: { text: "A", color: "bg-red-500 text-white dark:bg-red-600" },
-    Hadir: { text: "H", color: "bg-green-500 text-white dark:bg-green-600" },
-    Sakit: { text: "S", color: "bg-yellow-500 text-white dark:bg-yellow-600" },
-    Izin: { text: "I", color: "bg-blue-500 text-white dark:bg-blue-600" },
-    Alpa: { text: "A", color: "bg-red-500 text-white dark:bg-red-600" },
-    H: { text: "H", color: "bg-green-500 text-white dark:bg-green-600" },
-    S: { text: "S", color: "bg-yellow-500 text-white dark:bg-yellow-600" },
-    I: { text: "I", color: "bg-blue-500 text-white dark:bg-blue-600" },
-    A: { text: "A", color: "bg-red-500 text-white dark:bg-red-600" },
+    hadir: {
+      text: "H",
+      color: "bg-green-500 text-white dark:bg-green-600",
+      darkColor: "dark:bg-green-600 dark:text-white",
+    },
+    sakit: {
+      text: "S",
+      color: "bg-yellow-500 text-white dark:bg-yellow-600",
+      darkColor: "dark:bg-yellow-600 dark:text-white",
+    },
+    izin: {
+      text: "I",
+      color: "bg-blue-500 text-white dark:bg-blue-600",
+      darkColor: "dark:bg-blue-600 dark:text-white",
+    },
+    alpa: {
+      text: "A",
+      color: "bg-red-500 text-white dark:bg-red-600",
+      darkColor: "dark:bg-red-600 dark:text-white",
+    },
+    Hadir: {
+      text: "H",
+      color: "bg-green-500 text-white dark:bg-green-600",
+      darkColor: "dark:bg-green-600 dark:text-white",
+    },
+    Sakit: {
+      text: "S",
+      color: "bg-yellow-500 text-white dark:bg-yellow-600",
+      darkColor: "dark:bg-yellow-600 dark:text-white",
+    },
+    Izin: {
+      text: "I",
+      color: "bg-blue-500 text-white dark:bg-blue-600",
+      darkColor: "dark:bg-blue-600 dark:text-white",
+    },
+    Alpa: {
+      text: "A",
+      color: "bg-red-500 text-white dark:bg-red-600",
+      darkColor: "dark:bg-red-600 dark:text-white",
+    },
+    H: {
+      text: "H",
+      color: "bg-green-500 text-white dark:bg-green-600",
+      darkColor: "dark:bg-green-600 dark:text-white",
+    },
+    S: {
+      text: "S",
+      color: "bg-yellow-500 text-white dark:bg-yellow-600",
+      darkColor: "dark:bg-yellow-600 dark:text-white",
+    },
+    I: {
+      text: "I",
+      color: "bg-blue-500 text-white dark:bg-blue-600",
+      darkColor: "dark:bg-blue-600 dark:text-white",
+    },
+    A: {
+      text: "A",
+      color: "bg-red-500 text-white dark:bg-red-600",
+      darkColor: "dark:bg-red-600 dark:text-white",
+    },
   };
 
   const statusInfo = statusMap[status] ||
@@ -65,7 +113,7 @@ const getStatusBadge = (status, isDarkMode = false) => {
 
   return (
     <span
-      className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded text-xs font-bold ${statusInfo.color} mx-auto`}>
+      className={`inline-flex items-center justify-center w-6 h-6 xs:w-7 xs:h-7 sm:w-7 sm:h-7 rounded text-xs font-bold ${statusInfo.color} mx-auto touch-manipulation`}>
       {statusInfo.text}
     </span>
   );
@@ -77,46 +125,50 @@ const formatDateHeader = (dateStr) => {
     const date = new Date(dateStr + "T00:00:00");
     const day = date.getDate().toString().padStart(2, "0");
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    return `${day}-${month}`;
+    return `${day}/${month}`;
   } catch (error) {
     if (dateStr.includes("-")) {
       const parts = dateStr.split("-");
       if (parts.length >= 2) {
         const day = parts[2] ? parts[2].substring(0, 2) : parts[0];
         const month = parts[1] ? parts[1].padStart(2, "0") : parts[0];
-        return `${day}-${month}`;
+        return `${day}/${month}`;
       }
     }
     return dateStr;
   }
 };
 
-// Helper untuk get kategori kehadiran - UPDATE DARK MODE
+// Helper untuk get kategori kehadiran dengan tema merah-putih
 const getAttendanceCategory = (percentage) => {
   if (percentage >= 90)
     return {
       text: "Sangat Baik",
       color:
         "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+      darkColor: "dark:bg-green-900/30 dark:text-green-300",
     };
   if (percentage >= 80)
     return {
       text: "Baik",
       color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+      darkColor: "dark:bg-blue-900/30 dark:text-blue-300",
     };
   if (percentage >= 70)
     return {
       text: "Cukup",
       color:
         "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+      darkColor: "dark:bg-yellow-900/30 dark:text-yellow-300",
     };
   return {
     text: "Kurang",
     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+    darkColor: "dark:bg-red-900/30 dark:text-red-300",
   };
 };
 
-// Komponen AttendanceModal dengan DARK MODE SUPPORT
+// Komponen AttendanceModal dengan TEMA MERAH-PUTIH (Light Mode)
 const AttendanceModal = ({
   show,
   onClose,
@@ -170,7 +222,7 @@ const AttendanceModal = ({
       const dates = extractAllDatesFromData(data);
       setAttendanceDates(dates);
 
-      // ✅ NEW: Sort data by name untuk konsistensi urutan bulanan & semester
+      // ✅ Sort data by name untuk konsistensi urutan bulanan & semester
       const sortedData = [...data].sort((a, b) => {
         const nameA = (
           a.name ||
@@ -206,7 +258,7 @@ const AttendanceModal = ({
     }
   }, [show]);
 
-  // ✅ NEW: Effect untuk auto-fetch data saat viewMode berubah
+  // ✅ Effect untuk auto-fetch data saat viewMode berubah
   useEffect(() => {
     if (!show) return; // Skip kalau modal ngga dibuka
 
@@ -315,29 +367,32 @@ const AttendanceModal = ({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 transition-colors duration-300">
-      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col transition-colors duration-300">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800 text-white p-3 sm:p-4 flex justify-between items-center flex-shrink-0 gap-3">
-          <h2 className="text-sm sm:text-lg font-bold">📊 Rekap Presensi</h2>
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-1 xs:p-2 sm:p-4 transition-colors duration-300 touch-none">
+      <div className="bg-white dark:bg-gray-900 rounded-lg xs:rounded-xl w-full max-w-[98vw] xs:max-w-7xl max-h-[98vh] xs:max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col transition-colors duration-300 mx-1 xs:mx-2">
+        {/* Header dengan TEMA MERAH-PUTIH */}
+        <div className="bg-gradient-to-r from-red-600 to-red-700 dark:from-gray-800 dark:to-gray-900 text-white p-3 xs:p-4 flex justify-between items-center flex-shrink-0 gap-2 xs:gap-3 border-b-4 border-white dark:border-gray-700">
+          <h2 className="text-sm xs:text-base sm:text-lg font-bold flex items-center gap-2">
+            <span className="bg-white/20 p-1.5 rounded-lg">📊</span>
+            <span className="text-white">Rekap Presensi</span>
+          </h2>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
             {/* Tab Switcher */}
             <div className="flex bg-white/20 dark:bg-white/10 rounded-lg p-1 gap-1">
               <button
                 onClick={() => setViewMode("monthly")}
-                className={`px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-[40px] touch-manipulation active:scale-95 ${
+                className={`px-2 xs:px-3 py-1.5 xs:py-2 rounded text-xs font-medium transition-all duration-200 min-h-[36px] min-w-[60px] xs:min-w-[70px] touch-manipulation active:scale-95 ${
                   viewMode === "monthly"
-                    ? "bg-white text-blue-600 dark:text-blue-800 shadow"
+                    ? "bg-white text-red-600 dark:bg-gray-700 dark:text-white shadow-md"
                     : "text-white hover:bg-white/20 dark:hover:bg-white/30"
                 }`}>
-                📅 {isMobile ? "" : "Bulanan"}
+                📅 {isMobile ? "" : "Bulan"}
               </button>
               <button
                 onClick={() => setViewMode("semester")}
-                className={`px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-[40px] touch-manipulation active:scale-95 ${
+                className={`px-2 xs:px-3 py-1.5 xs:py-2 rounded text-xs font-medium transition-all duration-200 min-h-[36px] min-w-[60px] xs:min-w-[70px] touch-manipulation active:scale-95 ${
                   viewMode === "semester"
-                    ? "bg-white text-blue-600 dark:text-blue-800 shadow"
+                    ? "bg-white text-red-600 dark:bg-gray-700 dark:text-white shadow-md"
                     : "text-white hover:bg-white/20 dark:hover:bg-white/30"
                 }`}>
                 📊 {isMobile ? "" : "Semester"}
@@ -345,10 +400,10 @@ const AttendanceModal = ({
             </div>
 
             {/* Period Selector - Conditional based on viewMode */}
-            <div className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
+            <div className="flex items-center gap-1 xs:gap-2 bg-white/90 dark:bg-gray-800 rounded-lg p-1 shadow-sm border border-white/30 dark:border-gray-700">
               <Calendar
-                size={isMobile ? 14 : 16}
-                className="text-blue-500 dark:text-blue-400"
+                size={14}
+                className="text-red-500 dark:text-gray-400 xs:size-4"
               />
 
               {viewMode === "monthly" ? (
@@ -362,13 +417,13 @@ const AttendanceModal = ({
                         selectedYear
                       )
                     }
-                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 dark:border-gray-700 min-w-[80px] sm:min-w-[90px]"
+                    className="bg-transparent text-gray-800 dark:text-gray-300 text-xs xs:text-sm font-medium focus:outline-none cursor-pointer py-1 px-1 xs:px-2 border-r border-gray-300 dark:border-gray-700 min-w-[70px] xs:min-w-[80px] sm:min-w-[90px] touch-manipulation"
                     disabled={loading}>
                     {monthNames.map((month, index) => (
                       <option
                         key={index + 1}
                         value={index + 1}
-                        className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
+                        className="text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-800">
                         {month}
                       </option>
                     ))}
@@ -383,13 +438,13 @@ const AttendanceModal = ({
                         parseInt(e.target.value)
                       )
                     }
-                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px] sm:min-w-[80px]"
+                    className="bg-transparent text-gray-800 dark:text-gray-300 text-xs xs:text-sm font-medium focus:outline-none cursor-pointer py-1 px-1 xs:px-2 min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] touch-manipulation"
                     disabled={loading}>
                     {yearOptions.map((year) => (
                       <option
                         key={year}
                         value={year}
-                        className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
+                        className="text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-800">
                         {year}
                       </option>
                     ))}
@@ -403,16 +458,16 @@ const AttendanceModal = ({
                     onChange={(e) =>
                       handleSemesterChange(e.target.value, semesterYear)
                     }
-                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 border-r border-gray-200 dark:border-gray-700 min-w-[80px] sm:min-w-[90px]"
+                    className="bg-transparent text-gray-800 dark:text-gray-300 text-xs xs:text-sm font-medium focus:outline-none cursor-pointer py-1 px-1 xs:px-2 border-r border-gray-300 dark:border-gray-700 min-w-[70px] xs:min-w-[80px] sm:min-w-[90px] touch-manipulation"
                     disabled={loading}>
                     <option
                       value="ganjil"
-                      className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
+                      className="text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-800">
                       Ganjil
                     </option>
                     <option
                       value="genap"
-                      className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
+                      className="text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-800">
                       Genap
                     </option>
                   </select>
@@ -426,13 +481,13 @@ const AttendanceModal = ({
                         parseInt(e.target.value)
                       )
                     }
-                    className="bg-transparent text-gray-700 dark:text-gray-300 text-sm font-medium focus:outline-none cursor-pointer py-1 px-2 min-w-[70px] sm:min-w-[80px]"
+                    className="bg-transparent text-gray-800 dark:text-gray-300 text-xs xs:text-sm font-medium focus:outline-none cursor-pointer py-1 px-1 xs:px-2 min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] touch-manipulation"
                     disabled={loading}>
                     {yearOptions.map((year) => (
                       <option
                         key={year}
                         value={year}
-                        className="text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800">
+                        className="text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-800">
                         {year}
                       </option>
                     ))}
@@ -444,25 +499,29 @@ const AttendanceModal = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 dark:hover:bg-white/30 p-2 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation active:scale-95">
-              <X size={isMobile ? 18 : 20} />
+              className="text-white hover:bg-white/20 dark:hover:bg-white/30 p-1.5 xs:p-2 rounded-lg transition-all duration-200 min-w-[36px] min-h-[36px] xs:min-w-[44px] xs:min-h-[44px] flex items-center justify-center touch-manipulation active:scale-95 border border-white/30">
+              <X size={16} className="xs:size-5" />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-3 sm:p-4 flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
+        <div className="p-2 xs:p-3 sm:p-4 flex-1 flex flex-col overflow-hidden bg-red-50/30 dark:bg-gray-800 transition-colors duration-300">
           {/* Compact Header */}
-          <div className="mb-3 text-center border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-white dark:bg-gray-900 flex-shrink-0 sticky top-0 z-30 shadow-sm transition-colors duration-300">
-            <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 dark:text-gray-100">
+          <div className="mb-2 xs:mb-3 text-center border border-red-200 dark:border-gray-700 rounded-lg p-2 xs:p-3 bg-white dark:bg-gray-900 flex-shrink-0 sticky top-0 z-30 shadow-sm transition-colors duration-300">
+            <h3 className="text-sm xs:text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">
               {title || "REKAP PRESENSI"}{" "}
-              {activeClass && `- KELAS ${activeClass}`}
+              {activeClass && (
+                <span className="text-red-600 dark:text-red-400">
+                  - KELAS {activeClass}
+                </span>
+              )}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs xs:text-sm text-gray-700 dark:text-gray-400 mt-1">
               {getDynamicSubtitle()}
             </p>
             {viewMode === "monthly" && filteredDates.length > 0 && (
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+              <p className="text-xs text-red-600 dark:text-red-400 mt-1 xs:mt-2 font-medium">
                 {filteredDates.length} hari aktif •{" "}
                 {formatDateHeader(filteredDates[0])} -{" "}
                 {formatDateHeader(filteredDates[filteredDates.length - 1])}
@@ -472,72 +531,69 @@ const AttendanceModal = ({
 
           {/* Loading State */}
           {loading ? (
-            <div className="flex items-center justify-center p-8 text-gray-500 dark:text-gray-400 flex-1">
-              <RefreshCw
-                className="animate-spin mr-3 dark:text-gray-300"
-                size={isMobile ? 18 : 20}
-              />
-              <span className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+            <div className="flex items-center justify-center p-6 xs:p-8 text-gray-600 dark:text-gray-400 flex-1">
+              <RefreshCw className="animate-spin mr-2 xs:mr-3 dark:text-gray-300 size-5 xs:size-6" />
+              <span className="text-gray-700 dark:text-gray-300 text-sm xs:text-base">
                 Memuat data rekap...
               </span>
             </div>
           ) : (
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm flex-1 flex flex-col transition-colors duration-300">
+            <div className="border border-red-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm flex-1 flex flex-col transition-colors duration-300">
               {/* Conditional Table based on viewMode */}
               {viewMode === "monthly" ? (
                 // MONTHLY VIEW - Existing table
                 <>
                   {filteredDates.length > 0 && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-2 text-center text-xs text-blue-700 dark:text-blue-300 sm:hidden border-b border-blue-200 dark:border-blue-800 flex-shrink-0 flex items-center justify-center gap-2">
-                      <span>👉 Geser untuk melihat semua hari</span>
-                      <span className="bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded text-blue-800 dark:text-blue-200 font-bold">
+                    <div className="bg-red-50 dark:bg-red-900/20 p-2 text-center text-xs text-red-700 dark:text-red-300 xs:hidden border-b border-red-200 dark:border-red-800 flex-shrink-0 flex items-center justify-center gap-2">
+                      <span>👉 Geser untuk lihat semua hari</span>
+                      <span className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded text-red-800 dark:text-red-200 font-bold">
                         {filteredDates.length} hari
                       </span>
                     </div>
                   )}
 
                   <div className="overflow-auto flex-1 relative">
-                    <div className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-blue-50 dark:from-blue-900/20 to-transparent pointer-events-none sm:hidden z-10"></div>
+                    <div className="absolute right-0 top-0 bottom-0 w-3 xs:w-4 bg-gradient-to-l from-red-50 dark:from-red-900/20 to-transparent pointer-events-none xs:hidden z-10"></div>
 
-                    <table className="w-full text-xs sm:text-sm border-collapse">
-                      <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-20">
-                        <tr className="border-b-2 border-gray-400 dark:border-gray-600">
-                          <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-200 border-r-2 border-gray-300 dark:border-gray-700 sticky left-0 bg-gray-100 dark:bg-gray-800 z-30 min-w-[40px] sm:min-w-[50px]">
+                    <table className="w-full text-xs xs:text-sm border-collapse">
+                      <thead className="bg-red-50 dark:bg-gray-800 sticky top-0 z-20">
+                        <tr className="border-b-2 border-red-300 dark:border-gray-600">
+                          <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-200 border-r-2 border-red-300 dark:border-gray-700 sticky left-0 bg-red-50 dark:bg-gray-800 z-30 min-w-[30px] xs:min-w-[40px]">
                             No.
                           </th>
-                          <th className="p-2 text-left font-bold text-gray-800 dark:text-gray-200 border-r-2 border-gray-300 dark:border-gray-700 sticky left-[40px] sm:left-[50px] bg-gray-100 dark:bg-gray-800 z-30 min-w-[140px] sm:min-w-[200px]">
+                          <th className="p-1 xs:p-2 text-left font-bold text-gray-900 dark:text-gray-200 border-r-2 border-red-300 dark:border-gray-700 sticky left-[30px] xs:left-[40px] bg-red-50 dark:bg-gray-800 z-30 min-w-[120px] xs:min-w-[140px] sm:min-w-[200px]">
                             Nama Siswa
                           </th>
 
                           {filteredDates.map((date, index) => (
                             <th
                               key={date}
-                              className={`p-1 text-center font-bold text-gray-800 dark:text-gray-200 min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
+                              className={`p-0.5 xs:p-1 text-center font-bold text-gray-900 dark:text-gray-200 min-w-[36px] xs:min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
                                 index < filteredDates.length - 1
-                                  ? "border-r border-gray-300 dark:border-gray-700"
-                                  : "border-r-2 border-gray-400 dark:border-gray-600"
+                                  ? "border-r border-red-200 dark:border-gray-700"
+                                  : "border-r-2 border-red-300 dark:border-gray-600"
                               }`}>
                               {formatDateHeader(date)}
                             </th>
                           ))}
 
-                          <th className="p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px] bg-green-50 dark:bg-green-900/20">
-                            Hadir
+                          <th className="p-1 xs:p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-red-200 dark:border-gray-700 min-w-[36px] xs:min-w-[40px] bg-green-50/50 dark:bg-green-900/20">
+                            H
                           </th>
-                          <th className="p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px] bg-blue-50 dark:bg-blue-900/20">
-                            Izin
+                          <th className="p-1 xs:p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-red-200 dark:border-gray-700 min-w-[36px] xs:min-w-[40px] bg-blue-50/50 dark:bg-blue-900/20">
+                            I
                           </th>
-                          <th className="p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px] bg-yellow-50 dark:bg-yellow-900/20">
-                            Sakit
+                          <th className="p-1 xs:p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-red-200 dark:border-gray-700 min-w-[36px] xs:min-w-[40px] bg-yellow-50/50 dark:bg-yellow-900/20">
+                            S
                           </th>
-                          <th className="p-2 text-center font-bold text-red-700 dark:text-red-400 border-r-2 border-gray-400 dark:border-gray-600 min-w-[40px] sm:min-w-[45px] bg-red-50 dark:bg-red-900/20">
-                            Alpa
+                          <th className="p-1 xs:p-2 text-center font-bold text-red-700 dark:text-red-400 border-r-2 border-red-300 dark:border-gray-600 min-w-[36px] xs:min-w-[40px] bg-red-50/50 dark:bg-red-900/20">
+                            A
                           </th>
-                          <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-300 dark:border-gray-700 min-w-[40px] sm:min-w-[45px]">
+                          <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-200 dark:border-gray-700 min-w-[36px] xs:min-w-[40px]">
                             Total
                           </th>
-                          <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 min-w-[50px] sm:min-w-[60px]">
-                            Persentase
+                          <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 min-w-[44px] xs:min-w-[50px] sm:min-w-[60px]">
+                            %
                           </th>
                         </tr>
                       </thead>
@@ -546,11 +602,11 @@ const AttendanceModal = ({
                           processedData.map((student, index) => (
                             <tr
                               key={student.nisn || student.id || index}
-                              className="border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-150">
-                              <td className="p-2 text-center border-r-2 border-gray-300 dark:border-gray-700 sticky left-0 bg-white dark:bg-gray-900 z-10 font-medium shadow-right dark:shadow-gray-800 sm:shadow-none">
+                              className="border-b border-red-100 dark:border-gray-700 hover:bg-red-50/50 dark:hover:bg-gray-800 transition-colors duration-150">
+                              <td className="p-1 xs:p-2 text-center border-r-2 border-red-300 dark:border-gray-700 sticky left-0 bg-white dark:bg-gray-900 z-10 font-medium text-gray-900 dark:text-gray-300 shadow-right dark:shadow-gray-800 xs:shadow-none">
                                 {index + 1}
                               </td>
-                              <td className="p-2 font-medium text-gray-800 dark:text-gray-200 border-r-2 border-gray-300 dark:border-gray-700 sticky left-[40px] sm:left-[50px] bg-white dark:bg-gray-900 z-10 whitespace-nowrap shadow-right dark:shadow-gray-800 sm:shadow-none">
+                              <td className="p-1 xs:p-2 font-medium text-gray-900 dark:text-gray-200 border-r-2 border-red-300 dark:border-gray-700 sticky left-[30px] xs:left-[40px] bg-white dark:bg-gray-900 z-10 whitespace-nowrap text-xs xs:text-sm shadow-right dark:shadow-gray-800 xs:shadow-none">
                                 {student.name ||
                                   student.full_name ||
                                   student.nama_siswa}
@@ -559,38 +615,38 @@ const AttendanceModal = ({
                               {filteredDates.map((date, index) => (
                                 <td
                                   key={date}
-                                  className={`p-1 text-center ${
+                                  className={`p-0.5 xs:p-1 text-center ${
                                     index < filteredDates.length - 1
-                                      ? "border-r border-gray-200 dark:border-gray-700"
-                                      : "border-r-2 border-gray-400 dark:border-gray-600"
+                                      ? "border-r border-red-100 dark:border-gray-700"
+                                      : "border-r-2 border-red-300 dark:border-gray-600"
                                   }`}>
                                   <div className="flex justify-center">
                                     {getStatusBadge(
                                       getStudentStatusByDate(student, date),
-                                      true // Pass dark mode flag
+                                      true
                                     )}
                                   </div>
                                 </td>
                               ))}
 
-                              <td className="p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/10">
+                              <td className="p-1 xs:p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-red-100 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10">
                                 {student.hadir || 0}
                               </td>
-                              <td className="p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/10">
+                              <td className="p-1 xs:p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-red-100 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
                                 {student.izin || 0}
                               </td>
-                              <td className="p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-yellow-50/50 dark:bg-yellow-900/10">
+                              <td className="p-1 xs:p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-red-100 dark:border-gray-700 bg-yellow-50/30 dark:bg-yellow-900/10">
                                 {student.sakit || 0}
                               </td>
-                              <td className="p-2 text-center text-red-700 dark:text-red-400 font-bold border-r-2 border-gray-400 dark:border-gray-600 bg-red-50/50 dark:bg-red-900/10">
+                              <td className="p-1 xs:p-2 text-center text-red-700 dark:text-red-400 font-bold border-r-2 border-red-300 dark:border-gray-600 bg-red-50/30 dark:bg-red-900/10">
                                 {student.alpa || 0}
                               </td>
-                              <td className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
+                              <td className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-100 dark:border-gray-700">
                                 {student.total || 0}
                               </td>
-                              <td className="p-2 text-center font-bold text-gray-800 dark:text-gray-300">
+                              <td className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300">
                                 <span
-                                  className={`inline-flex items-center justify-center w-12 sm:w-14 px-2 py-1 rounded-full text-xs font-semibold ${
+                                  className={`inline-flex items-center justify-center w-10 xs:w-12 sm:w-14 px-1 xs:px-2 py-0.5 xs:py-1 rounded-full text-xs font-semibold ${
                                     student.percentage >= 80
                                       ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                                       : student.percentage >= 60
@@ -606,14 +662,14 @@ const AttendanceModal = ({
                           <tr>
                             <td
                               colSpan={filteredDates.length + 8}
-                              className="p-8 text-center text-gray-500 dark:text-gray-400">
-                              <div className="text-3xl sm:text-4xl mb-3 dark:text-gray-600">
+                              className="p-6 xs:p-8 text-center text-gray-600 dark:text-gray-400">
+                              <div className="text-2xl xs:text-3xl sm:text-4xl mb-2 xs:mb-3 dark:text-gray-600">
                                 📅
                               </div>
-                              <h4 className="font-semibold mb-2 text-sm sm:text-base dark:text-gray-300">
+                              <h4 className="font-semibold mb-1 xs:mb-2 text-sm xs:text-base dark:text-gray-300">
                                 Belum Ada Data
                               </h4>
-                              <p className="text-xs sm:text-sm dark:text-gray-400">
+                              <p className="text-xs xs:text-sm dark:text-gray-400">
                                 Belum ada data presensi untuk bulan ini
                               </p>
                             </td>
@@ -624,39 +680,39 @@ const AttendanceModal = ({
                   </div>
                 </>
               ) : (
-                // SEMESTER VIEW - New summary table
+                // SEMESTER VIEW - Summary table
                 <div className="overflow-auto flex-1">
-                  <table className="w-full text-xs sm:text-sm border-collapse">
-                    <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-20">
-                      <tr className="border-b-2 border-gray-400 dark:border-gray-600">
-                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-700 min-w-[40px]">
+                  <table className="w-full text-xs xs:text-sm border-collapse">
+                    <thead className="bg-red-50 dark:bg-gray-800 sticky top-0 z-20">
+                      <tr className="border-b-2 border-red-300 dark:border-gray-600">
+                        <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-200 border-r border-red-200 dark:border-gray-700 min-w-[30px] xs:min-w-[40px]">
                           No
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-700 min-w-[120px]">
+                        <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-200 border-r border-red-200 dark:border-gray-700 min-w-[80px] xs:min-w-[100px]">
                           NISN
                         </th>
-                        <th className="p-2 text-left font-bold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-700 min-w-[180px]">
+                        <th className="p-1 xs:p-2 text-left font-bold text-gray-900 dark:text-gray-200 border-r border-red-200 dark:border-gray-700 min-w-[120px] xs:min-w-[150px] sm:min-w-[180px]">
                           Nama Siswa
                         </th>
-                        <th className="p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-green-50 dark:bg-green-900/20">
-                          Hadir
+                        <th className="p-1 xs:p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] xs:min-w-[50px] bg-green-50/50 dark:bg-green-900/20">
+                          H
                         </th>
-                        <th className="p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-yellow-50 dark:bg-yellow-900/20">
-                          Sakit
+                        <th className="p-1 xs:p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] xs:min-w-[50px] bg-yellow-50/50 dark:bg-yellow-900/20">
+                          S
                         </th>
-                        <th className="p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-blue-50 dark:bg-blue-900/20">
-                          Izin
+                        <th className="p-1 xs:p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] xs:min-w-[50px] bg-blue-50/50 dark:bg-blue-900/20">
+                          I
                         </th>
-                        <th className="p-2 text-center font-bold text-red-700 dark:text-red-400 border-r border-gray-300 dark:border-gray-700 min-w-[60px] bg-red-50 dark:bg-red-900/20">
-                          Alpa
+                        <th className="p-1 xs:p-2 text-center font-bold text-red-700 dark:text-red-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] xs:min-w-[50px] bg-red-50/50 dark:bg-red-900/20">
+                          A
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-300 dark:border-gray-700 min-w-[60px]">
+                        <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-200 dark:border-gray-700 min-w-[40px] xs:min-w-[50px]">
                           Total
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-300 dark:border-gray-700 min-w-[70px]">
+                        <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-200 dark:border-gray-700 min-w-[50px] xs:min-w-[60px]">
                           %
                         </th>
-                        <th className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 min-w-[100px]">
+                        <th className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 min-w-[70px] xs:min-w-[80px]">
                           Kategori
                         </th>
                       </tr>
@@ -670,36 +726,36 @@ const AttendanceModal = ({
                           return (
                             <tr
                               key={student.nisn || student.id || index}
-                              className="border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-150">
-                              <td className="p-2 text-center border-r border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-gray-300">
+                              className="border-b border-red-100 dark:border-gray-700 hover:bg-red-50/50 dark:hover:bg-gray-800 transition-colors duration-150">
+                              <td className="p-1 xs:p-2 text-center border-r border-red-100 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-300">
                                 {index + 1}
                               </td>
-                              <td className="p-2 text-center border-r border-gray-200 dark:border-gray-700 font-mono text-xs text-gray-700 dark:text-gray-400">
+                              <td className="p-1 xs:p-2 text-center border-r border-red-100 dark:border-gray-700 font-mono text-xs text-gray-800 dark:text-gray-400">
                                 {student.nisn || "-"}
                               </td>
-                              <td className="p-2 border-r border-gray-200 dark:border-gray-700 font-medium text-gray-800 dark:text-gray-300">
+                              <td className="p-1 xs:p-2 border-r border-red-100 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-300 text-xs xs:text-sm">
                                 {student.name ||
                                   student.full_name ||
                                   student.nama_siswa}
                               </td>
-                              <td className="p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10">
+                              <td className="p-1 xs:p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-red-100 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10">
                                 {student.hadir || 0}
                               </td>
-                              <td className="p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-yellow-50/30 dark:bg-yellow-900/10">
+                              <td className="p-1 xs:p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-red-100 dark:border-gray-700 bg-yellow-50/30 dark:bg-yellow-900/10">
                                 {student.sakit || 0}
                               </td>
-                              <td className="p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
+                              <td className="p-1 xs:p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-red-100 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
                                 {student.izin || 0}
                               </td>
-                              <td className="p-2 text-center text-red-700 dark:text-red-400 font-bold border-r border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10">
+                              <td className="p-1 xs:p-2 text-center text-red-700 dark:text-red-400 font-bold border-r border-red-100 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10">
                                 {student.alpa || 0}
                               </td>
-                              <td className="p-2 text-center font-bold text-gray-800 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
+                              <td className="p-1 xs:p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-100 dark:border-gray-700">
                                 {student.total || 0}
                               </td>
-                              <td className="p-2 text-center font-bold border-r border-gray-200 dark:border-gray-700">
+                              <td className="p-1 xs:p-2 text-center font-bold border-r border-red-100 dark:border-gray-700">
                                 <span
-                                  className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                  className={`inline-flex items-center justify-center px-1 xs:px-2 py-0.5 xs:py-1 rounded-full text-xs font-semibold ${
                                     student.percentage >= 90
                                       ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                                       : student.percentage >= 80
@@ -711,9 +767,9 @@ const AttendanceModal = ({
                                   {student.percentage || 0}%
                                 </span>
                               </td>
-                              <td className="p-2 text-center">
+                              <td className="p-1 xs:p-2 text-center">
                                 <span
-                                  className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-semibold ${category.color}`}>
+                                  className={`inline-flex items-center justify-center px-2 xs:px-3 py-0.5 xs:py-1 rounded-full text-xs font-semibold ${category.color}`}>
                                   {category.text}
                                 </span>
                               </td>
@@ -724,14 +780,14 @@ const AttendanceModal = ({
                         <tr>
                           <td
                             colSpan={10}
-                            className="p-8 text-center text-gray-500 dark:text-gray-400">
-                            <div className="text-3xl sm:text-4xl mb-3 dark:text-gray-600">
+                            className="p-6 xs:p-8 text-center text-gray-600 dark:text-gray-400">
+                            <div className="text-2xl xs:text-3xl sm:text-4xl mb-2 xs:mb-3 dark:text-gray-600">
                               📊
                             </div>
-                            <h4 className="font-semibold mb-2 text-sm sm:text-base dark:text-gray-300">
+                            <h4 className="font-semibold mb-1 xs:mb-2 text-sm xs:text-base dark:text-gray-300">
                               Belum Ada Data
                             </h4>
-                            <p className="text-xs sm:text-sm dark:text-gray-400">
+                            <p className="text-xs xs:text-sm dark:text-gray-400">
                               Belum ada data presensi untuk semester ini
                             </p>
                           </td>
@@ -745,21 +801,28 @@ const AttendanceModal = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0 transition-colors duration-300">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+        {/* Footer dengan TEMA MERAH */}
+        <div className="bg-red-50 dark:bg-gray-800 p-2 xs:p-3 sm:p-4 border-t border-red-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0 transition-colors duration-300">
+          <div className="text-xs xs:text-sm text-gray-700 dark:text-gray-400">
             {processedData && processedData.length > 0 && (
-              <span className="text-xs sm:text-sm">
-                Total {processedData.length} siswa •{" "}
+              <span className="text-xs xs:text-sm">
+                <span className="font-semibold text-red-600 dark:text-red-400">
+                  {processedData.length}
+                </span>{" "}
+                siswa •{" "}
                 {viewMode === "monthly" ? (
                   <>
-                    {filteredDates.length} hari aktif • Periode{" "}
-                    {monthNames[selectedMonth - 1]} {selectedYear}
+                    <span className="font-semibold text-red-600 dark:text-red-400">
+                      {filteredDates.length}
+                    </span>{" "}
+                    hari • {monthNames[selectedMonth - 1]} {selectedYear}
                   </>
                 ) : (
                   <>
                     Semester{" "}
-                    {selectedSemester === "ganjil" ? "Ganjil" : "Genap"}{" "}
+                    <span className="font-semibold text-red-600 dark:text-red-400">
+                      {selectedSemester === "ganjil" ? "Ganjil" : "Genap"}
+                    </span>{" "}
                     {semesterYear}
                   </>
                 )}
@@ -768,7 +831,7 @@ const AttendanceModal = ({
           </div>
           <button
             onClick={onClose}
-            className="px-4 sm:px-6 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium touch-manipulation active:scale-95 min-h-[40px] min-w-[80px] sm:min-w-[100px]">
+            className="px-3 xs:px-4 sm:px-6 py-1.5 xs:py-2 bg-red-600 hover:bg-red-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-colors duration-200 text-xs xs:text-sm font-medium touch-manipulation active:scale-95 min-h-[36px] xs:min-h-[40px] min-w-[60px] xs:min-w-[80px] sm:min-w-[100px] border border-red-700 dark:border-gray-600">
             Tutup
           </button>
         </div>

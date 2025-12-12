@@ -38,13 +38,13 @@ const QRCodeGenerator = () => {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, width, height);
 
-    // Draw outer border (blue)
-    ctx.strokeStyle = "#1e40af";
+    // Draw outer border (red) - CHANGED TO RED
+    ctx.strokeStyle = "#dc2626"; // red-600
     ctx.lineWidth = 6;
     ctx.strokeRect(8, 8, width - 16, height - 16);
 
     // Draw inner border
-    ctx.strokeStyle = "#3b82f6";
+    ctx.strokeStyle = "#ef4444"; // red-500
     ctx.lineWidth = 2;
     ctx.strokeRect(16, 16, width - 32, height - 32);
 
@@ -55,7 +55,7 @@ const QRCodeGenerator = () => {
       ctx.drawImage(qrImg, padding, padding, qrSize, qrSize);
 
       const lineY = padding + qrSize + 15;
-      ctx.strokeStyle = "#cbd5e1";
+      ctx.strokeStyle = "#e5e7eb"; // gray-200
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(40, lineY);
@@ -70,7 +70,8 @@ const QRCodeGenerator = () => {
 
         ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
 
-        ctx.fillStyle = "#1e40af";
+        // CHANGED TO RED
+        ctx.fillStyle = "#dc2626"; // red-600
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
 
@@ -86,7 +87,8 @@ const QRCodeGenerator = () => {
       logo.onerror = () => {
         console.log("Logo tidak ditemukan, tampilkan text saja");
 
-        ctx.fillStyle = "#1e40af";
+        // CHANGED TO RED
+        ctx.fillStyle = "#dc2626"; // red-600
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
 
@@ -97,7 +99,7 @@ const QRCodeGenerator = () => {
         ctx.fillText("SDN 1 PASIRPOGOR", width / 2, textY);
 
         ctx.font = `16px Arial`;
-        ctx.fillStyle = "#64748b";
+        ctx.fillStyle = "#6b7280"; // gray-500
         ctx.fillText("Presensi Guru", width / 2, textY + 35);
 
         setFinalQrUrl(canvas.toDataURL("image/png"));
@@ -120,19 +122,19 @@ const QRCodeGenerator = () => {
     <div className="max-w-2xl mx-auto p-4 sm:p-6 bg-white rounded-xl shadow-lg dark:bg-gray-800 dark:shadow-xl">
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <QrCode className="text-blue-600 dark:text-blue-400" size={28} />
+          <QrCode className="text-red-600 dark:text-red-400" size={28} />
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
             Generator QR Presensi Guru
           </h1>
         </div>
-        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 px-2">
           Generate QR Code untuk sistem presensi guru SDN 1 Pasirpogor
         </p>
       </div>
 
       <button
         onClick={generateQR}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 mb-6 shadow-lg dark:bg-blue-700 dark:hover:bg-blue-800">
+        className="w-full py-3 min-h-[44px] bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 mb-6 shadow-lg dark:bg-red-700 dark:hover:bg-red-800">
         <RefreshCw size={20} />
         Generate QR Code
       </button>
@@ -141,7 +143,7 @@ const QRCodeGenerator = () => {
 
       {finalQrUrl && (
         <div className="space-y-4">
-          <div className="border-4 border-blue-500 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 dark:border-blue-700">
+          <div className="border-4 border-red-500 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 dark:border-red-700">
             <img
               src={finalQrUrl}
               alt="QR Code Presensi Guru"
@@ -152,8 +154,8 @@ const QRCodeGenerator = () => {
             </p>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/30 dark:border-blue-800">
-            <p className="text-sm text-gray-700 mb-2 font-semibold dark:text-blue-300">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 dark:bg-red-900/30 dark:border-red-800">
+            <p className="text-sm text-gray-700 mb-2 font-semibold dark:text-red-300">
               📋 Kode QR:
             </p>
             <p className="font-mono text-xs sm:text-sm bg-white px-3 py-2 rounded border border-gray-300 break-all dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700">
@@ -163,7 +165,7 @@ const QRCodeGenerator = () => {
 
           <button
             onClick={downloadQR}
-            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg dark:bg-green-700 dark:hover:bg-green-800">
+            className="w-full py-3 min-h-[44px] bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg dark:bg-green-700 dark:hover:bg-green-800">
             <Download size={20} />
             Download QR Code
           </button>

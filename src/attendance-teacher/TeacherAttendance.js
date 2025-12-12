@@ -1,6 +1,6 @@
-// src/attendance-teacher/TeacherAttendance.js - SD PASIRPOGOR VERSION (RESPONSIVE + DARK MODE)
+// src/attendance-teacher/TeacherAttendance.js - SD PASIRPOGOR VERSION (RESPONSIVE + DARK MODE + MERAH-PUTIH)
 import React, { useState, useEffect } from "react";
-import { Clock, Bell, X, Moon, Sun, Smartphone } from "lucide-react";
+import { Clock, Bell, X, Smartphone } from "lucide-react";
 import { supabase } from "../supabaseClient";
 
 // Teacher Components
@@ -22,7 +22,7 @@ const TeacherAttendance = ({ userData }) => {
     }
     return false;
   });
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   // Device detection
   useEffect(() => {
@@ -42,7 +42,7 @@ const TeacherAttendance = ({ userData }) => {
   useEffect(() => {
     const checkDarkMode = () => {
       const isDark = document.documentElement.classList.contains("dark");
-      setIsDarkMode(isDark);
+      setDarkMode(isDark);
     };
 
     checkDarkMode();
@@ -88,15 +88,7 @@ const TeacherAttendance = ({ userData }) => {
       const day = String(indonesiaDate.getDate()).padStart(2, "0");
       const todayLocal = `${year}-${month}-${day}`;
 
-      console.log(
-        `🕐 Indonesia Time: ${currentHour}:${String(currentMinute).padStart(
-          2,
-          "0"
-        )}`
-      );
-      console.log(`📅 Today: ${todayLocal}`);
-
-      // ⏰ Reminder only shows between 07:00 - 14:00
+      // ⏰ Reminder only shows between 07:00 - 13:00
       const currentTimeInMinutes = currentHour * 60 + currentMinute;
       const reminderStartTime = 7 * 60; // 07:00
       const reminderEndTime = 13 * 60; // 13:00
@@ -105,12 +97,9 @@ const TeacherAttendance = ({ userData }) => {
         currentTimeInMinutes < reminderStartTime ||
         currentTimeInMinutes >= reminderEndTime
       ) {
-        console.log(`⏰ Outside reminder window`);
         setShowReminder(false);
         return;
       }
-
-      console.log(`🔔 Within reminder window`);
 
       // ✅ Check if already attended today using UUID
       const { data: attendanceData, error: attendanceError } = await supabase
@@ -127,14 +116,10 @@ const TeacherAttendance = ({ userData }) => {
 
       const hasAttended = attendanceData && attendanceData.length > 0;
 
-      console.log(`✅ Already attended? ${hasAttended}`);
-
       // Show reminder if not attended yet
       if (!hasAttended) {
-        console.log("🔔 SHOWING REMINDER - Not attended yet!");
         setShowReminder(true);
       } else {
-        console.log("✅ Already attended - No reminder");
         setShowReminder(false);
       }
     } catch (error) {
@@ -166,9 +151,9 @@ const TeacherAttendance = ({ userData }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-red-600 dark:border-red-500 mx-auto mb-4"></div>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium">
             Memuat data presensi...
           </p>
@@ -179,7 +164,7 @@ const TeacherAttendance = ({ userData }) => {
 
   if (!userData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen bg-red-50 dark:bg-gray-900">
         <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
           <p className="text-red-600 dark:text-red-400 text-lg font-bold">
             Sesi login tidak ditemukan
@@ -202,25 +187,26 @@ const TeacherAttendance = ({ userData }) => {
 
   // ========== TEACHER VIEW ==========
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       {/* Reminder Pop-up */}
       {showReminder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-md w-full animate-bounce-in">
             {/* Header */}
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 dark:from-yellow-500 dark:to-orange-600 rounded-t-xl sm:rounded-t-2xl p-4 sm:p-6 relative">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 rounded-t-xl sm:rounded-t-2xl p-4 sm:p-6 relative">
               <button
                 onClick={handleDismissReminder}
-                className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-all">
+                className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white hover:bg-white/20 rounded-full p-1 transition-all"
+                aria-label="Tutup pengingat">
                 <X size={18} className="sm:size-5" />
               </button>
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="bg-white bg-opacity-20 p-2 sm:p-3 rounded-full">
+                <div className="bg-white/20 p-2 sm:p-3 rounded-full">
                   <Bell className="text-white" size={isMobile ? 24 : 32} />
                 </div>
                 <div>
                   <h3 className="text-base sm:text-xl font-bold text-white">
-                    ⚠️ Reminder Presensi
+                    ⚠️ Pengingat Presensi
                   </h3>
                   <p className="text-white text-xs sm:text-sm opacity-90">
                     Jangan lupa presensi hari ini!
@@ -236,8 +222,8 @@ const TeacherAttendance = ({ userData }) => {
                 Sekarang.
               </p>
 
-              <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 dark:border-blue-400 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6">
-                <p className="text-blue-800 dark:text-blue-300 text-xs sm:text-sm">
+              <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-400 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6">
+                <p className="text-red-800 dark:text-red-300 text-xs sm:text-sm">
                   <strong>📋 Info:</strong> Silakan lakukan presensi untuk
                   mencatat kehadiran Anda hari ini.
                 </p>
@@ -255,12 +241,12 @@ const TeacherAttendance = ({ userData }) => {
               <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={handleDismissReminder}
-                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-all border border-gray-300 dark:border-gray-600 text-sm sm:text-base">
+                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-all border border-gray-300 dark:border-gray-600 text-sm sm:text-base min-h-[44px]">
                   Nanti
                 </button>
                 <button
                   onClick={handleGoToAttendance}
-                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-700 dark:to-indigo-700 hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 text-white font-semibold rounded-lg transition-all shadow-lg text-sm sm:text-base">
+                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-red-600 to-red-700 dark:from-red-700 dark:to-red-800 hover:from-red-700 hover:to-red-800 dark:hover:from-red-600 dark:hover:to-red-700 text-white font-semibold rounded-lg transition-all shadow-lg text-sm sm:text-base min-h-[44px]">
                   Presensi Sekarang
                 </button>
               </div>
@@ -275,9 +261,9 @@ const TeacherAttendance = ({ userData }) => {
           <div className="flex items-center justify-between gap-3">
             {/* Logo & Title */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 sm:p-2 rounded-lg flex-shrink-0">
+              <div className="bg-red-100 dark:bg-red-900/40 p-1.5 sm:p-2 rounded-lg flex-shrink-0">
                 <Clock
-                  className="text-blue-600 dark:text-blue-400"
+                  className="text-red-600 dark:text-red-400"
                   size={isMobile ? 18 : 20}
                 />
               </div>
@@ -301,10 +287,10 @@ const TeacherAttendance = ({ userData }) => {
 
             {/* User Info - Responsive */}
             <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-gray-200 dark:border-gray-600 flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-600 dark:bg-blue-700 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-red-600 dark:bg-red-700 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                 {userData.full_name?.charAt(0) || "G"}
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden sm:block min-w-0">
                 <p className="text-sm font-semibold text-gray-800 dark:text-white truncate max-w-[120px]">
                   {userData.full_name}
                 </p>
@@ -327,7 +313,8 @@ const TeacherAttendance = ({ userData }) => {
           }`}>
           <button
             onClick={() => setShowReminder(true)}
-            className="bg-gradient-to-r from-yellow-400 to-orange-500 dark:from-yellow-500 dark:to-orange-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg flex items-center gap-1 sm:gap-2 hover:scale-105 transition-transform">
+            className="bg-gradient-to-r from-amber-500 to-orange-500 dark:from-amber-600 dark:to-orange-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg flex items-center gap-1 sm:gap-2 hover:scale-105 transition-transform min-h-[32px] sm:min-h-[36px]"
+            aria-label="Buka pengingat presensi">
             <Bell size={isMobile ? 14 : 16} />
             <span className="text-xs sm:text-sm font-semibold">
               Belum Presensi!
@@ -343,29 +330,33 @@ const TeacherAttendance = ({ userData }) => {
           <button
             onClick={() => setActiveView("presensi")}
             className={`
-              flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold 
-              transition-all text-sm sm:text-base min-w-[100px] sm:min-w-0
-              touch-manipulation
+              flex-1 sm:flex-none px-4 py-3 rounded-lg font-semibold 
+              transition-all text-sm sm:text-base min-w-[120px] sm:min-w-[140px]
+              touch-manipulation min-h-[44px]
               ${
                 activeView === "presensi"
-                  ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg"
+                  ? "bg-red-600 dark:bg-red-700 text-white shadow-lg"
                   : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
               }
-            `}>
+            `}
+            aria-label="Tab Presensi"
+            aria-selected={activeView === "presensi"}>
             Presensi
           </button>
           <button
             onClick={() => setActiveView("history")}
             className={`
-              flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold 
-              transition-all text-sm sm:text-base min-w-[100px] sm:min-w-0
-              touch-manipulation
+              flex-1 sm:flex-none px-4 py-3 rounded-lg font-semibold 
+              transition-all text-sm sm:text-base min-w-[120px] sm:min-w-[140px]
+              touch-manipulation min-h-[44px]
               ${
                 activeView === "history"
-                  ? "bg-blue-600 dark:bg-blue-700 text-white shadow-lg"
+                  ? "bg-red-600 dark:bg-red-700 text-white shadow-lg"
                   : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
               }
-            `}>
+            `}
+            aria-label="Tab Riwayat"
+            aria-selected={activeView === "history"}>
             Riwayat Saya
           </button>
         </div>
@@ -378,7 +369,7 @@ const TeacherAttendance = ({ userData }) => {
               currentUser={userData}
               refreshTrigger={refreshTrigger}
               isMobile={isMobile}
-              isDarkMode={isDarkMode}
+              darkMode={darkMode}
             />
 
             {/* 2️⃣ Attendance Tabs (QR Scanner / Manual Input) */}
@@ -387,7 +378,7 @@ const TeacherAttendance = ({ userData }) => {
                 currentUser={userData}
                 onSuccess={handleAttendanceSuccess}
                 isMobile={isMobile}
-                isDarkMode={isDarkMode}
+                darkMode={darkMode}
               />
             </div>
           </div>
@@ -396,7 +387,7 @@ const TeacherAttendance = ({ userData }) => {
           <MyMonthlyHistory
             currentUser={userData}
             isMobile={isMobile}
-            isDarkMode={isDarkMode}
+            darkMode={darkMode}
           />
         )}
       </div>

@@ -24,12 +24,13 @@ export const useAttendance = (currentUser) => {
 
   const { isOnline, pendingCount, isSyncing } = useSyncStatus();
 
-  // Device detection
+  // Enhanced device detection with better breakpoints
   useEffect(() => {
     const checkDeviceType = () => {
       const width = window.innerWidth;
-      const isMobileNow = width < 768;
-      const isTabletNow = width >= 768 && width < 1024;
+      // Mobile: < 640px, Tablet: 640px - 1024px, Desktop: > 1024px
+      const isMobileNow = width < 640;
+      const isTabletNow = width >= 640 && width < 1024;
 
       if (isMobile !== isMobileNow || isTablet !== isTabletNow) {
         setIsMobile(isMobileNow);
@@ -43,10 +44,13 @@ export const useAttendance = (currentUser) => {
     let resizeTimeout;
     const handleResize = () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(checkDeviceType, 100);
+      resizeTimeout = setTimeout(checkDeviceType, 150); // Debounce lebih lama
     };
 
     window.addEventListener("resize", handleResize);
+
+    // Check initial device
+    checkDeviceType();
 
     return () => {
       window.removeEventListener("resize", handleResize);
@@ -908,9 +912,9 @@ export const AttendanceLayout = ({ children, isMobile, isTablet }) => {
     <div
       className={`
       min-h-screen
-      bg-gray-50 dark:bg-gray-900
+      bg-white dark:bg-gray-900
       transition-colors duration-200
-      ${isMobile ? "p-2" : isTablet ? "p-4" : "p-6"}
+      ${isMobile ? "p-3" : isTablet ? "p-4" : "p-6"}
     `}>
       <div className="max-w-7xl mx-auto">{children}</div>
     </div>
@@ -922,30 +926,44 @@ export const HeaderSection = ({ title, subtitle, isMobile }) => {
     <div
       className={`
       mb-4 sm:mb-6 md:mb-8
-      bg-white dark:bg-gray-800
-      rounded-lg sm:rounded-xl
+      bg-gradient-to-r from-red-50 to-white 
+      dark:from-gray-800 dark:to-gray-900
+      rounded-lg sm:rounded-xl md:rounded-2xl
       shadow-sm dark:shadow-gray-900/50
-      ${isMobile ? "p-3" : "p-4 sm:p-6"}
-      border border-gray-200 dark:border-gray-700
+      ${isMobile ? "p-4" : "p-6 sm:p-8"}
+      border border-red-100 dark:border-gray-700
+      relative overflow-hidden
     `}>
-      <h1
-        className={`
-        font-bold
-        text-gray-900 dark:text-white
-        ${isMobile ? "text-lg sm:text-xl" : "text-xl sm:text-2xl md:text-3xl"}
-        mb-1 sm:mb-2
-      `}>
-        {title}
-      </h1>
-      {subtitle && (
-        <p
+      {/* Decorative elements */}
+      <div className="absolute top-0 right-0 w-24 h-24 bg-red-50 dark:bg-red-900/10 rounded-full -translate-y-12 translate-x-12"></div>
+      <div className="absolute bottom-0 left-0 w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full translate-y-8 -translate-x-8"></div>
+
+      <div className="relative">
+        <h1
           className={`
-          text-gray-600 dark:text-gray-300
-          ${isMobile ? "text-xs sm:text-sm" : "text-sm sm:text-base"}
+          font-bold
+          text-red-700 dark:text-white
+          ${
+            isMobile
+              ? "text-xl sm:text-2xl"
+              : "text-2xl sm:text-3xl md:text-4xl"
+          }
+          mb-2 sm:mb-3
+          tracking-tight
         `}>
-          {subtitle}
-        </p>
-      )}
+          {title}
+        </h1>
+        {subtitle && (
+          <p
+            className={`
+            text-red-600/80 dark:text-gray-300
+            ${isMobile ? "text-sm sm:text-base" : "text-base sm:text-lg"}
+            font-medium
+          `}>
+            {subtitle}
+          </p>
+        )}
+      </div>
     </div>
   );
 };
@@ -962,34 +980,37 @@ export const ClassSelector = ({
       <label
         className={`
         block
-        text-gray-700 dark:text-gray-300
-        ${isMobile ? "text-sm mb-2" : "text-base mb-3"}
-        font-medium
+        text-gray-800 dark:text-gray-200
+        ${isMobile ? "text-sm mb-3" : "text-base mb-4"}
+        font-semibold
       `}>
         Pilih Kelas:
       </label>
       <div
         className={`
         grid gap-2 sm:gap-3
-        ${isMobile ? "grid-cols-3" : isTablet ? "grid-cols-4" : "grid-cols-6"}
+        ${isMobile ? "grid-cols-3" : isTablet ? "grid-cols-3" : "grid-cols-6"}
       `}>
         {availableClasses.map((classNum) => (
           <button
             key={classNum}
             onClick={() => setActiveClass(classNum)}
             className={`
-              py-2 sm:py-3
+              py-3 sm:py-4
               rounded-lg sm:rounded-xl
-              font-medium
+              font-semibold
               transition-all duration-200
+              min-h-[52px] sm:min-h-[56px]
+              flex items-center justify-center
               ${
                 activeClass === classNum
-                  ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-md"
-                  : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+                  ? "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white shadow-lg shadow-red-200 dark:shadow-red-900/30"
+                  : "bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-300 border-2 border-red-200 dark:border-gray-600"
               }
-              ${isMobile ? "text-sm" : "text-base"}
-              min-h-[44px] sm:min-h-[48px]
-            `}>
+              ${isMobile ? "text-base" : "text-lg"}
+              active:scale-95
+            `}
+            aria-pressed={activeClass === classNum}>
             Kelas {classNum}
           </button>
         ))}
@@ -1004,9 +1025,9 @@ export const DatePicker = ({ date, setDate, isMobile }) => {
       <label
         className={`
         block
-        text-gray-700 dark:text-gray-300
+        text-gray-800 dark:text-gray-200
         ${isMobile ? "text-sm mb-2" : "text-base mb-3"}
-        font-medium
+        font-semibold
       `}>
         Tanggal Presensi:
       </label>
@@ -1016,17 +1037,20 @@ export const DatePicker = ({ date, setDate, isMobile }) => {
         onChange={(e) => setDate(e.target.value)}
         className={`
           w-full
-          ${isMobile ? "p-2.5 text-sm" : "p-3 text-base"}
+          ${isMobile ? "p-3 text-base" : "p-3.5 text-base"}
           rounded-lg sm:rounded-xl
-          border
+          border-2
           bg-white dark:bg-gray-800
-          border-gray-300 dark:border-gray-600
+          border-red-200 dark:border-gray-600
           text-gray-900 dark:text-white
-          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-          focus:border-blue-500 dark:focus:border-blue-400
+          focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400
+          focus:border-red-500 dark:focus:border-red-400
           outline-none
           transition-all duration-200
+          min-h-[52px]
+          shadow-sm
         `}
+        aria-label="Pilih tanggal presensi"
       />
     </div>
   );
@@ -1038,9 +1062,10 @@ export const SearchBar = ({ searchTerm, setSearchTerm, isMobile }) => {
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg
-            className="h-5 w-5 text-gray-400 dark:text-gray-500"
+            className="h-5 w-5 text-red-400 dark:text-red-500"
             fill="currentColor"
-            viewBox="0 0 20 20">
+            viewBox="0 0 20 20"
+            aria-hidden="true">
             <path
               fillRule="evenodd"
               d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
@@ -1057,20 +1082,23 @@ export const SearchBar = ({ searchTerm, setSearchTerm, isMobile }) => {
             w-full
             ${
               isMobile
-                ? "pl-10 pr-4 py-2.5 text-sm"
-                : "pl-12 pr-4 py-3 text-base"
+                ? "pl-10 pr-4 py-3 text-base"
+                : "pl-12 pr-4 py-3.5 text-base"
             }
             rounded-lg sm:rounded-xl
-            border
+            border-2
             bg-white dark:bg-gray-800
-            border-gray-300 dark:border-gray-600
+            border-red-200 dark:border-gray-600
             text-gray-900 dark:text-white
-            placeholder-gray-500 dark:placeholder-gray-400
-            focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-            focus:border-blue-500 dark:focus:border-blue-400
+            placeholder-red-300 dark:placeholder-gray-500
+            focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400
+            focus:border-red-500 dark:focus:border-red-400
             outline-none
             transition-all duration-200
+            shadow-sm
+            min-h-[52px]
           `}
+          aria-label="Cari siswa"
         />
       </div>
     </div>
@@ -1083,21 +1111,25 @@ export const SummaryCards = ({ summary, isMobile }) => {
       bg: "bg-green-100 dark:bg-green-900/30",
       text: "text-green-800 dark:text-green-300",
       border: "border-green-200 dark:border-green-800",
+      icon: "✅",
     },
     Sakit: {
       bg: "bg-yellow-100 dark:bg-yellow-900/30",
       text: "text-yellow-800 dark:text-yellow-300",
       border: "border-yellow-200 dark:border-yellow-800",
+      icon: "🤒",
     },
     Izin: {
       bg: "bg-blue-100 dark:bg-blue-900/30",
       text: "text-blue-800 dark:text-blue-300",
       border: "border-blue-200 dark:border-blue-800",
+      icon: "📝",
     },
     Alpa: {
       bg: "bg-red-100 dark:bg-red-900/30",
       text: "text-red-800 dark:text-red-300",
       border: "border-red-200 dark:border-red-800",
+      icon: "❌",
     },
   };
 
@@ -1114,16 +1146,21 @@ export const SummaryCards = ({ summary, isMobile }) => {
             ${statusConfig[status].bg}
             ${statusConfig[status].border}
             rounded-lg sm:rounded-xl
-            border
-            p-3 sm:p-4
+            border-2
+            p-4 sm:p-5
             transition-all duration-200
-            hover:shadow-md
+            hover:shadow-lg
+            flex flex-col items-center justify-center
+            min-h-[120px]
           `}>
+          <div className="text-2xl mb-2" role="img" aria-label={status}>
+            {statusConfig[status].icon}
+          </div>
           <div
             className={`
-            font-semibold
+            font-bold
             ${statusConfig[status].text}
-            ${isMobile ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"}
+            ${isMobile ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"}
             mb-1
           `}>
             {count}
@@ -1131,8 +1168,7 @@ export const SummaryCards = ({ summary, isMobile }) => {
           <div
             className={`
             ${statusConfig[status].text}
-            ${isMobile ? "text-xs sm:text-sm" : "text-sm"}
-            font-medium
+            ${isMobile ? "text-sm font-semibold" : "text-base font-semibold"}
           `}>
             {status}
           </div>
@@ -1154,8 +1190,8 @@ export const ActionButtons = ({
   return (
     <div
       className={`
-      flex flex-wrap gap-2 sm:gap-3
-      mb-4 sm:mb-6
+      flex flex-wrap gap-3 sm:gap-4
+      mb-6 sm:mb-8
       ${isMobile ? "flex-col" : "flex-row"}
     `}>
       <button
@@ -1163,23 +1199,27 @@ export const ActionButtons = ({
         disabled={saving}
         className={`
           flex-1
-          ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
-          px-4 py-2.5 sm:py-3
+          ${isMobile ? "min-h-[56px]" : "min-h-[60px]"}
+          px-4 py-3 sm:py-4
           rounded-lg sm:rounded-xl
           bg-yellow-500 hover:bg-yellow-600
           dark:bg-yellow-600 dark:hover:bg-yellow-700
           text-white
-          font-medium
-          ${isMobile ? "text-sm" : "text-base"}
+          font-semibold
+          ${isMobile ? "text-base" : "text-lg"}
           transition-all duration-200
           disabled:opacity-50 disabled:cursor-not-allowed
-          flex items-center justify-center gap-2
-        `}>
+          flex items-center justify-center gap-3
+          shadow-lg shadow-yellow-200 dark:shadow-yellow-900/30
+          active:scale-95
+        `}
+        aria-label="Tandai semua siswa hadir">
         <svg
-          className="w-5 h-5"
+          className="w-6 h-6"
           fill="none"
           stroke="currentColor"
-          viewBox="0 0 24 24">
+          viewBox="0 0 24 24"
+          aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1195,24 +1235,28 @@ export const ActionButtons = ({
         disabled={saving}
         className={`
           flex-1
-          ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
-          px-4 py-2.5 sm:py-3
+          ${isMobile ? "min-h-[56px]" : "min-h-[60px]"}
+          px-4 py-3 sm:py-4
           rounded-lg sm:rounded-xl
-          bg-blue-600 hover:bg-blue-700
-          dark:bg-blue-500 dark:hover:bg-blue-600
+          bg-red-600 hover:bg-red-700
+          dark:bg-red-500 dark:hover:bg-red-600
           text-white
-          font-medium
-          ${isMobile ? "text-sm" : "text-base"}
+          font-semibold
+          ${isMobile ? "text-base" : "text-lg"}
           transition-all duration-200
           disabled:opacity-50 disabled:cursor-not-allowed
-          flex items-center justify-center gap-2
-        `}>
+          flex items-center justify-center gap-3
+          shadow-lg shadow-red-200 dark:shadow-red-900/30
+          active:scale-95
+        `}
+        aria-label="Simpan presensi">
         {saving ? (
           <>
             <svg
-              className="animate-spin h-5 w-5"
+              className="animate-spin h-6 w-6"
               fill="none"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+              aria-hidden="true">
               <circle
                 className="opacity-25"
                 cx="12"
@@ -1232,10 +1276,11 @@ export const ActionButtons = ({
         ) : (
           <>
             <svg
-              className="w-5 h-5"
+              className="w-6 h-6"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+              aria-hidden="true">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -1252,22 +1297,26 @@ export const ActionButtons = ({
         onClick={onShowRekap}
         className={`
           flex-1
-          ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
-          px-4 py-2.5 sm:py-3
+          ${isMobile ? "min-h-[56px]" : "min-h-[60px]"}
+          px-4 py-3 sm:py-4
           rounded-lg sm:rounded-xl
           bg-green-600 hover:bg-green-700
           dark:bg-green-500 dark:hover:bg-green-600
           text-white
-          font-medium
-          ${isMobile ? "text-sm" : "text-base"}
+          font-semibold
+          ${isMobile ? "text-base" : "text-lg"}
           transition-all duration-200
-          flex items-center justify-center gap-2
-        `}>
+          flex items-center justify-center gap-3
+          shadow-lg shadow-green-200 dark:shadow-green-900/30
+          active:scale-95
+        `}
+        aria-label="Lihat rekap kehadiran">
         <svg
-          className="w-5 h-5"
+          className="w-6 h-6"
           fill="none"
           stroke="currentColor"
-          viewBox="0 0 24 24">
+          viewBox="0 0 24 24"
+          aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1282,18 +1331,22 @@ export const ActionButtons = ({
         <div
           className={`
           w-full
-          ${isMobile ? "p-2.5 text-sm" : "p-3 text-base"}
+          ${isMobile ? "p-3 text-sm" : "p-4 text-base"}
           rounded-lg sm:rounded-xl
           bg-yellow-100 dark:bg-yellow-900/30
           text-yellow-800 dark:text-yellow-300
-          border border-yellow-200 dark:border-yellow-800
-          flex items-center justify-center gap-2
-        `}>
+          border-2 border-yellow-200 dark:border-yellow-800
+          flex items-center justify-center gap-3
+          min-h-[56px]
+        `}
+          role="status"
+          aria-live="polite">
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24">
+            viewBox="0 0 24 24"
+            aria-hidden="true">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1301,7 +1354,9 @@ export const ActionButtons = ({
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
             />
           </svg>
-          {pendingCount} data offline menunggu sinkronisasi
+          <span className="font-semibold">
+            {pendingCount} data offline menunggu sinkronisasi
+          </span>
         </div>
       )}
     </div>
@@ -1319,11 +1374,11 @@ export const StudentCard = ({
   const statusOptions = ["Hadir", "Sakit", "Izin", "Alpa"];
   const statusColors = {
     Hadir:
-      "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800",
+      "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700",
     Sakit:
-      "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800",
-    Izin: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-    Alpa: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800",
+      "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700",
+    Izin: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700",
+    Alpa: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700",
   };
 
   return (
@@ -1331,29 +1386,32 @@ export const StudentCard = ({
       className={`
       bg-white dark:bg-gray-800
       rounded-lg sm:rounded-xl
-      border border-gray-200 dark:border-gray-700
-      ${isMobile ? "p-3 mb-3" : "p-4 mb-4"}
+      border-2 border-red-100 dark:border-gray-700
+      ${isMobile ? "p-4 mb-4" : "p-5 mb-5"}
       shadow-sm dark:shadow-gray-900/30
       transition-all duration-200
-      hover:shadow-md dark:hover:shadow-gray-900/50
+      hover:shadow-lg dark:hover:shadow-gray-900/50
+      hover:border-red-300 dark:hover:border-gray-600
     `}>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
         {/* Student Info */}
-        <div className="flex-1">
-          <div className="flex items-start gap-2 sm:gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-3 sm:gap-4">
             <div
               className={`
               flex-shrink-0
-              ${isMobile ? "w-8 h-8" : "w-10 h-10"}
+              ${isMobile ? "w-10 h-10" : "w-12 h-12"}
               rounded-full
-              bg-blue-100 dark:bg-blue-900/30
+              bg-gradient-to-br from-red-100 to-red-200
+              dark:from-red-900/30 dark:to-red-800/30
               flex items-center justify-center
+              shadow-sm
             `}>
               <span
                 className={`
-                font-semibold
-                text-blue-600 dark:text-blue-400
-                ${isMobile ? "text-sm" : "text-base"}
+                font-bold
+                text-red-700 dark:text-red-400
+                ${isMobile ? "text-base" : "text-lg"}
               `}>
                 {index + 1}
               </span>
@@ -1361,19 +1419,19 @@ export const StudentCard = ({
             <div className="flex-1 min-w-0">
               <h3
                 className={`
-                font-semibold
+                font-bold
                 text-gray-900 dark:text-white
-                ${isMobile ? "text-sm sm:text-base" : "text-base"}
-                mb-0.5 sm:mb-1
+                ${isMobile ? "text-base sm:text-lg" : "text-lg"}
+                mb-1 sm:mb-2
                 truncate
               `}>
                 {student.nama_siswa}
               </h3>
               <p
                 className={`
-                text-gray-600 dark:text-gray-400
-                ${isMobile ? "text-xs" : "text-sm"}
-                font-mono
+                text-red-600 dark:text-red-400
+                ${isMobile ? "text-sm" : "text-base"}
+                font-mono font-medium
               `}>
                 NISN: {student.nisn}
               </p>
@@ -1384,30 +1442,32 @@ export const StudentCard = ({
         {/* Status Selector */}
         <div
           className={`
-          ${isMobile ? "w-full" : "w-auto"}
+          ${isMobile ? "w-full" : "w-auto flex-shrink-0"}
         `}>
           <div
             className={`
-            grid grid-cols-4 gap-1 sm:gap-2
-            ${isMobile ? "mb-3" : ""}
+            grid grid-cols-4 gap-2
+            ${isMobile ? "mb-4" : ""}
           `}>
             {statusOptions.map((status) => (
               <button
                 key={status}
                 onClick={() => onUpdateStatus(student.kelas, index, status)}
                 className={`
-                  ${isMobile ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"}
+                  ${isMobile ? "px-2 py-2.5 text-sm" : "px-3 py-3 text-base"}
                   rounded-lg
-                  font-medium
+                  font-semibold
                   transition-all duration-200
+                  min-h-[44px]
+                  flex items-center justify-center
                   ${
                     attendance?.status === status
-                      ? statusColors[status] + " font-semibold shadow-sm"
+                      ? statusColors[status] + " shadow-md scale-105"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }
-                  min-h-[36px] sm:min-h-[40px]
-                  flex items-center justify-center
-                `}>
+                  active:scale-95
+                `}
+                aria-pressed={attendance?.status === status}>
                 {isMobile ? status.charAt(0) : status}
               </button>
             ))}
@@ -1416,40 +1476,50 @@ export const StudentCard = ({
       </div>
 
       {/* Note Input */}
-      <div className="mt-3 sm:mt-4">
+      <div className="mt-4 sm:mt-5">
+        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Keterangan (opsional):
+        </label>
         <textarea
           value={attendance?.note || ""}
           onChange={(e) => onUpdateNote(student.kelas, index, e.target.value)}
-          placeholder="Keterangan (opsional)..."
+          placeholder="Contoh: Sakit demam, Izin keluarga..."
           rows={2}
           className={`
             w-full
-            ${isMobile ? "p-2.5 text-sm" : "p-3 text-base"}
+            ${isMobile ? "p-3 text-base" : "p-3.5 text-base"}
             rounded-lg
-            border
+            border-2
             bg-gray-50 dark:bg-gray-900
-            border-gray-300 dark:border-gray-600
+            border-red-200 dark:border-gray-600
             text-gray-900 dark:text-white
-            placeholder-gray-500 dark:placeholder-gray-400
-            focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
-            focus:border-blue-500 dark:focus:border-blue-400
+            placeholder-red-300 dark:placeholder-gray-500
+            focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400
+            focus:border-red-500 dark:focus:border-red-400
             outline-none
             resize-none
             transition-all duration-200
+            shadow-sm
           `}
+          aria-label={`Keterangan untuk ${student.nama_siswa}`}
         />
       </div>
 
       {/* Current Status Badge */}
-      <div className="mt-2 flex justify-end">
+      <div className="mt-3 flex justify-between items-center">
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          Status saat ini:
+        </span>
         <span
           className={`
           ${statusColors[attendance?.status || "Hadir"]}
-          ${isMobile ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm"}
+          ${isMobile ? "px-3 py-1.5 text-sm" : "px-4 py-2 text-base"}
           rounded-full
-          font-medium
+          font-bold
+          border-2
+          shadow-sm
         `}>
-          Status: {attendance?.status || "Hadir"}
+          {attendance?.status || "Hadir"}
         </span>
       </div>
     </div>
@@ -1458,23 +1528,28 @@ export const StudentCard = ({
 
 export const LoadingSpinner = ({ isMobile }) => {
   return (
-    <div className="flex items-center justify-center min-h-[300px]">
+    <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
         <div
           className={`
           animate-spin rounded-full
-          border-4 border-blue-600 dark:border-blue-500
+          border-4 border-red-600 dark:border-red-500
           border-t-transparent
-          ${isMobile ? "w-12 h-12" : "w-16 h-16"}
-          mx-auto mb-4
+          ${isMobile ? "w-16 h-16" : "w-20 h-20"}
+          mx-auto mb-6
         `}
+          aria-hidden="true"
         />
         <p
           className={`
-          text-gray-700 dark:text-gray-300
-          ${isMobile ? "text-sm" : "text-base"}
+          text-gray-800 dark:text-gray-300
+          ${isMobile ? "text-lg" : "text-xl"}
+          font-semibold
         `}>
           Memuat data siswa...
+        </p>
+        <p className="text-red-600 dark:text-red-400 mt-2 text-sm">
+          Harap tunggu sebentar
         </p>
       </div>
     </div>
@@ -1483,12 +1558,12 @@ export const LoadingSpinner = ({ isMobile }) => {
 
 export const NoStudentsMessage = ({ isMobile }) => {
   return (
-    <div className="text-center py-8 sm:py-12">
+    <div className="text-center py-12 sm:py-16 bg-gradient-to-b from-red-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl border-2 border-red-100 dark:border-gray-700">
       <div
         className={`
-        mx-auto mb-4
-        ${isMobile ? "w-16 h-16" : "w-20 h-20"}
-        text-gray-400 dark:text-gray-600
+        mx-auto mb-6
+        ${isMobile ? "w-20 h-20" : "w-24 h-24"}
+        text-red-400 dark:text-red-500
       `}>
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -1501,48 +1576,75 @@ export const NoStudentsMessage = ({ isMobile }) => {
       </div>
       <h3
         className={`
-        font-semibold
-        text-gray-700 dark:text-gray-300
-        ${isMobile ? "text-lg mb-2" : "text-xl mb-3"}
+        font-bold
+        text-gray-800 dark:text-white
+        ${isMobile ? "text-xl mb-3" : "text-2xl mb-4"}
       `}>
         Tidak ada siswa ditemukan
       </h3>
       <p
         className={`
         text-gray-600 dark:text-gray-400
-        ${isMobile ? "text-sm" : "text-base"}
+        ${isMobile ? "text-base mb-6" : "text-lg mb-8"}
+        max-w-md mx-auto
       `}>
         Tidak ada data siswa untuk kelas ini atau filter pencarian tidak cocok.
       </p>
+      <button
+        onClick={() => window.location.reload()}
+        className={`
+          ${isMobile ? "px-6 py-3 text-base" : "px-8 py-4 text-lg"}
+          rounded-lg
+          bg-red-600 hover:bg-red-700
+          dark:bg-red-500 dark:hover:bg-red-600
+          text-white
+          font-semibold
+          transition-all duration-200
+          shadow-lg shadow-red-200 dark:shadow-red-900/30
+          active:scale-95
+        `}>
+        Muat Ulang Halaman
+      </button>
     </div>
   );
 };
 
 export const Toast = ({ toast, onHide }) => {
+  // Auto-hide after 5 seconds
+  useEffect(() => {
+    if (!toast.show) return;
+
+    const timer = setTimeout(() => {
+      onHide();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [toast.show, onHide]);
+
   if (!toast.show) return null;
 
   const toastConfig = {
     success: {
       bg: "bg-green-50 dark:bg-green-900/30",
-      border: "border-green-200 dark:border-green-800",
+      border: "border-green-300 dark:border-green-800",
       text: "text-green-800 dark:text-green-300",
       icon: "✅",
     },
     error: {
       bg: "bg-red-50 dark:bg-red-900/30",
-      border: "border-red-200 dark:border-red-800",
+      border: "border-red-300 dark:border-red-800",
       text: "text-red-800 dark:text-red-300",
       icon: "❌",
     },
     warning: {
       bg: "bg-yellow-50 dark:bg-yellow-900/30",
-      border: "border-yellow-200 dark:border-yellow-800",
+      border: "border-yellow-300 dark:border-yellow-800",
       text: "text-yellow-800 dark:text-yellow-300",
       icon: "⚠️",
     },
     info: {
       bg: "bg-blue-50 dark:bg-blue-900/30",
-      border: "border-blue-200 dark:border-blue-800",
+      border: "border-blue-300 dark:border-blue-800",
       text: "text-blue-800 dark:text-blue-300",
       icon: "ℹ️",
     },
@@ -1563,25 +1665,31 @@ export const Toast = ({ toast, onHide }) => {
         ${config.bg}
         ${config.border}
         rounded-lg sm:rounded-xl
-        border
+        border-2
         p-4
-        shadow-lg dark:shadow-gray-900/50
+        shadow-xl dark:shadow-gray-900/50
         flex items-start gap-3
-      `}>
-        <span className="text-lg flex-shrink-0">{config.icon}</span>
+      `}
+        role="alert"
+        aria-live="polite">
+        <span className="text-2xl flex-shrink-0" aria-hidden="true">
+          {config.icon}
+        </span>
         <div className="flex-1">
-          <p className={`${config.text} text-sm sm:text-base`}>
+          <p className={`${config.text} text-base font-medium`}>
             {toast.message}
           </p>
         </div>
         <button
           onClick={onHide}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex-shrink-0">
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 flex-shrink-0"
+          aria-label="Tutup notifikasi">
           <svg
-            className="w-5 h-5"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24">
+            viewBox="0 0 24 24"
+            aria-hidden="true">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -1605,68 +1713,80 @@ export const ConfirmationModal = ({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title">
       <div
         className={`
         bg-white dark:bg-gray-800
         rounded-lg sm:rounded-xl
-        shadow-xl dark:shadow-gray-900/50
+        shadow-2xl dark:shadow-gray-900/50
         w-full max-w-md
-        ${isMobile ? "p-4" : "p-6"}
+        ${isMobile ? "p-5" : "p-6"}
         animate-scale-in
+        border-2 border-red-100 dark:border-gray-700
       `}>
-        <div className="mb-4">
+        <div className="mb-6">
           <h3
+            id="modal-title"
             className={`
-            font-semibold
+            font-bold
             text-gray-900 dark:text-white
-            ${isMobile ? "text-lg mb-2" : "text-xl mb-3"}
+            ${isMobile ? "text-xl mb-3" : "text-2xl mb-4"}
           `}>
             Konfirmasi
           </h3>
           <p
             className={`
             text-gray-700 dark:text-gray-300
-            ${isMobile ? "text-sm" : "text-base"}
+            ${isMobile ? "text-base" : "text-lg"}
+            leading-relaxed
           `}>
             {message}
           </p>
         </div>
         <div
           className={`
-          flex gap-2 sm:gap-3
+          flex gap-3
           ${isMobile ? "flex-col" : "flex-row justify-end"}
         `}>
           <button
             onClick={onCancel}
             className={`
               flex-1
-              ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
-              px-4 py-2.5
+              min-h-[56px]
+              px-6 py-3
               rounded-lg
               bg-gray-200 hover:bg-gray-300
               dark:bg-gray-700 dark:hover:bg-gray-600
               text-gray-800 dark:text-white
-              font-medium
-              ${isMobile ? "text-sm" : "text-base"}
+              font-semibold
+              ${isMobile ? "text-base" : "text-lg"}
               transition-all duration-200
-            `}>
+              active:scale-95
+            `}
+            aria-label="Batal">
             Batal
           </button>
           <button
             onClick={onConfirm}
             className={`
               flex-1
-              ${isMobile ? "min-h-[44px]" : "min-h-[48px]"}
-              px-4 py-2.5
+              min-h-[56px]
+              px-6 py-3
               rounded-lg
-              bg-blue-600 hover:bg-blue-700
-              dark:bg-blue-500 dark:hover:bg-blue-600
+              bg-red-600 hover:bg-red-700
+              dark:bg-red-500 dark:hover:bg-red-600
               text-white
-              font-medium
-              ${isMobile ? "text-sm" : "text-base"}
+              font-semibold
+              ${isMobile ? "text-base" : "text-lg"}
               transition-all duration-200
-            `}>
+              shadow-lg shadow-red-200 dark:shadow-red-900/30
+              active:scale-95
+            `}
+            aria-label="Ya, lanjutkan">
             Ya, Lanjutkan
           </button>
         </div>
@@ -1727,10 +1847,17 @@ export const AttendanceMain = ({ currentUser }) => {
   // Wait for device detection
   if (!deviceDetected) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-white dark:from-gray-900 dark:to-black">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 dark:border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-700 dark:text-gray-300">Memuat aplikasi...</p>
+          <div
+            className="animate-spin rounded-full h-16 w-16 border-4 border-red-600 dark:border-red-500 border-t-transparent mx-auto mb-6"
+            aria-hidden="true"></div>
+          <p className="text-gray-800 dark:text-white text-lg font-semibold">
+            Memuat aplikasi...
+          </p>
+          <p className="text-red-600 dark:text-red-400 text-sm mt-2">
+            Mendeteksi perangkat Anda
+          </p>
         </div>
       </div>
     );
@@ -1790,18 +1917,22 @@ export const AttendanceMain = ({ currentUser }) => {
           <div>
             <div
               className={`
-              mb-3 sm:mb-4
-              text-gray-700 dark:text-gray-300
-              ${isMobile ? "text-sm" : "text-base"}
+              mb-4 sm:mb-6
+              text-gray-800 dark:text-gray-300
+              ${isMobile ? "text-base font-semibold" : "text-lg font-semibold"}
+              flex items-center gap-2
             `}>
-              Menampilkan {filteredStudents.length} siswa
+              <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-3 py-1 rounded-full">
+                {filteredStudents.length}
+              </span>
+              <span>siswa ditemukan</span>
             </div>
 
             <div
               className={
                 showCardView
-                  ? "space-y-3"
-                  : "grid grid-cols-1 lg:grid-cols-2 gap-4"
+                  ? "space-y-4"
+                  : "grid grid-cols-1 lg:grid-cols-2 gap-5"
               }>
               {filteredStudents.map((student, index) => (
                 <StudentCard

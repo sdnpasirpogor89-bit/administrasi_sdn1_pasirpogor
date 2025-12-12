@@ -32,14 +32,14 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
   const [teachersList, setTeachersList] = useState([]);
 
   const statusOptions = [
-    { value: "hadir", label: "Hadir", color: "bg-green-500 dark:bg-green-600" },
-    { value: "izin", label: "Izin", color: "bg-blue-500 dark:bg-blue-600" },
+    { value: "hadir", label: "Hadir", color: "bg-red-500 dark:bg-red-600" },
+    { value: "izin", label: "Izin", color: "bg-amber-500 dark:bg-amber-600" },
     {
       value: "sakit",
       label: "Sakit",
-      color: "bg-yellow-500 dark:bg-yellow-600",
+      color: "bg-orange-500 dark:bg-orange-600",
     },
-    { value: "alpha", label: "Alpha", color: "bg-red-500 dark:bg-red-600" },
+    { value: "alpha", label: "Alpha", color: "bg-rose-500 dark:bg-rose-600" },
   ];
 
   useEffect(() => {
@@ -292,20 +292,20 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center justify-center gap-2 dark:text-white">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center gap-2 dark:text-white">
           {isAdmin && (
-            <Shield className="text-blue-600 dark:text-blue-400" size={20} />
+            <Shield className="text-red-600 dark:text-red-400" size={20} />
           )}
           Input Presensi Manual
           {isAdmin && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
+            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full dark:bg-red-900/50 dark:text-red-300">
               ADMIN MODE
             </span>
           )}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-gray-600 dark:text-gray-400 px-2">
           {isAdmin
             ? "Mode Admin: Dapat input presensi kapan saja untuk semua guru"
             : "Isi form di bawah untuk mencatat presensi"}
@@ -321,13 +321,13 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
           }`}>
           {message.type === "success" ? (
             <CheckCircle
-              className="text-green-600 dark:text-green-400 flex-shrink-0"
-              size={24}
+              className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+              size={20}
             />
           ) : (
             <XCircle
-              className="text-red-600 dark:text-red-400 flex-shrink-0"
-              size={24}
+              className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+              size={20}
             />
           )}
           <p
@@ -341,11 +341,11 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {isAdmin && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2 dark:text-gray-300">
-              <Shield size={18} className="text-blue-600 dark:text-blue-400" />
+              <Shield size={18} className="text-red-600 dark:text-red-400" />
               Pilih Guru (Opsional)
             </label>
             <select
@@ -353,7 +353,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
               onChange={(e) =>
                 handleChange("teacherId", e.target.value || null)
               }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:ring-red-600 dark:focus:border-red-600">
               <option value="">-- Pilih Guru --</option>
               {teachersList.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
@@ -378,7 +378,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
             onChange={(e) => handleChange("date", e.target.value)}
             max={isAdmin ? undefined : today}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:ring-red-600 dark:focus:border-red-600"
           />
           <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
             {isAdmin
@@ -391,13 +391,13 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
             Status Kehadiran
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {statusOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => handleChange("status", option.value)}
-                className={`py-3 px-4 rounded-lg font-semibold transition-all ${
+                className={`py-3 px-2 sm:px-4 rounded-lg font-semibold transition-all min-h-[44px] flex items-center justify-center ${
                   formData.status === option.value
                     ? `${option.color} text-white shadow-lg scale-105`
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -424,7 +424,7 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
             value={formData.clockIn}
             onChange={(e) => handleChange("clockIn", e.target.value)}
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:ring-red-600 dark:focus:border-red-600"
           />
         </div>
 
@@ -441,17 +441,17 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
                 ? "Contoh: Lupa input presensi, konfirmasi via WA pukul 15.30"
                 : "Contoh: Sakit demam, Ada keperluan keluarga, dll... (opsional)"
             }
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:ring-red-600 dark:focus:border-red-600"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-4 ${
+          className={`w-full py-4 min-h-[56px] ${
             isAdmin
-              ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
-              : "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
+              ? "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+              : "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
           } disabled:bg-gray-400 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg`}>
           {loading ? (
             <>
@@ -470,8 +470,8 @@ const ManualCheckIn = ({ currentUser, onSuccess }) => {
       <div
         className={`${
           isAdmin
-            ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800"
-            : "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800"
+            ? "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800"
+            : "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800"
         } border rounded-lg p-4`}>
         <p className="text-sm text-gray-800 dark:text-gray-300">
           <strong>ℹ️ Info:</strong>{" "}

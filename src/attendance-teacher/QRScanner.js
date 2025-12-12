@@ -427,7 +427,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-6">
       <input
         ref={fileInputRef}
         type="file"
@@ -439,18 +439,18 @@ const QRScanner = ({ currentUser, onSuccess }) => {
       <div id="qr-reader-file" style={{ display: "none" }}></div>
 
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center justify-center gap-2 dark:text-white">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center gap-2 dark:text-white">
           {isAdmin && (
-            <Shield className="text-blue-600 dark:text-blue-400" size={20} />
+            <Shield className="text-red-600 dark:text-red-400" size={20} />
           )}
           Scan QR Code untuk Presensi
           {isAdmin && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
+            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full dark:bg-red-900/50 dark:text-red-300">
               ADMIN MODE
             </span>
           )}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-gray-600 dark:text-gray-400 px-2">
           {isAdmin
             ? "Scan QR Code untuk input presensi guru (tanpa batasan waktu)"
             : "Arahkan kamera ke QR Code atau pilih dari galeri"}
@@ -468,18 +468,18 @@ const QRScanner = ({ currentUser, onSuccess }) => {
           }`}>
           {message.type === "success" ? (
             <CheckCircle
-              className="text-green-600 dark:text-green-400 flex-shrink-0"
-              size={24}
+              className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+              size={20}
             />
           ) : message.type === "error" ? (
             <XCircle
-              className="text-red-600 dark:text-red-400 flex-shrink-0"
-              size={24}
+              className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+              size={20}
             />
           ) : (
             <AlertCircle
-              className="text-yellow-600 dark:text-yellow-400 flex-shrink-0"
-              size={24}
+              className="text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5"
+              size={20}
             />
           )}
           <p
@@ -496,8 +496,8 @@ const QRScanner = ({ currentUser, onSuccess }) => {
       )}
 
       {showTeacherSelect && isAdmin && (
-        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 space-y-4 dark:bg-blue-900/30 dark:border-blue-700">
-          <div className="flex items-center gap-2 text-blue-800 font-semibold dark:text-blue-300">
+        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 space-y-4 dark:bg-red-900/30 dark:border-red-700">
+          <div className="flex items-center gap-2 text-red-800 font-semibold dark:text-red-300">
             <Shield size={20} />
             <span>Pilih Guru untuk Presensi</span>
           </div>
@@ -505,7 +505,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
           <select
             value={selectedTeacherId || ""}
             onChange={(e) => setSelectedTeacherId(e.target.value)}
-            className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+            className="w-full px-4 py-3 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:focus:ring-red-600 dark:focus:border-red-600">
             <option value="">Pilih Guru</option>
             {teachersList.map((teacher) => (
               <option key={teacher.id} value={teacher.id}>
@@ -518,12 +518,12 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             <button
               onClick={handleTeacherSubmit}
               disabled={!selectedTeacherId}
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-all dark:bg-blue-700 dark:hover:bg-blue-800">
+              className="flex-1 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-all dark:bg-red-700 dark:hover:bg-red-800">
               Submit Presensi
             </button>
             <button
               onClick={handleCancelTeacherSelect}
-              className="flex-1 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600">
+              className="flex-1 py-3 min-h-[44px] bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600">
               Batal
             </button>
           </div>
@@ -534,10 +534,10 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         <div className="space-y-3">
           <button
             onClick={startScanning}
-            className={`w-full py-4 ${
+            className={`w-full py-4 min-h-[56px] ${
               isAdmin
-                ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
-                : "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
+                ? "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                : "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
             } text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg`}>
             <Camera size={20} />
             Scan dengan Kamera
@@ -545,20 +545,20 @@ const QRScanner = ({ currentUser, onSuccess }) => {
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className={`w-full py-4 ${
+            className={`w-full py-4 min-h-[56px] ${
               isAdmin
-                ? "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
-                : "bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                ? "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                : "bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
             } text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg`}>
             <Image size={20} />
-            📷 Pilih dari Galeri
+            Pilih dari Galeri
           </button>
         </div>
       )}
 
       {loading && (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto dark:border-blue-400"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto dark:border-red-400"></div>
           <p className="text-gray-600 mt-4 dark:text-gray-300">
             Menyimpan presensi...
           </p>
@@ -573,7 +573,7 @@ const QRScanner = ({ currentUser, onSuccess }) => {
             style={{ width: "100%", minHeight: "300px" }}></div>
           <button
             onClick={stopScanning}
-            className="w-full py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600">
+            className="w-full py-4 min-h-[44px] bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all dark:bg-gray-700 dark:hover:bg-gray-600">
             Tutup Kamera
           </button>
         </div>
@@ -583,8 +583,8 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         <div
           className={`${
             isAdmin
-              ? "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800"
-              : "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800"
+              ? "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800"
+              : "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-800"
           } border rounded-lg p-4`}>
           <p className="text-sm text-gray-800 dark:text-gray-300">
             <strong>💡 Tips:</strong> Pastikan pencahayaan cukup dan QR Code
@@ -608,12 +608,12 @@ const QRScanner = ({ currentUser, onSuccess }) => {
         )}
 
         {isAdmin && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3 dark:bg-blue-900/30 dark:border-blue-800">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 dark:bg-red-900/30 dark:border-red-800">
             <Shield
-              className="text-blue-600 dark:text-blue-400 flex-shrink-0"
+              className="text-red-600 dark:text-red-400 flex-shrink-0"
               size={20}
             />
-            <p className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="text-sm text-red-800 dark:text-red-300">
               <strong>Admin Mode:</strong> Anda dapat scan QR kapan saja tanpa
               batasan waktu dan lokasi untuk input presensi guru lain
             </p>
