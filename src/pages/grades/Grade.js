@@ -177,7 +177,7 @@ const Grade = ({ userData: initialUserData }) => {
     setTimeout(() => setMessage({ text: "", type: "" }), 5000);
   };
 
-  // ===== FUNGSI BARU: Load SEMUA nilai sekaligus + DRAFT SUPPORT =====
+  // ===== FUNGSI REVISI: Load SEMUA nilai sekaligus TANPA DRAFT SUPPORT =====
   const loadAllGrades = async () => {
     if (!selectedClass || !selectedSubject) {
       showMessage("Pilih kelas dan mata pelajaran terlebih dahulu!", "error");
@@ -190,13 +190,6 @@ const Grade = ({ userData: initialUserData }) => {
         "error"
       );
       return;
-    }
-
-    // ===== CEK DRAFT DULU =====
-    const draft = loadDraft();
-    if (draft && draft.length > 0) {
-      setShowDraftModal(true);
-      sessionStorage.setItem("temp-draft", JSON.stringify(draft));
     }
 
     setLoading(true);
@@ -285,12 +278,9 @@ const Grade = ({ userData: initialUserData }) => {
       });
 
       setStudents(processedStudents);
-
-      if (!draft || draft.length === 0) {
-        showMessage(
-          `Data nilai ${selectedSubject} kelas ${selectedClass} berhasil dimuat!`
-        );
-      }
+      showMessage(
+        `Data nilai ${selectedSubject} kelas ${selectedClass} berhasil dimuat!`
+      );
     } catch (error) {
       console.error("Error loading all grades:", error);
       showMessage("Error memuat data: " + error.message, "error");
@@ -426,6 +416,7 @@ const Grade = ({ userData: initialUserData }) => {
             } nilai berhasil disimpan!`,
             "success"
           );
+          // ✅ HAPUS DRAFT SETELAH BERHASIL SYNC
           clearDraft();
         } else {
           showMessage("❌ Gagal menyimpan data!", "error");
@@ -433,6 +424,7 @@ const Grade = ({ userData: initialUserData }) => {
       } else {
         const successCount = data?.length || allDataToSave.length;
         showMessage(`✅ ${successCount} nilai berhasil disimpan!`, "success");
+        // ✅ HAPUS DRAFT SETELAH BERHASIL SAVE
         clearDraft();
       }
 
@@ -545,78 +537,6 @@ const Grade = ({ userData: initialUserData }) => {
         {/* Sync Status Badge */}
         <SyncStatusBadge />
 
-        {/* Draft Recovery Modal */}
-        {showDraftModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div className="bg-red-100 dark:bg-red-900/30 p-2 sm:p-3 rounded-lg">
-                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 sm:mb-2">
-                    Draft Ditemukan! 📝
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3">
-                    Ada data input nilai yang belum tersimpan ke database.
-                  </p>
-                  {draftInfo && (
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 sm:p-3 text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                      <div>
-                        📅 Tersimpan:{" "}
-                        {draftInfo.savedAt.toLocaleString("id-ID")}
-                      </div>
-                      <div>👥 Jumlah siswa: {draftInfo.studentCount}</div>
-                      <div>📚 Mapel: {selectedSubject}</div>
-                      <div>🎯 Kelas: {selectedClass}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 sm:p-3 mb-4 sm:mb-6">
-                <p className="text-xs text-amber-800 dark:text-amber-300">
-                  ⚠️ <strong>Penting:</strong> Jika Anda lanjutkan draft, data
-                  dari database akan ditimpa dengan data draft.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <button
-                  onClick={() => {
-                    clearDraft();
-                    sessionStorage.removeItem("temp-draft");
-                    setShowDraftModal(false);
-                    showMessage(
-                      "Draft dibuang, menampilkan data dari database",
-                      "success"
-                    );
-                  }}
-                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium text-sm sm:text-base touch-manipulation min-h-[44px]">
-                  🗑️ Buang Draft
-                </button>
-                <button
-                  onClick={() => {
-                    const draft = sessionStorage.getItem("temp-draft");
-                    if (draft) {
-                      const parsedDraft = JSON.parse(draft);
-                      setStudents(parsedDraft);
-                      sessionStorage.removeItem("temp-draft");
-                      showMessage(
-                        `Draft berhasil dimuat! ${parsedDraft.length} siswa`,
-                        "success"
-                      );
-                    }
-                    setShowDraftModal(false);
-                  }}
-                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-lg transition-all font-medium text-sm sm:text-base shadow hover:shadow-md touch-manipulation min-h-[44px]">
-                  ✅ Lanjutkan Draft
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Message */}
         {message.text && (
           <div
@@ -715,23 +635,6 @@ const Grade = ({ userData: initialUserData }) => {
             </div>
           )}
         </div>
-
-        {/* Auto-save Indicator */}
-        {lastSaved && students.length > 0 && (
-          <div className="mb-3 sm:mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-              <span className="text-sm text-green-700 dark:text-green-300">
-                Draft tersimpan otomatis: {lastSaved}
-              </span>
-            </div>
-            <button
-              onClick={clearDraft}
-              className="text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 font-medium">
-              Hapus Draft
-            </button>
-          </div>
-        )}
 
         {/* Stats Cards - RED THEME */}
         {students.length > 0 && (
