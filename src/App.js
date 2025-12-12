@@ -20,7 +20,7 @@ import Attendance from "./pages/attendance/Attendance";
 import Teacher from "./pages/Teacher";
 import Grade from "./pages/grades/Grade";
 import Katrol from "./pages/grades/Katrol";
-import CekNilai from "./pages/grades/CekNilai"; // ← TAMBAH IMPORT BARU
+import RekapNilai from "./pages/grades/RekapNilai"; // ← IMPORT REKAP NILAI
 import CatatanSiswa from "./pages/CatatanSiswa";
 import TeacherSchedule from "./pages/TeacherSchedule";
 import Classes from "./pages/Classes";
@@ -32,12 +32,11 @@ import MaintenancePage from "./setting/MaintenancePage";
 import AdminPanel from "./setting/AdminPanel";
 import TeacherAttendance from "./attendance-teacher/TeacherAttendance";
 
-// ===== WRAPPER COMPONENTS =====
-// Tambah wrapper untuk CekNilai
-const CekNilaiWithNavigation = ({ userData }) => {
+// Tambah wrapper untuk RekapNilai
+const RekapNilaiWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <CekNilai userData={userData} onNavigate={navigate} />,
+    () => <RekapNilai userData={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -626,9 +625,9 @@ function App() {
               )
             }
           />
-          {/* ======= ROUTE BARU: CEK NILAI ======= */}
+          {/* ======= ROUTE BARU: REKAP NILAI ======= */}
           <Route
-            path="/grades/cek"
+            path="/grades/rekap"
             element={
               user ? (
                 canAccessDuringMaintenance(user) ? (
@@ -637,7 +636,7 @@ function App() {
                     onLogout={handleLogout}
                     darkMode={darkMode}
                     onToggleDarkMode={toggleDarkMode}>
-                    <CekNilaiWithNavigation userData={user} />
+                    <RekapNilaiWithNavigation userData={user} />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />

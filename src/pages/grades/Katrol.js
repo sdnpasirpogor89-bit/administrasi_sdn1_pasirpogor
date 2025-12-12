@@ -924,7 +924,29 @@ const Katrol = ({ userData: initialUserData }) => {
 
           {/* Action Buttons - Mobile Responsive */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-            {/* Tombol Muat Data */}
+            {/* Tombol Simpan Settings - SEKARANG PERTAMA */}
+            {selectedClass && selectedSubject && (
+              <button
+                onClick={saveSettings}
+                disabled={
+                  savingSettings || kkm > nilaiMaksimal || !settingsChanged
+                }
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+                {savingSettings ? (
+                  <>
+                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Simpan Pengaturan KKM</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Tombol Muat Data - SEKARANG KEDUA */}
             <button
               onClick={fetchDataNilai}
               disabled={
@@ -942,12 +964,12 @@ const Katrol = ({ userData: initialUserData }) => {
               ) : (
                 <>
                   <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Muat Data</span>
+                  <span>Muat Data Nilai</span>
                 </>
               )}
             </button>
 
-            {/* Tombol Proses Katrol */}
+            {/* Tombol Proses Katrol - SEKARANG KETIGA */}
             <button
               onClick={prosesKatrol}
               disabled={
@@ -989,28 +1011,6 @@ const Katrol = ({ userData: initialUserData }) => {
                   <>
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span>Simpan Nilai Katrol</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Tombol Simpan Settings */}
-            {selectedClass && selectedSubject && (
-              <button
-                onClick={saveSettings}
-                disabled={
-                  savingSettings || kkm > nilaiMaksimal || !settingsChanged
-                }
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
-                {savingSettings ? (
-                  <>
-                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span>Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan Pengaturan KKM</span>
                   </>
                 )}
               </button>

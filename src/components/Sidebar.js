@@ -18,7 +18,7 @@ import {
   CalendarDays,
   Clock,
   ClipboardCheck,
-  ChevronDown, // ✅ TAMBAHAN BARU
+  ChevronDown,
 } from "lucide-react";
 
 const Sidebar = ({
@@ -31,7 +31,7 @@ const Sidebar = ({
   onClose,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
-  const [openSubmenus, setOpenSubmenus] = useState({}); // ✅ STATE BARU UNTUK SUBMENU
+  const [openSubmenus, setOpenSubmenus] = useState({});
 
   useEffect(() => {
     if (!mobile) {
@@ -70,7 +70,7 @@ const Sidebar = ({
             submenu: [
               { name: "Nilai Asli", path: "/grades" },
               { name: "Nilai Katrol", path: "/grades/katrol" },
-              { name: "Cek Nilai", path: "/grades/cek" }, // ← TAMBAHAN
+              { name: "Rekap Nilai", path: "/grades/rekap" },
             ],
           },
           { name: "Catatan Siswa", icon: BookOpen },
@@ -117,7 +117,7 @@ const Sidebar = ({
             submenu: [
               { name: "Nilai Asli", path: "/grades" },
               { name: "Nilai Katrol", path: "/grades/katrol" },
-              { name: "Cek Nilai", path: "/grades/cek" }, // ← TAMBAHAN
+              { name: "Rekap Nilai", path: "/grades/rekap" },
             ],
           },
           { name: "Catatan Siswa", icon: BookOpen },
@@ -156,7 +156,7 @@ const Sidebar = ({
             submenu: [
               { name: "Nilai Asli", path: "/grades" },
               { name: "Nilai Katrol", path: "/grades/katrol" },
-              { name: "Cek Nilai", path: "/grades/cek" }, // ← TAMBAHAN
+              { name: "Rekap Nilai", path: "/grades/rekap" },
             ],
           },
           { name: "Catatan Siswa", icon: BookOpen },
@@ -169,18 +169,21 @@ const Sidebar = ({
 
   const menuSections = menuConfig[userData.role] || [];
 
-  // ✅ UPDATED: Handle menu click dengan support submenu
+  // Helper function to check if any submenu item is active
+  const isAnySubmenuActive = (submenu) => {
+    if (!submenu) return false;
+    return submenu.some((subItem) => currentPage === subItem.name);
+  };
+
   const handleMenuClick = (menuName, hasSubmenu = false) => {
-    // Jika menu punya submenu, toggle dropdown
     if (hasSubmenu) {
       setOpenSubmenus((prev) => ({
         ...prev,
         [menuName]: !prev[menuName],
       }));
-      return; // Jangan panggil onMenuClick untuk parent
+      return;
     }
 
-    // Menu biasa atau submenu item
     if (onMenuClick) {
       onMenuClick(menuName);
     }
@@ -296,12 +299,14 @@ const Sidebar = ({
                 {section.items.map((item) => {
                   const IconComponent = item.icon;
                   const isActive = currentPage === item.name;
-                  const hasSubmenu = item.hasSubmenu && item.submenu; // ✅ CEK SUBMENU
-                  const isSubmenuOpen = openSubmenus[item.name]; // ✅ CEK STATUS OPEN
+                  const hasSubmenu = item.hasSubmenu && item.submenu;
+                  const isSubmenuOpen = openSubmenus[item.name];
+                  const hasActiveSubmenu =
+                    hasSubmenu && isAnySubmenuActive(item.submenu);
 
                   return (
                     <li key={item.name} className="relative group">
-                      {/* ✅ PARENT MENU BUTTON */}
+                      {/* PARENT MENU BUTTON - dengan styling yang sama */}
                       <button
                         onClick={() => handleMenuClick(item.name, hasSubmenu)}
                         className={`
@@ -313,7 +318,7 @@ const Sidebar = ({
                               : "min-h-[38px]"
                           }
                           ${
-                            isActive
+                            isActive || hasActiveSubmenu
                               ? "bg-red-500/30 dark:bg-slate-700/50 text-white font-semibold border-l-4 border-rose-400 dark:border-blue-400 shadow-lg"
                               : "text-red-100/90 dark:text-slate-300/90 hover:bg-red-700/30 dark:hover:bg-slate-700/30 hover:text-white active:bg-red-600/40 dark:active:bg-slate-600/40"
                           }
@@ -323,7 +328,9 @@ const Sidebar = ({
                         <IconComponent
                           size={mobile ? 20 : 18}
                           className={`flex-shrink-0 ${
-                            isActive ? "text-rose-300 dark:text-blue-400" : ""
+                            isActive || hasActiveSubmenu
+                              ? "text-rose-300 dark:text-blue-400"
+                              : ""
                           }`}
                         />
                         {!showCollapsed && (
@@ -331,7 +338,6 @@ const Sidebar = ({
                             <span className="text-sm sm:text-base font-medium leading-tight flex-1">
                               {item.name}
                             </span>
-                            {/* ✅ ARROW ICON untuk submenu */}
                             {hasSubmenu && (
                               <ChevronDown
                                 size={16}
@@ -343,12 +349,12 @@ const Sidebar = ({
                           </>
                         )}
 
-                        {mobile && isActive && !hasSubmenu && (
+                        {mobile && (isActive || hasActiveSubmenu) && (
                           <div className="ml-auto w-2 h-2 bg-rose-400 dark:bg-blue-400 rounded-full shadow-sm"></div>
                         )}
                       </button>
 
-                      {/* ✅ RENDER SUBMENU ITEMS */}
+                      {/* SUBMENU ITEMS */}
                       {hasSubmenu && isSubmenuOpen && !showCollapsed && (
                         <ul className="mt-1 space-y-0.5 pl-8">
                           {item.submenu.map((subItem) => {

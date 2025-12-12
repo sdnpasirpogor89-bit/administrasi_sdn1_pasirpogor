@@ -180,7 +180,7 @@ const Layout = ({
       "/teacher-attendance": "Presensi Guru",
       "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
       "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
-      "/grades/cek": "Cek Nilai", // ✅ SUBMENU NILAI BARU!
+      "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
       "/spmb": "SPMB",
@@ -202,7 +202,7 @@ const Layout = ({
       "/teacher-attendance": "Presensi Guru",
       "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
       "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
-      "/grades/cek": "Cek Nilai", // ✅ SUBMENU NILAI BARU!
+      "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
       "/spmb": "SPMB",
@@ -236,7 +236,7 @@ const Layout = ({
         // ✅ UPDATED: Nilai submenu mapping (DITAMBAH CEK NILAI)
         "Nilai Asli": "/grades",
         "Nilai Katrol": "/grades/katrol",
-        "Cek Nilai": "/grades/cek", // ✅ NAVIGASI KE SUBMENU BARU!
+        "Rekap Nilai": "/grades/rekap", // ✅ NAVIGASI KE SUBMENU BARU!
         "Nilai Siswa": "/grades", // ✅ KEEP for parent menu
         Nilai: "/grades", // ✅ KEEP for mobile
 
