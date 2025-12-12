@@ -57,7 +57,7 @@ const StatsCards = ({ type, stats, userRole, viewMode = "detail" }) => {
 
   if (!stats || Object.keys(stats).length === 0) {
     return (
-      <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-red-100 dark:border-gray-700 shadow-sm">
+      <div className="p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <p className="text-sm text-gray-500 dark:text-gray-400 italic">
           Data statistik belum tersedia untuk filter ini.
         </p>
@@ -107,16 +107,16 @@ const StatsCards = ({ type, stats, userRole, viewMode = "detail" }) => {
     <div className="mb-6">
       {/* Mobile Info Badge */}
       {isMobile && totalCards > 2 && (
-        <div className="flex items-center justify-between mb-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800">
+        <div className="flex items-center justify-between mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <div className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <span className="text-xs text-red-700 dark:text-red-300">
+            <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-xs text-blue-700 dark:text-blue-300">
               Tampilkan: {visibleCardsCount} dari {totalCards} statistik
             </span>
           </div>
           <button
             onClick={handleToggleCards}
-            className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 min-h-[24px] min-w-[60px]">
+            className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
             {showAllCards ? "Tutup" : "Lihat Semua"}
             <ChevronRight
               className={`h-3 w-3 transition-transform ${
@@ -153,7 +153,7 @@ const StatsCards = ({ type, stats, userRole, viewMode = "detail" }) => {
         <div className="mt-4 text-center">
           <button
             onClick={handleToggleCards}
-            className="inline-flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors min-h-[44px] min-w-[160px]">
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
             <span>Tampilkan {totalCards - 2} statistik lainnya</span>
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -189,68 +189,68 @@ const Card = ({
   label,
   value,
   icon,
-  color = "red",
+  color = "blue",
   subtitle,
   isMobile = false,
 }) => {
   const colorClasses = {
-    red: {
-      label: "text-red-600 dark:text-red-400",
-      text: "text-red-800 dark:text-red-200",
-      subtitle: "text-red-600/80 dark:text-red-400/80",
-      icon: "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100",
-      bg: "bg-white dark:bg-gray-800",
-      border: "border-red-200 dark:border-red-800",
-      shadow: "shadow-red-100/50 dark:shadow-red-900/20",
+    blue: {
+      label: "text-blue-500 dark:text-blue-400",
+      text: "text-blue-800 dark:text-blue-200",
+      subtitle: "text-blue-500 dark:text-blue-400",
+      icon: "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100",
+      bg: "bg-blue-50/80 dark:bg-blue-900/30",
+      border: "border-blue-200 dark:border-blue-700",
+      shadow: "shadow-blue-100/50 dark:shadow-blue-900/20",
     },
     green: {
-      label: "text-green-600 dark:text-green-500",
-      text: "text-green-800 dark:text-green-300",
-      subtitle: "text-green-600/80 dark:text-green-500/80",
+      label: "text-green-500 dark:text-green-400",
+      text: "text-green-800 dark:text-green-200",
+      subtitle: "text-green-500 dark:text-green-400",
       icon: "bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100",
-      bg: "bg-white dark:bg-gray-800",
-      border: "border-green-200 dark:border-green-800",
+      bg: "bg-green-50/80 dark:bg-green-900/30",
+      border: "border-green-200 dark:border-green-700",
       shadow: "shadow-green-100/50 dark:shadow-green-900/20",
     },
     orange: {
-      label: "text-orange-600 dark:text-orange-500",
-      text: "text-orange-800 dark:text-orange-300",
-      subtitle: "text-orange-600/80 dark:text-orange-500/80",
+      label: "text-orange-500 dark:text-orange-400",
+      text: "text-orange-800 dark:text-orange-200",
+      subtitle: "text-orange-500 dark:text-orange-400",
       icon: "bg-orange-100 text-orange-700 dark:bg-orange-700 dark:text-orange-100",
-      bg: "bg-white dark:bg-gray-800",
-      border: "border-orange-200 dark:border-orange-800",
+      bg: "bg-orange-50/80 dark:bg-orange-900/30",
+      border: "border-orange-200 dark:border-orange-700",
       shadow: "shadow-orange-100/50 dark:shadow-orange-900/20",
     },
-    blue: {
-      label: "text-blue-600 dark:text-blue-400",
-      text: "text-blue-800 dark:text-blue-300",
-      subtitle: "text-blue-600/80 dark:text-blue-400/80",
-      icon: "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100",
-      bg: "bg-white dark:bg-gray-800",
-      border: "border-blue-200 dark:border-blue-800",
-      shadow: "shadow-blue-100/50 dark:shadow-blue-900/20",
+    red: {
+      label: "text-red-500 dark:text-red-400",
+      text: "text-red-800 dark:text-red-200",
+      subtitle: "text-red-500 dark:text-red-400",
+      icon: "bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100",
+      bg: "bg-red-50/80 dark:bg-red-900/30",
+      border: "border-red-200 dark:border-red-700",
+      shadow: "shadow-red-100/50 dark:shadow-red-900/20",
     },
     purple: {
-      label: "text-purple-600 dark:text-purple-400",
-      text: "text-purple-800 dark:text-purple-300",
-      subtitle: "text-purple-600/80 dark:text-purple-400/80",
+      label: "text-purple-500 dark:text-purple-400",
+      text: "text-purple-800 dark:text-purple-200",
+      subtitle: "text-purple-500 dark:text-purple-400",
       icon: "bg-purple-100 text-purple-700 dark:bg-purple-700 dark:text-purple-100",
-      bg: "bg-white dark:bg-gray-800",
-      border: "border-purple-200 dark:border-purple-800",
+      bg: "bg-purple-50/80 dark:bg-purple-900/30",
+      border: "border-purple-200 dark:border-purple-700",
       shadow: "shadow-purple-100/50 dark:shadow-purple-900/20",
     },
     gray: {
-      label: "text-gray-600 dark:text-gray-400",
-      text: "text-gray-800 dark:text-gray-300",
-      subtitle: "text-gray-600/80 dark:text-gray-400/80",
+      label: "text-gray-500 dark:text-gray-400",
+      text: "text-gray-800 dark:text-gray-200",
+      subtitle: "text-gray-500 dark:text-gray-400",
       icon: "bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-100",
-      bg: "bg-white dark:bg-gray-800",
-      border: "border-gray-200 dark:border-gray-700",
+      bg: "bg-gray-50/80 dark:bg-gray-800/50",
+      border: "border-gray-200 dark:border-gray-600",
       shadow: "shadow-gray-100/50 dark:shadow-gray-900/20",
     },
   };
 
-  const colors = colorClasses[color] || colorClasses.red;
+  const colors = colorClasses[color] || colorClasses.blue;
 
   return (
     <div
@@ -260,16 +260,16 @@ const Card = ({
       }
         hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300
         ${isMobile ? "shadow-sm" : "shadow-md"} ${colors.shadow}
-        cursor-pointer min-h-[88px]
+        cursor-pointer
       `}
       onClick={() => console.log(`Card clicked: ${label}`)}>
       <div
         className={`
           p-2 rounded-lg ${colors.icon} flex-shrink-0
-          ${isMobile ? "h-12 w-12" : "h-14 w-14"}
+          ${isMobile ? "h-10 w-10" : "h-12 w-12"}
           flex items-center justify-center
         `}>
-        <div className={isMobile ? "h-5 w-5" : "h-6 w-6"}>{icon}</div>
+        <div className={isMobile ? "h-4 w-4" : "h-5 w-5"}>{icon}</div>
       </div>
       <div className="flex-1 min-w-0">
         <p
@@ -283,17 +283,17 @@ const Card = ({
         <p
           className={`
           font-bold truncate
-          ${isMobile ? "text-xl" : "text-2xl"}
+          ${isMobile ? "text-lg" : "text-xl"}
           ${colors.text}
-          mt-1
+          mt-0.5
         `}>
           {formatValue(value)}
         </p>
         {subtitle && (
           <p
             className={`
-            truncate mt-1
-            ${isMobile ? "text-xs" : "text-sm"}
+            truncate mt-0.5
+            ${isMobile ? "text-[10px]" : "text-xs"}
             ${colors.subtitle}
           `}>
             {subtitle}
@@ -313,8 +313,8 @@ const renderStudentCards = (stats, isMobile) => [
     key="total"
     label="Total Siswa"
     value={stats.total}
-    icon={<Users size={isMobile ? 20 : 24} />}
-    color="red"
+    icon={<Users size={isMobile ? 16 : 20} />}
+    color="blue"
     subtitle={`Kelas: ${stats.kelas || "-"}`}
     isMobile={isMobile}
   />,
@@ -322,7 +322,7 @@ const renderStudentCards = (stats, isMobile) => [
     key="active"
     label="Siswa Aktif"
     value={stats.active}
-    icon={<UserCheck size={isMobile ? 20 : 24} />}
+    icon={<UserCheck size={isMobile ? 16 : 20} />}
     color="green"
     subtitle={`${stats.percentage || 0}% dari total`}
     isMobile={isMobile}
@@ -331,8 +331,8 @@ const renderStudentCards = (stats, isMobile) => [
     key="male"
     label="Siswa Laki-laki"
     value={stats.lakiLaki}
-    icon={<UserCheck size={isMobile ? 20 : 24} />}
-    color="blue"
+    icon={<UserCheck size={isMobile ? 16 : 20} />}
+    color="purple"
     subtitle={`Perempuan: ${stats.perempuan || 0}`}
     isMobile={isMobile}
   />,
@@ -340,8 +340,8 @@ const renderStudentCards = (stats, isMobile) => [
     key="inactive"
     label="Siswa Tidak Aktif"
     value={stats.inactive}
-    icon={<AlertCircle size={isMobile ? 20 : 24} />}
-    color="orange"
+    icon={<AlertCircle size={isMobile ? 16 : 20} />}
+    color="red"
     subtitle="Perlu diverifikasi"
     isMobile={isMobile}
   />,
@@ -352,8 +352,8 @@ const renderAttendanceCards = (stats, isMobile) => [
     key="totalDays"
     label="Total Hari"
     value={stats.totalDays}
-    icon={<Calendar size={isMobile ? 20 : 24} />}
-    color="red"
+    icon={<Calendar size={isMobile ? 16 : 20} />}
+    color="blue"
     subtitle={`Tahun: ${stats.tahunAjaran || "-"}`}
     isMobile={isMobile}
   />,
@@ -361,7 +361,7 @@ const renderAttendanceCards = (stats, isMobile) => [
     key="present"
     label="Hadir"
     value={stats.H}
-    icon={<CheckCircle size={isMobile ? 20 : 24} />}
+    icon={<CheckCircle size={isMobile ? 16 : 20} />}
     color="green"
     subtitle={`Rata-rata: ${stats.avgPercentage || 0}%`}
     isMobile={isMobile}
@@ -370,7 +370,7 @@ const renderAttendanceCards = (stats, isMobile) => [
     key="sick"
     label="Izin & Sakit"
     value={(stats.I || 0) + (stats.S || 0)}
-    icon={<Heart size={isMobile ? 20 : 24} />}
+    icon={<Heart size={isMobile ? 16 : 20} />}
     color="orange"
     subtitle={`Sakit: ${stats.S || 0}, Izin: ${stats.I || 0}`}
     isMobile={isMobile}
@@ -379,8 +379,8 @@ const renderAttendanceCards = (stats, isMobile) => [
     key="absent"
     label="Alpa"
     value={stats.A}
-    icon={<XCircle size={isMobile ? 20 : 24} />}
-    color="purple"
+    icon={<XCircle size={isMobile ? 16 : 20} />}
+    color="red"
     subtitle="Perlu Tindak Lanjut"
     isMobile={isMobile}
   />,
@@ -391,8 +391,8 @@ const renderAttendanceRecapCards = (stats, isMobile) => [
     key="totalStudents"
     label="Total Siswa"
     value={stats.totalStudents}
-    icon={<Users size={isMobile ? 20 : 24} />}
-    color="red"
+    icon={<Users size={isMobile ? 16 : 20} />}
+    color="blue"
     subtitle={`Kelas: ${stats.kelas || "-"}`}
     isMobile={isMobile}
   />,
@@ -400,7 +400,7 @@ const renderAttendanceRecapCards = (stats, isMobile) => [
     key="avgAttendance"
     label="Rata-rata Kehadiran"
     value={`${stats.avgPercentage || "-"}%`}
-    icon={<TrendingUp size={isMobile ? 20 : 24} />}
+    icon={<TrendingUp size={isMobile ? 16 : 20} />}
     color={parseFloat(stats.avgPercentage) >= 80 ? "green" : "orange"}
     subtitle={`Total Hari: ${stats.totalDays || 0}`}
     isMobile={isMobile}
@@ -409,7 +409,7 @@ const renderAttendanceRecapCards = (stats, isMobile) => [
     key="goodAttendance"
     label="Kehadiran Baik"
     value={stats.goodAttendanceStudents || 0}
-    icon={<CheckCircle size={isMobile ? 20 : 24} />}
+    icon={<CheckCircle size={isMobile ? 16 : 20} />}
     color="green"
     subtitle={`<70%: ${stats.lowAttendanceStudents || 0}`}
     isMobile={isMobile}
@@ -419,11 +419,11 @@ const renderAttendanceRecapCards = (stats, isMobile) => [
     label="Paling Sering Absen"
     value={
       stats.mostAbsentStudent
-        ? truncateText(stats.mostAbsentStudent, isMobile ? 10 : 15)
+        ? truncateText(stats.mostAbsentStudent, isMobile ? 8 : 12)
         : "-"
     }
-    icon={<TrendingDown size={isMobile ? 20 : 24} />}
-    color="purple"
+    icon={<TrendingDown size={isMobile ? 16 : 20} />}
+    color="red"
     subtitle={`Alpa: ${stats.mostAbsentCount || 0}`}
     isMobile={isMobile}
   />,
@@ -434,8 +434,8 @@ const renderGradeCards = (stats, isMobile) => [
     key="totalMapel"
     label="Mata Pelajaran"
     value={stats.totalMapel}
-    icon={<BookOpen size={isMobile ? 20 : 24} />}
-    color="red"
+    icon={<BookOpen size={isMobile ? 16 : 20} />}
+    color="purple"
     subtitle={`Kelas: ${stats.kelas || "-"}`}
     isMobile={isMobile}
   />,
@@ -443,7 +443,7 @@ const renderGradeCards = (stats, isMobile) => [
     key="avgGrade"
     label="Rata-rata Nilai"
     value={formatValue(stats.avgGrade)}
-    icon={<BarChart3 size={isMobile ? 20 : 24} />}
+    icon={<BarChart3 size={isMobile ? 16 : 20} />}
     color={(stats.avgGrade || 0) >= 75 ? "green" : "orange"}
     subtitle={`KKM: ${stats.kkm || "75"}`}
     isMobile={isMobile}
@@ -452,7 +452,7 @@ const renderGradeCards = (stats, isMobile) => [
     key="passed"
     label="Lulus KKM"
     value={stats.passedStudents || 0}
-    icon={<UserCheck size={isMobile ? 20 : 24} />}
+    icon={<UserCheck size={isMobile ? 16 : 20} />}
     color="green"
     subtitle={`Gagal: ${stats.failedStudents || 0}`}
     isMobile={isMobile}
@@ -461,7 +461,7 @@ const renderGradeCards = (stats, isMobile) => [
     key="maxGrade"
     label="Nilai Tertinggi"
     value={formatValue(stats.maxGrade)}
-    icon={<Award size={isMobile ? 20 : 24} />}
+    icon={<Award size={isMobile ? 16 : 20} />}
     color="blue"
     subtitle={`Terendah: ${formatValue(stats.minGrade)}`}
     isMobile={isMobile}
@@ -473,8 +473,8 @@ const renderNotesCards = (stats, userRole, isMobile) => [
     key="totalNotes"
     label="Total Catatan"
     value={stats.totalNotes}
-    icon={<FileText size={isMobile ? 20 : 24} />}
-    color="red"
+    icon={<FileText size={isMobile ? 16 : 20} />}
+    color="blue"
     subtitle={
       userRole === "admin"
         ? `Kelas: ${stats.totalClasses || 0}`
@@ -486,7 +486,7 @@ const renderNotesCards = (stats, userRole, isMobile) => [
     key="positive"
     label="Catatan Positif"
     value={stats.positiveNotes || 0}
-    icon={<TrendingUp size={isMobile ? 20 : 24} />}
+    icon={<TrendingUp size={isMobile ? 16 : 20} />}
     color="green"
     subtitle={`${stats.positivePercentage || 0}%`}
     isMobile={isMobile}
@@ -495,7 +495,7 @@ const renderNotesCards = (stats, userRole, isMobile) => [
     key="negative"
     label="Catatan Perhatian"
     value={stats.negativeNotes || 0}
-    icon={<AlertCircle size={isMobile ? 20 : 24} />}
+    icon={<AlertCircle size={isMobile ? 16 : 20} />}
     color="orange"
     subtitle={`Belum ditindak: ${stats.pendingActions || 0}`}
     isMobile={isMobile}
@@ -504,8 +504,8 @@ const renderNotesCards = (stats, userRole, isMobile) => [
     key="resolved"
     label="Terselesaikan"
     value={stats.resolvedNotes || 0}
-    icon={<Shield size={isMobile ? 20 : 24} />}
-    color="blue"
+    icon={<Shield size={isMobile ? 16 : 20} />}
+    color="purple"
     subtitle={`Sisa: ${(stats.totalNotes || 0) - (stats.resolvedNotes || 0)}`}
     isMobile={isMobile}
   />,

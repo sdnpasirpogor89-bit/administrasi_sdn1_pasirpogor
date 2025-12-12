@@ -100,10 +100,10 @@ const FilterBar = ({
 
   // Shared classes for label and input/select, adjusted for Mobile + Dark Mode
   const labelClass =
-    "block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2";
+    "block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 dark:text-gray-300";
 
   const inputClass =
-    "w-full px-3 py-2.5 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400 bg-white dark:bg-gray-700 dark:text-gray-200 dark:placeholder-gray-400 transition-all duration-200 min-h-[44px]";
+    "w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:placeholder-gray-400 transition-colors duration-200";
 
   // Mobile First Grid Class
   const filterCount = filterConfig.fields?.length || 4;
@@ -140,11 +140,11 @@ const FilterBar = ({
     switch (field) {
       case "kelas":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>
               Kelas
               {filterConfig.locked?.kelas && (
-                <span className="ml-1 text-xs text-red-600 dark:text-red-400 font-normal">
+                <span className="ml-1 text-xs text-red-500 dark:text-red-400 font-normal">
                   (Terkunci)
                 </span>
               )}
@@ -168,7 +168,7 @@ const FilterBar = ({
 
       case "tahunAjaran":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>Tahun Ajaran</label>
             <select
               value={filters.tahunAjaran || "current"}
@@ -185,11 +185,11 @@ const FilterBar = ({
 
       case "mataPelajaran":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>
               Mata Pelajaran
               {filterConfig.locked?.mapel && (
-                <span className="ml-1 text-xs text-red-600 dark:text-red-400 font-normal">
+                <span className="ml-1 text-xs text-red-500 dark:text-red-400 font-normal">
                   (Terkunci)
                 </span>
               )}
@@ -213,12 +213,12 @@ const FilterBar = ({
 
       case "search":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>
               Cari Nama {activeTab === "teachers" ? "Guru" : "Siswa"}
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 value={filters.search || ""}
@@ -229,7 +229,7 @@ const FilterBar = ({
               {filters.search && (
                 <button
                   onClick={() => handleChange("search", "")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -239,7 +239,7 @@ const FilterBar = ({
 
       case "viewMode":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>Tampilan</label>
             <select
               value={filters.viewMode || "list"}
@@ -256,7 +256,7 @@ const FilterBar = ({
 
       case "periode":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>Periode</label>
             <select
               value={filters.periode || "bulan_ini"}
@@ -273,7 +273,7 @@ const FilterBar = ({
 
       case "dibuatOleh":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>Dibuat Oleh</label>
             <select
               value={filters.dibuatOleh || "semua"}
@@ -290,7 +290,7 @@ const FilterBar = ({
 
       case "category":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>Kategori</label>
             <select
               value={filters.category || "semua"}
@@ -307,7 +307,7 @@ const FilterBar = ({
 
       case "status":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>
               Status {activeTab === "teachers" ? "Guru" : "Siswa"}
             </label>
@@ -326,7 +326,7 @@ const FilterBar = ({
 
       case "role":
         return (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <label className={labelClass}>Role Guru</label>
             <select
               value={filters.role || "semua"}
@@ -347,15 +347,15 @@ const FilterBar = ({
   };
 
   return (
-    <div className="mb-4 md:mb-6 transition-colors duration-300">
+    <div className="mb-6">
       {/* Mobile Header - Toggle Button */}
       {isMobile && (
-        <div className="flex items-center justify-between mb-3 p-3 bg-gradient-to-r from-red-50/50 to-white dark:from-gray-800 dark:to-gray-900 rounded-lg shadow-sm border border-red-100 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
           <button
             onClick={toggleFilters}
-            className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 min-h-[44px]">
-            <Filter className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <span>Filter ({activeFilterCount} aktif)</span>
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Filter className="h-4 w-4" />
+            Filter ({activeFilterCount} aktif)
             {isExpanded ? (
               <ChevronUp className="h-4 w-4 ml-1" />
             ) : (
@@ -367,7 +367,7 @@ const FilterBar = ({
             {activeFilterCount > 0 && (
               <button
                 onClick={handleClearFilters}
-                className="text-xs px-3 py-1.5 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg font-medium min-h-[44px] transition-colors">
+                className="text-xs px-2 py-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
                 Hapus Filter
               </button>
             )}
@@ -381,7 +381,7 @@ const FilterBar = ({
           isMobile && !showFilters ? "hidden" : "block"
         }`}>
         <div
-          className={`${gridClass} p-3 sm:p-4 bg-gradient-to-br from-red-50/30 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-sm border border-red-100 dark:border-gray-700 transition-colors duration-300`}>
+          className={`${gridClass} p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-sm transition-colors duration-300`}>
           {filterConfig.fields?.map((field) => (
             <div key={field} className="animate-fadeIn">
               {renderFilterComponent(field)}
@@ -391,10 +391,10 @@ const FilterBar = ({
 
         {/* Desktop Clear Button */}
         {!isMobile && activeFilterCount > 0 && (
-          <div className="mt-4 flex justify-end">
+          <div className="mt-3 flex justify-end">
             <button
               onClick={handleClearFilters}
-              className="text-sm px-4 py-2.5 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-2 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors min-h-[44px] font-medium">
+              className="text-sm px-4 py-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-2">
               <X className="h-4 w-4" />
               Hapus Semua Filter ({activeFilterCount})
             </button>
@@ -403,8 +403,8 @@ const FilterBar = ({
 
         {/* Mobile Active Filters Badge */}
         {isMobile && showFilters && activeFilterCount > 0 && (
-          <div className="mt-3 p-3 bg-gradient-to-r from-red-50 to-white dark:from-red-900/10 dark:to-gray-800 rounded-lg border border-red-100 dark:border-red-800/30">
-            <p className="text-xs text-red-700 dark:text-red-300 font-medium">
+          <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
               ⚡ {activeFilterCount} filter aktif. Scroll untuk lihat semua
               filter.
             </p>

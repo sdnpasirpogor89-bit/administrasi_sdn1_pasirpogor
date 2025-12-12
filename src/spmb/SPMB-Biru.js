@@ -412,17 +412,17 @@ const SPMB = ({ userData }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 sm:pb-6 transition-colors duration-300">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+      <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Toast Notification */}
         {toast.show && (
           <div
             className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 animate-slide-down max-w-sm ${
               toast.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 border-green-400 dark:border-green-500 text-green-800 dark:text-green-200"
+                ? "bg-green-50 border-green-400 text-green-800"
                 : toast.type === "error"
-                ? "bg-red-50 dark:bg-red-900/20 border-red-400 dark:border-red-500 text-red-800 dark:text-red-200"
-                : "bg-blue-50 dark:bg-blue-900/20 border-blue-400 dark:border-blue-500 text-blue-800 dark:text-blue-200"
+                ? "bg-red-50 border-red-400 text-red-800"
+                : "bg-blue-50 border-blue-400 text-blue-800"
             }`}>
             <div className="flex items-center gap-2">
               <i
@@ -433,38 +433,38 @@ const SPMB = ({ userData }) => {
                     ? "fa-exclamation-circle"
                     : "fa-info-circle"
                 }`}></i>
-              <span className="text-sm font-medium">{toast.message}</span>
+              <span className="text-sm">{toast.message}</span>
             </div>
           </div>
         )}
 
         {/* Page Header */}
-        <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 sm:p-6 md:p-8 shadow-sm border border-red-100 dark:border-gray-700">
-          <div className="text-center space-y-2 sm:space-y-3">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 dark:text-white tracking-tight">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 shadow-sm border border-blue-100">
+          <div className="text-center space-y-3">
+            <h1 className="text-2xl sm:text-3xl font-light text-gray-800 tracking-wide">
               Sistem Penerimaan Murid Baru (SPMB)
             </h1>
-            <div className="w-16 sm:w-20 h-0.5 bg-gradient-to-r from-red-400 to-red-500 dark:from-red-500 dark:to-red-600 mx-auto"></div>
-            <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg font-medium">
+            <div className="w-20 h-0.5 bg-gradient-to-r from-blue-400 to-indigo-500 mx-auto"></div>
+            <p className="text-gray-700 text-base sm:text-lg">
               SDN 1 PASIR POGOR
             </p>
-            <p className="text-red-600 dark:text-red-400 font-semibold bg-white/80 dark:bg-gray-800/80 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full inline-block text-xs sm:text-sm md:text-base">
+            <p className="text-blue-600 font-medium bg-white/60 px-4 py-2 rounded-full inline-block text-sm sm:text-base">
               Pendaftaran Siswa Baru Tahun Ajaran {getCurrentAcademicYear()}
             </p>
           </div>
         </div>
 
         {/* Desktop Navigation Tabs */}
-        <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex">
             {navItems.map((item) => (
               <button
                 key={item.key}
                 onClick={() => setActiveTab(item.key)}
-                className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 min-h-[3.5rem] ${
+                className={`flex-1 p-4 font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
                   activeTab === item.key
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    ? "bg-blue-500 text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50"
                 }`}>
                 <i className={`fas ${item.icon}`}></i>
                 <span>{item.fullLabel}</span>
@@ -474,7 +474,7 @@ const SPMB = ({ userData }) => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 md:p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
           {activeTab === "form" && (
             <StudentForm
               editingStudent={editingStudent}
@@ -518,19 +518,19 @@ const SPMB = ({ userData }) => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 sm:hidden z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-40">
         <div className="flex">
           {navItems.map((item) => (
             <button
               key={item.key}
               onClick={() => setActiveTab(item.key)}
-              className={`flex-1 p-3 font-medium transition-all duration-300 flex flex-col items-center justify-center gap-1 min-h-[4rem] ${
+              className={`flex-1 p-3 font-medium transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                 activeTab === item.key
-                  ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
-                  : "text-gray-600 dark:text-gray-300"
+                  ? "text-blue-500 bg-blue-50"
+                  : "text-gray-600"
               }`}>
               <i className={`fas ${item.icon} text-lg`}></i>
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="text-xs">{item.label}</span>
             </button>
           ))}
         </div>

@@ -15,7 +15,6 @@ import {
  * ✅ Support: students, grades, grades-grid, attendance, attendance-recap, notes, teachers
  * ✅ Mobile-first responsive design
  * ✅ Dark mode support
- * ✅ Red-White theme for light mode
  */
 const DataTable = ({
   data = [],
@@ -46,7 +45,7 @@ const DataTable = ({
     return (
       <div className="flex items-center justify-center py-8 sm:py-12 bg-white dark:bg-gray-900 rounded-lg">
         <Loader2
-          className="animate-spin text-red-600 dark:text-red-400 mr-2 h-5 w-5 sm:h-6 sm:w-6"
+          className="animate-spin text-blue-600 dark:text-blue-400 mr-2 h-5 w-5 sm:h-6 sm:w-6"
           size={isMobile ? 20 : 24}
         />
         <span className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
@@ -104,7 +103,7 @@ const DataTable = ({
           </p>
           {/* Device indicator - hanya untuk development */}
           {process.env.NODE_ENV === "development" && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
               {isMobile ? (
                 <>
                   <Smartphone className="h-3 w-3" /> Mobile
@@ -163,7 +162,7 @@ const renderAttendanceRecap = (data, isMobile) => {
         className={`min-w-full divide-y divide-gray-200 dark:divide-gray-700 ${
           showMobileView ? "text-xs" : "text-sm sm:text-base"
         }`}>
-        <thead className="bg-gradient-to-r from-red-50 to-red-100 dark:from-gray-800 dark:to-red-900/70">
+        <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-indigo-900/70">
           <tr>
             <th
               className={`px-3 py-2 sm:px-4 sm:py-3 text-left font-bold uppercase tracking-wider border-r border-gray-300 dark:text-gray-300 dark:border-gray-700 ${
@@ -256,7 +255,7 @@ const renderAttendanceRecap = (data, isMobile) => {
             <th
               className={`px-2 py-2 sm:px-4 sm:py-3 text-center font-bold uppercase tracking-wider ${
                 showMobileView ? "text-[10px]" : "text-xs"
-              } bg-red-50 dark:bg-red-900/30`}>
+              } bg-indigo-50 dark:bg-indigo-900/30`}>
               {showMobileView ? "%" : "Persentase"}
             </th>
 
@@ -327,7 +326,7 @@ const renderAttendanceRecap = (data, isMobile) => {
                 {/* Kelas - sembunyi di mobile */}
                 {!showMobileView && (
                   <td className="px-3 py-3 sm:px-4 sm:py-4 whitespace-nowrap border-r border-gray-200 dark:text-gray-200 dark:border-gray-700">
-                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium dark:bg-red-900/50 dark:text-red-300">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium dark:bg-blue-900/50 dark:text-blue-300">
                       {row.kelas}
                     </span>
                   </td>
@@ -385,7 +384,7 @@ const renderAttendanceRecap = (data, isMobile) => {
                 )}
 
                 {/* Persentase */}
-                <td className="px-2 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-center bg-red-50 dark:bg-red-900/30">
+                <td className="px-2 py-3 sm:px-4 sm:py-4 whitespace-nowrap text-center bg-indigo-50 dark:bg-indigo-900/30">
                   <div className="flex items-center justify-center gap-1">
                     <div className="dark:text-white">
                       {getPercentageIcon(persentase)}
@@ -479,7 +478,7 @@ const renderAttendanceRecap = (data, isMobile) => {
               </td>
             )}
 
-            <td className="px-2 py-2 sm:px-4 sm:py-3 text-center text-red-900 bg-red-100 dark:bg-red-900/70 dark:text-red-200">
+            <td className="px-2 py-2 sm:px-4 sm:py-3 text-center text-indigo-900 bg-indigo-100 dark:bg-indigo-900/70 dark:text-indigo-200">
               {(() => {
                 const totalHadir = data.reduce(
                   (sum, row) => sum + (parseInt(row.hadir) || 0),
@@ -515,7 +514,7 @@ const renderAttendanceRecap = (data, isMobile) => {
                 showMobileView ? "text-xs" : "text-sm"
               }`}>
               📊 Rekapitulasi Presensi -{" "}
-              <span className="text-red-600 dark:text-red-400">
+              <span className="text-blue-600 dark:text-blue-400">
                 {data.length}
               </span>{" "}
               siswa
@@ -638,7 +637,7 @@ const renderGridView = (data, isMobile, compactView) => {
             {MAPEL_LIST.map((mapel) => (
               <th
                 key={mapel}
-                className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider bg-red-50 dark:bg-red-900/30 dark:text-gray-300 min-w-[140px] whitespace-nowrap"
+                className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider bg-blue-50 dark:bg-blue-900/30 dark:text-gray-300 min-w-[140px] whitespace-nowrap"
                 title={mapel}>
                 <div className="flex flex-col items-center gap-1">
                   <span>{MAPEL_SHORT[mapel]}</span>
@@ -746,8 +745,8 @@ const renderGridView = (data, isMobile, compactView) => {
             </span>{" "}
             mata pelajaran
           </p>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800">
-            <span className="text-xs font-medium text-red-700 dark:text-red-300">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
               ⬅️ Geser horizontal untuk melihat semua nilai ➡️
             </span>
           </div>
@@ -962,7 +961,7 @@ const renderTableBody = (data, type, userRole, isMobile, compactView) => {
                   isMobile ? "px-1.5 py-0.5" : "px-2 py-1"
                 } ${
                   row.jenis_presensi === "kelas"
-                    ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
                     : "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300"
                 }`}>
                 {row.jenis_presensi || "-"}
@@ -1092,7 +1091,7 @@ const renderTableBody = (data, type, userRole, isMobile, compactView) => {
                 isMobile ? "px-1.5 py-0.5" : "px-2 py-1"
               } ${
                 row.role === "guru_kelas"
-                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300"
                   : "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300"
               }`}>
               {row.role === "guru_kelas" ? "Guru Kelas" : "Guru Mapel"}
@@ -1174,13 +1173,13 @@ const getStatusColor = (status) => {
 const getCategoryColor = (category) => {
   switch (category?.toLowerCase()) {
     case "akademik":
-      return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300";
     case "perilaku":
       return "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300";
     case "prestasi":
       return "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300";
     case "kesehatan":
-      return "bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300";
+      return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
     default:
       return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
   }

@@ -236,8 +236,8 @@ const ReportAdmin = ({ user = {} }) => {
   // Safety check
   if (!user.role) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-red-50/50 to-white dark:from-gray-900 dark:to-gray-950 p-4 md:p-6 flex items-center justify-center transition-colors duration-300">
-        <div className="text-center max-w-md mx-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 flex items-center justify-center">
+        <div className="text-center max-w-md">
           <div className="w-12 h-12 md:w-16 md:h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
             <svg
               className="w-6 h-6 md:w-8 md:h-8 text-red-600 dark:text-red-500"
@@ -252,48 +252,38 @@ const ReportAdmin = ({ user = {} }) => {
               />
             </svg>
           </div>
-          <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">
+          <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
             User Tidak Ditemukan
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Silakan login kembali atau tunggu data user dimuat.
           </p>
-          <button
-            onClick={() => (window.location.href = "/")}
-            className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white rounded-lg font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 text-sm md:text-base min-h-[44px] w-full max-w-xs mx-auto">
-            Kembali ke Login
-          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50/30 to-gray-50 dark:from-gray-900 dark:to-gray-950 p-3 sm:p-4 md:p-6 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4 md:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                Laporan & Analisis
-              </h1>
-              <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
-                Dashboard Lengkap Laporan Sistem - Administrator
-              </p>
-            </div>
-            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-700">
-              <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-medium">Pengguna:</span> {user.full_name}
-              </p>
-            </div>
-          </div>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Laporan & Analisis
+          </h1>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
+            Dashboard Lengkap Laporan Sistem - Administrator
+            {" - "}
+            <span className="font-medium dark:text-gray-300">
+              {user.full_name}
+            </span>
+          </p>
         </div>
 
         {/* Access Info Alert */}
-        <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 border border-red-200 dark:border-gray-700 rounded-xl p-3 sm:p-4 mb-4 md:mb-6 flex items-start sm:items-center gap-3">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 md:mb-6 flex items-start md:items-center gap-3">
           <svg
-            className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5 sm:mt-0"
+            className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5 md:mt-0"
             fill="currentColor"
             viewBox="0 0 20 20">
             <path
@@ -302,15 +292,15 @@ const ReportAdmin = ({ user = {} }) => {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-red-800 dark:text-red-300 text-xs sm:text-sm">
+          <p className="text-blue-800 dark:text-blue-300 text-sm">
             Akses penuh untuk semua data siswa, guru, presensi, dan nilai
           </p>
         </div>
 
         {/* Tabs - Responsive dengan scroll horizontal di mobile */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-4 md:mb-6 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 md:mb-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex overflow-x-auto px-3 sm:px-4 md:px-6 scrollbar-hide">
+            <div className="flex overflow-x-auto md:overflow-visible md:space-x-8 px-4 md:px-6 scrollbar-hide">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -320,16 +310,15 @@ const ReportAdmin = ({ user = {} }) => {
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
                     className={`
-                      flex items-center gap-2 py-3 px-3 sm:px-4 md:px-6 border-b-2 font-medium text-xs sm:text-sm transition-all duration-300 whitespace-nowrap min-h-[44px]
+                      flex items-center gap-2 py-3 md:py-4 px-2 md:px-0 border-b-2 font-medium text-sm transition-colors whitespace-nowrap
                       ${
                         isActive
-                          ? "border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-900/20"
-                          : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-700/50"
+                          ? "border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400"
+                          : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
                       }
-                    `}
-                    title={tab.label}>
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                    <span>{tab.label}</span>
+                    `}>
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-xs md:text-sm">{tab.label}</span>
                   </button>
                 );
               })}
@@ -340,8 +329,7 @@ const ReportAdmin = ({ user = {} }) => {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setFilterCollapsed(!filterCollapsed)}
-              className="w-full px-3 sm:px-4 md:px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors min-h-[44px]"
-              aria-expanded={!filterCollapsed}>
+              className="w-full px-4 md:px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
               <div className="flex items-center gap-2">
                 <svg
                   className="w-5 h-5 text-gray-600 dark:text-gray-400"
@@ -355,7 +343,7 @@ const ReportAdmin = ({ user = {} }) => {
                     d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                   />
                 </svg>
-                <span className="font-medium text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                <span className="font-medium text-gray-900 dark:text-gray-100 text-sm md:text-base">
                   Filter Laporan
                 </span>
               </div>
@@ -367,7 +355,7 @@ const ReportAdmin = ({ user = {} }) => {
             </button>
 
             {!filterCollapsed && (
-              <div className="px-3 sm:px-4 md:px-6 pb-4">
+              <div className="px-4 md:px-6 pb-4">
                 <FilterBar
                   activeTab={activeTab}
                   filters={filters}
@@ -393,55 +381,48 @@ const ReportAdmin = ({ user = {} }) => {
         )}
 
         {/* Export Bar with View Mode Toggle */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 mb-4 md:mb-6 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 w-full">
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600 dark:border-red-400"></span>
-                    Memuat data...
-                  </span>
-                ) : (
-                  <>
-                    Total{" "}
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      {data?.length || 0}
-                    </span>{" "}
-                    {attendanceViewMode === "recap" &&
-                    activeTab === "attendance"
-                      ? "siswa"
-                      : "data"}{" "}
-                    ditemukan
-                  </>
-                )}
-              </p>
-            </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-3 md:p-4 mb-4 md:mb-6 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-0">
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {loading ? (
+                <span>Memuat data...</span>
+              ) : (
+                <>
+                  Total{" "}
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    {data?.length || 0}
+                  </span>{" "}
+                  {attendanceViewMode === "recap" && activeTab === "attendance"
+                    ? "siswa"
+                    : "data"}{" "}
+                  ditemukan
+                </>
+              )}
+            </p>
 
             {/* 🆕 View Mode Toggle - ATTENDANCE (Detail vs Rekap) */}
             {activeTab === "attendance" && (
-              <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 border-t md:border-l border-gray-300 dark:border-gray-700 pt-3 md:pt-0 md:pl-4">
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 xs:mb-0">
+              <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 border-t md:border-l border-gray-300 dark:border-gray-700 pt-2 md:pt-0 md:pl-4">
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Tampilan:
                 </span>
                 <div
-                  className="inline-flex rounded-lg shadow-sm w-full xs:w-auto overflow-hidden border border-gray-300 dark:border-gray-700"
+                  className="inline-flex rounded-md shadow-sm w-full xs:w-auto"
                   role="group">
                   <button
                     type="button"
                     onClick={() => handleAttendanceViewModeToggle("detail")}
                     disabled={loading}
                     className={`
-                      px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center min-h-[44px] min-w-[80px]
+                      px-3 py-1.5 text-xs font-medium rounded-l-lg border transition-colors flex-1 xs:flex-none text-center
                       ${
                         attendanceViewMode === "detail"
-                          ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white"
-                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          ? "bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                    title="Tampilan Detail">
-                    <FileSpreadsheet className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 flex-shrink-0" />
+                    `}>
+                    <FileSpreadsheet className="w-3 h-3 md:w-4 md:h-4 inline-block mr-1" />
                     Detail
                   </button>
                   <button
@@ -449,16 +430,15 @@ const ReportAdmin = ({ user = {} }) => {
                     onClick={() => handleAttendanceViewModeToggle("recap")}
                     disabled={loading}
                     className={`
-                      px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center min-h-[44px] min-w-[80px]
+                      px-3 py-1.5 text-xs font-medium rounded-r-lg border transition-colors flex-1 xs:flex-none text-center
                       ${
                         attendanceViewMode === "recap"
-                          ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white"
-                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          ? "bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                    title="Tampilan Rekap">
-                    <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 flex-shrink-0" />
+                    `}>
+                    <BarChart3 className="w-3 h-3 md:w-4 md:h-4 inline-block mr-1" />
                     Rekap
                   </button>
                 </div>
@@ -467,28 +447,27 @@ const ReportAdmin = ({ user = {} }) => {
 
             {/* View Mode Toggle - GRADES (List vs Grid) */}
             {activeTab === "grades" && (
-              <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 border-t md:border-l border-gray-300 dark:border-gray-700 pt-3 md:pt-0 md:pl-4">
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1 xs:mb-0">
+              <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 border-t md:border-l border-gray-300 dark:border-gray-700 pt-2 md:pt-0 md:pl-4">
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                   Tampilan:
                 </span>
                 <div
-                  className="inline-flex rounded-lg shadow-sm w-full xs:w-auto overflow-hidden border border-gray-300 dark:border-gray-700"
+                  className="inline-flex rounded-md shadow-sm w-full xs:w-auto"
                   role="group">
                   <button
                     type="button"
                     onClick={() => handleViewModeToggle("list")}
                     disabled={loading}
                     className={`
-                      px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center min-h-[44px] min-w-[80px]
+                      px-3 py-1.5 text-xs font-medium rounded-l-lg border transition-colors flex-1 xs:flex-none text-center
                       ${
                         viewMode === "list"
-                          ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white"
-                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          ? "bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                    title="Tampilan List">
-                    <List className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 flex-shrink-0" />
+                    `}>
+                    <List className="w-3 h-3 md:w-4 md:h-4 inline-block mr-1" />
                     List
                   </button>
                   <button
@@ -496,16 +475,15 @@ const ReportAdmin = ({ user = {} }) => {
                     onClick={() => handleViewModeToggle("grid")}
                     disabled={loading}
                     className={`
-                      px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center min-h-[44px] min-w-[80px]
+                      px-3 py-1.5 text-xs font-medium rounded-r-lg border transition-colors flex-1 xs:flex-none text-center
                       ${
                         viewMode === "grid"
-                          ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white"
-                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          ? "bg-blue-600 dark:bg-blue-700 text-white border-blue-600 dark:border-blue-700"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                       }
                       ${loading ? "opacity-50 cursor-not-allowed" : ""}
-                    `}
-                    title="Tampilan Grid">
-                    <Grid3x3 className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 flex-shrink-0" />
+                    `}>
+                    <Grid3x3 className="w-3 h-3 md:w-4 md:h-4 inline-block mr-1" />
                     Grid
                   </button>
                 </div>
@@ -527,7 +505,7 @@ const ReportAdmin = ({ user = {} }) => {
 
         {/* Error State */}
         {error && (
-          <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 border border-red-200 dark:border-red-800 rounded-xl p-3 sm:p-4 mb-4 md:mb-6">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
             <div className="flex items-start gap-3">
               <svg
                 className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5"
@@ -545,12 +523,12 @@ const ReportAdmin = ({ user = {} }) => {
                 <h3 className="text-red-800 dark:text-red-400 font-semibold text-sm mb-1">
                   Terjadi Kesalahan
                 </h3>
-                <p className="text-red-700 dark:text-red-300 text-xs sm:text-sm">
+                <p className="text-red-700 dark:text-red-300 text-sm">
                   {error}
                 </p>
                 <button
                   onClick={refetch}
-                  className="mt-3 px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white rounded-lg text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 font-medium min-h-[44px] min-w-[100px]">
+                  className="mt-2 px-3 py-1.5 bg-red-600 dark:bg-red-700 text-white rounded text-sm hover:bg-red-700 dark:hover:bg-red-600 transition-colors">
                   Coba Lagi
                 </button>
               </div>
@@ -559,7 +537,7 @@ const ReportAdmin = ({ user = {} }) => {
         )}
 
         {/* Data Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto -mx-3 sm:mx-0">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-x-auto -mx-4 md:mx-0">
           <DataTable
             data={data || []}
             type={activeTab}
@@ -573,7 +551,7 @@ const ReportAdmin = ({ user = {} }) => {
           {/* Empty State */}
           {!loading && !error && (!data || data.length === 0) && (
             <div className="p-6 md:p-12 text-center">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-red-100 to-white dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                 <svg
                   className="w-6 h-6 md:w-8 md:h-8 text-gray-400 dark:text-gray-500"
                   fill="none"
@@ -587,7 +565,7 @@ const ReportAdmin = ({ user = {} }) => {
                   />
                 </svg>
               </div>
-              <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Tidak Ada Data
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -605,21 +583,6 @@ const ReportAdmin = ({ user = {} }) => {
               )}
             </div>
           )}
-        </div>
-
-        {/* Footer Note */}
-        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Laporan dihasilkan oleh sistem pada{" "}
-            {new Date().toLocaleDateString("id-ID", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
         </div>
       </div>
     </div>

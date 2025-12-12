@@ -419,8 +419,10 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-100 border-t-blue-600 mx-auto"></div>
-          <p className="mt-6 text-gray-600 font-medium">Memuat profil...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-100 border-t-red-600 mx-auto"></div>
+          <p className="mt-6 text-gray-600 dark:text-gray-300 font-medium">
+            Memuat profil...
+          </p>
         </div>
       </div>
     );
@@ -429,13 +431,13 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
   if (!profileData) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
-        <div className="bg-gray-100 rounded-full p-6 mb-4">
-          <User size={56} className="text-gray-400" />
+        <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-6 mb-4">
+          <User size={56} className="text-gray-400 dark:text-gray-500" />
         </div>
-        <p className="text-gray-500 text-xl font-semibold mb-2">
+        <p className="text-gray-500 dark:text-gray-400 text-xl font-semibold mb-2">
           Data profil tidak tersedia
         </p>
-        <p className="text-gray-400 text-sm mb-6">
+        <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
           Terjadi kesalahan saat memuat profil
         </p>
         <button
@@ -443,7 +445,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
             isInitialLoad.current = true;
             loadUserProfile(targetUserId);
           }}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+          className="px-6 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition font-medium min-h-[44px]">
           Coba Lagi
         </button>
       </div>
@@ -457,31 +459,37 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
   const displayCount = searchQuery ? filteredUsers.length : totalUsers;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {showUserModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-red-100 dark:border-gray-700">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sm:p-6 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                   {modalMode === "add" ? (
-                    <Plus size={24} />
+                    <Plus
+                      size={20}
+                      className="text-red-600 dark:text-red-400"
+                    />
                   ) : (
-                    <Edit2 size={24} />
+                    <Edit2
+                      size={20}
+                      className="text-red-600 dark:text-red-400"
+                    />
                   )}
                   {modalMode === "add" ? "Tambah User Baru" : "Edit User"}
                 </h3>
                 <button
                   onClick={() => setShowUserModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition">
-                  <X size={20} />
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition min-h-[40px] min-w-[40px]">
+                  <X size={20} className="text-gray-600 dark:text-gray-400" />
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Username <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -493,14 +501,16 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       username: e.target.value,
                     }))
                   }
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    formErrors.username ? "border-red-500" : "border-gray-300"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                    formErrors.username
+                      ? "border-red-500 dark:border-red-600"
+                      : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder="Masukkan username"
                   disabled={modalMode === "edit"}
                 />
                 {formErrors.username && (
-                  <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-500 dark:text-red-400 flex items-center gap-1">
                     <AlertCircle size={14} />
                     {formErrors.username}
                   </p>
@@ -508,7 +518,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Nama Lengkap <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -520,13 +530,15 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       full_name: e.target.value,
                     }))
                   }
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    formErrors.full_name ? "border-red-500" : "border-gray-300"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                    formErrors.full_name
+                      ? "border-red-500 dark:border-red-600"
+                      : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder="Masukkan nama lengkap"
                 />
                 {formErrors.full_name && (
-                  <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-500 dark:text-red-400 flex items-center gap-1">
                     <AlertCircle size={14} />
                     {formErrors.full_name}
                   </p>
@@ -534,13 +546,13 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Password{" "}
                   {modalMode === "add" && (
                     <span className="text-red-500">*</span>
                   )}
                   {modalMode === "edit" && (
-                    <span className="text-gray-500 text-xs font-normal">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs font-normal">
                       (Kosongkan jika tidak ingin mengubah)
                     </span>
                   )}
@@ -554,8 +566,10 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       password: e.target.value,
                     }))
                   }
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    formErrors.password ? "border-red-500" : "border-gray-300"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                    formErrors.password
+                      ? "border-red-500 dark:border-red-600"
+                      : "border-gray-300 dark:border-gray-600"
                   }`}
                   placeholder={
                     modalMode === "add"
@@ -564,7 +578,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                   }
                 />
                 {formErrors.password && (
-                  <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-500 dark:text-red-400 flex items-center gap-1">
                     <AlertCircle size={14} />
                     {formErrors.password}
                   </p>
@@ -572,7 +586,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Role <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -580,7 +594,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, role: e.target.value }))
                   }
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white">
                   <option value="guru_kelas">Guru Kelas</option>
                   <option value="guru_mapel">Guru Mapel</option>
                   <option value="admin">Admin</option>
@@ -590,9 +604,9 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
               {(formData.role === "guru_kelas" ||
                 formData.role === "guru_mapel") && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Kelas <span className="text-red-500">*</span>
-                    <span className="text-gray-500 text-xs font-normal ml-2">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs font-normal ml-2">
                       (Pisahkan dengan koma jika lebih dari 1, contoh: 1,2,3)
                     </span>
                   </label>
@@ -605,13 +619,15 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                         kelas: e.target.value,
                       }))
                     }
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      formErrors.kelas ? "border-red-500" : "border-gray-300"
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                      formErrors.kelas
+                        ? "border-red-500 dark:border-red-600"
+                        : "border-gray-300 dark:border-gray-600"
                     }`}
                     placeholder="Contoh: 5 atau 1,2,3"
                   />
                   {formErrors.kelas && (
-                    <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                    <p className="mt-1 text-sm text-red-500 dark:text-red-400 flex items-center gap-1">
                       <AlertCircle size={14} />
                       {formErrors.kelas}
                     </p>
@@ -620,7 +636,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Mata Pelajaran
                 </label>
                 <input
@@ -632,13 +648,13 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       mata_pelajaran: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white"
                   placeholder="Contoh: Matematika, IPA"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Tahun Ajaran
                 </label>
                 <input
@@ -650,7 +666,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       tahun_ajaran: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white"
                   placeholder="Contoh: 2025/2026"
                 />
               </div>
@@ -666,25 +682,25 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                         is_active: e.target.checked,
                       }))
                     }
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-4 h-4 text-red-600 dark:text-red-500 rounded focus:ring-2 focus:ring-red-500 dark:focus:ring-red-600"
                   />
-                  <span className="text-sm font-semibold text-gray-700">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Akun Aktif
                   </span>
                 </label>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setShowUserModal(false)}
-                  className="flex-1 px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition"
+                  className="flex-1 px-4 sm:px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition min-h-[44px]"
                   disabled={submitting}>
                   Batal
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  className="flex-1 px-4 sm:px-6 py-2.5 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[44px]">
                   {submitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -704,58 +720,62 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
       )}
 
       {isViewingOtherProfile && (
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <div className="flex items-center justify-between">
+        <div className="mb-4 sm:mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Eye size={20} className="text-blue-600" />
+              <Eye size={20} className="text-red-600 dark:text-red-400" />
               <div>
-                <p className="font-semibold text-gray-900">
+                <p className="font-semibold text-gray-900 dark:text-white">
                   Melihat Profil User Lain
                 </p>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 dark:text-gray-300 text-sm">
                   {profileData.full_name} ({profileData.role})
                 </p>
               </div>
             </div>
             <button
               onClick={() => setTargetUserId(userId)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-medium text-gray-700">
+              className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition text-sm font-medium text-gray-700 dark:text-gray-300 min-h-[44px] w-full sm:w-auto">
               Kembali ke Profil Saya
             </button>
           </div>
         </div>
       )}
 
-      <div className="mb-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex items-start gap-4 flex-1">
+      <div className="mb-4 sm:mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-red-100 dark:border-gray-700 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
+            <div className="flex items-start gap-3 sm:gap-4 flex-1">
               <div className="relative flex-shrink-0">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200">
-                  <span className="text-2xl font-bold text-gray-600">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
+                  <span className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-gray-300">
                     {profileData.full_name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div
-                  className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-4 border-white ${
-                    profileData.is_active ? "bg-green-500" : "bg-gray-400"
+                  className={`absolute bottom-0 right-0 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-4 border-white dark:border-gray-800 ${
+                    profileData.is_active
+                      ? "bg-green-500 dark:bg-green-400"
+                      : "bg-gray-400 dark:bg-gray-600"
                   }`}></div>
               </div>
 
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {profileData.full_name}
                 </h1>
-                <p className="text-gray-600 mb-2">@{profileData.username}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm">
+                  @{profileData.username}
+                </p>
 
-                <div className="flex flex-wrap items-center gap-3 mb-3">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-sm font-medium ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium ${
                       profileData.role === "admin"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-blue-100 text-blue-700"
+                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
                     }`}>
-                    <Shield size={14} />
+                    <Shield size={12} />
                     {profileData.role === "admin"
                       ? "Administrator"
                       : profileData.role === "guru_kelas"
@@ -763,45 +783,47 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       : "Guru Mapel"}
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 text-sm text-gray-600">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        profileData.is_active ? "bg-green-500" : "bg-gray-400"
+                        profileData.is_active
+                          ? "bg-green-500 dark:bg-green-400"
+                          : "bg-gray-400 dark:bg-gray-600"
                       }`}></span>
                     {profileData.is_active ? "Aktif" : "Nonaktif"}
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   {profileData.kelas && (
                     <div className="flex items-center gap-1.5">
-                      <School size={14} />
+                      <School size={12} className="flex-shrink-0" />
                       <span>Kelas {profileData.kelas}</span>
                     </div>
                   )}
 
                   {profileData.mata_pelajaran && (
                     <div className="flex items-center gap-1.5">
-                      <BookOpen size={14} />
+                      <BookOpen size={12} className="flex-shrink-0" />
                       <span>{profileData.mata_pelajaran}</span>
                     </div>
                   )}
 
                   <div className="flex items-center gap-1.5">
-                    <Calendar size={14} />
+                    <Calendar size={12} className="flex-shrink-0" />
                     <span>Bergabung {accountAge} hari yang lalu</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 flex-shrink-0">
+            <div className="flex flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
               {profileData.tahun_ajaran && (
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 min-w-[200px]">
-                  <p className="text-xs text-blue-600 font-semibold mb-1">
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 sm:p-4 border border-red-200 dark:border-red-800">
+                  <p className="text-xs text-red-600 dark:text-red-400 font-semibold mb-1">
                     Tahun Ajaran
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                     {profileData.tahun_ajaran}
                   </p>
                 </div>
@@ -812,12 +834,12 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
       </div>
 
       {isAdmin && !isViewingOtherProfile && (
-        <div className="mb-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-3">
+        <div className="mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-red-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 relative">
                 <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
                   size={18}
                 />
                 <input
@@ -825,25 +847,26 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                   placeholder="Cari pengguna berdasarkan nama, username, atau kelas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600 dark:focus:border-red-600 dark:bg-gray-700 dark:text-white"
                 />
                 {searching && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 dark:border-red-400 border-t-transparent"></div>
                   </div>
                 )}
               </div>
 
               <button
                 onClick={openAddModal}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2 whitespace-nowrap">
+                className="px-4 sm:px-5 py-2.5 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition font-semibold flex items-center gap-2 whitespace-nowrap justify-center min-h-[44px]">
                 <Plus size={18} />
-                Tambah User
+                <span className="hidden sm:inline">Tambah User</span>
+                <span className="inline sm:hidden">Tambah</span>
               </button>
             </div>
 
             {searchQuery && (
-              <div className="mt-2 text-sm text-gray-600">
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 Menampilkan {displayCount} dari {totalUsers} pengguna
               </div>
             )}
@@ -852,27 +875,37 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
       )}
 
       {isAdmin && !isViewingOtherProfile && (
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <div
-            className={`bg-white rounded-xl shadow-sm border transition-all ${
-              showUserList ? "border-blue-300" : "border-gray-200"
+            className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border transition-all ${
+              showUserList
+                ? "border-red-300 dark:border-red-600"
+                : "border-red-100 dark:border-gray-700"
             }`}>
             <div
-              className="flex items-center justify-between p-5 cursor-pointer"
+              className="flex items-center justify-between p-4 sm:p-5 cursor-pointer min-h-[64px]"
               onClick={() => setShowUserList(!showUserList)}>
               <div className="flex items-center gap-3">
                 <div
                   className={`rounded-lg p-2 ${
-                    showUserList ? "bg-blue-600" : "bg-gray-200"
+                    showUserList
+                      ? "bg-red-600 dark:bg-red-700"
+                      : "bg-gray-200 dark:bg-gray-700"
                   }`}>
                   <Users
                     size={18}
-                    className={showUserList ? "text-white" : "text-gray-600"}
+                    className={
+                      showUserList
+                        ? "text-white"
+                        : "text-gray-600 dark:text-gray-400"
+                    }
                   />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Semua Pengguna</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-bold text-gray-900 dark:text-white">
+                    Semua Pengguna
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {displayCount} {searchQuery ? "hasil" : "pengguna"}
                   </p>
                 </div>
@@ -882,22 +915,31 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                   e.stopPropagation();
                   setShowUserList(!showUserList);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm font-medium">
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition text-sm font-medium min-h-[40px]">
                 {showUserList ? (
-                  <ChevronUp size={18} />
+                  <ChevronUp
+                    size={18}
+                    className="text-gray-600 dark:text-gray-400"
+                  />
                 ) : (
-                  <ChevronDown size={18} />
+                  <ChevronDown
+                    size={18}
+                    className="text-gray-600 dark:text-gray-400"
+                  />
                 )}
               </button>
             </div>
 
             {showUserList && (
-              <div className="border-t border-gray-200">
-                <div className="max-h-[500px] overflow-y-auto p-4">
+              <div className="border-t border-gray-200 dark:border-gray-700">
+                <div className="max-h-[400px] overflow-y-auto p-4">
                   {filteredUsers.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Users size={48} className="text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">
+                    <div className="text-center py-8">
+                      <Users
+                        size={40}
+                        className="text-gray-300 dark:text-gray-600 mx-auto mb-3"
+                      />
+                      <p className="text-gray-500 dark:text-gray-400">
                         {searchQuery
                           ? "Tidak ada pengguna yang ditemukan"
                           : "Belum ada pengguna"}
@@ -908,63 +950,63 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       {filteredUsers.map((listUser) => (
                         <div
                           key={listUser.id}
-                          className="group flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition">
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold flex-shrink-0">
+                          className="group flex items-center justify-between p-3 sm:p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold flex-shrink-0 text-sm">
                               {listUser.full_name[0]}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 truncate">
+                              <p className="font-semibold text-gray-900 dark:text-white truncate text-sm sm:text-base">
                                 {listUser.full_name}
                               </p>
-                              <p className="text-sm text-gray-500 truncate">
+                              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                                 @{listUser.username}
                               </p>
                             </div>
                           </div>
 
-                          <div className="hidden md:block px-4">
-                            <span className="text-sm font-mono text-gray-600 bg-gray-100 px-3 py-1 rounded">
+                          <div className="hidden md:block px-3">
+                            <span className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                               {listUser.kelas || "-"}
                             </span>
                           </div>
 
-                          <div className="hidden sm:block px-4">
+                          <div className="hidden sm:block px-3">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium ${
+                              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium ${
                                 listUser.is_active
-                                  ? "bg-green-50 text-green-700"
-                                  : "bg-gray-100 text-gray-600"
+                                  ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                               }`}>
                               <span
                                 className={`w-2 h-2 rounded-full ${
                                   listUser.is_active
-                                    ? "bg-green-500"
-                                    : "bg-gray-400"
+                                    ? "bg-green-500 dark:bg-green-400"
+                                    : "bg-gray-400 dark:bg-gray-600"
                                 }`}></span>
                               {listUser.is_active ? "Aktif" : "Nonaktif"}
                             </span>
                           </div>
 
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => handleViewProfile(listUser)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition min-h-[36px] min-w-[36px]"
                               title="Lihat Profil">
-                              <Eye size={16} />
+                              <Eye size={14} className="sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => openEditModal(listUser)}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
+                              className="p-1.5 sm:p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition min-h-[36px] min-w-[36px]"
                               title="Edit User">
-                              <Edit2 size={16} />
+                              <Edit2 size={14} className="sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => handleDelete(listUser)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+                              className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition disabled:opacity-50 min-h-[36px] min-w-[36px]"
                               title="Hapus User"
                               disabled={listUser.id === userId}>
-                              <Trash2 size={16} />
+                              <Trash2 size={14} className="sm:w-4 sm:h-4" />
                             </button>
                           </div>
                         </div>
@@ -981,71 +1023,84 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
       {(profileData.role === "guru_kelas" ||
         profileData.role === "guru_mapel") &&
         profileData.kelas && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-red-100 dark:border-gray-700 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <div className="bg-blue-50 rounded-lg p-2">
-                  <School size={18} className="text-blue-600" />
+                <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-2">
+                  <School
+                    size={18}
+                    className="text-red-600 dark:text-red-400"
+                  />
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {statistics.totalClasses}
                 </p>
               </div>
-              <p className="text-sm text-gray-600 font-medium">Kelas Diampu</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Kelas Diampu
+              </p>
             </div>
 
-            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-red-100 dark:border-gray-700 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <div className="bg-green-50 rounded-lg p-2">
-                  <Users size={18} className="text-green-600" />
+                <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-2">
+                  <Users
+                    size={18}
+                    className="text-green-600 dark:text-green-400"
+                  />
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {statistics.loading ? "..." : statistics.totalStudents}
                 </p>
               </div>
-              <p className="text-sm text-gray-600 font-medium">Total Siswa</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Total Siswa
+              </p>
             </div>
 
-            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-red-100 dark:border-gray-700 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <div className="bg-orange-50 rounded-lg p-2">
-                  <BookOpen size={18} className="text-orange-600" />
+                <div className="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-2">
+                  <BookOpen
+                    size={18}
+                    className="text-orange-600 dark:text-orange-400"
+                  />
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {profileData.mata_pelajaran ? "1" : "7"}
                 </p>
               </div>
-              <p className="text-sm text-gray-600 font-medium">
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                 Mata Pelajaran
               </p>
             </div>
           </div>
         )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <User size={20} />
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-100 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <User size={20} className="text-red-600 dark:text-red-400" />
               Informasi Akun
             </h3>
 
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">
                   Username
                 </p>
-                <p className="text-gray-900 font-medium">
+                <p className="text-gray-900 dark:text-white font-medium">
                   {profileData.username}
                 </p>
               </div>
 
               {profileData.kelas && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">
                     Kelas
                   </p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-gray-900 dark:text-white font-medium">
                     Kelas {profileData.kelas}
                   </p>
                 </div>
@@ -1053,10 +1108,10 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
 
               {profileData.mata_pelajaran && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">
                     Mata Pelajaran
                   </p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-gray-900 dark:text-white font-medium">
                     {profileData.mata_pelajaran}
                   </p>
                 </div>
@@ -1064,20 +1119,20 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
 
               {profileData.tahun_ajaran && (
                 <div>
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">
                     Tahun Ajaran
                   </p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-gray-900 dark:text-white font-medium">
                     {profileData.tahun_ajaran}
                   </p>
                 </div>
               )}
 
               <div>
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">
                   Bergabung Pada
                 </p>
-                <p className="text-gray-900 font-medium">
+                <p className="text-gray-900 dark:text-white font-medium">
                   {new Date(profileData.created_at).toLocaleDateString(
                     "id-ID",
                     {
@@ -1087,21 +1142,21 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                     }
                   )}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {accountAge} hari yang lalu
                 </p>
               </div>
 
               {profileData.role === "admin" && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-2">
                     Hak Akses
                   </p>
-                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                    <p className="font-semibold text-purple-900 text-sm">
+                  <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                    <p className="font-semibold text-purple-900 dark:text-purple-400 text-sm">
                       Administrator Sistem
                     </p>
-                    <p className="text-xs text-purple-600 mt-1">
+                    <p className="text-xs text-purple-600 dark:text-purple-500 mt-1">
                       Akses penuh ke semua fitur
                     </p>
                   </div>
@@ -1113,35 +1168,38 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
 
         <div className="lg:col-span-2">
           {profileData.role === "admin" ? (
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-200 text-center">
-              <div className="bg-purple-50 rounded-full p-4 w-fit mx-auto mb-4">
-                <Shield size={40} className="text-purple-600" />
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 shadow-sm border border-red-100 dark:border-gray-700 text-center">
+              <div className="bg-purple-50 dark:bg-purple-900/30 rounded-full p-4 w-fit mx-auto mb-4">
+                <Shield
+                  size={40}
+                  className="text-purple-600 dark:text-purple-400"
+                />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                 Administrator System
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {isViewingOtherProfile
                   ? `Anda sedang melihat profil ${profileData.full_name} sebagai Administrator`
                   : "Anda memiliki akses penuh untuk mengelola semua data dan pengguna dalam sistem"}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-2 text-sm">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm">
                     Hak Akses:
                   </h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     <li>• Kelola semua user & role</li>
                     <li>• Akses data lengkap sistem</li>
                     <li>• Konfigurasi akademik</li>
                     <li>• Monitoring aktivitas</li>
                   </ul>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-2 text-sm">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-sm">
                     Fitur Khusus:
                   </h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     <li>• Lihat profil semua user</li>
                     <li>• Edit & hapus user</li>
                     <li>• Generate laporan</li>
@@ -1153,22 +1211,25 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
           ) : (
             <>
               {profileData.kelas ? (
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <BookOpen size={20} />
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-sm border border-red-100 dark:border-gray-700">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <BookOpen
+                      size={20}
+                      className="text-red-600 dark:text-red-400"
+                    />
                     Informasi Mengajar
                   </h3>
 
                   <div className="space-y-4">
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <p className="text-sm text-blue-600 font-semibold mb-2">
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                      <p className="text-sm text-red-600 dark:text-red-400 font-semibold mb-2">
                         Kelas yang Diampu
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {profileData.kelas.split(",").map((kelas, index) => (
                           <span
                             key={index}
-                            className="bg-white border border-blue-300 text-blue-700 px-3 py-1 rounded-lg font-medium text-sm">
+                            className="bg-white dark:bg-gray-800 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 px-3 py-1 rounded-lg font-medium text-sm">
                             Kelas {kelas.trim()}
                           </span>
                         ))}
@@ -1176,44 +1237,46 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                     </div>
 
                     {profileData.mata_pelajaran && (
-                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <p className="text-sm text-green-600 font-semibold mb-2">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                        <p className="text-sm text-green-600 dark:text-green-400 font-semibold mb-2">
                           Mata Pelajaran
                         </p>
-                        <p className="text-gray-900 font-medium">
+                        <p className="text-gray-900 dark:text-white font-medium">
                           {profileData.mata_pelajaran}
                         </p>
                       </div>
                     )}
 
                     {profileData.tahun_ajaran && (
-                      <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                        <p className="text-sm text-orange-600 font-semibold mb-2">
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+                        <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold mb-2">
                           Tahun Ajaran Aktif
                         </p>
-                        <p className="text-gray-900 font-medium">
+                        <p className="text-gray-900 dark:text-white font-medium">
                           {profileData.tahun_ajaran}
                         </p>
                       </div>
                     )}
 
                     {!statistics.loading && (
-                      <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                        <p className="text-sm text-purple-600 font-semibold mb-2">
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                        <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mb-2">
                           Statistik
                         </p>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <p className="text-2xl font-bold text-gray-900">
+                            <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                               {statistics.totalStudents}
                             </p>
-                            <p className="text-xs text-gray-600">Total Siswa</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              Total Siswa
+                            </p>
                           </div>
                           <div>
-                            <p className="text-2xl font-bold text-gray-900">
+                            <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                               {statistics.totalClasses}
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
                               Kelas Diampu
                             </p>
                           </div>
@@ -1223,14 +1286,17 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
-                  <div className="bg-gray-100 rounded-full p-6 w-fit mx-auto mb-4">
-                    <BookOpen size={40} className="text-gray-400" />
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-8 sm:p-12 shadow-sm border border-red-100 dark:border-gray-700 text-center">
+                  <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-6 w-fit mx-auto mb-4">
+                    <BookOpen
+                      size={40}
+                      className="text-gray-400 dark:text-gray-500"
+                    />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                     Belum Ada Informasi Mengajar
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 dark:text-gray-400">
                     {isViewingOtherProfile ? "User ini" : "Anda"} belum memiliki
                     data kelas atau mata pelajaran.
                   </p>

@@ -284,8 +284,15 @@ export const exportToExcelMultiSheet = async (
 
       if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-        cell.numFmt = colNumber === 20 || colNumber === 21 ? "0" : "0.00";
-        if (colNumber === 21) cell.font = { bold: true };
+
+        // ✅ REVISI: Kolom 20 & 21 (Nilai Akhir & Nilai Akhir-K) jadi TEXT
+        if (colNumber === 20 || colNumber === 21) {
+          cell.numFmt = "@"; // ← FORMAT JADI TEXT
+          if (colNumber === 21) cell.font = { bold: true };
+        } else {
+          // Kolom nilai lainnya tetap NUMBER dengan 2 desimal
+          cell.numFmt = "0.00";
+        }
       } else {
         cell.alignment = {
           vertical: "middle",
@@ -406,8 +413,15 @@ export const exportToExcelMultiSheet = async (
 
       if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-        cell.numFmt = colNumber === 11 ? "0" : "0.00";
-        if (colNumber === 11) cell.font = { bold: true };
+
+        // ✅ REVISI: Kolom 11 (Nilai Akhir-K) jadi TEXT
+        if (colNumber === 11) {
+          cell.numFmt = "@"; // ← FORMAT JADI TEXT
+          cell.font = { bold: true };
+        } else {
+          // Kolom nilai lainnya tetap NUMBER dengan 2 desimal
+          cell.numFmt = "0.00";
+        }
       } else {
         cell.alignment = {
           vertical: "middle",
@@ -1131,6 +1145,73 @@ export const exportLeger = async (
 
     rowPeringkat++;
 
+    // Data rows Sheet 1
+    legerData.forEach((row, index) => {
+      const r = wsNilai.addRow([
+        row.no,
+        row.nisn,
+        row.nama_siswa,
+        row.bindo,
+        row.bing,
+        row.bsunda,
+        row.mtk,
+        row.ipas,
+        row.pancasila,
+        row.senbud,
+        row.pabp,
+        row.pjok,
+        row.jumlah,
+        row.rata_rata,
+      ]);
+
+      r.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+
+        if (colNumber === 1) {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+        } else if (colNumber === 2) {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.numFmt = "@";
+        } else if (colNumber === 3) {
+          cell.alignment = { vertical: "middle", horizontal: "left" };
+        } else {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+
+          if (cell.value !== "-" && typeof cell.value === "number") {
+            // ✅ REVISI: Kolom 14 (Rata-rata) jadi TEXT
+            if (colNumber === 14) {
+              cell.numFmt = "@"; // ← FORMAT JADI TEXT
+              cell.font = { bold: true };
+            } else if (colNumber === 13) {
+              // Kolom Jumlah tetap NUMBER
+              cell.font = { bold: true };
+            } else {
+              // Kolom nilai mapel tetap NUMBER
+              cell.numFmt = "0";
+            }
+          }
+        }
+
+        if (index % 2 !== 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF2F2F2" },
+          };
+        }
+      });
+    });
+
+    // ========================================
+    // REVISI #3B: SHEET 2 - LEGER PERINGKAT
+    // Cari bagian ini di Utils.js (sekitar line 1080-1150)
+    // ========================================
+
     // Data rows Sheet 2
     legerPeringkat.forEach((row, index) => {
       const r = wsPeringkat.addRow([
@@ -1192,12 +1273,15 @@ export const exportLeger = async (
           cell.alignment = { vertical: "middle", horizontal: "center" };
 
           if (cell.value !== "-" && typeof cell.value === "number") {
+            // ✅ REVISI: Kolom 14 (Rata-rata) jadi TEXT
             if (colNumber === 14) {
-              cell.numFmt = "0.00";
+              cell.numFmt = "@"; // ← FORMAT JADI TEXT
               cell.font = { bold: true };
             } else if (colNumber === 13) {
+              // Kolom Jumlah tetap NUMBER
               cell.font = { bold: true };
             } else {
+              // Kolom nilai mapel tetap NUMBER
               cell.numFmt = "0";
             }
           }

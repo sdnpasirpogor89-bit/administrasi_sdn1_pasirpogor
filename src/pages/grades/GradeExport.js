@@ -834,9 +834,15 @@ export const exportToExcel = async ({
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          cell.numFmt = "0";
+
+          // ✅ REVISI: Kolom Nilai Akhir (kolom 11) jadi TEXT
           if (colNumber === numColumns) {
+            // Kolom Nilai Akhir
+            cell.numFmt = "@"; // ← FORMAT JADI TEXT
             cell.font = { bold: true };
+          } else {
+            // Kolom nilai lainnya (NH1-UAS) tetap NUMBER
+            cell.numFmt = "0";
           }
         } else {
           cell.alignment = { vertical: "middle", horizontal: "left" };

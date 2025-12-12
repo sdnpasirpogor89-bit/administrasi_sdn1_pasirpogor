@@ -512,9 +512,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white p-6 rounded-t-xl flex justify-between items-center">
             <div className="flex items-center gap-3">
               <UserCheck size={24} />
               <div>
@@ -530,14 +530,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 setShowPassword(false);
                 setShowPasswordEdit(false);
               }}
-              className="p-2 hover:bg-blue-600 rounded-lg transition-colors">
+              className="p-2 hover:bg-red-600 dark:hover:bg-red-800 rounded-lg transition-colors">
               <X size={20} />
             </button>
           </div>
 
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nama Lengkap <span className="text-red-500">*</span>
               </label>
               <input
@@ -545,20 +545,20 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 type="text"
                 value={localForm.full_name}
                 onChange={(e) => updateLocalForm("full_name", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Masukkan nama lengkap"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Username <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={localForm.username}
                 onChange={(e) => updateLocalForm("username", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Masukkan username"
               />
             </div>
@@ -566,7 +566,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             {/* PASSWORD SECTION - ADD MODE WITH TOGGLE */}
             {teacherModal.mode === "add" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -576,14 +576,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                     onChange={(e) =>
                       updateLocalForm("password", e.target.value)
                     }
-                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Masukkan password (min. 4 karakter)"
                     minLength={4}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 focus:outline-none transition-colors p-1"
                     title={
                       showPassword
                         ? "Sembunyikan password"
@@ -602,7 +602,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
             {/* PASSWORD CHANGE SECTION - EDIT MODE WITH TOGGLE */}
             {teacherModal.mode === "edit" && (
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <label className="flex items-center gap-2 mb-3 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -614,17 +614,17 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                         updateLocalForm("password", "");
                       }
                     }}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                    className="rounded border-gray-300 dark:border-gray-600 text-red-600 dark:text-red-400 focus:ring-red-500 w-5 h-5"
                   />
-                  <span className="text-sm font-medium text-gray-700 flex items-center gap-2 group-hover:text-blue-600 transition-colors">
-                    <Key size={16} className="text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                    <Key size={16} className="text-red-600 dark:text-red-400" />
                     Ganti Password User
                   </span>
                 </label>
 
                 {showPasswordChange && (
                   <div className="space-y-2 pl-6">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Password Baru <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -634,14 +634,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                         onChange={(e) =>
                           updateLocalForm("password", e.target.value)
                         }
-                        className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Masukkan password baru (min. 4 karakter)"
                         minLength={4}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPasswordEdit(!showPasswordEdit)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none transition-colors p-1"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 focus:outline-none transition-colors p-1"
                         title={
                           showPasswordEdit
                             ? "Sembunyikan password"
@@ -659,7 +659,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                         <span>⚠️</span> Password minimal 4 karakter
                       </p>
                     )}
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                       <span>💡</span> Password baru akan langsung aktif setelah
                       disimpan
                     </p>
@@ -669,13 +669,13 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Role
               </label>
               <select
                 value={localForm.role}
                 onChange={(e) => updateLocalForm("role", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="guru_mapel">Guru Mata Pelajaran</option>
                 <option value="guru_kelas">Guru Kelas</option>
                 <option value="admin">Administrator</option>
@@ -683,13 +683,13 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Kelas Diampu
               </label>
               <select
                 value={localForm.kelas}
                 onChange={(e) => updateLocalForm("kelas", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="">Pilih Kelas (Opsional)</option>
                 <option value="1">Kelas 1</option>
                 <option value="2">Kelas 2</option>
@@ -704,7 +704,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
                 {loading
                   ? "Menyimpan..."
                   : teacherModal.mode === "add"
@@ -719,7 +719,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                   setShowPasswordEdit(false);
                 }}
                 disabled={loading}
-                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                className="px-6 py-3 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
                 Batal
               </button>
             </div>
@@ -757,9 +757,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+      <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white p-6 rounded-t-xl flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Users size={24} />
               <div>
@@ -772,27 +772,27 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               onClick={() =>
                 setStudentModal({ show: false, mode: "add", data: null })
               }
-              className="p-2 hover:bg-green-600 rounded-lg transition-colors">
+              className="p-2 hover:bg-red-600 dark:hover:bg-red-800 rounded-lg transition-colors">
               <X size={20} />
             </button>
           </div>
 
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 NISN
               </label>
               <input
                 type="text"
                 value={localForm.nisn}
                 onChange={(e) => updateLocalForm("nisn", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Masukkan NISN siswa"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nama Siswa
               </label>
               <input
@@ -800,13 +800,13 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 type="text"
                 value={localForm.nama_siswa}
                 onChange={(e) => updateLocalForm("nama_siswa", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Masukkan nama lengkap siswa"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Jenis Kelamin
               </label>
               <select
@@ -814,20 +814,20 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 onChange={(e) =>
                   updateLocalForm("jenis_kelamin", e.target.value)
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="L">Laki-laki</option>
                 <option value="P">Perempuan</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Kelas
               </label>
               <select
                 value={localForm.kelas}
                 onChange={(e) => updateLocalForm("kelas", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="">Pilih Kelas</option>
                 <option value="1">Kelas 1</option>
                 <option value="2">Kelas 2</option>
@@ -846,9 +846,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                   onChange={(e) =>
                     updateLocalForm("is_active", e.target.checked)
                   }
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-4 h-4"
+                  className="rounded border-gray-300 dark:border-gray-600 text-red-600 dark:text-red-400 focus:ring-red-500 w-5 h-5"
                 />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Siswa Aktif
                 </span>
               </label>
@@ -858,7 +858,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
                 {loading
                   ? "Menyimpan..."
                   : studentModal.mode === "add"
@@ -870,7 +870,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                   setStudentModal({ show: false, mode: "add", data: null })
                 }
                 disabled={loading}
-                className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                className="px-6 py-3 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
                 Batal
               </button>
             </div>
@@ -880,18 +880,18 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     );
   };
 
-  // DELETE CONFIRMATION MODAL (tetap sama)
+  // DELETE CONFIRMATION MODAL (dengan dark mode)
   const DeleteConfirmModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="bg-red-50 border-b border-red-200 p-6 rounded-t-xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+        <div className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-6 rounded-t-xl">
           <div className="flex items-center gap-3">
-            <X className="text-red-600" size={24} />
+            <X className="text-red-600 dark:text-red-400" size={24} />
             <div>
-              <h2 className="text-xl font-bold text-red-800">
+              <h2 className="text-xl font-bold text-red-800 dark:text-red-300">
                 Konfirmasi Hapus
               </h2>
-              <p className="text-red-600 text-sm">
+              <p className="text-red-600 dark:text-red-400 text-sm">
                 {deleteConfirm.type === "teacher" ? "Data guru" : "Data siswa"}{" "}
                 akan dihapus permanen
               </p>
@@ -900,15 +900,15 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
         </div>
 
         <div className="p-6">
-          <p className="text-gray-700 mb-4">
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
             Apakah Anda yakin ingin menghapus{" "}
             {deleteConfirm.type === "teacher" ? "guru" : "siswa"}{" "}
-            <strong>
+            <strong className="text-gray-900 dark:text-white">
               {deleteConfirm.data?.full_name || deleteConfirm.data?.nama_siswa}
             </strong>
             ?
           </p>
-          <p className="text-sm text-red-600 mb-6">
+          <p className="text-sm text-red-600 dark:text-red-400 mb-6">
             Tindakan ini tidak dapat dibatalkan!
           </p>
 
@@ -922,7 +922,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 }
               }}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+              className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
               {loading ? "Menghapus..." : "Ya, Hapus"}
             </button>
             <button
@@ -930,7 +930,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 setDeleteConfirm({ show: false, type: "", data: null })
               }
               disabled={loading}
-              className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              className="px-6 py-3 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
               Batal
             </button>
           </div>
@@ -939,20 +939,17 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
     </div>
   );
 
-  // ... REST OF THE COMPONENT REMAINS THE SAME ...
-  // (Header, Statistics, Tables, etc. - tidak berubah)
-
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header dengan Mobile Menu */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl lg:text-2xl font-semibold text-gray-800 dark:text-white">
             School Management
           </h2>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 rounded-lg bg-gray-100">
+            className="sm:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center">
             <Plus
               size={20}
               className={`transform transition-transform ${
@@ -968,14 +965,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
           } sm:flex`}>
           <button
             onClick={() => openTeacherModal("add")}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-colors">
-            <Plus size={16} />
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-sm transition-colors min-h-[44px]">
+            <Plus size={18} />
             Tambah Guru
           </button>
           <button
             onClick={() => openStudentModal("add")}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm transition-colors">
-            <Plus size={16} />
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-sm transition-colors min-h-[44px]">
+            <Plus size={18} />
             Tambah Siswa
           </button>
         </div>
@@ -983,50 +980,50 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
       {/* School Statistics - Responsive Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
-        <div className="bg-blue-50 p-3 lg:p-4 rounded-lg">
+        <div className="bg-red-50 dark:bg-gray-800 border border-red-100 dark:border-gray-700 p-4 lg:p-5 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="text-blue-600" size={18} />
-            <span className="text-blue-900 font-medium text-sm lg:text-base">
+            <Users className="text-red-600 dark:text-red-400" size={20} />
+            <span className="text-red-900 dark:text-red-300 font-medium text-sm lg:text-base">
               Total Siswa
             </span>
           </div>
-          <p className="text-xl lg:text-2xl font-bold text-blue-600">
+          <p className="text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">
             {schoolStats.total_students}
           </p>
         </div>
 
-        <div className="bg-green-50 p-3 lg:p-4 rounded-lg">
+        <div className="bg-red-50 dark:bg-gray-800 border border-red-100 dark:border-gray-700 p-4 lg:p-5 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <UserCheck className="text-green-600" size={18} />
-            <span className="text-green-900 font-medium text-sm lg:text-base">
+            <UserCheck className="text-red-600 dark:text-red-400" size={20} />
+            <span className="text-red-900 dark:text-red-300 font-medium text-sm lg:text-base">
               Total Guru
             </span>
           </div>
-          <p className="text-xl lg:text-2xl font-bold text-green-600">
+          <p className="text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">
             {schoolStats.total_teachers}
           </p>
         </div>
 
-        <div className="bg-purple-50 p-3 lg:p-4 rounded-lg">
+        <div className="bg-red-50 dark:bg-gray-800 border border-red-100 dark:border-gray-700 p-4 lg:p-5 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <BookOpen className="text-purple-600" size={18} />
-            <span className="text-purple-900 font-medium text-sm lg:text-base">
+            <BookOpen className="text-red-600 dark:text-red-400" size={20} />
+            <span className="text-red-900 dark:text-red-300 font-medium text-sm lg:text-base">
               Kelas
             </span>
           </div>
-          <p className="text-xl lg:text-2xl font-bold text-purple-600">
+          <p className="text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">
             {Object.keys(studentsByClass).length}
           </p>
         </div>
 
-        <div className="bg-orange-50 p-3 lg:p-4 rounded-lg">
+        <div className="bg-red-50 dark:bg-gray-800 border border-red-100 dark:border-gray-700 p-4 lg:p-5 rounded-xl shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <Plus className="text-orange-600" size={18} />
-            <span className="text-orange-900 font-medium text-sm lg:text-base">
+            <Plus className="text-red-600 dark:text-red-400" size={20} />
+            <span className="text-red-900 dark:text-red-300 font-medium text-sm lg:text-base">
               Siswa Baru
             </span>
           </div>
-          <p className="text-xl lg:text-2xl font-bold text-orange-600">
+          <p className="text-2xl lg:text-3xl font-bold text-red-600 dark:text-red-400">
             {schoolStats.active_siswa_baru}
           </p>
         </div>
@@ -1034,80 +1031,82 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
       {/* Teacher Management */}
       <div className="mb-6 lg:mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        <h3 className="text-lg lg:text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Management Guru
         </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full border border-gray-200 rounded-lg min-w-[600px]">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <table className="w-full min-w-[600px] lg:min-w-0">
+            <thead className="bg-red-50 dark:bg-gray-800">
               <tr>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Status
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Nama Guru
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Username
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Role
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Kelas
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {teachers.map((teacher) => (
                 <tr
                   key={teacher.id}
-                  className={`hover:bg-gray-50 transition-colors ${
-                    !teacher.is_active ? "opacity-50 bg-gray-100" : ""
+                  className={`hover:bg-red-50 dark:hover:bg-gray-800/50 transition-colors ${
+                    !teacher.is_active
+                      ? "opacity-60 bg-gray-100 dark:bg-gray-800"
+                      : ""
                   }`}>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3">
+                  <td className="px-3 py-3 lg:px-4 lg:py-3">
                     <button
                       onClick={() =>
                         toggleTeacherStatus(teacher.id, teacher.is_active)
                       }
                       disabled={loading}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors min-h-[36px] min-w-[80px] ${
                         teacher.is_active
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-red-100 text-red-800 hover:bg-red-200"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50"
+                          : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
                       }`}>
                       {teacher.is_active ? (
-                        <CheckSquare size={12} />
+                        <CheckSquare size={14} />
                       ) : (
-                        <X size={12} />
+                        <X size={14} />
                       )}
                       <span className="hidden sm:inline">
                         {teacher.is_active ? "Active" : "Inactive"}
                       </span>
                     </button>
                   </td>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-gray-800">
+                  <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base font-medium text-gray-800 dark:text-white">
                     {teacher.full_name}
                   </td>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
+                  <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base text-gray-600 dark:text-gray-400">
                     @{teacher.username}
                   </td>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3">
-                    <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded capitalize">
+                  <td className="px-3 py-3 lg:px-4 lg:py-3">
+                    <span className="inline-block px-3 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded-lg capitalize">
                       {teacher.role.replace("_", " ")}
                     </span>
                   </td>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
+                  <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base text-gray-600 dark:text-gray-400">
                     <select
                       value={teacher.kelas || ""}
                       onChange={(e) =>
                         updateTeacherClass(teacher.id, e.target.value || null)
                       }
                       disabled={loading || !teacher.is_active}
-                      className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-all">
+                      className="text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 transition-all w-full max-w-[120px]">
                       <option value="">Pilih Kelas</option>
                       <option value="1">Kelas 1</option>
                       <option value="2">Kelas 2</option>
@@ -1117,14 +1116,14 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                       <option value="6">Kelas 6</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2 lg:px-4 lg:py-3">
-                    <div className="flex gap-1 lg:gap-2">
+                  <td className="px-3 py-3 lg:px-4 lg:py-3">
+                    <div className="flex gap-2 lg:gap-3">
                       <button
                         onClick={() => openTeacherModal("edit", teacher)}
                         disabled={loading}
-                        className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors"
+                        className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                         title="Edit Guru">
-                        <Edit3 size={14} />
+                        <Edit3 size={18} />
                       </button>
 
                       <button
@@ -1136,9 +1135,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                           })
                         }
                         disabled={loading}
-                        className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
+                        className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                         title="Hapus Guru">
-                        <Trash2 size={14} />
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -1151,15 +1150,15 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
       {/* Student Management dengan Filter */}
       <div className="mb-6 lg:mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        <h3 className="text-lg lg:text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Management Siswa
         </h3>
 
         {/* Filter Section */}
-        <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+        <div className="bg-white dark:bg-gray-800 p-4 lg:p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-5">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
             <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Cari Siswa
               </label>
               <div className="relative">
@@ -1172,17 +1171,17 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                       search: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                  className="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Cari berdasarkan nama atau NISN..."
                 />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                 </div>
               </div>
             </div>
 
             <div className="w-full lg:w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Filter Kelas
               </label>
               <select
@@ -1193,7 +1192,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                     kelas: e.target.value,
                   }))
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all">
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="">Semua Kelas</option>
                 <option value="1">Kelas 1</option>
                 <option value="2">Kelas 2</option>
@@ -1207,7 +1206,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
             <div className="w-full lg:w-auto">
               <button
                 onClick={resetFilters}
-                className="w-full lg:w-auto px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                className="w-full lg:w-auto px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors text-sm lg:text-base min-h-[44px] flex items-center justify-center">
                 Reset Filter
               </button>
             </div>
@@ -1215,8 +1214,8 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
           {/* Info hasil filter */}
           {(studentFilters.kelas || studentFilters.search) && (
-            <div className="mt-3 p-2 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-300">
                 Menampilkan {filteredStudents.length} siswa
                 {studentFilters.kelas && ` dari Kelas ${studentFilters.kelas}`}
                 {studentFilters.search &&
@@ -1226,55 +1225,55 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border border-gray-200 rounded-lg min-w-[600px]">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <table className="w-full min-w-[600px] lg:min-w-0">
+            <thead className="bg-red-50 dark:bg-gray-800">
               <tr>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   NISN
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Nama Siswa
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Jenis Kelamin
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Kelas
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Status
                 </th>
-                <th className="px-3 py-2 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700">
+                <th className="px-3 py-3 lg:px-4 lg:py-3 text-left text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student) => (
                   <tr
                     key={student.id}
-                    className="hover:bg-gray-50 transition-colors">
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-gray-800">
+                    className="hover:bg-red-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base font-medium text-gray-800 dark:text-white">
                       {student.nisn}
                     </td>
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-800">
+                    <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base text-gray-800 dark:text-gray-300">
                       {student.nama_siswa}
                     </td>
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
+                    <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base text-gray-600 dark:text-gray-400">
                       {student.jenis_kelamin === "L"
                         ? "Laki-laki"
                         : "Perempuan"}
                     </td>
-                    <td className="px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm text-gray-600">
+                    <td className="px-3 py-3 lg:px-4 lg:py-3 text-sm lg:text-base text-gray-600 dark:text-gray-400">
                       <select
                         value={student.kelas || ""}
                         onChange={(e) =>
                           updateStudentClass(student.id, e.target.value || null)
                         }
                         disabled={loading}
-                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 disabled:opacity-50 transition-all">
+                        className="text-sm px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 transition-all w-full max-w-[120px]">
                         <option value="">Pilih Kelas</option>
                         <option value="1">Kelas 1</option>
                         <option value="2">Kelas 2</option>
@@ -1284,24 +1283,24 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                         <option value="6">Kelas 6</option>
                       </select>
                     </td>
-                    <td className="px-3 py-2 lg:px-4 lg:py-3">
+                    <td className="px-3 py-3 lg:px-4 lg:py-3">
                       <span
-                        className={`inline-block px-2 py-1 text-xs rounded ${
+                        className={`inline-block px-3 py-1 text-xs rounded-lg ${
                           student.is_active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
+                            : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
                         }`}>
                         {student.is_active ? "Aktif" : "Tidak Aktif"}
                       </span>
                     </td>
-                    <td className="px-3 py-2 lg:px-4 lg:py-3">
-                      <div className="flex gap-1 lg:gap-2">
+                    <td className="px-3 py-3 lg:px-4 lg:py-3">
+                      <div className="flex gap-2 lg:gap-3">
                         <button
                           onClick={() => openStudentModal("edit", student)}
                           disabled={loading}
-                          className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors"
+                          className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                           title="Edit Siswa">
-                          <Edit3 size={14} />
+                          <Edit3 size={18} />
                         </button>
 
                         <button
@@ -1313,9 +1312,9 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                             })
                           }
                           disabled={loading}
-                          className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors"
+                          className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                           title="Hapus Siswa">
-                          <Trash2 size={14} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -1325,7 +1324,7 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
                 <tr>
                   <td
                     colSpan="6"
-                    className="px-4 py-8 text-center text-gray-500">
+                    className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                     {students.length === 0
                       ? "Tidak ada data siswa"
                       : "Tidak ditemukan siswa yang sesuai dengan filter"}
@@ -1339,23 +1338,23 @@ const SchoolManagementTab = ({ user, loading, setLoading, showToast }) => {
 
       {/* Student Distribution by Class - Responsive Grid */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        <h3 className="text-lg lg:text-xl font-semibold text-gray-800 dark:text-white mb-4">
           Distribusi Siswa per Kelas
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {Object.entries(studentsByClass).map(([kelas, students]) => (
             <div
               key={kelas}
-              className="border border-gray-200 rounded-lg p-3 lg:p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-800 text-sm lg:text-base">
+              className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-gray-800">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-gray-800 dark:text-white text-base lg:text-lg">
                   Kelas {kelas}
                 </h4>
-                <span className="text-xs lg:text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                <span className="text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-3 py-1 rounded-lg">
                   {students.length} siswa
                 </span>
               </div>
-              <div className="text-xs text-gray-600 max-h-20 overflow-y-auto">
+              <div className="text-sm text-gray-600 dark:text-gray-400 max-h-24 overflow-y-auto pr-2">
                 {students
                   .slice(0, 5)
                   .map((s) => s.nama_siswa)

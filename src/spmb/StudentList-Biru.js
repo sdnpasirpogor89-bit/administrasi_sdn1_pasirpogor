@@ -344,8 +344,7 @@ const StudentList = ({
 
   // Render functions
   const renderPhoneNumber = (phoneNumber, parentName) => {
-    if (!phoneNumber)
-      return <div className="text-gray-400 dark:text-gray-500 text-sm">-</div>;
+    if (!phoneNumber) return <div className="text-gray-400 text-sm">-</div>;
 
     const cleanPhone = phoneNumber.toString().replace(/\D/g, "");
     let waPhone = cleanPhone;
@@ -366,26 +365,24 @@ const StudentList = ({
 
     return (
       <div className="flex flex-col gap-1">
-        <div className="text-sm text-gray-800 dark:text-gray-200">
-          {phoneNumber}
-        </div>
+        <div className="text-sm text-gray-800">{phoneNumber}</div>
         <div className="flex gap-1">
           <a
             href={`tel:${phoneNumber}`}
-            className="inline-flex items-center gap-1 px-2 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-semibold hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors min-h-[44px] min-w-[44px] justify-center"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-200 transition-colors"
             title="Telepon">
             <i className="fas fa-phone text-xs"></i>
-            <span className="hidden xs:inline">Call</span>
+            Call
           </a>
           <a
             href={`https://wa.me/${waPhone}`}
-            className="inline-flex items-center gap-1 px-2 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg text-xs font-semibold hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors min-h-[44px] min-w-[44px] justify-center"
+            className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-200 transition-colors"
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWhatsAppClick}
             title="WhatsApp">
             <i className="fab fa-whatsapp text-xs"></i>
-            <span className="hidden xs:inline">WA</span>
+            WA
           </a>
         </div>
       </div>
@@ -394,22 +391,22 @@ const StudentList = ({
 
   // Card view component for mobile
   const StudentCard = ({ student, index }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 hover:shadow-xl transition-all duration-300">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
           {/* ✅ FIXED: Gunakan getDisplayNumber */}
-          <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-800 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
             {getDisplayNumber(index)}
           </div>
           <div>
-            <h3 className="font-bold text-gray-800 dark:text-white text-base sm:text-lg">
+            <h3 className="font-bold text-gray-800 text-lg">
               {student.nama_lengkap || student.nama}
             </h3>
             <span
               className={`px-2 py-1 rounded-full text-xs font-semibold ${
                 student.jenis_kelamin === "Laki-laki"
-                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
-                  : "bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-pink-100 text-pink-800"
               }`}>
               {student.jenis_kelamin}
             </span>
@@ -418,13 +415,13 @@ const StudentList = ({
         <div className="flex gap-2">
           <button
             onClick={() => handleEdit(student)}
-            className="bg-gradient-to-r from-yellow-600 to-yellow-500 dark:from-yellow-700 dark:to-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300"
             title="Edit Data">
             <i className="fas fa-edit"></i>
           </button>
           <button
             onClick={() => handleDelete(student.id)}
-            className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="bg-gradient-to-r from-red-600 to-red-400 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300"
             title="Hapus Data">
             <i className="fas fa-trash"></i>
           </button>
@@ -433,43 +430,29 @@ const StudentList = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div>
-          <div className="text-gray-500 dark:text-gray-400 mb-1 text-xs sm:text-sm">
-            Tempat, Tanggal Lahir
-          </div>
-          <div className="font-medium text-gray-800 dark:text-gray-200">
+          <div className="text-gray-500 mb-1">Tempat, Tanggal Lahir</div>
+          <div className="font-medium">
             {student.tempat_lahir},{" "}
             {formatDateToDDMMYYYY(student.tanggal_lahir)}
           </div>
         </div>
 
         <div>
-          <div className="text-gray-500 dark:text-gray-400 mb-1 text-xs sm:text-sm">
-            NISN
-          </div>
-          <div className="font-medium text-gray-800 dark:text-gray-200">
+          <div className="text-gray-500 mb-1">NISN</div>
+          <div className="font-medium">
             {student.nisn && student.nisn !== "-" ? student.nisn : "-"}
           </div>
         </div>
 
         <div className="md:col-span-2">
-          <div className="text-gray-500 dark:text-gray-400 mb-1 text-xs sm:text-sm">
-            Alamat
-          </div>
-          <div className="font-medium text-gray-800 dark:text-gray-200">
-            {student.alamat || "-"}
-          </div>
+          <div className="text-gray-500 mb-1">Alamat</div>
+          <div className="font-medium">{student.alamat || "-"}</div>
         </div>
 
         <div>
-          <div className="text-gray-500 dark:text-gray-400 mb-1 text-xs sm:text-sm">
-            Orang Tua
-          </div>
-          <div className="font-medium text-gray-800 dark:text-gray-200">
-            Ayah: {student.nama_ayah || "-"}
-          </div>
-          <div className="font-medium text-gray-800 dark:text-gray-200">
-            Ibu: {student.nama_ibu || "-"}
-          </div>
+          <div className="text-gray-500 mb-1">Orang Tua</div>
+          <div className="font-medium">Ayah: {student.nama_ayah || "-"}</div>
+          <div className="font-medium">Ibu: {student.nama_ibu || "-"}</div>
           <div className="mt-2">
             {renderPhoneNumber(
               student.no_hp,
@@ -479,10 +462,8 @@ const StudentList = ({
         </div>
 
         <div>
-          <div className="text-gray-500 dark:text-gray-400 mb-1 text-xs sm:text-sm">
-            Asal TK/PAUD
-          </div>
-          <div className="font-medium text-gray-800 dark:text-gray-200">
+          <div className="text-gray-500 mb-1">Asal TK/PAUD</div>
+          <div className="font-medium">
             {student.asal_tk || student.asal_sekolah || "-"}
           </div>
         </div>
@@ -491,44 +472,44 @@ const StudentList = ({
   );
 
   return (
-    <div className="transition-colors duration-300">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800 dark:text-white flex items-center gap-2 sm:gap-3">
-        <i className="fas fa-list text-red-600 dark:text-red-400"></i>
-        <span>Data Calon Siswa Baru</span>
+    <div>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-3">
+        <i className="fas fa-list text-blue-600"></i>
+        Data Calon Siswa Baru
       </h2>
 
       {/* Search and Controls */}
-      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => onSearch(e.target.value)}
-            className="w-full p-3 sm:p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-sm sm:text-base transition-all duration-300 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:border-red-500 dark:focus:border-red-500 focus:ring-4 focus:ring-red-200 dark:focus:ring-red-900/30 focus:outline-none focus:-translate-y-0.5 pl-10 sm:pl-12"
+            onChange={onSearch}
+            className="w-full p-4 border-2 border-gray-200 rounded-xl text-base transition-all duration-300 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-200 focus:outline-none focus:-translate-y-1 pl-12"
             placeholder="Cari nama siswa, asal sekolah, atau nama orang tua..."
           />
-          <i className="fas fa-search absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+          <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
         </div>
 
         <div className="flex gap-2">
           {/* View Mode Toggle */}
-          <div className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl flex overflow-hidden">
+          <div className="bg-white border-2 border-gray-200 rounded-xl flex overflow-hidden">
             <button
               onClick={() => setViewMode("table")}
-              className={`px-3 sm:px-4 py-3 text-sm font-semibold transition-all duration-300 flex items-center gap-2 min-h-[44px] min-w-[44px] justify-center ${
+              className={`px-4 py-4 text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                 viewMode === "table"
-                  ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  ? "bg-gradient-to-r from-blue-800 to-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}>
               <i className="fas fa-table"></i>
               <span className="hidden sm:inline">Tabel</span>
             </button>
             <button
               onClick={() => setViewMode("cards")}
-              className={`px-3 sm:px-4 py-3 text-sm font-semibold transition-all duration-300 flex items-center gap-2 min-h-[44px] min-w-[44px] justify-center ${
+              className={`px-4 py-4 text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                 viewMode === "cards"
-                  ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  ? "bg-gradient-to-r from-blue-800 to-blue-600 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}>
               <i className="fas fa-th-large"></i>
               <span className="hidden sm:inline">Kartu</span>
@@ -539,7 +520,7 @@ const StudentList = ({
           <button
             onClick={handleExportData}
             disabled={isExporting || !allStudents || allStudents.length === 0}
-            className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:dark:bg-gray-700 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 sm:gap-3 min-h-[44px]">
+            className="bg-gradient-to-r from-blue-800 to-blue-600 text-white px-6 py-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-3">
             <i className="fas fa-file-export"></i>
             <span className="hidden sm:inline">
               {isExporting ? "Exporting..." : "Export Data"}
@@ -549,7 +530,7 @@ const StudentList = ({
           <button
             onClick={onLoadStudents}
             disabled={isLoading}
-            className="bg-gradient-to-r from-red-500 to-red-400 dark:from-red-600 dark:to-red-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:dark:bg-gray-700 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2 sm:gap-3 min-h-[44px]">
+            className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-4 rounded-xl font-semibold text-base transition-all duration-400 hover:-translate-y-1 hover:shadow-xl disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-3">
             <i className="fas fa-sync-alt"></i>
             <span className="hidden sm:inline">
               {isLoading ? "Memuat..." : "Refresh"}
@@ -559,47 +540,41 @@ const StudentList = ({
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div className="bg-gradient-to-r from-red-100 to-white dark:from-gray-800 dark:to-gray-900 border-2 border-red-200 dark:border-gray-700 rounded-xl p-3 sm:p-4 text-center">
-          <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-blue-200 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-blue-800">
             {totalStudents}
           </div>
-          <div className="text-red-600 dark:text-red-300 text-xs sm:text-sm">
-            Total Pendaftar
-          </div>
+          <div className="text-blue-600 text-sm">Total Pendaftar</div>
         </div>
-        <div className="bg-gradient-to-r from-blue-100 to-white dark:from-gray-800 dark:to-gray-900 border-2 border-blue-200 dark:border-gray-700 rounded-xl p-3 sm:p-4 text-center">
-          <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-400">
+        <div className="bg-gradient-to-r from-green-100 to-green-50 border-2 border-green-200 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-green-800">
             {allStudents
               ? allStudents.filter((s) => s.jenis_kelamin === "Laki-laki")
                   .length
               : 0}
           </div>
-          <div className="text-blue-600 dark:text-blue-300 text-xs sm:text-sm">
-            Siswa Laki-laki
-          </div>
+          <div className="text-green-600 text-sm">Siswa Laki-laki</div>
         </div>
-        <div className="bg-gradient-to-r from-pink-100 to-white dark:from-gray-800 dark:to-gray-900 border-2 border-pink-200 dark:border-gray-700 rounded-xl p-3 sm:p-4 text-center">
-          <div className="text-xl sm:text-2xl font-bold text-pink-700 dark:text-pink-400">
+        <div className="bg-gradient-to-r from-pink-100 to-pink-50 border-2 border-pink-200 rounded-xl p-4 text-center">
+          <div className="text-2xl font-bold text-pink-800">
             {allStudents
               ? allStudents.filter((s) => s.jenis_kelamin === "Perempuan")
                   .length
               : 0}
           </div>
-          <div className="text-pink-600 dark:text-pink-300 text-xs sm:text-sm">
-            Siswa Perempuan
-          </div>
+          <div className="text-pink-600 text-sm">Siswa Perempuan</div>
         </div>
       </div>
 
       {/* Content - Table or Cards */}
       {viewMode === "cards" ? (
         // Cards View
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {sortedStudents.length === 0 ? (
-            <div className="col-span-full text-center py-8 sm:py-12">
-              <i className="fas fa-inbox text-3xl sm:text-4xl mb-3 sm:mb-4 text-gray-400 dark:text-gray-600"></i>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+            <div className="col-span-full text-center py-12">
+              <i className="fas fa-inbox text-4xl mb-4 text-gray-400"></i>
+              <p className="text-gray-500">
                 {searchTerm
                   ? "Tidak ada data yang sesuai dengan pencarian"
                   : "Belum ada data pendaftar"}
@@ -613,16 +588,14 @@ const StudentList = ({
         </div>
       ) : (
         // Table View
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white">
+              <thead className="bg-gradient-to-r from-blue-800 to-blue-600 text-white">
                 <tr>
-                  <th className="p-3 text-left font-semibold text-xs sm:text-sm min-w-[44px] min-h-[44px]">
-                    No
-                  </th>
+                  <th className="p-3 text-left font-semibold text-sm">No</th>
                   <th
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-red-700 dark:hover:bg-red-800 transition-colors text-xs sm:text-sm min-w-[150px] min-h-[44px]"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-blue-700 transition-colors text-sm min-w-[150px]"
                     onClick={() => handleSort("nama")}>
                     <div className="flex items-center gap-2">
                       Nama Siswa
@@ -630,28 +603,28 @@ const StudentList = ({
                     </div>
                   </th>
                   <th
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-red-700 dark:hover:bg-red-800 transition-colors text-xs sm:text-sm min-w-[44px] min-h-[44px]"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-blue-700 transition-colors text-sm"
                     onClick={() => handleSort("jenis_kelamin")}>
                     <div className="flex items-center gap-2">
-                      JK
+                      Jenis Kelamin
                       <i className={getSortIcon("jenis_kelamin")}></i>
                     </div>
                   </th>
-                  <th className="p-3 text-left font-semibold text-xs sm:text-sm min-w-[120px] min-h-[44px]">
+                  <th className="p-3 text-left font-semibold text-sm min-w-[120px]">
                     TTL
                   </th>
-                  <th className="p-3 text-left font-semibold text-xs sm:text-sm min-w-[200px] min-h-[44px]">
+                  <th className="p-3 text-left font-semibold text-sm min-w-[200px]">
                     Orang Tua
                   </th>
                   <th
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-red-700 dark:hover:bg-red-800 transition-colors text-xs sm:text-sm min-w-[150px] min-h-[44px]"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-blue-700 transition-colors text-sm min-w-[150px]"
                     onClick={() => handleSort("asal_sekolah")}>
                     <div className="flex items-center gap-2">
                       Asal TK/PAUD
                       <i className={getSortIcon("asal_sekolah")}></i>
                     </div>
                   </th>
-                  <th className="p-3 text-left font-semibold text-xs sm:text-sm min-w-[100px] min-h-[44px]">
+                  <th className="p-3 text-left font-semibold text-sm min-w-[100px]">
                     Aksi
                   </th>
                 </tr>
@@ -659,32 +632,28 @@ const StudentList = ({
               <tbody>
                 {sortedStudents.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan="7"
-                      className="p-6 sm:p-8 text-center text-gray-500 dark:text-gray-400">
-                      <i className="fas fa-inbox text-3xl sm:text-4xl mb-2 block"></i>
-                      <p className="text-sm sm:text-base">
-                        {searchTerm
-                          ? "Tidak ada data yang sesuai dengan pencarian"
-                          : "Belum ada data pendaftar"}
-                      </p>
+                    <td colSpan="7" className="p-8 text-center text-gray-500">
+                      <i className="fas fa-inbox text-4xl mb-2 block"></i>
+                      {searchTerm
+                        ? "Tidak ada data yang sesuai dengan pencarian"
+                        : "Belum ada data pendaftar"}
                     </td>
                   </tr>
                 ) : (
                   sortedStudents.map((student, index) => (
                     <tr
                       key={student.id}
-                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       {/* ✅ FIXED: Gunakan getDisplayNumber */}
-                      <td className="p-3 text-gray-600 dark:text-gray-400 font-semibold text-xs sm:text-sm">
+                      <td className="p-3 text-gray-600 font-semibold">
                         {getDisplayNumber(index)}
                       </td>
                       <td className="p-3">
-                        <div className="font-semibold text-gray-800 dark:text-gray-200 text-sm sm:text-base">
+                        <div className="font-semibold text-gray-800">
                           {student.nama_lengkap || student.nama}
                         </div>
                         {student.nisn && student.nisn !== "-" && (
-                          <div className="text-xs text-gray-500 dark:text-gray-500">
+                          <div className="text-xs text-gray-500">
                             NISN: {student.nisn}
                           </div>
                         )}
@@ -693,28 +662,28 @@ const StudentList = ({
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${
                             student.jenis_kelamin === "Laki-laki"
-                              ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
-                              : "bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-pink-100 text-pink-800"
                           }`}>
                           {student.jenis_kelamin === "Laki-laki" ? "L" : "P"}
                         </span>
                       </td>
                       <td className="p-3">
-                        <div className="text-xs sm:text-sm">
-                          <div className="font-medium text-gray-800 dark:text-gray-200">
+                        <div className="text-sm">
+                          <div className="font-medium">
                             {student.tempat_lahir}
                           </div>
-                          <div className="text-gray-500 dark:text-gray-500 text-xs">
+                          <div className="text-gray-500 text-xs">
                             {formatDateToDDMMYYYY(student.tanggal_lahir)}
                           </div>
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="text-xs sm:text-sm">
-                          <div className="font-medium mb-1 text-gray-800 dark:text-gray-200">
+                        <div className="text-sm">
+                          <div className="font-medium mb-1">
                             Ayah: {student.nama_ayah || "-"}
                           </div>
-                          <div className="font-medium mb-1 text-gray-800 dark:text-gray-200">
+                          <div className="font-medium mb-1">
                             Ibu: {student.nama_ibu || "-"}
                           </div>
                           {renderPhoneNumber(
@@ -724,7 +693,7 @@ const StudentList = ({
                         </div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        <div className="text-sm font-medium">
                           {student.asal_tk || student.asal_sekolah || "-"}
                         </div>
                       </td>
@@ -732,13 +701,13 @@ const StudentList = ({
                         <div className="flex gap-1">
                           <button
                             onClick={() => handleEdit(student)}
-                            className="bg-gradient-to-r from-yellow-600 to-yellow-500 dark:from-yellow-700 dark:to-yellow-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center justify-center min-h-[44px] min-w-[44px]"
+                            className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center justify-center"
                             title="Edit Data">
                             <i className="fas fa-edit"></i>
                           </button>
                           <button
                             onClick={() => handleDelete(student.id)}
-                            className="bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center justify-center min-h-[44px] min-w-[44px]"
+                            className="bg-gradient-to-r from-red-600 to-red-400 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center justify-center"
                             title="Hapus Data">
                             <i className="fas fa-trash"></i>
                           </button>
@@ -755,31 +724,26 @@ const StudentList = ({
 
       {/* ✅ FIXED: Pagination dengan effectiveTotalPages */}
       {shouldShowPagination && (
-        <div className="flex flex-col sm:flex-row justify-between items-center p-3 sm:p-4 mt-4 sm:mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 gap-3 sm:gap-4">
-          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row justify-between items-center p-4 mt-6 bg-white rounded-xl shadow-lg border border-gray-200 gap-4">
+          <div className="text-sm text-gray-600 text-center sm:text-left">
             Menampilkan{" "}
-            <span className="font-semibold text-gray-800 dark:text-gray-200">
+            <span className="font-semibold">
               {getDisplayNumber(0)}-
               {getDisplayNumber(sortedStudents.length - 1)}
             </span>{" "}
-            dari{" "}
-            <span className="font-semibold text-gray-800 dark:text-gray-200">
-              {totalStudents}
-            </span>{" "}
-            data
+            dari <span className="font-semibold">{totalStudents}</span> data
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <div className="flex gap-1">
               <button
                 onClick={() => onPageChange(currentPageNum - 1)}
                 disabled={currentPageNum === 1}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 min-w-[44px] sm:min-w-[120px] justify-center min-h-[44px] text-gray-800 dark:text-gray-200"
-                title="Halaman Sebelumnya">
+                className="bg-white border border-gray-300 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 min-w-[120px] justify-center">
                 <i className="fas fa-chevron-left"></i>
-                <span className="hidden sm:inline">Sebelumnya</span>
+                <span>Sebelumnya</span>
               </button>
 
-              <div className="flex gap-1 mx-1 sm:mx-2">
+              <div className="flex gap-1 mx-2">
                 {Array.from(
                   { length: Math.min(5, effectiveTotalPages) },
                   (_, i) => {
@@ -798,12 +762,11 @@ const StudentList = ({
                       <button
                         key={pageNum}
                         onClick={() => onPageChange(pageNum)}
-                        className={`min-w-[44px] h-11 sm:h-12 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center justify-center ${
+                        className={`min-w-[44px] h-12 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center ${
                           currentPageNum === pageNum
-                            ? "bg-gradient-to-r from-red-600 to-red-500 dark:from-red-700 dark:to-red-600 text-white shadow-lg"
-                            : "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        }`}
-                        title={`Halaman ${pageNum}`}>
+                            ? "bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg"
+                            : "bg-white border border-gray-300 hover:bg-gray-50"
+                        }`}>
                         {pageNum}
                       </button>
                     );
@@ -814,14 +777,13 @@ const StudentList = ({
               <button
                 onClick={() => onPageChange(currentPageNum + 1)}
                 disabled={currentPageNum === effectiveTotalPages}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-xs sm:text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 min-w-[44px] sm:min-w-[120px] justify-center min-h-[44px] text-gray-800 dark:text-gray-200"
-                title="Halaman Berikutnya">
-                <span className="hidden sm:inline">Berikutnya</span>
+                className="bg-white border border-gray-300 px-4 py-3 rounded-lg text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2 min-w-[120px] justify-center">
+                <span>Berikutnya</span>
                 <i className="fas fa-chevron-right"></i>
               </button>
             </div>
 
-            <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg">
+            <div className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
               Halaman {currentPageNum} dari {effectiveTotalPages}
             </div>
           </div>

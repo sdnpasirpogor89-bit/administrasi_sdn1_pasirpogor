@@ -432,36 +432,37 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">
+    <div className="p-4 md:p-6">
+      {/* HEADER */}
+      <h2 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white mb-6">
         Academic Year Management
       </h2>
 
-      {/* Current Academic Year */}
-      <div className="bg-blue-50 p-6 rounded-lg mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Calendar className="text-blue-600" size={24} />
-          <h3 className="text-lg font-semibold text-blue-900">
+      {/* CURRENT ACADEMIC YEAR CARD */}
+      <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 rounded-lg mb-6 md:mb-8 border border-red-100 dark:border-gray-700">
+        <div className="flex items-center gap-3 mb-3">
+          <Calendar className="text-red-600 dark:text-red-400" size={24} />
+          <h3 className="text-lg md:text-xl font-semibold text-red-900 dark:text-white">
             Tahun Ajaran Aktif
           </h3>
         </div>
-        <p className="text-3xl font-bold text-blue-600 mb-2">
+        <p className="text-3xl md:text-4xl font-bold text-red-600 dark:text-red-400 mb-2">
           {schoolStats.academic_year}
         </p>
-        <p className="text-blue-700">
+        <p className="text-red-700 dark:text-red-300">
           {schoolStats.total_students} siswa aktif dalam{" "}
           {Object.keys(studentsByClass).length} kelas
         </p>
       </div>
 
-      {/* Year Transition */}
+      {/* YEAR TRANSITION SECTION */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
               Transisi Tahun Ajaran
             </h3>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
               Kelola perpindahan ke tahun ajaran berikutnya (termasuk siswa baru
               dari SPMB)
             </p>
@@ -471,40 +472,47 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
             <button
               onClick={generateYearTransitionPreview}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              <Eye size={16} />
-              Preview Naik Kelas
+              className="flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto">
+              <Eye size={18} />
+              <span>Preview Naik Kelas</span>
             </button>
           )}
         </div>
 
-        {/* Transition Preview */}
+        {/* TRANSITION PREVIEW */}
         {yearTransition.preview && (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <CheckCircle className="text-green-600" size={20} />
-              <h4 className="font-semibold text-gray-800">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 md:p-6 rounded-lg">
+            {/* PREVIEW HEADER */}
+            <div className="flex items-center gap-3 mb-6">
+              <CheckCircle
+                className="text-green-600 dark:text-green-400"
+                size={20}
+              />
+              <h4 className="font-semibold text-gray-800 dark:text-white">
                 Preview Transisi: {yearTransition.preview.currentYear} →{" "}
                 {yearTransition.preview.newYear}
               </h4>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              {/* Promotions */}
-              <div>
-                <h5 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-                  <Users size={16} className="text-blue-600" />
+            {/* PREVIEW CARDS - GRID */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
+              {/* PROMOTIONS CARD */}
+              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h5 className="font-medium text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                  <Users size={18} className="text-red-600 dark:text-red-400" />
                   Siswa Naik Kelas
                 </h5>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-3 max-h-[280px] overflow-y-auto pr-2">
                   {Object.entries(yearTransition.preview.promotions).map(
                     ([grade, students]) => (
-                      <div key={grade} className="bg-white p-3 rounded border">
+                      <div
+                        key={grade}
+                        className="bg-white dark:bg-gray-800 p-3 rounded border border-gray-300 dark:border-gray-600">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-blue-600">
+                          <span className="font-medium text-red-600 dark:text-red-400">
                             → Kelas {grade}
                           </span>
-                          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          <span className="text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-3 py-1 rounded">
                             {students.length} siswa
                           </span>
                         </div>
@@ -514,33 +522,43 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                 </div>
               </div>
 
-              {/* NEW STUDENTS FROM SPMB */}
-              <div>
-                <h5 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-                  <UserPlus size={16} className="text-green-600" />
+              {/* NEW STUDENTS CARD */}
+              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h5 className="font-medium text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                  <UserPlus
+                    size={18}
+                    className="text-green-600 dark:text-green-400"
+                  />
                   Siswa Baru (SPMB)
                 </h5>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  <div className="bg-white p-3 rounded border border-green-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-green-600">
+                <div className="space-y-3">
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-medium text-green-700 dark:text-green-400">
                         SPMB → Kelas 1
                       </span>
-                      <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
+                      <span className="text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1 rounded">
                         {yearTransition.preview.newStudents?.length || 0} siswa
                       </span>
                     </div>
                     {yearTransition.preview.newStudents?.length > 0 && (
-                      <div className="mt-2 pt-2 border-t">
-                        <p className="text-xs text-gray-600">Contoh nama:</p>
-                        <ul className="text-xs text-gray-700 mt-1 space-y-0.5">
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          Contoh nama:
+                        </p>
+                        <ul className="text-xs text-gray-700 dark:text-gray-300 space-y-1">
                           {yearTransition.preview.newStudents
                             .slice(0, 3)
                             .map((siswa, idx) => (
-                              <li key={idx}>• {siswa.nama_lengkap}</li>
+                              <li key={idx} className="flex items-start">
+                                <span className="text-green-600 dark:text-green-400 mr-1">
+                                  •
+                                </span>
+                                {siswa.nama_lengkap}
+                              </li>
                             ))}
                           {yearTransition.preview.newStudents.length > 3 && (
-                            <li className="text-gray-500">
+                            <li className="text-gray-500 dark:text-gray-400 pt-1">
                               ... dan{" "}
                               {yearTransition.preview.newStudents.length - 3}{" "}
                               lainnya
@@ -553,8 +571,8 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
                   {(!yearTransition.preview.newStudents ||
                     yearTransition.preview.newStudents.length === 0) && (
-                    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                      <p className="text-xs text-yellow-700">
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300">
                         ℹ️ Tidak ada siswa baru yang diterima untuk tahun ajaran{" "}
                         {yearTransition.preview.newYear}
                       </p>
@@ -563,17 +581,20 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                 </div>
               </div>
 
-              {/* Graduating */}
-              <div>
-                <h5 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
-                  🎓 Siswa Lulus
+              {/* GRADUATING CARD */}
+              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h5 className="font-medium text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                  <span className="text-purple-600 dark:text-purple-400">
+                    🎓
+                  </span>
+                  Siswa Lulus
                 </h5>
-                <div className="bg-white p-3 rounded border">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded border border-gray-300 dark:border-gray-600">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-green-600">
+                    <span className="font-medium text-purple-600 dark:text-purple-400">
                       Kelas 6 → Lulus
                     </span>
-                    <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
+                    <span className="text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-3 py-1 rounded">
                       {yearTransition.preview.graduating.length} siswa
                     </span>
                   </div>
@@ -583,30 +604,31 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
 
             {/* NISN CONFLICT WARNING */}
             {yearTransition.preview.conflictedNISN?.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <div className="flex items-start gap-3">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-4">
                   <AlertTriangle
-                    className="text-red-600 flex-shrink-0 mt-0.5"
-                    size={16}
+                    className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                    size={20}
                   />
                   <div className="flex-1">
-                    <p className="text-red-800 font-medium mb-2">
+                    <p className="text-red-800 dark:text-red-300 font-medium mb-3">
                       ⚠️ Konflik NISN Terdeteksi!
                     </p>
-                    <p className="text-red-700 text-sm mb-2">
+                    <p className="text-red-700 dark:text-red-400 text-sm mb-3">
                       {yearTransition.preview.conflictedNISN.length} siswa baru
                       memiliki NISN yang sudah terdaftar:
                     </p>
-                    <ul className="text-red-700 text-sm space-y-1 list-disc list-inside max-h-32 overflow-y-auto">
+                    <ul className="text-red-700 dark:text-red-400 text-sm space-y-2 list-disc list-inside max-h-[140px] overflow-y-auto pl-2">
                       {yearTransition.preview.conflictedNISN.map(
                         (item, idx) => (
                           <li key={idx}>
-                            {item.nama} (NISN: {item.nisn})
+                            <span className="font-medium">{item.nama}</span>{" "}
+                            (NISN: {item.nisn})
                           </li>
                         )
                       )}
                     </ul>
-                    <p className="text-red-600 text-xs mt-2 font-medium">
+                    <p className="text-red-600 dark:text-red-400 text-xs mt-3 font-medium">
                       Siswa ini TIDAK akan dimasukkan ke sistem. Perbaiki NISN
                       di SPMB terlebih dahulu!
                     </p>
@@ -615,147 +637,180 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
               </div>
             )}
 
-            {/* Summary Statistics */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <h5 className="font-medium text-blue-900 mb-3">
+            {/* SUMMARY STATISTICS */}
+            <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 border border-red-100 dark:border-gray-700 rounded-lg p-4 md:p-6 mb-6">
+              <h5 className="font-medium text-red-900 dark:text-white mb-4">
                 📊 Ringkasan Transisi
               </h5>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="bg-white p-3 rounded">
-                  <p className="text-gray-600">Siswa Naik Kelas</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                {[
+                  {
+                    label: "Siswa Naik Kelas",
+                    value: Object.values(
+                      yearTransition.preview.promotions
+                    ).flat().length,
+                    color: "red",
+                  },
+                  {
+                    label: "Siswa Baru",
+                    value: yearTransition.preview.newStudents?.length || 0,
+                    color: "green",
+                  },
+                  {
+                    label: "Siswa Lulus",
+                    value: yearTransition.preview.graduating.length,
+                    color: "purple",
+                  },
+                  {
+                    label: "Total Aktif Baru",
+                    value:
                       Object.values(yearTransition.preview.promotions).flat()
-                        .length
-                    }
-                  </p>
-                </div>
-                <div className="bg-white p-3 rounded">
-                  <p className="text-gray-600">Siswa Baru</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {yearTransition.preview.newStudents?.length || 0}
-                  </p>
-                </div>
-                <div className="bg-white p-3 rounded">
-                  <p className="text-gray-600">Siswa Lulus</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {yearTransition.preview.graduating.length}
-                  </p>
-                </div>
-                <div className="bg-white p-3 rounded">
-                  <p className="text-gray-600">Total Aktif Baru</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {Object.values(yearTransition.preview.promotions).flat()
-                      .length +
-                      (yearTransition.preview.newStudents?.length || 0)}
-                  </p>
-                </div>
+                        .length +
+                      (yearTransition.preview.newStudents?.length || 0),
+                    color: "orange",
+                  },
+                ].map((stat, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <p className="text-gray-600 dark:text-gray-300 text-xs md:text-sm mb-1">
+                      {stat.label}
+                    </p>
+                    <p
+                      className={`text-2xl md:text-3xl font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* 🆕 SIMULATION SECTION */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="text-purple-600" size={20} />
-                  <h5 className="font-medium text-purple-900">
-                    Testing & Validation
-                  </h5>
+            {/* SIMULATION SECTION */}
+            <div className="bg-gradient-to-r from-purple-50 to-white dark:from-gray-800 dark:to-gray-900 border border-purple-100 dark:border-gray-700 rounded-lg p-4 md:p-6 mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <Zap
+                    className="text-purple-600 dark:text-purple-400"
+                    size={22}
+                  />
+                  <div>
+                    <h5 className="font-medium text-purple-900 dark:text-white">
+                      Testing & Validation
+                    </h5>
+                    <p className="text-purple-700 dark:text-purple-300 text-sm">
+                      Simulasi detail tanpa mengubah database
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={simulateYearTransition}
                   disabled={isSimulating || loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                  className="flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto">
                   {isSimulating ? (
                     <>
-                      <RefreshCw className="animate-spin" size={16} />
-                      Simulating...
+                      <RefreshCw className="animate-spin" size={18} />
+                      <span>Simulating...</span>
                     </>
                   ) : (
                     <>
-                      <BarChart3 size={16} />
-                      🔍 Simulate Transisi
+                      <BarChart3 size={18} />
+                      <span>🔍 Simulate Transisi</span>
                     </>
                   )}
                 </button>
               </div>
-              <p className="text-purple-700 text-sm mb-2">
-                Jalankan simulasi untuk melihat detail lengkap hasil transisi
-                tanpa mengubah database.
-                <strong> Database tetap AMAN!</strong>
-              </p>
-              {!simulationResult && (
-                <div className="bg-purple-100 rounded p-2 text-xs text-purple-800">
+              <div className="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3">
+                <p className="text-purple-800 dark:text-purple-300 text-sm">
                   💡 <strong>Rekomendasi:</strong> Jalankan simulasi terlebih
                   dahulu sebelum execute untuk memastikan semua data valid!
-                </div>
-              )}
+                </p>
+              </div>
             </div>
 
-            {/* 🆕 SIMULATION RESULTS */}
+            {/* SIMULATION RESULTS */}
             {simulationResult && (
-              <div className="bg-white border-2 border-purple-300 rounded-lg p-4 mb-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle className="text-purple-600" size={20} />
-                  <h5 className="font-semibold text-purple-900">
-                    📊 Hasil Simulasi
-                  </h5>
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+              <div className="bg-white dark:bg-gray-800 border-2 border-purple-300 dark:border-purple-700 rounded-lg p-4 md:p-6 mb-6">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle
+                      className="text-purple-600 dark:text-purple-400"
+                      size={22}
+                    />
+                    <h5 className="font-semibold text-purple-900 dark:text-white">
+                      📊 Hasil Simulasi
+                    </h5>
+                  </div>
+                  <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-3 py-1 rounded inline-block md:ml-auto">
                     {new Date(simulationResult.timestamp).toLocaleString(
                       "id-ID"
                     )}
                   </span>
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-600 mb-1">Naik Kelas</p>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {simulationResult.summary.totalPromoted}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
-                    <p className="text-xs text-green-600 mb-1">Siswa Baru</p>
-                    <p className="text-2xl font-bold text-green-700">
-                      {simulationResult.summary.totalNewStudents}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
-                    <p className="text-xs text-purple-600 mb-1">Lulus</p>
-                    <p className="text-2xl font-bold text-purple-700">
-                      {simulationResult.summary.totalGraduated}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
-                    <p className="text-xs text-orange-600 mb-1">Total Aktif</p>
-                    <p className="text-2xl font-bold text-orange-700">
-                      {simulationResult.summary.totalActiveAfter}
-                    </p>
-                    <p className="text-xs mt-1">
-                      {simulationResult.summary.netChange > 0 ? "+" : ""}
-                      {simulationResult.summary.netChange} dari sebelumnya
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
-                    <p className="text-xs text-gray-600 mb-1">Status</p>
-                    <p
-                      className={`text-lg font-bold ${
-                        simulationResult.isValid
-                          ? "text-green-700"
-                          : "text-red-700"
-                      }`}>
-                      {simulationResult.isValid ? "✅ VALID" : "⚠️ PERHATIAN"}
-                    </p>
-                  </div>
+                {/* SUMMARY CARDS */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                  {[
+                    {
+                      label: "Naik Kelas",
+                      value: simulationResult.summary.totalPromoted,
+                      color: "blue",
+                    },
+                    {
+                      label: "Siswa Baru",
+                      value: simulationResult.summary.totalNewStudents,
+                      color: "green",
+                    },
+                    {
+                      label: "Lulus",
+                      value: simulationResult.summary.totalGraduated,
+                      color: "purple",
+                    },
+                    {
+                      label: "Total Aktif",
+                      value: simulationResult.summary.totalActiveAfter,
+                      subtext: `${
+                        simulationResult.summary.netChange > 0 ? "+" : ""
+                      }${simulationResult.summary.netChange} dari sebelumnya`,
+                      color: "orange",
+                    },
+                    {
+                      label: "Status",
+                      value: simulationResult.isValid ? "VALID" : "PERHATIAN",
+                      isStatus: true,
+                      color: simulationResult.isValid ? "green" : "red",
+                    },
+                  ].map((stat, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-gray-600 dark:text-gray-300 text-xs mb-1">
+                        {stat.label}
+                      </p>
+                      <p
+                        className={`text-xl md:text-2xl font-bold ${
+                          stat.isStatus
+                            ? simulationResult.isValid
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
+                            : `text-${stat.color}-600 dark:text-${stat.color}-400`
+                        }`}>
+                        {stat.value}
+                      </p>
+                      {stat.subtext && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {stat.subtext}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
-                {/* Distribution by Class */}
-                <div className="mb-4">
-                  <h6 className="font-medium text-gray-800 mb-2">
+                {/* DISTRIBUTION BY CLASS */}
+                <div className="mb-6">
+                  <h6 className="font-medium text-gray-800 dark:text-white mb-4">
                     📈 Distribusi per Kelas Setelah Transisi:
                   </h6>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                     {Object.entries(
                       simulationResult.detailedChanges.studentsByNewClass
                     )
@@ -763,14 +818,14 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                       .map(([kelas, students]) => (
                         <div
                           key={kelas}
-                          className="bg-white p-3 rounded border">
-                          <p className="font-bold text-center text-blue-700">
+                          className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                          <p className="font-bold text-red-600 dark:text-red-400 text-sm mb-1">
                             Kelas {kelas}
                           </p>
-                          <p className="text-2xl font-bold text-center">
+                          <p className="text-2xl font-bold text-gray-800 dark:text-white">
                             {students.length}
                           </p>
-                          <p className="text-xs text-gray-500 text-center">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             siswa
                           </p>
                         </div>
@@ -778,19 +833,19 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                   </div>
                 </div>
 
-                {/* Warnings */}
+                {/* WARNINGS */}
                 {simulationResult.warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-3">
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                    <div className="flex items-start gap-4">
                       <AlertTriangle
-                        className="text-yellow-600 flex-shrink-0 mt-0.5"
-                        size={16}
+                        className="text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5"
+                        size={20}
                       />
                       <div className="flex-1">
-                        <p className="text-yellow-800 font-medium mb-2">
+                        <p className="text-yellow-800 dark:text-yellow-300 font-medium mb-3">
                           ⚠️ Peringatan dari Sistem:
                         </p>
-                        <ul className="text-yellow-700 text-sm space-y-1 list-disc list-inside max-h-32 overflow-y-auto">
+                        <ul className="text-yellow-700 dark:text-yellow-400 text-sm space-y-2 list-disc list-inside pl-2">
                           {simulationResult.warnings.map((warning, idx) => (
                             <li key={idx}>{warning}</li>
                           ))}
@@ -800,24 +855,30 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                   </div>
                 )}
 
-                {/* Simulation Status */}
+                {/* SIMULATION STATUS */}
                 <div
-                  className={`p-3 rounded-lg mb-4 ${
+                  className={`rounded-lg p-4 mb-4 ${
                     simulationResult.isValid
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-red-50 border border-red-200"
+                      ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                      : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
                   }`}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {simulationResult.isValid ? (
-                      <CheckCircle className="text-green-600" size={20} />
+                      <CheckCircle
+                        className="text-green-600 dark:text-green-400"
+                        size={20}
+                      />
                     ) : (
-                      <AlertTriangle className="text-red-600" size={20} />
+                      <AlertTriangle
+                        className="text-red-600 dark:text-red-400"
+                        size={20}
+                      />
                     )}
                     <p
                       className={`font-medium ${
                         simulationResult.isValid
-                          ? "text-green-800"
-                          : "text-red-800"
+                          ? "text-green-800 dark:text-green-300"
+                          : "text-red-800 dark:text-red-300"
                       }`}>
                       {simulationResult.isValid
                         ? "✅ Simulasi menunjukkan transisi dapat dilakukan dengan aman."
@@ -828,18 +889,18 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
               </div>
             )}
 
-            {/* Execute Button */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
+            {/* EXECUTE SECTION */}
+            <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 border border-red-200 dark:border-gray-700 rounded-lg p-4 md:p-6">
+              <div className="flex items-start gap-4">
                 <AlertTriangle
-                  className="text-yellow-600 flex-shrink-0 mt-0.5"
-                  size={16}
+                  className="text-red-600 dark:text-red-400 flex-shrink-0 mt-1"
+                  size={22}
                 />
                 <div className="flex-1">
-                  <p className="text-yellow-800 font-medium mb-2">
+                  <p className="text-red-800 dark:text-red-300 font-medium mb-4">
                     Peringatan: Tindakan Permanen
                   </p>
-                  <ul className="text-yellow-700 text-sm space-y-1 mb-4 list-disc list-inside">
+                  <ul className="text-red-700 dark:text-red-400 text-sm space-y-2 mb-6 list-disc list-inside pl-2">
                     <li>Semua siswa akan naik kelas</li>
                     <li>Siswa kelas 6 akan diluluskan</li>
                     <li>
@@ -852,18 +913,15 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                     </li>
                   </ul>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={executeYearTransition}
                       disabled={loading || yearTransition.inProgress}
-                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium">
+                      className="flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium w-full sm:w-auto">
                       {yearTransition.inProgress ? (
                         <>
-                          <RefreshCw
-                            className="animate-spin inline mr-2"
-                            size={16}
-                          />
-                          Memproses...
+                          <RefreshCw className="animate-spin" size={18} />
+                          <span>Memproses...</span>
                         </>
                       ) : (
                         "Mulai Tahun Ajaran Baru"
@@ -880,7 +938,7 @@ const AcademicYearTab = ({ user, loading, setLoading, showToast }) => {
                         setSimulationResult(null);
                       }}
                       disabled={yearTransition.inProgress}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50">
+                      className="px-5 py-3 min-h-[44px] bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 w-full sm:w-auto">
                       Batal
                     </button>
                   </div>
