@@ -17,8 +17,7 @@ import {
   prosesKatrolSemua,
   hitungNilaiAkhir,
   exportToExcelMultiSheet,
-  exportLeger,
-} from "./Utils";
+} from "./Utils"; // 🔥 HAPUS exportLeger dari import
 
 const Katrol = ({ userData: initialUserData }) => {
   const [userData, setUserData] = useState(initialUserData);
@@ -27,7 +26,6 @@ const Katrol = ({ userData: initialUserData }) => {
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [exportingLeger, setExportingLeger] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dataNilai, setDataNilai] = useState([]);
   const [dataGrouped, setDataGrouped] = useState([]);
@@ -762,38 +760,6 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   };
 
-  const handleExportLeger = async () => {
-    if (!selectedClass) {
-      showMessage("Pilih kelas terlebih dahulu", "error");
-      return;
-    }
-
-    if (!activeAcademicYear) {
-      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
-      return;
-    }
-
-    setExportingLeger(true);
-    try {
-      const result = await exportLeger(
-        selectedClass,
-        supabase,
-        activeAcademicYear.year,
-        activeAcademicYear.semester
-      );
-
-      showMessage(
-        `✅ Berhasil export Leger Nilai (${result.count} siswa)`,
-        "success"
-      );
-    } catch (error) {
-      console.error("Error exporting leger:", error);
-      showMessage(`Gagal export leger: ${error.message}`, "error");
-    } finally {
-      setExportingLeger(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6">
       {/* Header */}
@@ -1022,7 +988,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 ) : (
                   <>
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan Katrol</span>
+                    <span>Simpan Nilai Katrol</span>
                   </>
                 )}
               </button>
@@ -1044,42 +1010,20 @@ const Katrol = ({ userData: initialUserData }) => {
                 ) : (
                   <>
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan KKM</span>
+                    <span>Simpan Pengaturan KKM</span>
                   </>
                 )}
               </button>
             )}
 
-            {/* Export Buttons */}
+            {/* Export Button */}
             {hasilKatrol.length > 0 && (
-              <>
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
-                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Export Nilai Katrol</span>
-                </button>
-              </>
-            )}
-
-            {/* Tombol Export Leger */}
-            {selectedClass && (
               <button
-                onClick={handleExportLeger}
-                disabled={exportingLeger}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
-                {exportingLeger ? (
-                  <>
-                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span>Exporting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Export Leger</span>
-                  </>
-                )}
+                onClick={handleExport}
+                disabled={exporting}
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+                <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Export Nilai Katrol</span>
               </button>
             )}
           </div>

@@ -169,7 +169,7 @@ const Layout = ({
     });
   };
 
-  // Get current page name from location - ✅ UPDATED FOR SUBMENU
+  // Get current page name from location - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI)
   const getCurrentPageName = () => {
     const pathMap = {
       "/dashboard": "Dashboard",
@@ -178,8 +178,9 @@ const Layout = ({
       "/teachers": "Data Guru",
       "/attendance": "Presensi Siswa",
       "/teacher-attendance": "Presensi Guru",
-      "/grades": "Nilai Asli", // ✅ UPDATED
-      "/grades/katrol": "Nilai Katrol", // ✅ ADDED
+      "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
+      "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
+      "/grades/cek": "Cek Nilai", // ✅ SUBMENU NILAI BARU!
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
       "/spmb": "SPMB",
@@ -190,7 +191,7 @@ const Layout = ({
     return pathMap[location.pathname] || "Dashboard";
   };
 
-  // Mobile-optimized page names - ✅ UPDATED FOR SUBMENU
+  // Mobile-optimized page names - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI)
   const getMobilePageName = () => {
     const mobileNames = {
       "/dashboard": "Dashboard",
@@ -199,8 +200,9 @@ const Layout = ({
       "/teachers": "Guru",
       "/attendance": "Presensi",
       "/teacher-attendance": "Presensi Guru",
-      "/grades": "Nilai Asli", // ✅ UPDATED
-      "/grades/katrol": "Nilai Katrol", // ✅ ADDED
+      "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
+      "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
+      "/grades/cek": "Cek Nilai", // ✅ SUBMENU NILAI BARU!
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
       "/spmb": "SPMB",
@@ -213,7 +215,7 @@ const Layout = ({
 
   const currentPageName = isMobile ? getMobilePageName() : getCurrentPageName();
 
-  // Simplified navigation - ✅ UPDATED FOR SUBMENU
+  // Simplified navigation - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI)
   const handleMenuClick = useCallback(
     (menuName) => {
       if (isNavigating) return;
@@ -231,9 +233,10 @@ const Layout = ({
         "Presensi Guru": "/teacher-attendance",
         Presensi: "/attendance",
 
-        // ✅ UPDATED: Nilai submenu mapping
-        "Nilai Asli": "/grades", // ✅ ADD
-        "Nilai Katrol": "/grades/katrol", // ✅ ADD
+        // ✅ UPDATED: Nilai submenu mapping (DITAMBAH CEK NILAI)
+        "Nilai Asli": "/grades",
+        "Nilai Katrol": "/grades/katrol",
+        "Cek Nilai": "/grades/cek", // ✅ NAVIGASI KE SUBMENU BARU!
         "Nilai Siswa": "/grades", // ✅ KEEP for parent menu
         Nilai: "/grades", // ✅ KEEP for mobile
 

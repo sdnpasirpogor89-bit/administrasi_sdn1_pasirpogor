@@ -66,10 +66,11 @@ const Sidebar = ({
           {
             name: "Nilai Siswa",
             icon: BarChart3,
-            hasSubmenu: true, // ✅ FLAG SUBMENU
+            hasSubmenu: true,
             submenu: [
               { name: "Nilai Asli", path: "/grades" },
               { name: "Nilai Katrol", path: "/grades/katrol" },
+              { name: "Cek Nilai", path: "/grades/cek" }, // ← TAMBAHAN
             ],
           },
           { name: "Catatan Siswa", icon: BookOpen },
@@ -112,10 +113,11 @@ const Sidebar = ({
           {
             name: "Nilai Siswa",
             icon: BarChart3,
-            hasSubmenu: true, // ✅ FLAG SUBMENU
+            hasSubmenu: true,
             submenu: [
               { name: "Nilai Asli", path: "/grades" },
               { name: "Nilai Katrol", path: "/grades/katrol" },
+              { name: "Cek Nilai", path: "/grades/cek" }, // ← TAMBAHAN
             ],
           },
           { name: "Catatan Siswa", icon: BookOpen },
@@ -150,10 +152,11 @@ const Sidebar = ({
           {
             name: "Nilai Siswa",
             icon: BarChart3,
-            hasSubmenu: true, // ✅ FLAG SUBMENU
+            hasSubmenu: true,
             submenu: [
               { name: "Nilai Asli", path: "/grades" },
               { name: "Nilai Katrol", path: "/grades/katrol" },
+              { name: "Cek Nilai", path: "/grades/cek" }, // ← TAMBAHAN
             ],
           },
           { name: "Catatan Siswa", icon: BookOpen },
