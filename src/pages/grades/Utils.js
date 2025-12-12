@@ -826,7 +826,9 @@ export const exportLeger = async (
       "Pendidikan Pancasila": "pancasila",
       "Seni Budaya": "senbud",
       "Pendidikan Agama dan Budi Pekerti (PABP)": "pabp",
+      PABP: "pabp", // ✅ TAMBAHKAN SHORTHAND
       "Pendidikan Jasmani Olahraga Kesehatan": "pjok",
+      PJOK: "pjok", // ✅ TAMBAHKAN SHORTHAND
     };
 
     const siswaMap = new Map();
