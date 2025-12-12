@@ -16,13 +16,34 @@ export const groupDataByNISN = (rawData) => {
         nisn: item.nisn,
         nama_siswa: item.nama_siswa,
         nilai: {
-          NH1: item.nh1 !== null && item.nh1 !== undefined ? item.nh1 : null,
-          NH2: item.nh2 !== null && item.nh2 !== undefined ? item.nh2 : null,
-          NH3: item.nh3 !== null && item.nh3 !== undefined ? item.nh3 : null,
-          NH4: item.nh4 !== null && item.nh4 !== undefined ? item.nh4 : null,
-          NH5: item.nh5 !== null && item.nh5 !== undefined ? item.nh5 : null,
-          UTS: item.uts !== null && item.uts !== undefined ? item.uts : null,
-          UAS: item.uas !== null && item.uas !== undefined ? item.uas : null,
+          NH1:
+            item.nh1 !== null && item.nh1 !== undefined
+              ? Math.round(item.nh1)
+              : null, // ✅ DIBULATKAN
+          NH2:
+            item.nh2 !== null && item.nh2 !== undefined
+              ? Math.round(item.nh2)
+              : null, // ✅ DIBULATKAN
+          NH3:
+            item.nh3 !== null && item.nh3 !== undefined
+              ? Math.round(item.nh3)
+              : null, // ✅ DIBULATKAN
+          NH4:
+            item.nh4 !== null && item.nh4 !== undefined
+              ? Math.round(item.nh4)
+              : null, // ✅ DIBULATKAN
+          NH5:
+            item.nh5 !== null && item.nh5 !== undefined
+              ? Math.round(item.nh5)
+              : null, // ✅ DIBULATKAN
+          UTS:
+            item.uts !== null && item.uts !== undefined
+              ? Math.round(item.uts)
+              : null, // ✅ DIBULATKAN
+          UAS:
+            item.uas !== null && item.uas !== undefined
+              ? Math.round(item.uas)
+              : null, // ✅ DIBULATKAN
         },
         nilai_katrol: {},
       };
@@ -76,7 +97,7 @@ export const katrolNilaiPerJenis = (
       ...siswa,
       nilai_katrol: {
         ...siswa.nilai_katrol,
-        // ✅ UBAH: Pembulatan jadi INTEGER (2 angka)
+        // ✅ DIBULATKAN jadi 2 angka integer
         [jenisNilai]: Math.round(nilaiKatrol),
       },
     };
@@ -133,7 +154,8 @@ export const hitungNilaiAkhir = (dataSiswa) => {
 
     return {
       ...siswa,
-      rata_NH_asli: Math.round(rataNH_asli * 100) / 100,
+      // ✅ SEMUA DIBULATKAN jadi 2 angka integer
+      rata_NH_asli: Math.round(rataNH_asli),
       rata_NH_katrol: Math.round(rataNH_katrol),
       nilai_akhir_asli: Math.round(nilaiAkhirAsli),
       nilai_akhir_katrol: Math.round(nilaiAkhirKatrol),
@@ -286,24 +308,10 @@ export const exportToExcelMultiSheet = async (
       if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
 
-        // ✅ UBAH: Semua kolom nilai katrol jadi INTEGER (format "0")
-        if (
-          colNumber === 5 ||
-          colNumber === 7 ||
-          colNumber === 9 ||
-          colNumber === 11 ||
-          colNumber === 13 ||
-          colNumber === 15 ||
-          colNumber === 17 ||
-          colNumber === 19 ||
-          colNumber === 20 ||
-          colNumber === 21
-        ) {
-          cell.numFmt = "0"; // Format integer untuk kolom katrol
-          if (colNumber === 21) cell.font = { bold: true };
-        } else {
-          cell.numFmt = "0.00"; // Kolom asli tetap 2 desimal
-        }
+        // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
+        cell.numFmt = "0";
+
+        if (colNumber === 21) cell.font = { bold: true };
       } else {
         cell.alignment = {
           vertical: "middle",
@@ -424,7 +432,7 @@ export const exportToExcelMultiSheet = async (
 
       if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-        // ✅ UBAH: Semua kolom nilai katrol jadi INTEGER (format "0")
+        // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
         cell.numFmt = "0";
         if (colNumber === 11) cell.font = { bold: true };
       } else {
@@ -609,23 +617,8 @@ export const exportToExcel = async (
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          // ✅ UBAH: Kolom katrol jadi integer
-          if (
-            colNumber === 5 ||
-            colNumber === 7 ||
-            colNumber === 9 ||
-            colNumber === 11 ||
-            colNumber === 13 ||
-            colNumber === 15 ||
-            colNumber === 17 ||
-            colNumber === 19 ||
-            colNumber === 20 ||
-            colNumber === 21
-          ) {
-            cell.numFmt = "0";
-          } else {
-            cell.numFmt = "0.00";
-          }
+          // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
+          cell.numFmt = "0";
           if (colNumber === numColumns) cell.font = { bold: true };
         } else {
           cell.alignment = {
@@ -725,7 +718,7 @@ export const exportToExcel = async (
 
         if (colNumber >= 4) {
           cell.alignment = { vertical: "middle", horizontal: "center" };
-          // ✅ UBAH: Semua kolom nilai katrol jadi integer
+          // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
           cell.numFmt = "0";
           if (colNumber === numColumns) cell.font = { bold: true };
         } else {
@@ -837,7 +830,7 @@ export const exportLeger = async (
       const siswaData = siswaMap.get(item.nisn);
       const shorthand = mapelMapping[item.mata_pelajaran];
       if (shorthand) {
-        siswaData[shorthand] = item.nilai_akhir;
+        siswaData[shorthand] = item.nilai_akhir; // Sudah integer dari database
       }
     });
 
@@ -864,7 +857,7 @@ export const exportLeger = async (
           ? nilaiValid.reduce((sum, n) => sum + n, 0)
           : null;
       const rataRata =
-        nilaiValid.length > 0 ? Math.round(jumlah / nilaiValid.length) : null; // ✅ REVISI: DIBULATKAN
+        nilaiValid.length > 0 ? Math.round(jumlah / nilaiValid.length) : null; // ✅ DIBULATKAN
 
       legerData.push({
         no: index + 1,
@@ -1037,13 +1030,10 @@ export const exportLeger = async (
           cell.alignment = { vertical: "middle", horizontal: "center" };
 
           if (cell.value !== "-" && typeof cell.value === "number") {
-            if (colNumber === 14) {
-              cell.numFmt = "0"; // ✅ REVISI: Rata-rata jadi integer
+            // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
+            cell.numFmt = "0";
+            if (colNumber === 14 || colNumber === 13) {
               cell.font = { bold: true };
-            } else if (colNumber === 13) {
-              cell.font = { bold: true };
-            } else {
-              cell.numFmt = "0"; // ✅ REVISI: Semua nilai mapel jadi integer
             }
           }
         }
@@ -1214,13 +1204,10 @@ export const exportLeger = async (
           cell.alignment = { vertical: "middle", horizontal: "center" };
 
           if (cell.value !== "-" && typeof cell.value === "number") {
-            if (colNumber === 14) {
-              cell.numFmt = "0"; // ✅ REVISI: Rata-rata jadi integer
+            // ✅ SEMUA KOLOM NILAI FORMAT INTEGER "0"
+            cell.numFmt = "0";
+            if (colNumber === 14 || colNumber === 13) {
               cell.font = { bold: true };
-            } else if (colNumber === 13) {
-              cell.font = { bold: true };
-            } else {
-              cell.numFmt = "0"; // ✅ REVISI: Semua nilai mapel jadi integer
             }
           }
         }
