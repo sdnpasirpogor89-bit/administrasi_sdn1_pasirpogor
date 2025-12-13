@@ -1,9 +1,9 @@
-// CekNilai.js - Component (Mobile First + Dark Mode + Tema MERAH) - REVISI
+// RekapNilai.js - Component (Mobile First + Dark Mode + Tema MERAH)
 import React, { useState, useEffect } from "react";
 import { exportLeger } from "./Utils";
 import { supabase } from "../../supabaseClient";
 
-const CekNilai = ({ userData: initialUserData }) => {
+const RekapNilai = ({ userData: initialUserData }) => {
   const [kelasList, setKelasList] = useState([]);
   const [selectedKelas, setSelectedKelas] = useState("");
   const [data, setData] = useState([]);
@@ -621,4 +621,4 @@ const CekNilai = ({ userData: initialUserData }) => {
   );
 };
 
-export default CekNilai;
+export default RekapNilai;

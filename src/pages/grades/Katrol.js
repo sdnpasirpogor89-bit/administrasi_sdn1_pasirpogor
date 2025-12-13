@@ -762,7 +762,7 @@ const Katrol = ({ userData: initialUserData }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6">
-      {/* Header */}
+      {/* Header dengan tema merah-putih */}
       <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
         <div className="bg-gradient-to-r from-red-600 to-red-700 dark:from-red-950 dark:to-red-900 rounded-xl shadow-lg p-4 sm:p-6 text-white">
           <div className="flex items-center gap-2 sm:gap-3 mb-2">
@@ -791,9 +791,9 @@ const Katrol = ({ userData: initialUserData }) => {
         </div>
       )}
 
-      {/* Filter Section */}
+      {/* Filter Section - Responsive dengan tema merah */}
       <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 border border-gray-100 dark:border-gray-700">
           <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 dark:text-gray-200">
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-500" />
             Filter Data
@@ -806,7 +806,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 Kelas
               </label>
               {userData?.role === "guru_kelas" ? (
-                <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
+                <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
                   <span className="font-semibold">Kelas {selectedClass}</span>
                 </div>
               ) : (
@@ -836,7 +836,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 Mata Pelajaran
               </label>
               {userData?.role === "guru_mapel" ? (
-                <div className="bg-gray-100 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
+                <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
                   <span className="font-semibold">{selectedSubject}</span>
                 </div>
               ) : (
@@ -872,7 +872,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 value={kkmInput}
                 onChange={(e) => handleKkmChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
-                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800 transition-colors"
+                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500 transition-colors"
                 placeholder="KKM"
               />
             </div>
@@ -889,7 +889,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 value={nilaiMaksimalInput}
                 onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
                 disabled={!selectedSubject || loadingSettings}
-                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 disabled:dark:bg-gray-800 transition-colors"
+                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500 transition-colors"
                 placeholder="Nilai Max"
               />
             </div>
@@ -897,8 +897,8 @@ const Katrol = ({ userData: initialUserData }) => {
 
           {/* Warning KKM > Nilai Maksimal */}
           {kkm > nilaiMaksimal && selectedSubject && (
-            <div className="mb-4 flex items-center gap-2 text-red-600 dark:text-red-400 text-xs sm:text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-4 flex items-start sm:items-center gap-2 text-red-600 dark:text-red-400 text-xs sm:text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
               <span>KKM tidak boleh lebih besar dari Nilai Maksimal!</span>
             </div>
           )}
@@ -922,31 +922,33 @@ const Katrol = ({ userData: initialUserData }) => {
             </div>
           )}
 
-          {/* Action Buttons - Mobile Responsive */}
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-            {/* Tombol Simpan Settings - SEKARANG PERTAMA */}
+          {/* Action Buttons - Mobile Responsive dengan touch target 44px */}
+          <div className="flex flex-col xs:flex-row flex-wrap gap-2 sm:gap-3">
+            {/* Simpan Settings */}
             {selectedClass && selectedSubject && (
               <button
                 onClick={saveSettings}
                 disabled={
                   savingSettings || kkm > nilaiMaksimal || !settingsChanged
                 }
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
                 {savingSettings ? (
                   <>
                     <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span>Menyimpan...</span>
+                    <span className="whitespace-nowrap">Menyimpan...</span>
                   </>
                 ) : (
                   <>
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan Pengaturan KKM</span>
+                    <span className="whitespace-nowrap">
+                      Simpan Pengaturan KKM
+                    </span>
                   </>
                 )}
               </button>
             )}
 
-            {/* Tombol Muat Data - SEKARANG KEDUA */}
+            {/* Muat Data */}
             <button
               onClick={fetchDataNilai}
               disabled={
@@ -955,21 +957,21 @@ const Katrol = ({ userData: initialUserData }) => {
                 loading ||
                 kkm > nilaiMaksimal
               }
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
               {loading ? (
                 <>
                   <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  <span>Memuat Data...</span>
+                  <span className="whitespace-nowrap">Memuat Data...</span>
                 </>
               ) : (
                 <>
                   <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Muat Data Nilai</span>
+                  <span className="whitespace-nowrap">Muat Data Nilai</span>
                 </>
               )}
             </button>
 
-            {/* Tombol Proses Katrol - SEKARANG KETIGA */}
+            {/* Proses Katrol */}
             <button
               onClick={prosesKatrol}
               disabled={
@@ -978,16 +980,16 @@ const Katrol = ({ userData: initialUserData }) => {
                 processing ||
                 kkm > nilaiMaksimal
               }
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
               {processing ? (
                 <>
                   <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  <span>Memproses...</span>
+                  <span className="whitespace-nowrap">Memproses...</span>
                 </>
               ) : (
                 <>
                   <Calculator className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>
+                  <span className="whitespace-nowrap">
                     {hasilKatrol.length > 0
                       ? "Proses Ulang Katrol"
                       : "Proses Katrol"}
@@ -996,21 +998,23 @@ const Katrol = ({ userData: initialUserData }) => {
               )}
             </button>
 
-            {/* Tombol Simpan Nilai Katrol */}
+            {/* Simpan Nilai Katrol */}
             {hasilKatrol.length > 0 && (
               <button
                 onClick={saveKatrolToDatabase}
                 disabled={saving}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
                 {saving ? (
                   <>
                     <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span>Menyimpan...</span>
+                    <span className="whitespace-nowrap">Menyimpan...</span>
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Simpan Nilai Katrol</span>
+                    <span className="whitespace-nowrap">
+                      Simpan Nilai Katrol
+                    </span>
                   </>
                 )}
               </button>
@@ -1021,9 +1025,9 @@ const Katrol = ({ userData: initialUserData }) => {
               <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-2.5 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white rounded-lg disabled:bg-gray-300 disabled:dark:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] sm:min-h-0">
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
                 <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>Export Nilai Katrol</span>
+                <span className="whitespace-nowrap">Export Nilai Katrol</span>
               </button>
             )}
           </div>
@@ -1034,10 +1038,10 @@ const Katrol = ({ userData: initialUserData }) => {
       {message.text && (
         <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
           <div
-            className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
+            className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg text-sm sm:text-base border ${
               message.type === "success"
-                ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-800"
-                : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-800"
+                ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
+                : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
             }`}>
             {message.type === "success" ? (
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 sm:mt-0" />
@@ -1054,12 +1058,12 @@ const Katrol = ({ userData: initialUserData }) => {
         {/* Preview Table */}
         {showPreview && dataGrouped.length > 0 && (
           <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 mb-4 border border-gray-100 dark:border-gray-700">
               <h3 className="text-lg font-semibold mb-4 dark:text-gray-200 flex items-center gap-2">
                 <Eye className="w-5 h-5 text-red-600 dark:text-red-500" />
                 Preview Data Nilai ({dataGrouped.length} siswa)
               </h3>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
                 <div className="min-w-full inline-block align-middle">
                   <div className="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -1074,7 +1078,6 @@ const Katrol = ({ userData: initialUserData }) => {
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                             Nama Siswa
                           </th>
-                          {/* 🔥 BARU: Render kolom NH secara dinamis */}
                           {availableNH.map((nh) => (
                             <th
                               key={nh}
@@ -1104,7 +1107,6 @@ const Katrol = ({ userData: initialUserData }) => {
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                               {item.nama_siswa}
                             </td>
-                            {/* 🔥 BARU: Render nilai NH secara dinamis */}
                             {availableNH.map((nh) => (
                               <td
                                 key={nh}
@@ -1138,7 +1140,7 @@ const Katrol = ({ userData: initialUserData }) => {
         {/* Results Table */}
         {hasilKatrol.length > 0 && (
           <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 border border-gray-100 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                 <h3 className="text-lg font-semibold dark:text-gray-200 flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-green-600 dark:text-green-500" />
@@ -1166,7 +1168,6 @@ const Katrol = ({ userData: initialUserData }) => {
                 </div>
               </div>
 
-              {/* 🔥 CATATAN: KatrolTable akan menampilkan BOTH nilai asli dan nilai katrol */}
               <KatrolTable data={hasilKatrol} availableNH={availableNH} />
 
               <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
@@ -1175,7 +1176,7 @@ const Katrol = ({ userData: initialUserData }) => {
                   Maksimal:{" "}
                   <span className="font-semibold">{nilaiMaksimal}</span>
                 </p>
-                <p className="font-mono text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                <p className="font-mono text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">
                   Nilai Akhir = KKM + ((Nilai Mentah - Min) / (Max - Min)) ×
                   (Nilai Maksimal - KKM)
                 </p>
@@ -1207,7 +1208,7 @@ const Katrol = ({ userData: initialUserData }) => {
                 <button
                   onClick={fetchDataNilai}
                   disabled={!selectedClass || !selectedSubject}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   Muat Data Sekarang
                 </button>
               </div>
