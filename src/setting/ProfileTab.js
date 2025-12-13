@@ -808,11 +808,6 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                       <span>{profileData.mata_pelajaran}</span>
                     </div>
                   )}
-
-                  <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="flex-shrink-0" />
-                    <span>Bergabung {accountAge} hari yang lalu</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1101,7 +1096,7 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                     Kelas
                   </p>
                   <p className="text-gray-900 dark:text-white font-medium">
-                    Kelas {profileData.kelas}
+                    Guru Kelas {profileData.kelas}
                   </p>
                 </div>
               )}
@@ -1127,25 +1122,6 @@ const ProfileTab = ({ userId, user, showToast, loading, setLoading }) => {
                   </p>
                 </div>
               )}
-
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold mb-1">
-                  Bergabung Pada
-                </p>
-                <p className="text-gray-900 dark:text-white font-medium">
-                  {new Date(profileData.created_at).toLocaleDateString(
-                    "id-ID",
-                    {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    }
-                  )}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {accountAge} hari yang lalu
-                </p>
-              </div>
 
               {profileData.role === "admin" && (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">

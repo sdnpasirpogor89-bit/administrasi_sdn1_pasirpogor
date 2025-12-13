@@ -76,18 +76,6 @@ const Sidebar = ({
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
           { name: "Laporan", icon: FileText },
-          {
-            name: "E-Raport", // ← MENU BARU
-            icon: ClipboardList,
-            hasSubmenu: true,
-            submenu: [
-              { name: "Input TP/ATP", path: "/eraport/tp" },
-              { name: "Input Nilai", path: "/eraport/nilai" },
-              { name: "Input Kehadiran", path: "/eraport/kehadiran" },
-              { name: "Input Catatan", path: "/eraport/catatan" },
-              { name: "Cetak Raport", path: "/eraport/cetak" },
-            ],
-          },
         ],
       },
       {
@@ -135,18 +123,6 @@ const Sidebar = ({
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
           { name: "Laporan", icon: FileText },
-          {
-            name: "E-Raport", // ← MENU BARU
-            icon: ClipboardList,
-            hasSubmenu: true,
-            submenu: [
-              { name: "Input TP/ATP", path: "/eraport/tp" },
-              { name: "Input Nilai", path: "/eraport/nilai" },
-              { name: "Input Kehadiran", path: "/eraport/kehadiran" },
-              { name: "Input Catatan", path: "/eraport/catatan" },
-              { name: "Cetak Raport", path: "/eraport/cetak" },
-            ],
-          },
         ],
       },
     ],
@@ -186,18 +162,6 @@ const Sidebar = ({
           { name: "Catatan Siswa", icon: BookOpen },
           { name: "Jadwal Pelajaran", icon: CalendarDays },
           { name: "Laporan", icon: FileText },
-          {
-            name: "E-Raport", // ← MENU BARU
-            icon: ClipboardList,
-            hasSubmenu: true,
-            submenu: [
-              { name: "Input TP/ATP", path: "/eraport/tp" },
-              { name: "Input Nilai", path: "/eraport/nilai" },
-              { name: "Input Kehadiran", path: "/eraport/kehadiran" },
-              { name: "Input Catatan", path: "/eraport/catatan" },
-              { name: "Cetak Raport", path: "/eraport/cetak" },
-            ],
-          },
         ],
       },
     ],

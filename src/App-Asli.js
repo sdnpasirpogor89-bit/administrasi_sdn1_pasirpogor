@@ -32,59 +32,11 @@ import MaintenancePage from "./setting/MaintenancePage";
 import AdminPanel from "./setting/AdminPanel";
 import TeacherAttendance from "./attendance-teacher/TeacherAttendance";
 
-// TAMBAH IMPORT E-RAPORT
-import InputTP from "./e-raport/InputTP";
-import InputNilai from "./e-raport/InputNilai";
-import InputKehadiran from "./e-raport/InputKehadiran";
-import InputCatatan from "./e-raport/InputCatatan";
-import CetakRaport from "./e-raport/CetakRaport";
-
 // Tambah wrapper untuk RekapNilai
 const RekapNilaiWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
     () => <RekapNilai userData={userData} onNavigate={navigate} />,
-    [userData]
-  );
-};
-
-// TAMBAH WRAPPER UNTUK E-RAPORT
-const InputTPWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <InputTP userData={userData} onNavigate={navigate} />,
-    [userData]
-  );
-};
-
-const InputNilaiWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <InputNilai userData={userData} onNavigate={navigate} />,
-    [userData]
-  );
-};
-
-const InputKehadiranWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <InputKehadiran userData={userData} onNavigate={navigate} />,
-    [userData]
-  );
-};
-
-const InputCatatanWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <InputCatatan userData={userData} onNavigate={navigate} />,
-    [userData]
-  );
-};
-
-const CetakRaportWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <CetakRaport userData={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -805,108 +757,6 @@ function App() {
                     darkMode={darkMode}
                     onToggleDarkMode={toggleDarkMode}>
                     <MonitorSistemWithNavigation userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-
-          {/* ======= ROUTE BARU: E-RAPORT ======= */}
-          <Route
-            path="/eraport/tp"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <InputTPWithNavigation userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/eraport/nilai"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <InputNilaiWithNavigation userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/eraport/kehadiran"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <InputKehadiranWithNavigation userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/eraport/catatan"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <InputCatatanWithNavigation userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/eraport/cetak"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <CetakRaportWithNavigation userData={user} />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />

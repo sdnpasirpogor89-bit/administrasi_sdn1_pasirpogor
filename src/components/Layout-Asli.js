@@ -169,7 +169,7 @@ const Layout = ({
     });
   };
 
-  // Get current page name from location - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI DAN E-RAPORT)
+  // Get current page name from location - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI)
   const getCurrentPageName = () => {
     const pathMap = {
       "/dashboard": "Dashboard",
@@ -181,14 +181,6 @@ const Layout = ({
       "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
       "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
       "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
-
-      // ✅ TAMBAH E-RAPORT
-      "/eraport/tp": "Input TP/ATP",
-      "/eraport/nilai": "Input Nilai",
-      "/eraport/kehadiran": "Input Kehadiran",
-      "/eraport/catatan": "Input Catatan",
-      "/eraport/cetak": "Cetak Raport",
-
       "/catatan-siswa": "Catatan Siswa",
       "/schedule": "Jadwal Pelajaran",
       "/spmb": "SPMB",
@@ -199,7 +191,7 @@ const Layout = ({
     return pathMap[location.pathname] || "Dashboard";
   };
 
-  // Mobile-optimized page names - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI DAN E-RAPORT)
+  // Mobile-optimized page names - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI)
   const getMobilePageName = () => {
     const mobileNames = {
       "/dashboard": "Dashboard",
@@ -211,14 +203,6 @@ const Layout = ({
       "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
       "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
       "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
-
-      // ✅ TAMBAH E-RAPORT
-      "/eraport/tp": "TP/ATP",
-      "/eraport/nilai": "Nilai Raport",
-      "/eraport/kehadiran": "Kehadiran",
-      "/eraport/catatan": "Catatan Raport",
-      "/eraport/cetak": "Cetak Raport",
-
       "/catatan-siswa": "Catatan",
       "/schedule": "Jadwal",
       "/spmb": "SPMB",
@@ -231,7 +215,7 @@ const Layout = ({
 
   const currentPageName = isMobile ? getMobilePageName() : getCurrentPageName();
 
-  // Simplified navigation - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI DAN E-RAPORT)
+  // Simplified navigation - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI)
   const handleMenuClick = useCallback(
     (menuName) => {
       if (isNavigating) return;
@@ -255,18 +239,6 @@ const Layout = ({
         "Rekap Nilai": "/grades/rekap", // ✅ NAVIGASI KE SUBMENU BARU!
         "Nilai Siswa": "/grades", // ✅ KEEP for parent menu
         Nilai: "/grades", // ✅ KEEP for mobile
-
-        // ✅ TAMBAH E-RAPORT
-        "Input TP/ATP": "/eraport/tp",
-        "Input Nilai": "/eraport/nilai",
-        "Input Kehadiran": "/eraport/kehadiran",
-        "Input Catatan": "/eraport/catatan",
-        "Cetak Raport": "/eraport/cetak",
-        "TP/ATP": "/eraport/tp",
-        "Nilai Raport": "/eraport/nilai",
-        Kehadiran: "/eraport/kehadiran",
-        "Catatan Raport": "/eraport/catatan",
-        "E-Raport": "/eraport/tp", // ✅ Parent menu navigation
 
         // Other menus
         "Catatan Siswa": "/catatan-siswa",
