@@ -63,6 +63,7 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
+          { name: "Jadwal Pelajaran", icon: CalendarDays },
           {
             name: "Nilai Siswa",
             icon: BarChart3,
@@ -73,11 +74,8 @@ const Sidebar = ({
               { name: "Rekap Nilai", path: "/grades/rekap" },
             ],
           },
-          { name: "Catatan Siswa", icon: BookOpen },
-          { name: "Jadwal Pelajaran", icon: CalendarDays },
-          { name: "Laporan", icon: FileText },
           {
-            name: "E-Raport", // ← MENU BARU
+            name: "E-Raport",
             icon: ClipboardList,
             hasSubmenu: true,
             submenu: [
@@ -122,6 +120,7 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
+          { name: "Jadwal Pelajaran", icon: CalendarDays },
           {
             name: "Nilai Siswa",
             icon: BarChart3,
@@ -132,11 +131,8 @@ const Sidebar = ({
               { name: "Rekap Nilai", path: "/grades/rekap" },
             ],
           },
-          { name: "Catatan Siswa", icon: BookOpen },
-          { name: "Jadwal Pelajaran", icon: CalendarDays },
-          { name: "Laporan", icon: FileText },
           {
-            name: "E-Raport", // ← MENU BARU
+            name: "E-Raport",
             icon: ClipboardList,
             hasSubmenu: true,
             submenu: [
@@ -173,6 +169,7 @@ const Sidebar = ({
       {
         category: "AKADEMIK",
         items: [
+          { name: "Jadwal Pelajaran", icon: CalendarDays },
           {
             name: "Nilai Siswa",
             icon: BarChart3,
@@ -183,15 +180,12 @@ const Sidebar = ({
               { name: "Rekap Nilai", path: "/grades/rekap" },
             ],
           },
-          { name: "Catatan Siswa", icon: BookOpen },
-          { name: "Jadwal Pelajaran", icon: CalendarDays },
-          { name: "Laporan", icon: FileText },
           {
-            name: "E-Raport", // ← MENU BARU
+            name: "E-Raport",
             icon: ClipboardList,
             hasSubmenu: true,
             submenu: [
-              { name: "Input TP/ATP", path: "/eraport/tp" },
+              { name: "Input TP", path: "/eraport/tp" },
               { name: "Input Nilai", path: "/eraport/nilai" },
               { name: "Input Kehadiran", path: "/eraport/kehadiran" },
               { name: "Input Catatan", path: "/eraport/catatan" },
