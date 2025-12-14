@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
-import { Save } from "lucide-react";
+import { Save, Download, Upload } from "lucide-react";
+import * as XLSX from "xlsx";
 
 // Inline style untuk shimmer animation
 const shimmerStyle = document.createElement("style");
@@ -19,12 +20,14 @@ function InputNilai() {
   const [kelas, setKelas] = useState("");
   const [userId, setUserId] = useState("");
   const [selectedMapel, setSelectedMapel] = useState("");
+  const [periode, setPeriode] = useState("");
   const [siswaList, setSiswaList] = useState([]);
   const [tpList, setTpList] = useState([]);
   const [academicYear, setAcademicYear] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
+  const fileInputRef = useRef(null);
 
   const mataPelajaran = [
     "PABP",
@@ -44,33 +47,20 @@ function InputNilai() {
   }, []);
 
   useEffect(() => {
-    if (kelas && selectedMapel && academicYear) {
+    if (kelas && selectedMapel && academicYear && periode) {
       loadData();
     }
-  }, [kelas, selectedMapel, academicYear]);
+  }, [kelas, selectedMapel, academicYear, periode]);
 
   const loadUserData = async () => {
-    // Get user session from localStorage
     const sessionData = localStorage.getItem("userSession");
-    console.log("🔍 Session from localStorage:", sessionData);
-
     if (sessionData) {
       try {
         const userData = JSON.parse(sessionData);
-        console.log("🔍 Parsed user data:", userData);
-
-        if (userData.kelas) {
-          setKelas(userData.kelas);
-          console.log("✅ Kelas set to:", userData.kelas);
-        }
-
-        // ⭐ SET USER ID
-        if (userData.id) {
-          setUserId(userData.id);
-          console.log("✅ User ID set to:", userData.id);
-        }
+        if (userData.kelas) setKelas(userData.kelas);
+        if (userData.id) setUserId(userData.id);
       } catch (error) {
-        console.error("❌ Error parsing session:", error);
+        console.error("Error parsing session:", error);
       }
     }
   };
@@ -82,129 +72,88 @@ function InputNilai() {
       .eq("is_active", true)
       .single();
 
-    console.log("📅 Active Academic Year:", data);
     setAcademicYear(data);
   };
 
   const loadData = async () => {
     setLoading(true);
 
-    // Get class_id from kelas
-    const { data: classData } = await supabase
-      .from("classes")
-      .select("id")
-      .eq("grade", `Kelas ${kelas}`)
-      .eq("academic_year", academicYear?.year)
-      .single();
+    try {
+      // Get class_id
+      const { data: classData } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("grade", `Kelas ${kelas}`)
+        .eq("academic_year", academicYear?.year)
+        .single();
 
-    if (!classData) {
-      console.error("Class not found");
+      if (!classData) {
+        console.error("Class not found");
+        setLoading(false);
+        return;
+      }
+
+      // Load siswa
+      const { data: students } = await supabase
+        .from("students")
+        .select("*")
+        .eq("kelas", kelas)
+        .eq("is_active", true)
+        .order("nama_siswa");
+
+      // Load TP
+      const { data: tp } = await supabase
+        .from("tujuan_pembelajaran")
+        .select("*")
+        .eq("class_id", classData.id)
+        .eq("mata_pelajaran", selectedMapel)
+        .eq("semester", academicYear?.semester)
+        .eq("tahun_ajaran", academicYear?.year)
+        .order("urutan");
+
+      setTpList(tp || []);
+
+      // Load existing nilai_eraport untuk periode ini
+      const { data: existingRapor } = await supabase
+        .from("nilai_eraport")
+        .select("*, nilai_eraport_detail(*)")
+        .eq("class_id", classData.id)
+        .eq("mata_pelajaran", selectedMapel)
+        .eq("semester", academicYear?.semester)
+        .eq("tahun_ajaran_id", academicYear?.id)
+        .eq("periode", periode);
+
+      // Map students dengan data yang udah disimpan atau default 0
+      const merged = students?.map((siswa) => {
+        const rapor = existingRapor?.find((r) => r.student_id === siswa.id);
+
+        return {
+          ...siswa,
+          nilai_mid: rapor?.nilai_akhir || 0,
+          rapor_id: rapor?.id,
+          tp_tercapai:
+            rapor?.nilai_eraport_detail
+              ?.filter((d) => d.status === "sudah_menguasai")
+              .map((d) => d.tujuan_pembelajaran_id) || [],
+          tp_peningkatan:
+            rapor?.nilai_eraport_detail
+              ?.filter((d) => d.status === "perlu_perbaikan")
+              .map((d) => d.tujuan_pembelajaran_id) || [],
+        };
+      });
+
+      setSiswaList(merged || []);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      alert("Gagal memuat data: " + error.message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    console.log("🔍 Class ID:", classData.id);
-
-    // Load siswa
-    const { data: students } = await supabase
-      .from("students")
-      .select("*")
-      .eq("kelas", kelas)
-      .eq("is_active", true)
-      .order("nama_siswa");
-
-    // Load nilai katrol
-    const { data: nilaiData } = await supabase
-      .from("nilai_katrol")
-      .select("*")
-      .eq("kelas", kelas)
-      .eq("mata_pelajaran", selectedMapel)
-      .eq("semester", academicYear?.semester)
-      .eq("tahun_ajaran", academicYear?.year);
-
-    // Load TP
-    const { data: tp, error: tpError } = await supabase
-      .from("tujuan_pembelajaran")
-      .select("*")
-      .eq("class_id", classData.id) // ⭐ TAMBAHKAN FILTER CLASS_ID
-      .eq("mata_pelajaran", selectedMapel)
-      .eq("semester", academicYear?.semester)
-      .eq("tahun_ajaran", academicYear?.year)
-      .order("urutan");
-
-    console.log("📚 TP Query params:", {
-      class_id: classData.id,
-      mata_pelajaran: selectedMapel,
-      semester: academicYear?.semester,
-      tahun_ajaran: academicYear?.year,
-    });
-    console.log("📚 TP Result:", tp);
-    console.log("📚 TP Count:", tp?.length || 0);
-
-    if (tpError) console.error("❌ TP Load Error:", tpError);
-
-    setTpList(tp || []);
-
-    // Load existing mini_erapor
-    const { data: existingRapor } = await supabase
-      .from("mini_erapor")
-      .select("*, mini_erapor_detail(*)")
-      .eq("class_id", classData.id)
-      .eq("mata_pelajaran", selectedMapel)
-      .eq("semester", academicYear?.semester)
-      .eq("tahun_ajaran_id", academicYear?.id)
-      .eq("periode", "Tengah Semester"); // ⭐ TAMBAHKAN FILTER PERIODE juga
-
-    console.log("🔍 Existing Rapor:", existingRapor);
-
-    // Merge data
-    const merged = students?.map((siswa) => {
-      const nilai = nilaiData?.find((n) => n.nisn === siswa.nisn) || {};
-      const rapor = existingRapor?.find((r) => r.student_id === siswa.id);
-
-      // Hitung rata NH dari yang ada
-      const nhValues = [
-        nilai.nh1_katrol,
-        nilai.nh2_katrol,
-        nilai.nh3_katrol,
-        nilai.nh4_katrol,
-        nilai.nh5katrol,
-      ].filter((val) => val != null && val !== "" && !isNaN(val));
-
-      const rataNH =
-        nhValues.length > 0
-          ? nhValues.reduce((a, b) => Number(a) + Number(b), 0) /
-            nhValues.length
-          : 0;
-
-      const utsKatrol = Number(nilai.uts_katrol) || 0;
-      const nilaiMid =
-        rataNH > 0 || utsKatrol > 0
-          ? Math.round(rataNH * 0.6 + utsKatrol * 0.4)
-          : 0;
-
-      return {
-        ...siswa,
-        nilai_mid: rapor?.nilai_akhir || nilaiMid,
-        rapor_id: rapor?.id,
-        tp_tercapai:
-          rapor?.mini_erapor_detail
-            ?.filter((d) => d.status === "sudah_menguasai") // ⭐ FIX
-            .map((d) => d.tujuan_pembelajaran_id) || [],
-        tp_peningkatan:
-          rapor?.mini_erapor_detail
-            ?.filter((d) => d.status === "perlu_perbaikan") // ⭐ FIX
-            .map((d) => d.tujuan_pembelajaran_id) || [],
-      };
-    });
-
-    setSiswaList(merged || []);
-    setLoading(false);
   };
 
   const handleNilaiChange = (index, value) => {
     const updated = [...siswaList];
-    updated[index].nilai_mid = value;
+    updated[index].nilai_mid = value === "" ? 0 : parseInt(value) || 0;
     setSiswaList(updated);
   };
 
@@ -236,144 +185,337 @@ function InputNilai() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    setSaveProgress({ current: 0, total: siswaList.length });
-    console.log("🔍 Starting save...");
-    console.log("🔍 User ID:", userId);
-    console.log("🔍 Kelas:", kelas);
+    if (!periode) {
+      alert("Pilih periode terlebih dahulu!");
+      return;
+    }
+
+    if (!selectedMapel) {
+      alert("Pilih mata pelajaran terlebih dahulu!");
+      return;
+    }
 
     if (!userId) {
       alert("User ID tidak ditemukan! Silakan login ulang.");
-      setSaving(false);
       return;
     }
 
-    // Get class_id
-    const { data: classData } = await supabase
-      .from("classes")
-      .select("id")
-      .eq("grade", `Kelas ${kelas}`)
-      .eq("academic_year", academicYear?.year)
-      .single();
+    // ⚠️ VALIDASI: Cek siswa yang belum centang TP
+    const siswaBlmIsiTP = siswaList.filter(
+      (s) => s.tp_tercapai.length === 0 && s.tp_peningkatan.length === 0
+    );
 
-    if (!classData) {
-      alert("Class not found!");
-      setSaving(false);
-      return;
-    }
-
-    console.log("🔍 Class ID for save:", classData.id);
-
-    // ⭐ OPTIMASI: Proses parallel dengan batching
-    const batchSize = 5; // Proses 5 siswa sekaligus
-    for (let i = 0; i < siswaList.length; i += batchSize) {
-      const batch = siswaList.slice(i, i + batchSize);
-
-      await Promise.all(
-        batch.map(async (siswa, batchIndex) => {
-          const currentIndex = i + batchIndex;
-          let raporId = siswa.rapor_id;
-
-          // Insert atau update mini_erapor
-          if (raporId) {
-            console.log("🔄 Updating rapor:", raporId);
-            const { error } = await supabase
-              .from("mini_erapor")
-              .update({
-                nilai_akhir: siswa.nilai_mid,
-                periode: "Tengah Semester",
-                updated_at: new Date(),
-              })
-              .eq("id", raporId);
-
-            if (error) console.error("❌ Update error:", error);
-          } else {
-            console.log("➕ Inserting new rapor for:", siswa.nama_siswa);
-
-            const insertData = {
-              student_id: siswa.id,
-              class_id: classData.id,
-              mata_pelajaran: selectedMapel,
-              guru_id: userId,
-              nilai_akhir: siswa.nilai_mid,
-              periode: "Tengah Semester",
-              semester: academicYear?.semester,
-              tahun_ajaran_id: academicYear?.id,
-              status: "draft",
-            };
-
-            console.log("📦 Insert data:", insertData);
-
-            const { data, error } = await supabase
-              .from("mini_erapor")
-              .insert(insertData)
-              .select()
-              .single();
-
-            if (error) {
-              console.error("❌ Insert error:", error);
-              console.error("❌ Error details:", JSON.stringify(error));
-            } else {
-              console.log("✅ Inserted:", data);
-              raporId = data?.id;
-            }
-          }
-
-          if (!raporId) return;
-
-          // Delete existing details
-          await supabase
-            .from("mini_erapor_detail")
-            .delete()
-            .eq("mini_erapor_id", raporId);
-
-          // Insert new details
-          const details = [
-            ...siswa.tp_tercapai.map((tpId) => ({
-              mini_erapor_id: raporId,
-              tujuan_pembelajaran_id: tpId,
-              status: "sudah_menguasai",
-            })),
-            ...siswa.tp_peningkatan.map((tpId) => ({
-              mini_erapor_id: raporId,
-              tujuan_pembelajaran_id: tpId,
-              status: "perlu_perbaikan",
-            })),
-          ];
-
-          console.log(`📝 Details untuk ${siswa.nama_siswa}:`, details);
-          console.log(`   - TP Tercapai: ${siswa.tp_tercapai.length}`);
-          console.log(`   - TP Peningkatan: ${siswa.tp_peningkatan.length}`);
-
-          if (details.length > 0) {
-            console.log("💾 Inserting details...");
-            const { data: detailData, error } = await supabase
-              .from("mini_erapor_detail")
-              .insert(details)
-              .select();
-
-            if (error) {
-              console.error("❌ Detail insert error:", error);
-              console.error("❌ Detail error full:", JSON.stringify(error));
-            } else {
-              console.log("✅ Details inserted:", detailData);
-            }
-          } else {
-            console.log("⚠️ No details to insert (tidak ada TP yang dipilih)");
-          }
-
-          // Update progress
-          setSaveProgress({
-            current: currentIndex + 1,
-            total: siswaList.length,
-          });
-        })
+    if (siswaBlmIsiTP.length > 0) {
+      const namaList = siswaBlmIsiTP.map((s) => s.nama_siswa).join("\n- ");
+      const konfirmasi = window.confirm(
+        `⚠️ PERINGATAN!\n\nAda ${siswaBlmIsiTP.length} siswa yang belum dicentang TP-nya:\n\n- ${namaList}\n\nData siswa ini akan disimpan TANPA detail TP.\n\nLanjutkan simpan?`
       );
+
+      if (!konfirmasi) return;
     }
 
-    alert("Data berhasil disimpan!");
-    setSaving(false);
-    setSaveProgress({ current: 0, total: 0 });
+    // Cek apakah ada data yang sudah tersimpan sebelumnya
+    const hasExistingData = siswaList.some((siswa) => siswa.rapor_id);
+
+    if (hasExistingData) {
+      const konfirmasi = window.confirm(
+        "Data nilai untuk periode ini sudah ada sebelumnya.\n\nApakah Anda ingin menimpanya?\n\nKlik OK untuk menimpa data lama.\nKlik Cancel untuk membatalkan."
+      );
+
+      if (!konfirmasi) return;
+    } else {
+      if (!window.confirm("Simpan data nilai siswa?")) return;
+    }
+
+    setSaving(true);
+    setSaveProgress({ current: 0, total: siswaList.length });
+
+    try {
+      // Get class_id
+      const { data: classData } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("grade", `Kelas ${kelas}`)
+        .eq("academic_year", academicYear?.year)
+        .single();
+
+      if (!classData) {
+        alert("Class not found!");
+        setSaving(false);
+        return;
+      }
+
+      // Proses batch untuk efisiensi
+      const batchSize = 5;
+      for (let i = 0; i < siswaList.length; i += batchSize) {
+        const batch = siswaList.slice(i, i + batchSize);
+
+        await Promise.all(
+          batch.map(async (siswa, batchIndex) => {
+            const currentIndex = i + batchIndex;
+            let raporId = siswa.rapor_id;
+
+            // Update atau Insert nilai_eraport
+            if (raporId) {
+              const { error } = await supabase
+                .from("nilai_eraport")
+                .update({
+                  nilai_akhir: siswa.nilai_mid,
+                  periode: periode,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", raporId);
+
+              if (error) {
+                console.error("❌ Update error:", error);
+                throw error;
+              }
+              console.log("✅ Updated rapor_id:", raporId);
+            } else {
+              const insertData = {
+                student_id: siswa.id,
+                class_id: classData.id,
+                mata_pelajaran: selectedMapel,
+                guru_id: userId,
+                nilai_akhir: siswa.nilai_mid,
+                periode: periode,
+                semester: academicYear?.semester,
+                tahun_ajaran_id: academicYear?.id,
+                tanggal_dibuat: new Date().toISOString().split("T")[0],
+                status: "draft",
+              };
+
+              console.log("📦 Insert data:", insertData);
+
+              const { data, error } = await supabase
+                .from("nilai_eraport")
+                .insert(insertData)
+                .select()
+                .single();
+
+              if (error) {
+                console.error("❌ Insert error:", error);
+                throw error;
+              }
+
+              // ⚠️ FIX: Pastikan raporId keisi!
+              if (!data || !data.id) {
+                console.error("❌ Insert succeeded but no ID returned:", data);
+                throw new Error("Failed to get rapor_id after insert");
+              }
+
+              raporId = data.id;
+              console.log("✅ Inserted rapor_id:", raporId);
+            }
+
+            // ⚠️ FIX: Double check raporId sebelum lanjut
+            if (!raporId) {
+              console.error(
+                "❌ No rapor_id available for student:",
+                siswa.nama_siswa
+              );
+              throw new Error(
+                `Gagal mendapatkan ID rapor untuk ${siswa.nama_siswa}`
+              );
+            }
+
+            // Delete existing details
+            console.log("🗑️ Deleting old details for rapor_id:", raporId);
+            const { error: deleteError } = await supabase
+              .from("nilai_eraport_detail")
+              .delete()
+              .eq("nilai_eraport_id", raporId);
+
+            if (deleteError) {
+              console.error("❌ Delete error:", deleteError);
+              // Nggak throw, karena mungkin emang belum ada data
+            }
+
+            // Insert new details
+            const details = [
+              ...siswa.tp_tercapai.map((tpId) => ({
+                nilai_eraport_id: raporId,
+                tujuan_pembelajaran_id: tpId,
+                status: "sudah_menguasai",
+              })),
+              ...siswa.tp_peningkatan.map((tpId) => ({
+                nilai_eraport_id: raporId,
+                tujuan_pembelajaran_id: tpId,
+                status: "perlu_perbaikan",
+              })),
+            ];
+
+            console.log(
+              `📝 Inserting ${details.length} details for:`,
+              siswa.nama_siswa
+            );
+
+            if (details.length > 0) {
+              const { data: insertedDetails, error: detailError } =
+                await supabase
+                  .from("nilai_eraport_detail")
+                  .insert(details)
+                  .select(); // ⚠️ FIX: Tambah .select() biar tau berhasil atau nggak
+
+              if (detailError) {
+                console.error("❌ Detail insert error:", detailError);
+                throw new Error(
+                  `Gagal insert detail untuk ${siswa.nama_siswa}: ${detailError.message}`
+                );
+              }
+
+              console.log("✅ Inserted details:", insertedDetails);
+            } else {
+              console.log("⚠️ No details to insert for:", siswa.nama_siswa);
+            }
+
+            // Update progress
+            setSaveProgress({
+              current: currentIndex + 1,
+              total: siswaList.length,
+            });
+          })
+        );
+      }
+
+      alert("Data berhasil disimpan!");
+      await loadData();
+    } catch (error) {
+      console.error("💥 Save error:", error);
+      alert("Gagal menyimpan: " + error.message);
+    } finally {
+      setSaving(false);
+      setSaveProgress({ current: 0, total: 0 });
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    if (!selectedMapel || !periode) {
+      alert("Pilih Mata Pelajaran dan Periode terlebih dahulu!");
+      return;
+    }
+
+    // Prepare data untuk template
+    const templateData = siswaList.map((siswa, idx) => ({
+      No: idx + 1,
+      NISN: siswa.nisn,
+      "Nama Siswa": siswa.nama_siswa,
+      Nilai: "",
+    }));
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([]);
+
+    // Header Sekolah
+    XLSX.utils.sheet_add_aoa(
+      ws,
+      [["SEKOLAH DASAR NEGERI 1 PASIRPOGOR"], ["DAFTAR NILAI SISWA"], [""]],
+      { origin: "A1" }
+    );
+
+    // Info
+    const periodeText =
+      periode === "mid_ganjil" ? "Mid Semester Ganjil" : "Mid Semester Genap";
+    XLSX.utils.sheet_add_aoa(
+      ws,
+      [
+        [`Mata Pelajaran: ${selectedMapel}`],
+        [`Kelas: ${kelas}`],
+        [`Periode: ${periodeText}`],
+        [`Tahun Ajaran: ${academicYear?.year || ""}`],
+        [""],
+      ],
+      { origin: "A4" }
+    );
+
+    // Table data
+    XLSX.utils.sheet_add_json(ws, templateData, {
+      origin: "A9",
+      skipHeader: false,
+    });
+
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 5 }, // No
+      { wch: 15 }, // NISN
+      { wch: 30 }, // Nama Siswa
+      { wch: 10 }, // Nilai
+    ];
+
+    // Merge cells untuk header
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // SEKOLAH
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // DAFTAR NILAI
+    ];
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Daftar Nilai");
+
+    // Download
+    const fileName = `Template_Nilai_${selectedMapel}_Kelas${kelas}_${periodeText}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+
+        // Convert to JSON, skip header rows (mulai dari row 9)
+        const data = XLSX.utils.sheet_to_json(ws, { range: 8 });
+
+        if (!data || data.length === 0) {
+          alert("File Excel kosong atau format tidak sesuai!");
+          return;
+        }
+
+        // Map nilai dari Excel ke siswaList
+        const updated = [...siswaList];
+        let importCount = 0;
+        let notFoundCount = 0;
+
+        data.forEach((row) => {
+          const nisn = String(row.NISN || "").trim();
+          const nilai = parseInt(row.Nilai) || 0;
+
+          if (!nisn) return;
+
+          const index = updated.findIndex((s) => String(s.nisn) === nisn);
+          if (index !== -1) {
+            updated[index].nilai_mid = nilai;
+            importCount++;
+          } else {
+            notFoundCount++;
+          }
+        });
+
+        setSiswaList(updated);
+
+        alert(
+          `Import berhasil!\n\n✅ ${importCount} nilai berhasil diimport\n${
+            notFoundCount > 0 ? `⚠️ ${notFoundCount} NISN tidak ditemukan` : ""
+          }`
+        );
+
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } catch (error) {
+        console.error("Import error:", error);
+        alert("Gagal import file! Pastikan format Excel sesuai template.");
+      }
+    };
+
+    reader.readAsBinaryString(file);
   };
 
   return (
@@ -383,11 +525,11 @@ function InputNilai() {
           INPUT NILAI AKHIR RAPOR SISWA
         </h2>
 
-        {/* Filter - Mobile First */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+        {/* Filter */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
           <div>
             <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
-              Pilih Kelas
+              Kelas
             </label>
             <input
               type="text"
@@ -398,41 +540,70 @@ function InputNilai() {
           </div>
           <div>
             <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
-              Pilih Mapel
+              Mata Pelajaran
             </label>
             <select
               value={selectedMapel}
               onChange={(e) => setSelectedMapel(e.target.value)}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent dark:focus:border-transparent transition-all">
-              <option value="" className="dark:bg-gray-800">
-                -- Pilih Mata Pelajaran --
-              </option>
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400">
+              <option value="">-- Pilih Mata Pelajaran --</option>
               {mataPelajaran.map((mp) => (
-                <option
-                  key={mp}
-                  value={mp}
-                  className="dark:bg-gray-800 dark:text-gray-100">
+                <option key={mp} value={mp}>
                   {mp}
                 </option>
               ))}
             </select>
           </div>
+          <div>
+            <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
+              Periode
+            </label>
+            <select
+              value={periode}
+              onChange={(e) => setPeriode(e.target.value)}
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400">
+              <option value="">-- Pilih Periode --</option>
+              <option value="mid_ganjil">Mid Semester Ganjil</option>
+              <option value="mid_genap">Mid Semester Genap</option>
+            </select>
+          </div>
         </div>
 
-        {selectedMapel && !loading && (
+        {selectedMapel && periode && !loading && siswaList.length > 0 && (
           <>
-            <div className="flex justify-end mb-4 sm:mb-6">
+            <div className="flex flex-wrap gap-2 justify-end mb-4 sm:mb-6">
+              <button
+                onClick={handleDownloadTemplate}
+                className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 text-sm sm:text-base min-h-[44px]">
+                <Download size={18} />
+                <span className="hidden sm:inline">Download Template</span>
+                <span className="sm:hidden">Template</span>
+              </button>
+
+              <label className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer text-sm sm:text-base min-h-[44px]">
+                <Upload size={18} />
+                <span className="hidden sm:inline">Import dari Excel</span>
+                <span className="sm:hidden">Import</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleImportExcel}
+                  className="hidden"
+                />
+              </label>
+
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-red-700 hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base min-h-[44px] min-w-[44px]">
+                className="bg-red-700 hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base min-h-[44px]">
                 <Save size={18} />
                 <span className="hidden sm:inline">Simpan Semua Data</span>
                 <span className="sm:hidden">Simpan</span>
               </button>
             </div>
 
-            {/* Table - Responsive */}
+            {/* Table */}
             <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
               <table className="w-full border-collapse text-xs sm:text-sm">
                 <thead>
@@ -478,7 +649,9 @@ function InputNilai() {
                           onChange={(e) =>
                             handleNilaiChange(idx, e.target.value)
                           }
-                          className="w-16 sm:w-20 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent"
+                          onFocus={(e) => e.target.select()}
+                          onClick={(e) => e.target.select()}
+                          className="w-16 sm:w-20 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-center focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400"
                           min="0"
                           max="100"
                         />
@@ -538,45 +711,35 @@ function InputNilai() {
             <div className="inline-flex flex-col items-center">
               <div className="relative">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-red-200 dark:border-red-900 border-t-red-700 dark:border-t-red-500 rounded-full animate-spin"></div>
-                <div
-                  className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-transparent border-t-red-600 dark:border-t-red-400 rounded-full animate-spin absolute top-0 left-0"
-                  style={{
-                    animationDirection: "reverse",
-                    animationDuration: "1s",
-                  }}></div>
               </div>
               <p className="text-gray-600 dark:text-gray-300 mt-4 font-medium text-sm sm:text-base">
                 Memuat data...
               </p>
-              <p className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm mt-1">
-                Mohon tunggu sebentar
-              </p>
             </div>
           </div>
         )}
+
+        {!loading &&
+          kelas &&
+          selectedMapel &&
+          periode &&
+          siswaList.length === 0 && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              Tidak ada data siswa untuk kelas ini
+            </div>
+          )}
       </div>
 
       {/* Overlay Loading saat Save */}
       {saving && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl max-w-md w-full transform transition-all">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl max-w-md w-full">
             <div className="flex flex-col items-center">
-              {/* Spinning Circles */}
               <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-4 sm:mb-6">
                 <div className="absolute inset-0 border-4 border-red-200 dark:border-red-900 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-transparent border-t-red-700 dark:border-t-red-500 rounded-full animate-spin"></div>
-                <div
-                  className="absolute inset-2 border-4 border-transparent border-t-red-600 dark:border-t-red-400 rounded-full animate-spin"
-                  style={{
-                    animationDirection: "reverse",
-                    animationDuration: "1.5s",
-                  }}></div>
-                <div
-                  className="absolute inset-4 border-4 border-transparent border-t-red-500 dark:border-t-red-300 rounded-full animate-spin"
-                  style={{ animationDuration: "2s" }}></div>
               </div>
 
-              {/* Text */}
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-2">
                 Menyimpan Data
               </h3>
@@ -584,7 +747,7 @@ function InputNilai() {
                 Mohon tunggu, jangan tutup halaman ini...
               </p>
 
-              {/* Progress */}
+              {/* Progress Bar */}
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-red-500 to-red-700 dark:from-red-600 dark:to-red-800 h-2 rounded-full transition-all duration-500 ease-out relative"

@@ -10,7 +10,7 @@ function InputKehadiran() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
-  const [periode, setPeriode] = useState("");
+  const [periode, setPeriode] = useState("jul_sep"); // Default ke periode pertama
   const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
@@ -52,13 +52,81 @@ function InputKehadiran() {
     }
   };
 
+  const getDateRangeForPeriod = (periode, tahunAjaran) => {
+    if (!periode || !tahunAjaran) return null;
+
+    const [tahun1, tahun2] = tahunAjaran.split("/").map(Number);
+
+    switch (periode) {
+      case "jul_sep":
+        return { start: `${tahun1}-07-01`, end: `${tahun1}-09-30` };
+      case "oct_dec":
+        return { start: `${tahun1}-10-01`, end: `${tahun1}-12-31` };
+      case "jan_mar":
+        return { start: `${tahun2}-01-01`, end: `${tahun2}-03-31` };
+      case "apr_jun":
+        return { start: `${tahun2}-04-01`, end: `${tahun2}-06-30` };
+      default:
+        return null;
+    }
+  };
+
+  const generateSummaryFromAttendance = async (
+    students,
+    attendanceData,
+    periodeRange
+  ) => {
+    const summaryRecords = [];
+
+    for (const siswa of students) {
+      const siswaAttendance =
+        attendanceData?.filter((a) => {
+          if (a.nisn !== siswa.nisn) return false;
+          const tanggalStr =
+            typeof a.tanggal === "string" ? a.tanggal.split("T")[0] : a.tanggal;
+
+          return (
+            tanggalStr >= periodeRange.start && tanggalStr <= periodeRange.end
+          );
+        }) || [];
+
+      const sakit = siswaAttendance.filter((a) => a.status === "Sakit").length;
+      const izin = siswaAttendance.filter((a) => a.status === "Izin").length;
+      const alpa = siswaAttendance.filter((a) => a.status === "Alpa").length;
+
+      summaryRecords.push({
+        nisn: siswa.nisn,
+        nama_siswa: siswa.nama_siswa,
+        kelas: parseInt(kelas),
+        tahun_ajaran: academicYear.year,
+        periode: periode,
+        sakit: sakit,
+        izin: izin,
+        alpa: alpa,
+        is_auto_calculated: true,
+        created_by: userId,
+      });
+    }
+
+    if (summaryRecords.length > 0) {
+      const { data, error } = await supabase
+        .from("attendance_summary")
+        .insert(summaryRecords)
+        .select();
+
+      if (error) throw error;
+      return data;
+    }
+
+    return [];
+  };
+
   const loadData = async () => {
     setLoading(true);
 
     try {
       const kelasInt = parseInt(kelas);
 
-      // Load students
       const { data: students, error: studentsError } = await supabase
         .from("students")
         .select("*")
@@ -74,34 +142,46 @@ function InputKehadiran() {
         return;
       }
 
-      // Load saved summary data untuk periode ini (if any)
-      const { data: summaryData, error: summaryError } = await supabase
-        .from("attendance_eraport")
-        .select("*")
-        .eq("kelas", kelasInt)
-        .eq("tahun_ajaran", academicYear?.year)
-        .eq("periode", periode);
+      const [summaryResult, attendanceResult] = await Promise.all([
+        supabase
+          .from("attendance_summary")
+          .select("*")
+          .eq("kelas", kelasInt)
+          .eq("tahun_ajaran", academicYear?.year)
+          .eq("periode", periode),
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("kelas", kelasInt)
+          .eq("tahun_ajaran", academicYear?.year),
+      ]);
 
-      if (summaryError) throw summaryError;
+      if (summaryResult.error) throw summaryResult.error;
+      if (attendanceResult.error) throw attendanceResult.error;
 
-      // Check if any data is locked
+      let summaryData = summaryResult.data;
+      const attendanceData = attendanceResult.data;
+
       setIsLocked(summaryData?.some((s) => s.is_locked) || false);
 
-      // Map students dengan data yang udah disimpan, atau default 0
-      const mappedStudents = students.map((siswa) => {
-        const savedSummary = summaryData?.find((s) => s.nisn === siswa.nisn);
+      const periodeRange = getDateRangeForPeriod(periode, academicYear?.year);
 
-        return {
-          ...siswa,
-          sakit: savedSummary?.sakit || 0,
-          izin: savedSummary?.izin || 0,
-          alpa: savedSummary?.alpa || 0,
-          summary_id: savedSummary?.id,
-          is_locked: savedSummary?.is_locked || false,
-        };
-      });
+      if (!summaryData?.length && attendanceData?.length && periodeRange) {
+        try {
+          summaryData = await generateSummaryFromAttendance(
+            students,
+            attendanceData,
+            periodeRange
+          );
+        } catch (error) {
+          console.error("Error generating summary:", error);
+          summaryData = [];
+        }
+      }
 
-      setSiswaList(mappedStudents);
+      setSiswaList(
+        processData(students, summaryData || [], attendanceData, periodeRange)
+      );
     } catch (error) {
       console.error("Error loading data:", error);
       alert("Gagal memuat data: " + error.message);
@@ -110,43 +190,59 @@ function InputKehadiran() {
     }
   };
 
+  const processData = (students, summaryData, attendanceData, periodeRange) => {
+    const filteredAttendance =
+      attendanceData?.filter((a) => {
+        if (!periodeRange) return false;
+        const tanggalStr =
+          typeof a.tanggal === "string" ? a.tanggal.split("T")[0] : a.tanggal;
+        return (
+          tanggalStr >= periodeRange.start && tanggalStr <= periodeRange.end
+        );
+      }) || [];
+
+    return students.map((siswa) => {
+      const siswaAttendance = filteredAttendance.filter(
+        (a) => a.nisn === siswa.nisn
+      );
+
+      const sakitAuto = siswaAttendance.filter(
+        (a) => a.status === "Sakit"
+      ).length;
+      const izinAuto = siswaAttendance.filter(
+        (a) => a.status === "Izin"
+      ).length;
+      const alpaAuto = siswaAttendance.filter(
+        (a) => a.status === "Alpa"
+      ).length;
+
+      const savedSummary = summaryData?.find((s) => s.nisn === siswa.nisn);
+
+      return {
+        ...siswa,
+        sakit: savedSummary ? savedSummary.sakit : sakitAuto,
+        izin: savedSummary ? savedSummary.izin : izinAuto,
+        alpa: savedSummary ? savedSummary.alpa : alpaAuto,
+        summary_id: savedSummary?.id,
+        is_locked: savedSummary?.is_locked || false,
+        is_auto_calculated: savedSummary?.is_auto_calculated ?? true,
+      };
+    });
+  };
+
   const handleKehadiranChange = (index, field, value) => {
     if (isLocked) {
-      alert("Data sudah dikunci!");
+      alert("Periode sudah dikunci!");
       return;
     }
     const updated = [...siswaList];
-    // Kalau value kosong, set 0
-    updated[index][field] = value === "" ? 0 : parseInt(value) || 0;
+    updated[index][field] = parseInt(value) || 0;
+    updated[index].is_auto_calculated = false;
     setSiswaList(updated);
   };
 
   const handleSave = async () => {
-    if (!periode) {
-      alert("Pilih periode terlebih dahulu!");
-      return;
-    }
-
-    if (isLocked) {
-      alert("Data sudah dikunci!");
-      return;
-    }
-
-    // Cek apakah ada data yang sudah tersimpan sebelumnya
-    const hasExistingData = siswaList.some((siswa) => siswa.summary_id);
-
-    if (hasExistingData) {
-      const konfirmasi = window.confirm(
-        "Data untuk periode ini sudah ada sebelumnya.\n\nApakah Anda ingin menimpanya?\n\nKlik OK untuk menimpa data lama.\nKlik Cancel untuk membatalkan."
-      );
-
-      if (!konfirmasi) {
-        return; // Batalkan simpan
-      }
-    } else {
-      // Data baru, konfirmasi biasa
-      if (!window.confirm("Simpan data kehadiran siswa?")) return;
-    }
+    if (!periode || isLocked) return;
 
     setSaving(true);
     setSaveProgress({ current: 0, total: siswaList.length });
@@ -166,7 +262,7 @@ function InputKehadiran() {
           sakit: siswa.sakit,
           izin: siswa.izin,
           alpa: siswa.alpa,
-          is_auto_calculated: false,
+          is_auto_calculated: siswa.is_auto_calculated,
         };
 
         if (siswa.summary_id) {
@@ -178,7 +274,7 @@ function InputKehadiran() {
 
       if (toInsert.length > 0) {
         const { error: insertError } = await supabase
-          .from("attendance_eraport")
+          .from("attendance_summary")
           .insert(toInsert);
 
         if (insertError) throw insertError;
@@ -191,7 +287,7 @@ function InputKehadiran() {
           const { id, ...updateData } = record;
 
           const { error: updateError } = await supabase
-            .from("attendance_eraport")
+            .from("attendance_summary")
             .update(updateData)
             .eq("id", id);
 
@@ -204,7 +300,7 @@ function InputKehadiran() {
         }
       }
 
-      alert("Data berhasil disimpan!");
+      alert("Data tersimpan!");
       await loadData();
     } catch (error) {
       console.error("Save error:", error);
@@ -241,9 +337,10 @@ function InputKehadiran() {
               value={periode}
               onChange={(e) => setPeriode(e.target.value)}
               className="w-full p-2 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200">
-              <option value="">-- Pilih Periode --</option>
-              <option value="mid_ganjil">Mid Semester Ganjil</option>
-              <option value="mid_genap">Mid Semester Genap</option>
+              <option value="jul_sep">Juli - September</option>
+              <option value="oct_dec">Oktober - Desember</option>
+              <option value="jan_mar">Januari - Maret</option>
+              <option value="apr_jun">April - Juni</option>
             </select>
           </div>
         </div>
@@ -257,7 +354,7 @@ function InputKehadiran() {
           </div>
         )}
 
-        {kelas && periode && !loading && siswaList.length > 0 && (
+        {kelas && periode && !loading && (
           <>
             <div className="flex justify-end mb-4">
               <button
@@ -308,12 +405,6 @@ function InputKehadiran() {
                           onChange={(e) =>
                             handleKehadiranChange(idx, "sakit", e.target.value)
                           }
-                          onFocus={(e) => {
-                            e.target.select();
-                          }}
-                          onClick={(e) => {
-                            e.target.select();
-                          }}
                           disabled={isLocked}
                           className="w-16 p-1 border rounded text-center bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 disabled:opacity-50"
                           min="0"
@@ -326,12 +417,6 @@ function InputKehadiran() {
                           onChange={(e) =>
                             handleKehadiranChange(idx, "izin", e.target.value)
                           }
-                          onFocus={(e) => {
-                            e.target.select();
-                          }}
-                          onClick={(e) => {
-                            e.target.select();
-                          }}
                           disabled={isLocked}
                           className="w-16 p-1 border rounded text-center bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 disabled:opacity-50"
                           min="0"
@@ -344,12 +429,6 @@ function InputKehadiran() {
                           onChange={(e) =>
                             handleKehadiranChange(idx, "alpa", e.target.value)
                           }
-                          onFocus={(e) => {
-                            e.target.select();
-                          }}
-                          onClick={(e) => {
-                            e.target.select();
-                          }}
                           disabled={isLocked}
                           className="w-16 p-1 border rounded text-center bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 disabled:opacity-50"
                           min="0"
@@ -387,12 +466,6 @@ function InputKehadiran() {
               <div className="w-8 h-8 border-2 border-red-200 dark:border-red-900 border-t-red-600 dark:border-t-red-500 rounded-full animate-spin"></div>
               <p className="text-gray-600 dark:text-gray-400 mt-2">Memuat...</p>
             </div>
-          </div>
-        )}
-
-        {!loading && kelas && periode && siswaList.length === 0 && (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            Tidak ada data siswa untuk kelas ini
           </div>
         )}
 

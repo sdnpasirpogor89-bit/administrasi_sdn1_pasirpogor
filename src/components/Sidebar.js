@@ -132,7 +132,7 @@ const Sidebar = ({
             ],
           },
           {
-            name: "E-Raport",
+            name: "Mid E-Raport",
             icon: ClipboardList,
             hasSubmenu: true,
             submenu: [
