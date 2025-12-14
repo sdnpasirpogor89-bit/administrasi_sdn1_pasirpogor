@@ -269,7 +269,7 @@ function InputKehadiran() {
                     : "bg-red-700 dark:bg-red-600 text-white hover:bg-red-800 dark:hover:bg-red-700"
                 }`}>
                 <Save size={16} />
-                Simpan
+                Simpan Data
               </button>
             </div>
 

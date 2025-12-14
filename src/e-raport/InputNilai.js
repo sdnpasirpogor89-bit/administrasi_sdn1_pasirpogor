@@ -30,7 +30,7 @@ function InputNilai() {
   const fileInputRef = useRef(null);
 
   const mataPelajaran = [
-    "PABP",
+    "PAIBP",
     "Pendidikan Pancasila",
     "Bahasa Indonesia",
     "Bahasa Inggris",
@@ -109,6 +109,7 @@ function InputNilai() {
         .eq("mata_pelajaran", selectedMapel)
         .eq("semester", academicYear?.semester)
         .eq("tahun_ajaran", academicYear?.year)
+        .eq("periode", periode)
         .order("urutan");
 
       setTpList(tp || []);
@@ -657,7 +658,7 @@ function InputNilai() {
                         />
                       </td>
                       <td className="border border-gray-200 dark:border-gray-700 p-2 sm:p-3">
-                        <div className="space-y-1 sm:space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                        <div className="space-y-1 sm:space-y-2 ">
                           {tpList.map((tp) => (
                             <label
                               key={tp.id}
@@ -678,7 +679,7 @@ function InputNilai() {
                         </div>
                       </td>
                       <td className="border border-gray-200 dark:border-gray-700 p-2 sm:p-3">
-                        <div className="space-y-1 sm:space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                        <div className="space-y-1 sm:space-y-2 ">
                           {tpList.map((tp) => (
                             <label
                               key={tp.id}
