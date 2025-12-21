@@ -131,6 +131,31 @@ function CetakRaport() {
     return text || "-";
   };
 
+  // Taruh setelah fungsi generateCapaianKompetensi
+  const isMapelWajib = (namaMapel) => {
+    const mapel = namaMapel.toLowerCase().trim();
+
+    const mapelWajibList = [
+      "paibp",
+      "pendidikan pancasila",
+      "bahasa indonesia",
+      "ipas",
+      "matematika",
+      "seni budaya",
+      "pjok",
+    ];
+
+    return mapelWajibList.some((m) => mapel.includes(m));
+  };
+
+  const isMapelPilihan = (namaMapel) => {
+    const mapel = namaMapel.toLowerCase().trim();
+
+    const mapelPilihanList = ["bahasa inggris", "bahasa sunda"];
+
+    return mapelPilihanList.some((m) => mapel.includes(m));
+  };
+
   // MODAL FUNCTIONS
   const openDetailModal = async (siswa) => {
     setSelectedSiswa(siswa);
@@ -148,14 +173,29 @@ function CetakRaport() {
         .eq("periode", periode)
         .order("mata_pelajaran");
 
-      const { data: tpData } = await supabase
+      // Query TP dengan class_id dari siswa (bisa UUID atau string kelas)
+      let tpQuery = supabase
         .from("tujuan_pembelajaran")
         .select("*")
-        .eq("class_id", siswa.kelas)
-        .eq("semester", academicYear?.semester)
         .eq("tahun_ajaran", academicYear?.year)
+        .eq("periode", periode);
+
+      // Coba dulu pakai tingkat (kelas angka)
+      if (siswa.kelas) {
+        tpQuery = tpQuery.eq("tingkat", siswa.kelas);
+      }
+
+      const { data: tpData, error: tpError } = await tpQuery
         .order("mata_pelajaran")
         .order("urutan");
+
+      console.log("DEBUG:", {
+        siswa_kelas: siswa.kelas,
+        tahun_ajaran: academicYear?.year,
+        periode: periode,
+        tp_found: tpData?.length,
+        tp_error: tpError,
+      });
 
       const enrichedData =
         nilaiData?.map((nilai) => {
@@ -253,26 +293,24 @@ function CetakRaport() {
 
       if (nilaiError) throw nilaiError;
 
-      // Pisahkan mata pelajaran wajib dan pilihan
-      const mapelWajib =
-        nilaiData?.filter((n) =>
-          [
-            "Pendidikan Agama Islam dan Budi Pekerti",
-            "Pendidikan Pancasila dan Kewarganegaraan",
-            "Bahasa Indonesia",
-            "Matematika (Umum)",
-            "Ilmu Pengetahuan Alam dan Sosial (IPAS)",
-            "Pendidikan Jasmani, Olahraga, dan Kesehatan",
-            "Seni Budaya",
-          ].includes(n.mata_pelajaran)
-        ) || [];
+      console.log(
+        "🔍 Mata pelajaran ditemukan:",
+        nilaiData?.map((n) => n.mata_pelajaran)
+      );
 
+      const mapelWajib =
+        nilaiData?.filter((n) => isMapelWajib(n.mata_pelajaran)) || [];
       const mapelPilihan =
-        nilaiData?.filter((n) =>
-          ["Muatan Lokal Bahasa Daerah", "Bahasa Inggris"].includes(
-            n.mata_pelajaran
-          )
-        ) || [];
+        nilaiData?.filter((n) => isMapelPilihan(n.mata_pelajaran)) || [];
+
+      console.log(
+        "✅ Mapel Wajib:",
+        mapelWajib.map((m) => m.mata_pelajaran)
+      );
+      console.log(
+        "📚 Mapel Pilihan:",
+        mapelPilihan.map((m) => m.mata_pelajaran)
+      );
 
       const { data: kehadiranData } = await supabase
         .from("attendance")
@@ -305,90 +343,59 @@ function CetakRaport() {
       if (!isFirstStudent) doc.addPage();
 
       let yPos = 20;
+      let currentPage = 1;
 
-      // HEADER - Format persis seperti PDF asli (2 kolom)
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
+      // ========== FUNCTION UNTUK RENDER HEADER ==========
+      const renderHeader = (pageNum) => {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
 
-      // Kolom KIRI
-      doc.text("Nama Murid", 20, yPos);
-      doc.text(`: ${siswa.nama_siswa.toUpperCase()}`, 55, yPos);
+        // Kolom KIRI
+        doc.text("Nama Murid", 20, yPos);
+        doc.text(`: ${siswa.nama_siswa.toUpperCase()}`, 55, yPos);
+        doc.text("Kelas", 135, yPos);
+        doc.text(`: Kelas ${kelas}`, 165, yPos);
+        yPos += 5;
 
-      // Kolom KANAN
-      doc.text("Kelas", 130, yPos);
-      doc.text(`: Kelas ${kelas}`, 150, yPos);
-      yPos += 5;
+        doc.text("NIS/NISN", 20, yPos);
+        doc.text(`: ${siswa.nis || siswa.nisn} / ${siswa.nisn}`, 55, yPos);
+        doc.text("Fase", 135, yPos);
+        doc.text(`: ${getFase(parseInt(kelas))}`, 165, yPos);
+        yPos += 5;
 
-      doc.text("NIS/NISN", 20, yPos);
-      doc.text(`: ${siswa.nis || siswa.nisn} / ${siswa.nisn}`, 55, yPos);
-      doc.text("Fase", 130, yPos);
-      doc.text(`: ${getFase(parseInt(kelas))}`, 150, yPos);
-      yPos += 5;
+        doc.text("Sekolah", 20, yPos);
+        doc.text(
+          `: ${schoolSettings.school_name || "SD NEGERI 1 PASIRPOGOR"}`,
+          55,
+          yPos
+        );
+        doc.text("Semester", 135, yPos);
+        doc.text(`: ${academicYear?.semester}`, 165, yPos);
+        yPos += 5;
 
-      doc.text("Sekolah", 20, yPos);
-      doc.text(
-        `: ${schoolSettings.school_name || "SD NEGERI 1 PASIRPOGOR"}`,
-        55,
-        yPos
-      );
-      doc.text("Semester", 130, yPos);
-      doc.text(`: ${academicYear?.semester}`, 150, yPos);
-      yPos += 5;
+        doc.text("Alamat", 20, yPos);
+        doc.text(
+          `: ${schoolSettings.school_address || "Kp. Bojongloa"}`,
+          55,
+          yPos
+        );
+        doc.text("Tahun Ajaran", 135, yPos);
+        doc.text(`: ${academicYear?.year}`, 165, yPos);
+        yPos += 10;
 
-      doc.text("Alamat", 20, yPos);
-      doc.text(
-        `: ${schoolSettings.school_address || "Kp. Bojongloa"}`,
-        55,
-        yPos
-      );
-      doc.text("Tahun Ajaran", 130, yPos);
-      doc.text(`: ${academicYear?.year}`, 150, yPos);
-      yPos += 10;
+        // JUDUL (hanya di halaman 1)
+        if (pageNum === 1) {
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.text("LAPORAN HASIL BELAJAR", 105, yPos, { align: "center" });
+          yPos += 8;
+        }
+      };
 
-      // JUDUL
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("LAPORAN HASIL BELAJAR", 105, yPos, { align: "center" });
-      yPos += 8;
+      // ========== RENDER HEADER HALAMAN 1 ==========
+      renderHeader(1);
 
-      // TABEL HEADER
-      doc.autoTable({
-        startY: yPos,
-        head: [["No", "Mata Pelajaran", "Nilai Akhir", "Capaian Kompetensi"]],
-        body: [],
-        theme: "plain",
-        styles: {
-          fontSize: 9,
-          cellPadding: 2,
-          lineColor: [0, 0, 0],
-          lineWidth: 0.5,
-        },
-        headStyles: {
-          fillColor: [255, 255, 255],
-          textColor: [0, 0, 0],
-          fontStyle: "bold",
-          halign: "center",
-          lineColor: [0, 0, 0],
-          lineWidth: 0.5,
-        },
-        columnStyles: {
-          0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 60 },
-          2: { cellWidth: 20, halign: "center" },
-          3: { cellWidth: 90 },
-        },
-        margin: { left: 20, right: 20 },
-        didDrawPage: () => {},
-      });
-
-      yPos = doc.lastAutoTable.finalY;
-
-      // SECTION: Mata Pelajaran WAJIB
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Mata Pelajaran Wajib", 20, yPos + 5);
-      yPos += 8;
-
+      // ========== TABEL MATA PELAJARAN ==========
       const tableDataWajib = mapelWajib.map((nilai, idx) => {
         const capaian = generateCapaianKompetensi([nilai]);
         return [
@@ -399,137 +406,61 @@ function CetakRaport() {
         ];
       });
 
+      const tableDataPilihan = mapelPilihan.map((nilai, idx) => {
+        const capaian = generateCapaianKompetensi([nilai]);
+        return [
+          idx + 1,
+          nilai.mata_pelajaran,
+          nilai.nilai_akhir || "-",
+          capaian,
+        ];
+      });
+
+      const fullTableBody = [
+        [
+          {
+            content: "Mata Pelajaran Wajib",
+            colSpan: 4,
+            styles: {
+              fontStyle: "bold",
+              halign: "left",
+              fillColor: [255, 255, 255],
+              textColor: [0, 0, 0],
+            },
+          },
+        ],
+        ...tableDataWajib,
+      ];
+
+      if (mapelPilihan.length > 0) {
+        fullTableBody.push(
+          [
+            {
+              content: "Mata Pelajaran Pilihan",
+              colSpan: 4,
+              styles: {
+                fontStyle: "bold",
+                halign: "left",
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+              },
+            },
+          ],
+          ...tableDataPilihan
+        );
+      }
+
       doc.autoTable({
         startY: yPos,
-        body: tableDataWajib,
+        head: [["No", "Mata Pelajaran", "Nilai Akhir", "Capaian Kompetensi"]],
+        body: fullTableBody,
         theme: "plain",
         styles: {
           fontSize: 8,
           cellPadding: 3,
           lineColor: [0, 0, 0],
-          lineWidth: 0.5,
+          lineWidth: 0.1,
           overflow: "linebreak",
-        },
-        columnStyles: {
-          0: { cellWidth: 10, halign: "center", valign: "middle" },
-          1: { cellWidth: 60, valign: "middle" },
-          2: { cellWidth: 20, halign: "center", valign: "middle" },
-          3: { cellWidth: 90, valign: "middle" },
-        },
-        margin: { left: 20, right: 20 },
-      });
-
-      yPos = doc.lastAutoTable.finalY + 8;
-
-      yPos = doc.lastAutoTable.finalY + 8;
-
-      // SECTION: Mata Pelajaran PILIHAN
-      if (mapelPilihan.length > 0) {
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.text("Mata Pelajaran Pilihan", 20, yPos);
-        yPos += 8;
-
-        const tableDataPilihan = mapelPilihan.map((nilai, idx) => {
-          const capaian = generateCapaianKompetensi([nilai]);
-          return [
-            idx + 1,
-            nilai.mata_pelajaran,
-            nilai.nilai_akhir || "-",
-            capaian,
-          ];
-        });
-
-        doc.autoTable({
-          startY: yPos,
-          body: tableDataPilihan,
-          theme: "plain",
-          styles: {
-            fontSize: 8,
-            cellPadding: 3,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.5,
-            overflow: "linebreak",
-          },
-          columnStyles: {
-            0: { cellWidth: 10, halign: "center", valign: "middle" },
-            1: { cellWidth: 60, valign: "middle" },
-            2: { cellWidth: 20, halign: "center", valign: "middle" },
-            3: { cellWidth: 90, valign: "middle" },
-          },
-          margin: { left: 20, right: 20 },
-        });
-      }
-
-      // FOOTER HALAMAN 1
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "italic");
-      doc.text(
-        `Kelas ${kelas} | ${siswa.nama_siswa.toUpperCase()} | ${siswa.nisn}`,
-        20,
-        285
-      );
-      doc.text(`Halaman : 1`, 180, 285);
-
-      // ========== HALAMAN 2 ==========
-      doc.addPage();
-      yPos = 20;
-
-      // HEADER HALAMAN 2 (sama dengan halaman 1)
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-
-      doc.text("Nama Murid", 20, yPos);
-      doc.text(`: ${siswa.nama_siswa.toUpperCase()}`, 55, yPos);
-      doc.text("Kelas", 130, yPos);
-      doc.text(`: Kelas ${kelas}`, 150, yPos);
-      yPos += 5;
-
-      doc.text("NIS/NISN", 20, yPos);
-      doc.text(`: ${siswa.nis || siswa.nisn} / ${siswa.nisn}`, 55, yPos);
-      doc.text("Fase", 130, yPos);
-      doc.text(`: ${getFase(parseInt(kelas))}`, 150, yPos);
-      yPos += 5;
-
-      doc.text("Sekolah", 20, yPos);
-      doc.text(
-        `: ${schoolSettings.school_name || "SD NEGERI 1 PASIRPOGOR"}`,
-        55,
-        yPos
-      );
-      doc.text("Semester", 130, yPos);
-      doc.text(`: ${academicYear?.semester}`, 150, yPos);
-      yPos += 5;
-
-      doc.text("Alamat", 20, yPos);
-      doc.text(
-        `: ${schoolSettings.school_address || "Kp. Bojongloa"}`,
-        55,
-        yPos
-      );
-      doc.text("Tahun Ajaran", 130, yPos);
-      doc.text(`: ${academicYear?.year}`, 150, yPos);
-      yPos += 10;
-
-      // KOKURIKULER
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Kokurikuler", 20, yPos);
-      yPos += 6;
-
-      doc.autoTable({
-        startY: yPos,
-        head: [["No", "Ekstrakurikuler", "Keterangan"]],
-        body: [
-          ["1", "", ""],
-          ["2", "", ""],
-        ],
-        theme: "plain",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          lineColor: [0, 0, 0],
-          lineWidth: 0.5,
         },
         headStyles: {
           fillColor: [255, 255, 255],
@@ -537,115 +468,232 @@ function CetakRaport() {
           fontStyle: "bold",
           halign: "center",
           lineColor: [0, 0, 0],
-          lineWidth: 0.5,
+          lineWidth: 0.1,
+          fontSize: 9,
+          cellPadding: 2,
         },
         columnStyles: {
-          0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 90 },
-          2: { cellWidth: 80 },
+          0: { cellWidth: 10, halign: "center", valign: "middle" },
+          1: { cellWidth: 40, valign: "middle" },
+          2: { cellWidth: 20, halign: "center", valign: "middle" },
+          3: { cellWidth: 100, halign: "justify", valign: "middle" },
         },
         margin: { left: 20, right: 20 },
       });
 
       yPos = doc.lastAutoTable.finalY + 10;
 
-      // KETIDAKHADIRAN
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Ketidakhadiran", 20, yPos);
-      yPos += 6;
+      // ========== CEK APAKAH PERLU PAGE BREAK ==========
+      const remainingSpace = 270 - yPos; // 270 = batas aman sebelum footer (285 - 15)
+      const neededSpace = 130; // Perkiraan tinggi: Kokurikuler(35) + Ekstrakurikuler(25) + 2Kolom(48) + TTD(22)
 
-      doc.setFont("helvetica", "normal");
-      doc.text(`Sakit`, 20, yPos);
-      doc.text(`: ${sakit} hari`, 55, yPos);
-      yPos += 5;
-      doc.text(`Izin`, 20, yPos);
-      doc.text(`: ${izin} hari`, 55, yPos);
-      yPos += 5;
-      doc.text(`Tanpa Keterangan`, 20, yPos);
-      doc.text(`: ${alpha} hari`, 55, yPos);
+      console.log(
+        `📏 Space Check - Remaining: ${remainingSpace}, Needed: ${neededSpace}`
+      );
+
+      if (remainingSpace < neededSpace) {
+        console.log("⚠️ Space tidak cukup, bikin halaman baru");
+
+        // FOOTER HALAMAN 1
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "italic");
+        doc.text(
+          `Kelas ${kelas} | ${siswa.nama_siswa.toUpperCase()} | ${siswa.nisn}`,
+          20,
+          285
+        );
+        doc.text(`Halaman : 1`, 180, 285);
+
+        // BIKIN HALAMAN BARU
+        doc.addPage();
+        yPos = 20;
+        currentPage = 2;
+
+        // RENDER HEADER HALAMAN 2
+        renderHeader(2);
+      } else {
+        console.log("✅ Space cukup, lanjut di halaman yang sama");
+        // Tidak ada footer halaman 1 karena masih satu halaman
+      }
+
+      // ========== KOKURIKULER ==========
+      // Header
+      doc.rect(20, yPos, 170, 10);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Kokurikuler", 105, yPos + 7, { align: "center" });
       yPos += 10;
 
-      // CATATAN WALI KELAS
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Catatan Wali Kelas", 20, yPos);
-      yPos += 6;
+      // Content area (empty space below header)
+      doc.rect(20, yPos, 170, 30);
+      yPos += 35;
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      const catatan = catatanData?.catatan_wali_kelas || "";
-      const wrappedCatatan = doc.splitTextToSize(catatan, 170);
-      doc.text(wrappedCatatan, 20, yPos);
-      yPos += wrappedCatatan.length * 5 + 10;
-
-      // TANGGAPAN ORANG TUA
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Tanggapan Orang Tua/Wali Murid", 20, yPos);
-      yPos += 15;
-
-      // TTD
-      const location = schoolSettings.school_location || "Sindangkerta";
-      const currentDate = new Date();
-      const formattedDate = currentDate.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+      // ========== TABEL EKSTRAKURIKULER ==========
+      doc.autoTable({
+        startY: yPos,
+        head: [["No", "Ekstrakurikuler", "Keterangan"]],
+        body: [["1", "", ""]],
+        theme: "plain",
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+        },
+        headStyles: {
+          fillColor: [255, 255, 255],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+          halign: "center",
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 15, halign: "center", valign: "middle" },
+          1: { cellWidth: 50, halign: "left", valign: "middle" },
+          2: { cellWidth: 105, halign: "left", valign: "middle" },
+        },
+        margin: { left: 20, right: 20 },
       });
+      yPos = doc.lastAutoTable.finalY + 8;
 
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${location}, ${formattedDate}`, 130, yPos);
-      yPos += 10;
+      // ========== LAYOUT 2 KOLOM: KETIDAKHADIRAN & CATATAN ==========
+      const col1X = 20;
+      const col2X = 108;
+      const boxWidth = 82;
+      const startBoxY = yPos;
 
-      // 3 KOLOM TTD
-      const col1X = 35;
-      const col2X = 105;
-      const col3X = 155;
-
-      // KOLOM 1: Orang Tua Murid
-      doc.text("Orang Tua Murid", col1X, yPos, { align: "center" });
-
-      // KOLOM 2: Kepala Sekolah
-      doc.text("Kepala Sekolah", col2X, yPos, { align: "center" });
-
-      // KOLOM 3: Wali Kelas
-      doc.text("Wali Kelas", col3X, yPos, { align: "center" });
-
-      yPos += 20;
-
-      // Garis TTD & Nama
-      doc.line(col1X - 25, yPos, col1X + 25, yPos);
-      doc.text(".....................................", col1X, yPos + 3, {
+      // BOX KIRI: KETIDAKHADIRAN
+      // Header Ketidakhadiran
+      doc.rect(col1X, startBoxY, boxWidth, 10);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Ketidakhadiran", col1X + boxWidth / 2, startBoxY + 7, {
         align: "center",
       });
 
-      doc.line(col2X - 30, yPos, col2X + 30, yPos);
+      // Tabel ketidakhadiran
+      doc.autoTable({
+        startY: startBoxY + 10,
+        body: [
+          ["Sakit", `: ${sakit} hari`],
+          ["Izin", `: ${izin} hari`],
+          ["Tanpa Keterangan", `: ${alpha} hari`],
+        ],
+        theme: "plain",
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 50, halign: "left" },
+          1: { cellWidth: 32, halign: "left" },
+        },
+        margin: { left: col1X, right: 0 },
+        tableWidth: boxWidth,
+      });
+
+      const ketidakhadiranFinalY = doc.lastAutoTable.finalY;
+
+      // BOX KANAN: CATATAN WALI KELAS
+      // Header Catatan Wali Kelas
+      doc.rect(col2X, startBoxY, boxWidth, 10);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Catatan Wali Kelas", col2X + boxWidth / 2, startBoxY + 7, {
+        align: "center",
+      });
+
+      // Content catatan (tinggi menyesuaikan dengan box ketidakhadiran)
+      const catatanHeight = ketidakhadiranFinalY - (startBoxY + 10);
+      doc.rect(col2X, startBoxY + 10, boxWidth, catatanHeight);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      const catatan = catatanData?.catatan_wali_kelas || "";
+      const wrappedCatatan = doc.splitTextToSize(catatan, boxWidth - 6);
+      doc.text(wrappedCatatan, col2X + 3, startBoxY + 15);
+
+      yPos = ketidakhadiranFinalY + 8;
+
+      // ========== TANGGAPAN ORANG TUA/WALI MURID ==========
+      // Header
+      doc.rect(20, yPos, 170, 10);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Tanggapan Orang Tua/Wali Murid", 105, yPos + 7, {
+        align: "center",
+      });
+      yPos += 10;
+
+      // Content area (empty space below header)
+      doc.rect(20, yPos, 170, 40);
+      yPos += 45;
+
+      // ========== JARAK KOSONG 2 BARIS ==========
+      yPos += 4;
+
+      // ========== TANDA TANGAN ==========
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+
+      // ========== LOKASI DAN TANGGAL (KANAN ATAS) ==========
+      const ttdCol1 = 50; // Orang Tua Murid (kiri)
+      const ttdCol2 = 155; // Wali Kelas (kanan)
+
+      doc.text("Sindangkerta, 22 Desember 2025", ttdCol2, yPos, {
+        align: "center",
+      });
+      yPos += 6; // Jarak kecil antara tanggal dan Wali Kelas
+
+      // ========== 2 KOLOM: ORANG TUA (KIRI) & WALI KELAS (KANAN) ==========
+      doc.text("Orang Tua Murid", ttdCol1, yPos, { align: "center" });
+      doc.text("Wali Kelas", ttdCol2, yPos, { align: "center" });
+
+      yPos += 20; // Jarak untuk tanda tangan
+
+      // NAMA - Orang Tua (titik-titik) & Wali Kelas
+      doc.text(".....................................", ttdCol1, yPos, {
+        align: "center",
+      });
+
+      doc.setFont("helvetica", "bold");
+      doc.text(waliKelas?.full_name || "LITA PURNAMA, S.Pd", ttdCol2, yPos, {
+        align: "center",
+      });
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        waliKelas?.nip ? `NIP. ${waliKelas.nip}` : "NIP.",
+        ttdCol2,
+        yPos + 4,
+        {
+          align: "center",
+        }
+      );
+
+      yPos += 8; // Jarak sebelum Kepala Sekolah
+
+      // ========== KEPALA SEKOLAH (TENGAH BAWAH) ==========
+      doc.text("Kepala Sekolah", 105, yPos, { align: "center" });
+      yPos += 20;
+
       doc.setFont("helvetica", "bold");
       doc.text(
         schoolSettings.principal_name || "YAYAN HAEDAR,S.Pd",
-        col2X,
-        yPos + 3,
+        105,
+        yPos,
         { align: "center" }
       );
       doc.setFont("helvetica", "normal");
       doc.text(
         `NIP. ${schoolSettings.principal_nip || "196704041988031005"}`,
-        col2X,
-        yPos + 7,
+        105,
+        yPos + 4,
         { align: "center" }
       );
 
-      doc.line(col3X - 30, yPos, col3X + 30, yPos);
-      doc.setFont("helvetica", "bold");
-      doc.text(waliKelas?.full_name || "LITA PURNAMA, S.Pd", col3X, yPos + 3, {
-        align: "center",
-      });
-      doc.setFont("helvetica", "normal");
-      doc.text("NIP.", col3X, yPos + 7, { align: "center" });
-
-      // FOOTER HALAMAN 2
+      // ========== FOOTER HALAMAN TERAKHIR ==========
       doc.setFontSize(8);
       doc.setFont("helvetica", "italic");
       doc.text(
@@ -653,7 +701,7 @@ function CetakRaport() {
         20,
         285
       );
-      doc.text(`Halaman : 2`, 180, 285);
+      doc.text(`Halaman : ${currentPage}`, 180, 285);
 
       return doc;
     } catch (error) {

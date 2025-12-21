@@ -83,6 +83,7 @@ const Sidebar = ({
               { name: "Input Nilai", path: "/eraport/nilai" },
               { name: "Input Kehadiran", path: "/eraport/kehadiran" },
               { name: "Input Catatan", path: "/eraport/catatan" },
+              { name: "Cek Status Nilai", path: "/eraport/cek-status" }, // ← TAMBAHAN BARU
               { name: "Cetak Raport", path: "/eraport/cetak" },
             ],
           },
@@ -140,6 +141,7 @@ const Sidebar = ({
               { name: "Input Nilai", path: "/eraport/nilai" },
               { name: "Input Kehadiran", path: "/eraport/kehadiran" },
               { name: "Input Catatan", path: "/eraport/catatan" },
+              { name: "Cek Status Nilai", path: "/eraport/cek-status" }, // ← TAMBAHAN BARU
               { name: "Cetak Raport", path: "/eraport/cetak" },
             ],
           },

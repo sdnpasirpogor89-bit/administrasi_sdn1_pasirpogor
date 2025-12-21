@@ -372,7 +372,7 @@ function CetakRaport() {
 
       if (!isFirstStudent) doc.addPage();
 
-      let yPos = 22;
+      let yPos = 15;
       let currentPage = 1;
 
       // ========== RENDER HEADER ==========
@@ -523,7 +523,7 @@ function CetakRaport() {
           20,
           287
         );
-        doc.text(`Halaman : 1`, 175, 287);
+        doc.text(`Halaman : 1`, 180, 287);
 
         doc.addPage();
         yPos = 15;
@@ -709,7 +709,7 @@ function CetakRaport() {
         20,
         287
       );
-      doc.text(`Halaman : ${currentPage}`, 175, 287);
+      doc.text(`Halaman : ${currentPage}`, 180, 287);
 
       return doc;
     } catch (error) {

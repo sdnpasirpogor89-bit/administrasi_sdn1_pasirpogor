@@ -182,11 +182,12 @@ const Layout = ({
       "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
       "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
 
-      // ✅ TAMBAH E-RAPORT
+      // ✅ TAMBAH E-RAPORT (INCLUDING NEW CEK STATUS NILAI)
       "/eraport/tp": "Input TP/ATP",
       "/eraport/nilai": "Input Nilai",
       "/eraport/kehadiran": "Input Kehadiran",
       "/eraport/catatan": "Input Catatan",
+      "/eraport/cek-status": "Cek Status Nilai", // ← TAMBAHAN BARU
       "/eraport/cetak": "Cetak Raport",
 
       "/catatan-siswa": "Catatan Siswa",
@@ -212,11 +213,12 @@ const Layout = ({
       "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
       "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
 
-      // ✅ TAMBAH E-RAPORT
+      // ✅ TAMBAH E-RAPORT (INCLUDING NEW CEK STATUS NILAI)
       "/eraport/tp": "TP/ATP",
       "/eraport/nilai": "Nilai Raport",
       "/eraport/kehadiran": "Kehadiran",
       "/eraport/catatan": "Catatan Raport",
+      "/eraport/cek-status": "Cek Nilai", // ← TAMBAHAN BARU (NAMA SINGKAT)
       "/eraport/cetak": "Cetak Raport",
 
       "/catatan-siswa": "Catatan",
@@ -256,16 +258,18 @@ const Layout = ({
         "Nilai Siswa": "/grades", // ✅ KEEP for parent menu
         Nilai: "/grades", // ✅ KEEP for mobile
 
-        // ✅ TAMBAH E-RAPORT
+        // ✅ TAMBAH E-RAPORT (INCLUDING NEW CEK STATUS NILAI)
         "Input TP/ATP": "/eraport/tp",
         "Input Nilai": "/eraport/nilai",
         "Input Kehadiran": "/eraport/kehadiran",
         "Input Catatan": "/eraport/catatan",
+        "Cek Status Nilai": "/eraport/cek-status", // ← TAMBAHAN BARU
         "Cetak Raport": "/eraport/cetak",
         "TP/ATP": "/eraport/tp",
         "Nilai Raport": "/eraport/nilai",
         Kehadiran: "/eraport/kehadiran",
         "Catatan Raport": "/eraport/catatan",
+        "Cek Nilai": "/eraport/cek-status", // ← Mobile version
         "E-Raport": "/eraport/tp", // ✅ Parent menu navigation
 
         // Other menus

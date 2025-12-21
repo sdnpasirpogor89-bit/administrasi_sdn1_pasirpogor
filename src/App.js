@@ -37,6 +37,7 @@ import InputTP from "./e-raport/InputTP";
 import InputNilai from "./e-raport/InputNilai";
 import InputKehadiran from "./e-raport/InputKehadiran";
 import InputCatatan from "./e-raport/InputCatatan";
+import CekNilai from "./e-raport/CekNilai";
 import CetakRaport from "./e-raport/CetakRaport";
 
 // Tambah wrapper untuk RekapNilai
@@ -887,6 +888,26 @@ function App() {
                     darkMode={darkMode}
                     onToggleDarkMode={toggleDarkMode}>
                     <InputCatatanWithNavigation userData={user} />
+                  </Layout>
+                ) : (
+                  <MaintenancePage message={maintenanceMessage} />
+                )
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/eraport/cek-status"
+            element={
+              user ? (
+                canAccessDuringMaintenance(user) ? (
+                  <Layout
+                    userData={user}
+                    onLogout={handleLogout}
+                    darkMode={darkMode}
+                    onToggleDarkMode={toggleDarkMode}>
+                    <CekNilai />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />

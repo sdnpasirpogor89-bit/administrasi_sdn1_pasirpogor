@@ -21,6 +21,7 @@ if (!document.head.querySelector("[data-shimmer-style]")) {
 function InputCatatan() {
   const [kelas, setKelas] = useState("");
   const [userId, setUserId] = useState("");
+  const [periode, setPeriode] = useState(""); // ← TAMBAH STATE PERIODE
   const [siswaList, setSiswaList] = useState([]);
   const [academicYear, setAcademicYear] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,19 +34,19 @@ function InputCatatan() {
   }, []);
 
   useEffect(() => {
-    if (kelas && academicYear) {
+    if (kelas && academicYear && periode) {
       loadData();
     }
-  }, [kelas, academicYear]);
+  }, [kelas, academicYear, periode]);
 
   const loadUserData = async () => {
     const sessionData = localStorage.getItem("userSession");
-    console.log("🔍 Session from localStorage:", sessionData);
+    console.log("📋 Session from localStorage:", sessionData);
 
     if (sessionData) {
       try {
         const userData = JSON.parse(sessionData);
-        console.log("🔍 Parsed user data:", userData);
+        console.log("📋 Parsed user data:", userData);
 
         if (userData.kelas) {
           setKelas(userData.kelas);
@@ -84,14 +85,14 @@ function InputCatatan() {
       .eq("is_active", true)
       .order("nama_siswa");
 
-    // Load existing catatan
+    // Load existing catatan - pakai semester (isinya periode: mid_ganjil/mid_genap)
     const { data: existingCatatan } = await supabase
       .from("catatan_eraport")
       .select("*")
       .eq("academic_year_id", academicYear?.id)
-      .eq("semester", academicYear?.semester);
+      .eq("semester", periode); // semester isinya periode (mid_ganjil/mid_genap)
 
-    console.log("📝 Existing Catatan:", existingCatatan);
+    console.log("📋 Existing Catatan:", existingCatatan);
 
     // Merge data
     const merged = students?.map((siswa) => {
@@ -124,10 +125,11 @@ function InputCatatan() {
     );
 
     setSaveProgress({ current: 0, total: siswaWithCatatan.length });
-    console.log("🔍 Starting save...");
-    console.log("🔍 User ID:", userId);
-    console.log("🔍 Kelas:", kelas);
-    console.log("🔍 Total siswa dengan catatan:", siswaWithCatatan.length);
+    console.log("💾 Starting save...");
+    console.log("📋 User ID:", userId);
+    console.log("📋 Kelas:", kelas);
+    console.log("📋 Periode:", periode); // ← LOG PERIODE
+    console.log("📋 Total siswa dengan catatan:", siswaWithCatatan.length);
 
     if (!userId) {
       alert("User ID tidak ditemukan! Silakan login ulang.");
@@ -142,7 +144,7 @@ function InputCatatan() {
     }
 
     // ⭐ OPTIMASI: Proses parallel dengan batching
-    const batchSize = 5; // Proses 5 siswa sekaligus
+    const batchSize = 5;
     for (let i = 0; i < siswaWithCatatan.length; i += batchSize) {
       const batch = siswaWithCatatan.slice(i, i + batchSize);
 
@@ -167,13 +169,13 @@ function InputCatatan() {
               console.log("✅ Updated:", siswa.nama_siswa);
             }
           } else {
-            // Insert new catatan
+            // Insert new catatan DENGAN PERIODE
             console.log("➕ Inserting catatan for:", siswa.nama_siswa);
 
             const insertData = {
               student_id: siswa.id,
               academic_year_id: academicYear?.id,
-              semester: academicYear?.semester,
+              semester: periode, // semester isinya periode (mid_ganjil/mid_genap)
               catatan_wali_kelas: siswa.catatan_wali_kelas,
               created_by: userId,
             };
@@ -206,7 +208,6 @@ function InputCatatan() {
     alert("Data berhasil disimpan!");
     setSaving(false);
     setSaveProgress({ current: 0, total: 0 });
-    // Reload data untuk update catatan_id
     loadData();
   };
 
@@ -217,20 +218,35 @@ function InputCatatan() {
           INPUT CATATAN WALI KELAS
         </h2>
 
-        {/* Filter */}
-        <div className="mb-4 md:mb-6 bg-gray-50 dark:bg-gray-800 p-3 md:p-4 rounded-lg transition-colors duration-200">
-          <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
-            Pilih Kelas
-          </label>
-          <input
-            type="text"
-            value={kelas ? `Kelas ${kelas}` : ""}
-            disabled
-            className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-red-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium transition-colors duration-200"
-          />
+        {/* Filter - TAMBAH PERIODE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 md:mb-6 bg-gray-50 dark:bg-gray-800 p-3 md:p-4 rounded-lg transition-colors duration-200">
+          <div>
+            <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
+              Kelas
+            </label>
+            <input
+              type="text"
+              value={kelas ? `Kelas ${kelas}` : ""}
+              disabled
+              className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-red-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium transition-colors duration-200"
+            />
+          </div>
+          <div>
+            <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">
+              Periode
+            </label>
+            <select
+              value={periode}
+              onChange={(e) => setPeriode(e.target.value)}
+              className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-medium focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 transition-colors duration-200">
+              <option value="">-- Pilih Periode --</option>
+              <option value="mid_ganjil">Mid Semester Ganjil</option>
+              <option value="mid_genap">Mid Semester Genap</option>
+            </select>
+          </div>
         </div>
 
-        {kelas && !loading && (
+        {kelas && periode && !loading && (
           <>
             <div className="flex justify-end mb-4">
               <button
@@ -332,14 +348,21 @@ function InputCatatan() {
             </p>
           </div>
         )}
+
+        {kelas && !periode && !loading && (
+          <div className="text-center py-6 md:py-8 text-gray-500 dark:text-gray-400">
+            <p className="text-sm md:text-base">
+              Silakan pilih periode terlebih dahulu.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Overlay Loading saat Save - Fullscreen di tengah layar */}
+      {/* Overlay Loading saat Save */}
       {saving && (
         <div className="fixed inset-0 bg-black/70 dark:bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 rounded-xl md:rounded-2xl p-6 md:p-8 shadow-2xl max-w-md w-full mx-4 transform transition-all">
             <div className="flex flex-col items-center">
-              {/* Spinning Circles */}
               <div className="relative w-16 h-16 md:w-20 md:h-20 mb-4 md:mb-6">
                 <div className="absolute inset-0 border-4 border-red-200 dark:border-red-800/30 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-transparent border-t-red-700 dark:border-t-red-600 rounded-full animate-spin"></div>
@@ -354,7 +377,6 @@ function InputCatatan() {
                   style={{ animationDuration: "2s" }}></div>
               </div>
 
-              {/* Text */}
               <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-2">
                 Menyimpan Catatan
               </h3>
@@ -362,7 +384,6 @@ function InputCatatan() {
                 Mohon tunggu, jangan tutup halaman ini...
               </p>
 
-              {/* Progress */}
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-red-500 to-red-700 dark:from-red-600 dark:to-red-800 h-2 rounded-full transition-all duration-500 ease-out relative"
@@ -377,12 +398,10 @@ function InputCatatan() {
                 </div>
               </div>
 
-              {/* Counter */}
               <p className="text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {saveProgress.current} dari {saveProgress.total} siswa
               </p>
 
-              {/* Percentage */}
               <p className="text-xl md:text-2xl font-bold text-red-700 dark:text-red-500 mt-2">
                 {saveProgress.total > 0
                   ? Math.round(
