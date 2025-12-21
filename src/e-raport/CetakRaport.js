@@ -386,8 +386,8 @@ function CetakRaport() {
         doc.text(`: Kelas ${kelas}`, 157, yPos);
         yPos += 4.5;
 
-        doc.text("NIS/NISN", 20, yPos);
-        doc.text(`: ${siswa.nis || siswa.nisn} / ${siswa.nisn}`, 50, yPos);
+        doc.text("NISN", 20, yPos);
+        doc.text(`: ${siswa.nisn}`, 50, yPos); // Hapus yang duplikat
         doc.text("Fase", 135, yPos);
         doc.text(`: ${getFase(parseInt(kelas))}`, 157, yPos);
         yPos += 4.5;
@@ -794,10 +794,6 @@ function CetakRaport() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 md:p-6">
-        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6 text-gray-900 dark:text-white">
-          CETAK RAPORT
-        </h2>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 md:mb-6 bg-gray-50 dark:bg-gray-800 p-3 md:p-4 rounded-lg">
           <div>
             <label className="block font-semibold mb-2 text-gray-800 dark:text-gray-200">

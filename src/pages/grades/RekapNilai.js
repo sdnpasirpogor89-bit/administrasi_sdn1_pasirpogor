@@ -190,47 +190,47 @@ const RekapNilai = ({ userData: initialUserData }) => {
         siswaMap.set(item.nisn, {
           nisn: item.nisn,
           nama_siswa: item.nama_siswa,
+          pabp: "-",
+          pancasila: "-",
           bindo: "-",
-          bing: "-",
-          bsunda: "-",
           mtk: "-",
           ipas: "-",
-          pancasila: "-",
-          senbud: "-",
-          pabp: "-",
           pjok: "-",
+          senbud: "-",
+          bsunda: "-",
+          bing: "-",
         });
       }
 
       const siswa = siswaMap.get(item.nisn);
       const mapel = item.mata_pelajaran.toLowerCase();
 
-      if (mapel.includes("indo")) siswa.bindo = item.nilai_akhir;
-      else if (mapel.includes("ing")) siswa.bing = item.nilai_akhir;
-      else if (mapel.includes("sunda")) siswa.bsunda = item.nilai_akhir;
+      if (mapel.includes("pabp") || mapel.includes("agama"))
+        siswa.pabp = item.nilai_akhir;
+      else if (mapel.includes("pancasila")) siswa.pancasila = item.nilai_akhir;
+      else if (mapel.includes("indo")) siswa.bindo = item.nilai_akhir;
       else if (mapel.includes("mtk") || mapel.includes("matematika"))
         siswa.mtk = item.nilai_akhir;
       else if (mapel.includes("ipas")) siswa.ipas = item.nilai_akhir;
-      else if (mapel.includes("pancasila")) siswa.pancasila = item.nilai_akhir;
-      else if (mapel.includes("senbud") || mapel.includes("seni"))
-        siswa.senbud = item.nilai_akhir;
-      else if (mapel.includes("pabp") || mapel.includes("agama"))
-        siswa.pabp = item.nilai_akhir;
       else if (mapel.includes("pjok") || mapel.includes("jasmani"))
         siswa.pjok = item.nilai_akhir;
+      else if (mapel.includes("senbud") || mapel.includes("seni"))
+        siswa.senbud = item.nilai_akhir;
+      else if (mapel.includes("sunda")) siswa.bsunda = item.nilai_akhir;
+      else if (mapel.includes("ing")) siswa.bing = item.nilai_akhir;
     });
 
     const result = Array.from(siswaMap.values()).map((siswa, index) => {
       const nilaiArray = [
+        siswa.pabp,
+        siswa.pancasila,
         siswa.bindo,
-        siswa.bing,
-        siswa.bsunda,
         siswa.mtk,
         siswa.ipas,
-        siswa.pancasila,
-        siswa.senbud,
-        siswa.pabp,
         siswa.pjok,
+        siswa.senbud,
+        siswa.bsunda,
+        siswa.bing,
       ].filter((n) => n !== "-" && !isNaN(parseInt(n)));
 
       const jumlah = nilaiArray.reduce((sum, n) => sum + parseInt(n), 0);
@@ -466,36 +466,36 @@ const RekapNilai = ({ userData: initialUserData }) => {
               <table className="w-full">
                 <thead className="bg-red-50 dark:bg-gray-700">
                   <tr>
-                    <th className="py-3 px-3 text-left font-bold text-red-800 dark:text-red-300 text-sm w-12">
+                    <th className="py-2 px-3 text-left font-bold text-red-800 dark:text-red-300 text-sm w-12">
                       No
                     </th>
-                    <th className="py-3 px-3 text-left font-bold text-red-800 dark:text-red-300 text-sm w-24">
+                    <th className="py-2 px-3 text-left font-bold text-red-800 dark:text-red-300 text-sm w-24">
                       NISN
                     </th>
-                    <th className="py-3 px-3 text-left font-bold text-red-800 dark:text-red-300 text-sm min-w-[160px]">
+                    <th className="py-2 px-3 text-left font-bold text-red-800 dark:text-red-300 text-sm min-w-[160px]">
                       Nama Siswa
                     </th>
                     {[
-                      "B.Indo",
-                      "B.Ing",
-                      "B.Sunda",
+                      "PAIBP",
+                      "PPKn",
+                      "B.IND",
                       "MTK",
                       "IPAS",
-                      "Pancasila",
-                      "Senbud",
-                      "PABP",
                       "PJOK",
+                      "SENBUD",
+                      "B.SUN",
+                      "B.ING",
                     ].map((mapel) => (
                       <th
                         key={mapel}
-                        className="py-3 px-3 text-center font-bold text-red-800 dark:text-red-300 text-sm w-20">
+                        className="py-2 px-3 text-center font-bold text-red-800 dark:text-red-300 text-sm w-20">
                         {mapel}
                       </th>
                     ))}
-                    <th className="py-3 px-3 text-center font-bold text-red-800 dark:text-red-300 text-sm w-20">
+                    <th className="py-2 px-3 text-center font-bold text-red-800 dark:text-red-300 text-sm w-20">
                       Jumlah
                     </th>
-                    <th className="py-3 px-3 text-center font-bold text-red-800 dark:text-red-300 text-sm w-24">
+                    <th className="py-2 px-3 text-center font-bold text-red-800 dark:text-red-300 text-sm w-24">
                       Rata-rata
                     </th>
                   </tr>
@@ -505,46 +505,46 @@ const RekapNilai = ({ userData: initialUserData }) => {
                     <tr
                       key={row.nisn}
                       className="hover:bg-red-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="py-3 px-3 text-gray-700 dark:text-gray-300 font-medium">
+                      <td className="py-2 px-3 text-gray-700 dark:text-gray-300 font-medium text-sm">
                         {row.no}
                       </td>
-                      <td className="py-3 px-3 font-mono text-red-600 dark:text-red-400 text-sm">
+                      <td className="py-2 px-3 font-mono text-red-600 dark:text-red-400 text-xs">
                         {row.nisn}
                       </td>
-                      <td className="py-3 px-3 text-gray-800 dark:text-gray-200 font-medium">
+                      <td className="py-2 px-3 text-gray-800 dark:text-gray-200 font-medium text-sm">
                         {row.nama_siswa}
                       </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.bindo}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.bing}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.bsunda}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.mtk}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.ipas}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.pancasila}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
-                        {row.senbud}
-                      </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
                         {row.pabp}
                       </td>
-                      <td className="py-3 px-3 text-center text-gray-700 dark:text-gray-300 font-medium">
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.pancasila}
+                      </td>
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.bindo}
+                      </td>
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.mtk}
+                      </td>
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.ipas}
+                      </td>
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
                         {row.pjok}
                       </td>
-                      <td className="py-3 px-3 text-center font-bold text-red-700 dark:text-red-300 text-lg">
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.senbud}
+                      </td>
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.bsunda}
+                      </td>
+                      <td className="py-2 px-3 text-center text-gray-700 dark:text-gray-300 font-medium text-sm">
+                        {row.bing}
+                      </td>
+                      <td className="py-2 px-3 text-center font-bold text-red-700 dark:text-red-300 text-base">
                         {row.jumlah}
                       </td>
-                      <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 text-lg">
+                      <td className="py-2 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 text-base">
                         {row.rata_rata}
                       </td>
                     </tr>

@@ -38,7 +38,7 @@ import InputNilai from "./e-raport/InputNilai";
 import InputKehadiran from "./e-raport/InputKehadiran";
 import InputCatatan from "./e-raport/InputCatatan";
 import CekNilai from "./e-raport/CekNilai";
-import CetakRaport from "./e-raport/CetakRaport";
+import RaportPage from "./e-raport/RaportPage";
 
 // Tambah wrapper untuk RekapNilai
 const RekapNilaiWithNavigation = ({ userData }) => {
@@ -82,10 +82,10 @@ const InputCatatanWithNavigation = ({ userData }) => {
   );
 };
 
-const CetakRaportWithNavigation = ({ userData }) => {
+const RaportPageWithNavigation = ({ userData }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <CetakRaport userData={userData} onNavigate={navigate} />,
+    () => <RaportPage userData={userData} onNavigate={navigate} />,
     [userData]
   );
 };
@@ -927,7 +927,7 @@ function App() {
                     onLogout={handleLogout}
                     darkMode={darkMode}
                     onToggleDarkMode={toggleDarkMode}>
-                    <CetakRaportWithNavigation userData={user} />
+                    <RaportPageWithNavigation userData={user} />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />

@@ -64,7 +64,7 @@ const Katrol = ({ userData: initialUserData }) => {
     "IPAS",
     "Pendidikan Pancasila",
     "Seni Budaya",
-    "Pendidikan Agama dan Budi Pekerti (PABP)",
+    "Pendidikan Agama dan Budi Pekerti (PAIBP)",
     "Pendidikan Jasmani Olahraga Kesehatan",
   ];
 

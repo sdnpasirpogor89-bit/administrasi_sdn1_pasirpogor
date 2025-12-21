@@ -217,8 +217,8 @@ function InputKehadiran() {
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
-          Input Absensi Siswa
+        <h2 className="text-base md:text-lg lg:text-xl font-bold mb-4 md:mb-6 text-gray-900 dark:text-white">
+          INPUT KEHADIRAN SISWA
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

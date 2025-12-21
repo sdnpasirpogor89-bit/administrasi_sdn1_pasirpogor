@@ -224,7 +224,7 @@ const CekNilai = () => {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4 md:p-6">
-        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6 text-gray-900 dark:text-white">
+        <h2 className="text-base md:text-lg lg:text-xl font-bold mb-4 md:mb-6 text-gray-900 dark:text-white">
           CEK KELENGKAPAN NILAI
         </h2>
 

@@ -794,8 +794,7 @@ export const exportLeger = async (
   kelas,
   supabase,
   tahunAjaran = null,
-  semester = null,
-  sortBy = "jumlah"
+  semester = null
 ) => {
   try {
     let query = supabase
@@ -842,18 +841,19 @@ export const exportLeger = async (
 
     sortedData.forEach((item) => {
       if (!siswaMap.has(item.nisn)) {
+        // 🔧 REVISI #1: Struktur Data siswaMap
         siswaMap.set(item.nisn, {
           nisn: item.nisn,
           nama_siswa: item.nama_siswa,
+          pabp: null,
+          pancasila: null,
           bindo: null,
-          bing: null,
-          bsunda: null,
           mtk: null,
           ipas: null,
-          pancasila: null,
-          senbud: null,
-          pabp: null,
           pjok: null,
+          senbud: null,
+          bsunda: null,
+          bing: null,
         });
         siswaOrder.push(item.nisn);
       }
@@ -870,16 +870,17 @@ export const exportLeger = async (
 
     siswaOrder.forEach((nisn, index) => {
       const siswa = siswaMap.get(nisn);
+      // 🔧 REVISI #2: Array Nilai untuk Perhitungan
       const nilai = [
+        siswa.pabp,
+        siswa.pancasila,
         siswa.bindo,
-        siswa.bing,
-        siswa.bsunda,
         siswa.mtk,
         siswa.ipas,
-        siswa.pancasila,
-        siswa.senbud,
-        siswa.pabp,
         siswa.pjok,
+        siswa.senbud,
+        siswa.bsunda,
+        siswa.bing,
       ];
 
       const nilaiValid = nilai.filter((n) => n !== null && n !== undefined);
@@ -890,43 +891,23 @@ export const exportLeger = async (
       const rataRata =
         nilaiValid.length > 0 ? Math.round(jumlah / nilaiValid.length) : null;
 
+      // 🔧 REVISI #3: Object legerData Push
       legerData.push({
         no: index + 1,
         nisn: siswa.nisn,
         nama_siswa: siswa.nama_siswa,
+        pabp: siswa.pabp || "-",
+        pancasila: siswa.pancasila || "-",
         bindo: siswa.bindo || "-",
-        bing: siswa.bing || "-",
-        bsunda: siswa.bsunda || "-",
         mtk: siswa.mtk || "-",
         ipas: siswa.ipas || "-",
-        pancasila: siswa.pancasila || "-",
-        senbud: siswa.senbud || "-",
-        pabp: siswa.pabp || "-",
         pjok: siswa.pjok || "-",
+        senbud: siswa.senbud || "-",
+        bsunda: siswa.bsunda || "-",
+        bing: siswa.bing || "-",
         jumlah: jumlah || "-",
         rata_rata: rataRata || "-",
       });
-    });
-
-    // Buat data untuk sheet peringkat
-    const legerPeringkat = [...legerData]
-      .filter((item) => item.jumlah !== "-" && item.rata_rata !== "-")
-      .map((item) => ({
-        ...item,
-        jumlah_num: item.jumlah !== "-" ? item.jumlah : 0,
-        rata_rata_num: item.rata_rata !== "-" ? parseInt(item.rata_rata) : 0,
-      }));
-
-    // Sort berdasarkan pilihan
-    if (sortBy === "jumlah") {
-      legerPeringkat.sort((a, b) => b.jumlah_num - a.jumlah_num);
-    } else {
-      legerPeringkat.sort((a, b) => b.rata_rata_num - a.rata_rata_num);
-    }
-
-    // Update nomor urut untuk peringkat
-    legerPeringkat.forEach((item, index) => {
-      item.no = index + 1;
     });
 
     // Buat Workbook Excel dengan 2 sheet
@@ -938,13 +919,12 @@ export const exportLeger = async (
     // Header Sheet 1
     const headerNilai = [
       ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
-      [`LEGER NILAI - KELAS ${kelas}`],
+      [`REKAPITULASI NILAI HASIL KATROL - KELAS ${kelas}`],
       [
         `Tahun Ajaran: ${tahunAjaran || "2025/2026"}${
           semester ? ` - Semester ${semester}` : ""
         }`,
       ],
-      ["(Diurutkan berdasarkan Nama Siswa)"],
       [""],
     ];
 
@@ -962,19 +942,20 @@ export const exportLeger = async (
     });
 
     // Table headers Sheet 1
+    // 🔧 REVISI #4a: Table Headers (Leger Nilai)
     const headersNilai = [
       "No",
       "NISN",
       "Nama Siswa",
-      "B.Indo",
-      "B.Ing",
-      "B.Sunda",
+      "PAIBP",
+      "PPKn",
+      "B.IND",
       "MTK",
       "IPAS",
-      "Pend. Pancasila",
-      "Senbud",
-      "PABP",
       "PJOK",
+      "SENBUD",
+      "B.SUN",
+      "B.ING",
       "Jumlah",
       "Rata-rata",
     ];
@@ -1013,7 +994,7 @@ export const exportLeger = async (
       { width: 9 },
       { width: 9 },
       { width: 9 },
-      { width: 13 },
+      { width: 9 },
       { width: 9 },
       { width: 9 },
       { width: 9 },
@@ -1025,19 +1006,20 @@ export const exportLeger = async (
 
     // Data rows Sheet 1
     legerData.forEach((row, index) => {
+      // 🔧 REVISI #5a: Data Rows addRow (Leger Nilai)
       const r = wsNilai.addRow([
         row.no,
         row.nisn,
         row.nama_siswa,
+        row.pabp,
+        row.pancasila,
         row.bindo,
-        row.bing,
-        row.bsunda,
         row.mtk,
         row.ipas,
-        row.pancasila,
-        row.senbud,
-        row.pabp,
         row.pjok,
+        row.senbud,
+        row.bsunda,
+        row.bing,
         row.jumlah,
         row.rata_rata,
       ]);
@@ -1078,192 +1060,6 @@ export const exportLeger = async (
       });
     });
 
-    // ==================== SHEET 2: LEGER PERINGKAT ====================
-    const wsPeringkat = workbook.addWorksheet("Leger Peringkat");
-
-    // Header Sheet 2
-    const headerPeringkat = [
-      ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
-      [`LEGER PERINGKAT - KELAS ${kelas}`],
-      [
-        `Tahun Ajaran: ${tahunAjaran || "2025/2026"}${
-          semester ? ` - Semester ${semester}` : ""
-        }`,
-      ],
-      [
-        `(Diurutkan berdasarkan ${
-          sortBy === "jumlah" ? "Jumlah Nilai" : "Rata-rata Nilai"
-        } - Tertinggi ke Terendah)`,
-      ],
-      [""],
-    ];
-
-    let rowPeringkat = 1;
-    headerPeringkat.forEach((row) => {
-      const r = wsPeringkat.getRow(rowPeringkat++);
-      r.getCell(1).value = row[0];
-      wsPeringkat.mergeCells(`A${rowPeringkat - 1}:N${rowPeringkat - 1}`);
-      r.getCell(1).font = {
-        bold: true,
-        size: rowPeringkat <= 4 ? 14 : 11,
-        name: "Calibri",
-      };
-      r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
-    });
-
-    // Table headers Sheet 2
-    const headersPeringkat = [
-      "No",
-      "NISN",
-      "Nama Siswa",
-      "B.Indo",
-      "B.Ing",
-      "B.Sunda",
-      "MTK",
-      "IPAS",
-      "Pend. Pancasila",
-      "Senbud",
-      "PABP",
-      "PJOK",
-      "Jumlah",
-      "Rata-rata",
-    ];
-
-    const headerRowPeringkat = wsPeringkat.getRow(rowPeringkat);
-    headerRowPeringkat.values = headersPeringkat;
-    headerRowPeringkat.height = 30;
-
-    headerRowPeringkat.eachCell((cell) => {
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFE2EFDA" },
-      };
-      cell.font = { bold: true, size: 10 };
-      cell.alignment = {
-        vertical: "middle",
-        horizontal: "center",
-        wrapText: true,
-      };
-      cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-      };
-    });
-
-    // Column widths Sheet 2
-    wsPeringkat.columns = [
-      { width: 5 },
-      { width: 14 },
-      { width: 33 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 13 },
-      { width: 9 },
-      { width: 9 },
-      { width: 9 },
-      { width: 10 },
-      { width: 11 },
-    ];
-
-    rowPeringkat++;
-
-    // Data rows Sheet 2
-    legerPeringkat.forEach((row, index) => {
-      const r = wsPeringkat.addRow([
-        row.no,
-        row.nisn,
-        row.nama_siswa,
-        row.bindo,
-        row.bing,
-        row.bsunda,
-        row.mtk,
-        row.ipas,
-        row.pancasila,
-        row.senbud,
-        row.pabp,
-        row.pjok,
-        row.jumlah,
-        row.rata_rata,
-      ]);
-
-      r.eachCell((cell, colNumber) => {
-        cell.border = {
-          top: { style: "thin" },
-          left: { style: "thin" },
-          bottom: { style: "thin" },
-          right: { style: "thin" },
-        };
-
-        if (colNumber === 1) {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-          if (index < 3) {
-            cell.font = { bold: true, size: 11 };
-            if (index === 0) {
-              cell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "FFFFD700" },
-              };
-            } else if (index === 1) {
-              cell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "FFC0C0C0" },
-              };
-            } else if (index === 2) {
-              cell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "FFCD7F32" },
-              };
-            }
-          }
-        } else if (colNumber === 2) {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-          cell.numFmt = "@";
-        } else if (colNumber === 3) {
-          cell.alignment = { vertical: "middle", horizontal: "left" };
-        } else {
-          cell.alignment = { vertical: "middle", horizontal: "center" };
-
-          if (cell.value !== "-" && typeof cell.value === "number") {
-            cell.numFmt = "0";
-            if (colNumber === 14 || colNumber === 13) {
-              cell.font = { bold: true };
-            }
-          }
-        }
-
-        // Highlight baris 3 besar
-        if (index < 3 && colNumber > 1) {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: {
-              argb:
-                index === 0
-                  ? "FFFFFFCC"
-                  : index === 1
-                  ? "FFE8E8E8"
-                  : "FFF5E6CC",
-            },
-          };
-        } else if (index % 2 !== 0) {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF2F2F2" },
-          };
-        }
-      });
-    });
-
     // ==================== DOWNLOAD ====================
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
@@ -1283,8 +1079,6 @@ export const exportLeger = async (
     return {
       success: true,
       count: legerData.length,
-      peringkatCount: legerPeringkat.length,
-      sortBy: sortBy,
     };
   } catch (error) {
     console.error("Error exporting leger:", error);
