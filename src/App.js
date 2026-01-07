@@ -16,11 +16,9 @@ import Layout from "./components/Layout";
 import AdminDashboard from "./components/AdminDashboard";
 import TeacherDashboard from "./components/TeacherDashboard";
 import Students from "./pages/Students";
-import Attendance from "./pages/attendance/Attendance";
+import AttendanceMain from "./pages/attendance/AttendanceMain"; // ✅ GANTI KE ATTENDANCEMAIN
 import Teacher from "./pages/Teacher";
-import Grade from "./pages/grades/Grade";
-import Katrol from "./pages/grades/Katrol";
-import RekapNilai from "./pages/grades/RekapNilai"; // ← IMPORT REKAP NILAI
+import GradeMain from "./pages/grades/GradeMain";
 import CatatanSiswa from "./pages/CatatanSiswa";
 import TeacherSchedule from "./pages/TeacherSchedule";
 import Classes from "./pages/Classes";
@@ -39,15 +37,6 @@ import InputKehadiran from "./e-raport/InputKehadiran";
 import InputCatatan from "./e-raport/InputCatatan";
 import CekNilai from "./e-raport/CekNilai";
 import RaportPage from "./e-raport/RaportPage";
-
-// Tambah wrapper untuk RekapNilai
-const RekapNilaiWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <RekapNilai userData={userData} onNavigate={navigate} />,
-    [userData]
-  );
-};
 
 // TAMBAH WRAPPER UNTUK E-RAPORT
 const InputTPWithNavigation = ({ userData }) => {
@@ -106,19 +95,18 @@ const StudentsWithNavigation = ({ userData }) => {
   );
 };
 
-const AttendanceWithNavigation = ({ currentUser }) => {
+const AttendanceWithNavigation = ({ currentUser, darkMode, showToast }) => {
   const navigate = useNavigate();
   return useMemo(
-    () => <Attendance currentUser={currentUser} onNavigate={navigate} />,
-    [currentUser]
-  );
-};
-
-const GradesWithNavigation = ({ userData }) => {
-  const navigate = useNavigate();
-  return useMemo(
-    () => <Grade userData={userData} onNavigate={navigate} />,
-    [userData]
+    () => (
+      <AttendanceMain
+        user={currentUser}
+        onNavigate={navigate}
+        darkMode={darkMode}
+        onShowToast={showToast}
+      />
+    ),
+    [currentUser, darkMode, showToast]
   );
 };
 
@@ -193,6 +181,15 @@ function App() {
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [maintenanceLoading, setMaintenanceLoading] = useState(true);
   const [whitelistUsers, setWhitelistUsers] = useState([]);
+
+  // ========== TOAST STATE ==========
+  const [toast, setToast] = useState(null);
+
+  // ========== TOAST FUNCTION ==========
+  const showToast = useCallback((message, type = "info") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   // ========== 🌙 APPLY DARK MODE TO HTML ==========
   useEffect(() => {
@@ -584,7 +581,11 @@ function App() {
                     onLogout={handleLogout}
                     darkMode={darkMode}
                     onToggleDarkMode={toggleDarkMode}>
-                    <AttendanceWithNavigation currentUser={user} />
+                    <AttendanceWithNavigation
+                      currentUser={user}
+                      darkMode={darkMode}
+                      showToast={showToast}
+                    />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />
@@ -644,48 +645,11 @@ function App() {
                     onLogout={handleLogout}
                     darkMode={darkMode}
                     onToggleDarkMode={toggleDarkMode}>
-                    <Grade userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/grades/katrol"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <Katrol userData={user} />
-                  </Layout>
-                ) : (
-                  <MaintenancePage message={maintenanceMessage} />
-                )
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          {/* ======= ROUTE BARU: REKAP NILAI ======= */}
-          <Route
-            path="/grades/rekap"
-            element={
-              user ? (
-                canAccessDuringMaintenance(user) ? (
-                  <Layout
-                    userData={user}
-                    onLogout={handleLogout}
-                    darkMode={darkMode}
-                    onToggleDarkMode={toggleDarkMode}>
-                    <RekapNilaiWithNavigation userData={user} />
+                    <GradeMain
+                      user={user}
+                      onShowToast={showToast}
+                      darkMode={darkMode}
+                    />
                   </Layout>
                 ) : (
                   <MaintenancePage message={maintenanceMessage} />
@@ -948,6 +912,22 @@ function App() {
             element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
           />
         </Routes>
+
+        {/* TOAST NOTIFICATION */}
+        {toast && (
+          <div
+            className={`fixed bottom-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white animate-fade-in ${
+              toast.type === "success"
+                ? "bg-green-500"
+                : toast.type === "error"
+                ? "bg-red-500"
+                : toast.type === "warning"
+                ? "bg-yellow-500"
+                : "bg-blue-500"
+            }`}>
+            {toast.message}
+          </div>
+        )}
       </div>
     </Router>
   );

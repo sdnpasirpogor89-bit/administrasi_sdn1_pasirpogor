@@ -146,7 +146,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
     return result;
   };
 
-  // ✅ FUNGSI FETCH PREVIEW DATA - REVISI!
+  // ✅ FUNGSI FETCH PREVIEW DATA - BARU!
   const fetchPreviewData = async ({
     mode,
     month,
@@ -169,6 +169,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
         return;
       }
 
+      // ✅ GET SEMESTER DATA
       const semesterData = await getSemesterById(selectedSemester);
       if (!semesterData) {
         showToast("Semester tidak ditemukan", "error");
@@ -176,102 +177,61 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
         return;
       }
 
-      console.log("🔍 Fetching ALL attendance data for:", {
-        semesterId: selectedSemester,
-        tahun_ajaran: semesterData.year,
-        semester: semesterData.semester,
-        class: previewClass,
+      console.log("🔍 Fetching preview data:", {
         mode,
         month,
         year,
+        semester,
+        academicYear,
+        class: previewClass,
+        semesterData,
       });
 
-      // ✅ FETCH ALL DATA DENGAN PAGINATION
-      const BATCH_SIZE = 1000;
-      let allData = [];
-      let from = 0;
-      let hasMore = true;
-      let totalCount = 0;
+      let query = supabase
+        .from("attendance")
+        .select("*")
+        .eq("kelas", previewClass)
+        .eq("tahun_ajaran", semesterData.year) // ✅ Always filter by year
+        .order("tanggal", { ascending: true });
 
-      while (hasMore) {
-        let query = supabase
-          .from("attendance")
-          .select("*", { count: "exact" })
-          .eq("kelas", previewClass)
-          .eq("tahun_ajaran", semesterData.year)
-          .eq("semester", semesterData.semester)
-          .order("tanggal", { ascending: true })
-          .range(from, from + BATCH_SIZE - 1);
+      if (mode === "monthly" && month && year) {
+        // ✅ USE USER-SELECTED YEAR DIRECTLY
+        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
 
-        if (mode === "monthly" && month && year) {
-          const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-          const lastDay = new Date(year, month, 0).getDate();
-          const endDate = `${year}-${String(month).padStart(
-            2,
-            "0"
-          )}-${lastDay}`;
+        console.log("📅 Monthly filter:", startDate, "to", endDate);
 
-          query = query.gte("tanggal", startDate).lte("tanggal", endDate);
-        } else if (mode === "semester") {
-          query = query
-            .gte("tanggal", semesterData.start_date)
-            .lte("tanggal", semesterData.end_date);
-        }
+        query = query.gte("tanggal", startDate).lte("tanggal", endDate);
+      } else if (mode === "semester") {
+        // ✅ SEMESTER MODE: Use semester date range
+        console.log(
+          "📚 Semester filter:",
+          semesterData.year,
+          semesterData.semester
+        );
 
-        const { data, error, count } = await query;
-
-        if (error) throw error;
-
-        if (from === 0) {
-          totalCount = count;
-          console.log("📊 Total records to fetch:", totalCount);
-        }
-
-        if (data && data.length > 0) {
-          allData = [...allData, ...data];
-          from += BATCH_SIZE;
-
-          console.log(
-            `📦 Fetched batch: ${data.length} records (Total: ${allData.length}/${totalCount})`
-          );
-
-          if (allData.length >= totalCount || data.length < BATCH_SIZE) {
-            hasMore = false;
-          }
-        } else {
-          hasMore = false;
-        }
+        query = query
+          .gte("tanggal", semesterData.start_date)
+          .lte("tanggal", semesterData.end_date);
       }
 
-      console.log("✅ All data fetched:", allData.length, "records");
+      const { data, error } = await query;
 
-      if (allData && allData.length > 0) {
-        // ✅ LOG TOTAL HARI UNTUK DEBUG
-        const uniqueDates = [...new Set(allData.map((d) => d.tanggal))].sort();
-        console.log("📅 Unique dates in data:", uniqueDates.length, "days");
-        console.log(
-          "📅 Date range:",
-          uniqueDates[0],
-          "to",
-          uniqueDates[uniqueDates.length - 1]
-        );
+      if (error) throw error;
 
-        const transformedData = transformAttendanceData(allData);
+      console.log("📦 Raw data received:", data?.length || 0, "records");
+
+      if (data && data.length > 0) {
+        const transformedData = transformAttendanceData(data);
         setPreviewData(transformedData);
-        console.log("✅ Transformed:", transformedData.length, "students");
-
-        // ✅ LOG RINGKASAN
-        const totalRecords = allData.length;
-        const totalStudents = transformedData.length;
-        console.log(
-          `📊 Summary: ${totalRecords} attendance records → ${totalStudents} students`
-        );
+        console.log("✅ Preview data set:", transformedData.length, "students");
       } else {
         setPreviewData([]);
-        console.log("⚠️ No attendance data found");
+        console.log("⚠️ No data found for the selected period");
       }
     } catch (error) {
-      console.error("❌ Error fetching preview:", error);
+      console.error("❌ Error fetching preview data:", error);
       showToast("Gagal memuat data preview", "error");
       setPreviewData([]);
     } finally {
@@ -289,6 +249,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
         return;
       }
 
+      // ✅ If no username, try to use user object directly
       if (!user.username) {
         console.warn("⚠️ No username, using user object directly");
         setFullUserData(user);
@@ -307,7 +268,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
 
         if (error) {
           console.error("❌ Error fetching user data:", error);
-          setFullUserData(user);
+          setFullUserData(user); // ✅ Fallback to passed user
           setLoading(false);
           return;
         }
@@ -316,7 +277,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
           console.warn(
             "⚠️ User not found in database, using passed user object"
           );
-          setFullUserData(user);
+          setFullUserData(user); // ✅ Fallback to passed user
           setLoading(false);
           return;
         }
@@ -338,7 +299,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
         // Auto-set preview class jika user adalah guru kelas
         if (data.role === "guru_kelas" && data.kelas) {
           setPreviewClass(data.kelas);
-          setSelectedClass(data.kelas);
+          setSelectedClass(data.kelas); // Untuk tab export juga
         }
       } catch (error) {
         console.error("❌ Unexpected error:", error);
@@ -380,9 +341,9 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
     fetchActiveSemester();
   }, []);
 
-  // ✅ AUTO-FETCH PREVIEW DATA SAAT TAB DIBUKA
+  // ✅ AUTO-FETCH PREVIEW DATA - BARU!
   useEffect(() => {
-    if (activeTab === "preview" && previewClass && selectedSemester) {
+    if (activeTab === "preview" && previewClass) {
       console.log("🔄 Tab preview opened, fetching data...");
 
       // Fetch data untuk bulan sekarang
@@ -393,7 +354,7 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
         year: now.getFullYear(),
       });
     }
-  }, [activeTab, previewClass, selectedSemester]);
+  }, [activeTab, previewClass]);
 
   // ✅ HANDLE EXPORT
   const handleDownloadExport = async () => {
@@ -646,73 +607,20 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
                 />
               )}
 
-              {/* TAB 2: PREVIEW PRESENSI - REVISI! */}
+              {/* TAB 2: PREVIEW PRESENSI - FIXED! */}
               {activeTab === "preview" && (
                 <div className="space-y-4">
-                  {/* SEMESTER SELECTOR - DI LUAR MODAL */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}>
-                      1. Pilih Semester
-                    </label>
-                    <select
-                      value={selectedSemester}
-                      onChange={(e) => {
-                        const newSemesterId = e.target.value;
-                        setSelectedSemester(newSemesterId);
-
-                        // Auto-refresh saat ganti semester
-                        if (previewClass && newSemesterId) {
-                          const now = new Date();
-                          fetchPreviewData({
-                            mode: "monthly",
-                            month: now.getMonth() + 1,
-                            year: now.getFullYear(),
-                          });
-                        }
-                      }}
-                      className={`w-full px-4 py-3 rounded-lg border-2 font-medium transition-all ${
-                        darkMode
-                          ? "bg-gray-700 border-gray-600 text-white focus:border-red-500"
-                          : "bg-white border-gray-300 text-gray-900 focus:border-red-500"
-                      }`}>
-                      <option value="">Pilih Semester</option>
-                      {availableSemesters.map((sem) => (
-                        <option key={sem.id} value={sem.id}>
-                          {sem.year} - Semester{" "}
-                          {sem.semester === 1 ? "Ganjil" : "Genap"}
-                          {sem.is_active ? " (Aktif)" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   {/* Selector Kelas */}
-                  <div>
+                  <div className="mb-4">
                     <label
                       className={`block text-sm font-medium mb-2 ${
                         darkMode ? "text-gray-300" : "text-gray-700"
                       }`}>
-                      2. Pilih Kelas untuk Preview
+                      Pilih Kelas untuk Preview
                     </label>
                     <select
                       value={previewClass}
-                      onChange={(e) => {
-                        const newClass = e.target.value;
-                        setPreviewClass(newClass);
-
-                        // Auto-refresh saat ganti kelas
-                        if (selectedSemester && newClass) {
-                          const now = new Date();
-                          fetchPreviewData({
-                            mode: "monthly",
-                            month: now.getMonth() + 1,
-                            year: now.getFullYear(),
-                          });
-                        }
-                      }}
+                      onChange={(e) => setPreviewClass(e.target.value)}
                       disabled={
                         fullUserData?.role === "guru_kelas" &&
                         fullUserData?.kelas
@@ -734,10 +642,16 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
                         </option>
                       ))}
                     </select>
+                    {fullUserData?.role === "guru_kelas" &&
+                      fullUserData?.kelas && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          🔒 Kelas otomatis sesuai data guru
+                        </p>
+                      )}
                   </div>
 
-                  {/* AttendanceModal */}
-                  {previewClass && selectedSemester ? (
+                  {/* AttendanceModal dengan props yang benar */}
+                  {previewClass ? (
                     <AttendanceModal
                       show={true}
                       onClose={() => {}}
@@ -751,10 +665,6 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
                       darkMode={darkMode}
                       isMobile={false}
                       isTablet={false}
-                      selectedSemesterData={availableSemesters.find(
-                        (s) => s.id === selectedSemester
-                      )}
-                      availableSemesters={availableSemesters}
                     />
                   ) : (
                     <div
@@ -763,15 +673,9 @@ const AttendanceMain = ({ user, onShowToast, darkMode }) => {
                           ? "text-gray-400 border-gray-700 bg-gray-900/30"
                           : "text-gray-500 border-gray-300 bg-gray-50"
                       }`}>
-                      <div className="text-5xl mb-3">
-                        {!selectedSemester ? "📅" : !previewClass ? "👆" : "✅"}
-                      </div>
+                      <div className="text-5xl mb-3">👆</div>
                       <p className="font-medium">
-                        {!selectedSemester
-                          ? "Pilih semester terlebih dahulu"
-                          : !previewClass
-                          ? "Pilih kelas untuk melihat preview presensi"
-                          : "Memuat data..."}
+                        Pilih kelas untuk melihat preview presensi
                       </p>
                     </div>
                   )}

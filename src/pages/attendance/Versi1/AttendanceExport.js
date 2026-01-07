@@ -1,7 +1,5 @@
 // AttendanceExport.js - FIXED DUPLICATE FUNCTION
 import ExcelJS from "exceljs";
-import { supabase } from "../../supabaseClient";
-import { filterBySemester } from "../../services/academicYearService";
 
 // ========================================
 // 🗓️ LIBUR NASIONAL 2025-2026
@@ -816,17 +814,9 @@ export const exportSemesterRecapFromComponent = async (
   semester,
   year,
   studentsData,
-  currentUser = null,
-  semesterId = null
+  currentUser = null
 ) => {
   try {
-    console.log("📋 exportSemesterRecapFromComponent called:", {
-      activeClass,
-      semester,
-      year,
-      semesterId,
-    });
-
     const students = studentsData[activeClass] || [];
 
     if (students.length === 0) {
@@ -845,20 +835,6 @@ export const exportSemesterRecapFromComponent = async (
 
     const months = semester === 1 ? [7, 8, 9, 10, 11, 12] : [1, 2, 3, 4, 5, 6];
 
-    // ✅ CALCULATE DATE RANGE for semester
-    let startDate, endDate;
-    if (semester === 1) {
-      // Semester Ganjil: Juli-Desember tahun PERTAMA
-      startDate = `${yearNum}-07-01`;
-      endDate = `${yearNum}-12-31`;
-    } else {
-      // Semester Genap: Januari-Juni tahun KEDUA
-      startDate = `${yearNum + 1}-01-01`;
-      endDate = `${yearNum + 1}-06-30`;
-    }
-
-    console.log("📅 Date range for semester:", startDate, "to", endDate);
-
     // Fetch with pagination
     let allRecords = [];
     let page = 0;
@@ -866,21 +842,13 @@ export const exportSemesterRecapFromComponent = async (
     let hasMore = true;
 
     while (hasMore) {
-      let query = supabase
+      const { data, error } = await supabase
         .from("attendance")
         .select("*")
         .eq("kelas", activeClass)
-        .gte("tanggal", startDate)
-        .lte("tanggal", endDate)
+        .eq("tahun_ajaran", academicYear)
         .order("tanggal", { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      // ✅ ADD FILTER BY SEMESTER
-      if (semesterId) {
-        query = filterBySemester(query, semesterId);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -892,8 +860,6 @@ export const exportSemesterRecapFromComponent = async (
         hasMore = false;
       }
     }
-
-    console.log("📦 Attendance records fetched:", allRecords.length);
 
     const attendanceData = allRecords;
 
@@ -943,163 +909,5 @@ export const exportSemesterRecapFromComponent = async (
   } catch (error) {
     console.error("Error in exportSemesterRecapFromComponent:", error);
     return { success: false, message: `Error: ${error.message}` };
-  }
-};
-
-// ========================================
-// NEW WRAPPER FUNCTIONS FOR SD
-// ========================================
-
-/**
- * Export Monthly Attendance - Wrapper untuk SD
- * @param {Array} students - Array of student objects
- * @param {string} selectedClass - Class number
- * @param {string} title - Report title
- * @param {Date} date - Date object
- * @param {Object} summary - Summary object (not used)
- * @param {Object} config - Config object (not used)
- * @param {Function} showToast - Toast function
- * @param {string} yearMonth - Format: "YYYY-MM"
- * @param {string} teacherName - Teacher name
- * @param {string} selectedClassNum - Class number
- * @param {string} semesterId - Semester ID
- * @param {string} academicYear - Format: "2025/2026"
- * @param {number} semesterNum - Semester number (1 or 2)
- */
-export const exportMonthlyAttendanceSD = async (
-  students,
-  selectedClass,
-  title,
-  date,
-  summary,
-  config,
-  showToast,
-  yearMonth,
-  teacherName,
-  selectedClassNum,
-  semesterId,
-  academicYear,
-  semesterNum
-) => {
-  try {
-    const [year, month] = yearMonth.split("-");
-
-    // Import supabase
-    const { supabase } = await import("../../supabaseClient");
-
-    // Fetch students data
-    const { data: studentsData, error: studentsError } = await supabase
-      .from("students")
-      .select("*")
-      .eq("kelas", parseInt(selectedClass))
-      .eq("is_active", true)
-      .order("nama_siswa", { ascending: true });
-
-    if (studentsError) throw studentsError;
-
-    // Create studentsData object for legacy function
-    const studentsDataObj = {
-      [selectedClass]: studentsData || [],
-    };
-
-    // Call legacy function
-    return await exportAttendanceFromComponent(
-      supabase,
-      selectedClass,
-      month,
-      year,
-      studentsDataObj,
-      teacherName
-    );
-  } catch (error) {
-    console.error("Error in exportMonthlyAttendanceSD:", error);
-    if (showToast) {
-      showToast("Gagal export: " + error.message, "error");
-    }
-    return { success: false, message: error.message };
-  }
-};
-
-/**
- * Export Semester Recap - Wrapper untuk SD
- * @param {Array} students - Array of student objects
- * @param {string} selectedClass - Class number
- * @param {string} title - Report title
- * @param {Function} showToast - Toast function
- * @param {string} teacherName - Teacher name
- * @param {string} semesterId - Semester ID
- * @param {string} academicYear - Format: "2025/2026"
- * @param {number} semesterNum - Semester number (1 or 2)
- */
-export const exportSemesterRecapSD = async (
-  students,
-  selectedClass,
-  title,
-  showToast,
-  teacherName,
-  semesterId,
-  academicYear,
-  semesterNum
-) => {
-  try {
-    console.log("🚀 exportSemesterRecapSD called with:", {
-      selectedClass,
-      academicYear,
-      semesterNum,
-      teacherName,
-      semesterId,
-    });
-
-    // Import supabase
-    const { supabase } = await import("../../supabaseClient");
-
-    console.log("📦 Fetching students for class:", selectedClass);
-
-    // Fetch students data
-    const { data: studentsData, error: studentsError } = await supabase
-      .from("students")
-      .select("*")
-      .eq("kelas", parseInt(selectedClass))
-      .eq("is_active", true)
-      .order("nama_siswa", { ascending: true });
-
-    if (studentsError) throw studentsError;
-
-    console.log("✅ Students fetched:", studentsData?.length);
-
-    // Create studentsData object for legacy function
-    const studentsDataObj = {
-      [selectedClass]: studentsData || [],
-    };
-
-    // Extract year from academicYear
-    const yearNum = parseInt(academicYear.split("/")[0]);
-
-    console.log("📞 Calling exportSemesterRecapFromComponent with:", {
-      selectedClass,
-      semesterNum,
-      yearNum,
-      semesterId,
-    });
-
-    // Call legacy function with semesterId
-    const result = await exportSemesterRecapFromComponent(
-      supabase,
-      selectedClass,
-      semesterNum,
-      yearNum,
-      studentsDataObj,
-      teacherName,
-      semesterId
-    );
-
-    console.log("✅ Export result:", result);
-    return result;
-  } catch (error) {
-    console.error("❌ Error in exportSemesterRecapSD:", error);
-    if (showToast) {
-      showToast("Gagal export: " + error.message, "error");
-    }
-    return { success: false, message: error.message };
   }
 };

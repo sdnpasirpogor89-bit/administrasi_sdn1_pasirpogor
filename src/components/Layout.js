@@ -26,7 +26,6 @@ const Layout = ({
   const [isNavigating, setIsNavigating] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // ✅ FIX: Initialize dengan nilai yang benar dari awal
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth < 768;
@@ -51,7 +50,6 @@ const Layout = ({
   const navigationTimeoutRef = useRef(null);
   const profileDropdownRef = useRef(null);
 
-  // ✅ FIX: Enhanced device detection - sekarang cuma untuk resize
   useEffect(() => {
     const checkDeviceType = () => {
       const width = window.innerWidth;
@@ -67,12 +65,10 @@ const Layout = ({
       }
     };
 
-    // Nggak perlu checkDeviceType() di sini karena udah di-initialize di useState
     window.addEventListener("resize", checkDeviceType);
     return () => window.removeEventListener("resize", checkDeviceType);
   }, []);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -91,13 +87,11 @@ const Layout = ({
     };
   }, []);
 
-  // Close mobile sidebar and dropdown when route changes
   useEffect(() => {
     setShowMobileSidebar(false);
     setShowProfileDropdown(false);
   }, [location.pathname]);
 
-  // Optimized clock update
   useEffect(() => {
     const updateTime = () => setCurrentTime(new Date());
     const interval = isMobile ? 5000 : 1000;
@@ -116,7 +110,6 @@ const Layout = ({
     };
   }, [isMobile]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -128,7 +121,6 @@ const Layout = ({
     };
   }, []);
 
-  // Reset navigation state when location changes
   useEffect(() => {
     setIsNavigating(false);
     if (navigationTimeoutRef.current) {
@@ -137,7 +129,6 @@ const Layout = ({
     }
   }, [location.pathname]);
 
-  // Mobile-optimized date formatting
   const formatDate = (date) => {
     if (isMobile) {
       const day = date.toLocaleDateString("id-ID", { weekday: "short" });
@@ -160,7 +151,6 @@ const Layout = ({
     }
   };
 
-  // Mobile-optimized time formatting
   const formatTime = (date) => {
     return date.toLocaleTimeString("id-ID", {
       hour: "2-digit",
@@ -169,7 +159,7 @@ const Layout = ({
     });
   };
 
-  // Get current page name from location - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI DAN E-RAPORT)
+  // ✅ UPDATED: Hapus mapping untuk submenu Nilai
   const getCurrentPageName = () => {
     const pathMap = {
       "/dashboard": "Dashboard",
@@ -178,16 +168,14 @@ const Layout = ({
       "/teachers": "Data Guru",
       "/attendance": "Presensi Siswa",
       "/teacher-attendance": "Presensi Guru",
-      "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
-      "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
-      "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
+      "/grades": "Nilai Siswa", // ✅ Tetap mapping ke "/grades" tapi cuma satu
 
-      // ✅ TAMBAH E-RAPORT (INCLUDING NEW CEK STATUS NILAI)
+      // E-RAPORT (tetap ada submenu)
       "/eraport/tp": "Input TP/ATP",
       "/eraport/nilai": "Input Nilai",
       "/eraport/kehadiran": "Input Kehadiran",
       "/eraport/catatan": "Input Catatan",
-      "/eraport/cek-status": "Cek Status Nilai", // ← TAMBAHAN BARU
+      "/eraport/cek-status": "Cek Status Nilai",
       "/eraport/cetak": "Cetak Raport",
 
       "/catatan-siswa": "Catatan Siswa",
@@ -200,7 +188,7 @@ const Layout = ({
     return pathMap[location.pathname] || "Dashboard";
   };
 
-  // Mobile-optimized page names - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI DAN E-RAPORT)
+  // ✅ UPDATED: Hapus mapping mobile untuk submenu Nilai
   const getMobilePageName = () => {
     const mobileNames = {
       "/dashboard": "Dashboard",
@@ -209,16 +197,14 @@ const Layout = ({
       "/teachers": "Guru",
       "/attendance": "Presensi",
       "/teacher-attendance": "Presensi Guru",
-      "/grades": "Nilai Asli", // ✅ SUBMENU NILAI
-      "/grades/katrol": "Nilai Katrol", // ✅ SUBMENU NILAI
-      "/grades/rekap": "Rekap Nilai", // ✅ SUBMENU NILAI BARU!
+      "/grades": "Nilai", // ✅ Mobile: "Nilai" aja
 
-      // ✅ TAMBAH E-RAPORT (INCLUDING NEW CEK STATUS NILAI)
+      // E-RAPORT (mobile)
       "/eraport/tp": "TP/ATP",
       "/eraport/nilai": "Nilai Raport",
       "/eraport/kehadiran": "Kehadiran",
       "/eraport/catatan": "Catatan Raport",
-      "/eraport/cek-status": "Cek Nilai", // ← TAMBAHAN BARU (NAMA SINGKAT)
+      "/eraport/cek-status": "Cek Nilai",
       "/eraport/cetak": "Cetak Raport",
 
       "/catatan-siswa": "Catatan",
@@ -233,7 +219,7 @@ const Layout = ({
 
   const currentPageName = isMobile ? getMobilePageName() : getCurrentPageName();
 
-  // Simplified navigation - ✅ UPDATED FOR SUBMENU (DITAMBAH CEK NILAI DAN E-RAPORT)
+  // ✅ UPDATED: Hapus mapping untuk submenu Nilai di handleMenuClick
   const handleMenuClick = useCallback(
     (menuName) => {
       if (isNavigating) return;
@@ -251,26 +237,23 @@ const Layout = ({
         "Presensi Guru": "/teacher-attendance",
         Presensi: "/attendance",
 
-        // ✅ UPDATED: Nilai submenu mapping (DITAMBAH CEK NILAI)
-        "Nilai Asli": "/grades",
-        "Nilai Katrol": "/grades/katrol",
-        "Rekap Nilai": "/grades/rekap", // ✅ NAVIGASI KE SUBMENU BARU!
-        "Nilai Siswa": "/grades", // ✅ KEEP for parent menu
-        Nilai: "/grades", // ✅ KEEP for mobile
+        // ✅ UPDATED: Nilai Siswa langsung ke /grades (GradeMain.js)
+        "Nilai Siswa": "/grades",
+        Nilai: "/grades",
 
-        // ✅ TAMBAH E-RAPORT (INCLUDING NEW CEK STATUS NILAI)
+        // E-RAPORT (tetap ada submenu)
         "Input TP/ATP": "/eraport/tp",
         "Input Nilai": "/eraport/nilai",
         "Input Kehadiran": "/eraport/kehadiran",
         "Input Catatan": "/eraport/catatan",
-        "Cek Status Nilai": "/eraport/cek-status", // ← TAMBAHAN BARU
+        "Cek Status Nilai": "/eraport/cek-status",
         "Cetak Raport": "/eraport/cetak",
         "TP/ATP": "/eraport/tp",
         "Nilai Raport": "/eraport/nilai",
         Kehadiran: "/eraport/kehadiran",
         "Catatan Raport": "/eraport/catatan",
-        "Cek Nilai": "/eraport/cek-status", // ← Mobile version
-        "E-Raport": "/eraport/tp", // ✅ Parent menu navigation
+        "Cek Nilai": "/eraport/cek-status",
+        "E-Raport": "/eraport/tp",
 
         // Other menus
         "Catatan Siswa": "/catatan-siswa",
@@ -301,7 +284,6 @@ const Layout = ({
     [isNavigating, location.pathname, navigate]
   );
 
-  // Toggle functions
   const handleToggleCollapse = () => {
     if (!isMobile && !isTablet) {
       setSidebarCollapsed(!sidebarCollapsed);
@@ -316,7 +298,6 @@ const Layout = ({
     setShowProfileDropdown(!showProfileDropdown);
   };
 
-  // Logout handlers
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
     setShowProfileDropdown(false);
@@ -331,13 +312,11 @@ const Layout = ({
     setShowLogoutModal(false);
   };
 
-  // Get responsive sidebar margin
   const getSidebarMargin = () => {
     if (isMobile || isTablet) return "ml-0";
     return sidebarCollapsed ? "ml-20" : "ml-72";
   };
 
-  // 櫨 COOL DARK MODE TOGGLE COMPONENT - Updated with red theme only for light mode
   const CoolDarkModeToggle = ({ size = "default" }) => {
     const sizes = {
       small: { container: "w-14 h-7", circle: "w-5 h-5", icon: 12 },
@@ -359,7 +338,6 @@ const Layout = ({
         }`}
         aria-label="Toggle Dark Mode"
         title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-        {/* Animated Background Stars (Dark Mode) */}
         {darkMode && (
           <>
             <span className="absolute top-1 left-2 w-1 h-1 bg-white rounded-full animate-pulse"></span>
@@ -368,7 +346,6 @@ const Layout = ({
           </>
         )}
 
-        {/* Animated Sun Rays (Light Mode) */}
         {!darkMode && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="absolute w-full h-full animate-spin-slow">
@@ -394,7 +371,6 @@ const Layout = ({
           </div>
         )}
 
-        {/* Toggle Circle with Icon */}
         <div
           className={`absolute top-1 ${
             currentSize.circle
@@ -423,7 +399,6 @@ const Layout = ({
       className={`flex min-h-screen transition-colors duration-300 ${
         darkMode ? "bg-slate-900" : "bg-red-50"
       }`}>
-      {/* Add custom animations */}
       <style>{`
         @keyframes spin-slow {
           from { transform: rotate(0deg); }
@@ -440,7 +415,6 @@ const Layout = ({
         }
       `}</style>
 
-      {/* Logout Confirmation Modal - REVISI TEMA MERAH */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div
@@ -495,7 +469,6 @@ const Layout = ({
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       {!isMobile && !isTablet && (
         <Sidebar
           userData={userData}
@@ -507,7 +480,6 @@ const Layout = ({
         />
       )}
 
-      {/* Mobile/Tablet Sidebar */}
       {(isMobile || isTablet) && showMobileSidebar && (
         <>
           <div
@@ -525,17 +497,14 @@ const Layout = ({
         </>
       )}
 
-      {/* Main Content Area */}
       <div
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${getSidebarMargin()}`}>
-        {/* Header */}
         <header
           className={`border-b sticky top-0 z-30 shadow-sm transition-colors duration-300 ${
             darkMode
               ? "bg-slate-800 border-slate-700"
               : "bg-white border-red-200"
           }`}>
-          {/* Mobile Header */}
           {isMobile && (
             <div className="px-4 py-2.5">
               <div className="flex justify-between items-center">
@@ -562,7 +531,6 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* COOL DARK MODE TOGGLE - MOBILE */}
                   <div onClick={(e) => e.stopPropagation()}>
                     <CoolDarkModeToggle size="small" />
                   </div>
@@ -672,7 +640,6 @@ const Layout = ({
             </div>
           )}
 
-          {/* Tablet Header */}
           {isTablet && (
             <div className="px-6 py-3">
               <div className="flex justify-between items-center">
@@ -699,7 +666,6 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  {/* COOL DARK MODE TOGGLE - TABLET */}
                   <CoolDarkModeToggle size="default" />
 
                   <div
@@ -825,7 +791,6 @@ const Layout = ({
             </div>
           )}
 
-          {/* Desktop Header */}
           {!isMobile && !isTablet && (
             <div className="px-8 py-5">
               <div className="flex justify-between items-center">
@@ -847,7 +812,6 @@ const Layout = ({
                 </div>
 
                 <div className="flex items-center gap-6">
-                  {/* COOL DARK MODE TOGGLE - DESKTOP */}
                   <CoolDarkModeToggle size="large" />
 
                   <div
@@ -968,7 +932,6 @@ const Layout = ({
           )}
         </header>
 
-        {/* Main Content */}
         <main
           className={`flex-1 overflow-y-auto transition-colors duration-300 ${
             isMobile ? "p-3" : isTablet ? "p-6" : "p-8"

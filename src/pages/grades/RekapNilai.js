@@ -2,6 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { exportLeger } from "./Utils";
 import { supabase } from "../../supabaseClient";
+// ✅ TAMBAH IMPORT
+import {
+  getActiveAcademicInfo,
+  getAllSemestersInActiveYear,
+  getSemesterById,
+} from "../../services/academicYearService";
 
 const RekapNilai = ({ userData: initialUserData }) => {
   const [kelasList, setKelasList] = useState([]);
@@ -11,7 +17,11 @@ const RekapNilai = ({ userData: initialUserData }) => {
   const [error, setError] = useState("");
   const [userData, setUserData] = useState(initialUserData);
 
-  // State untuk tahun ajaran dan semester aktif dari database
+  // ✅ SEMESTER STATE
+  const [selectedSemester, setSelectedSemester] = useState("");
+  const [availableSemesters, setAvailableSemesters] = useState([]);
+
+  // State untuk tahun ajaran dan semester aktif dari database (untuk display)
   const [activeTahunAjaran, setActiveTahunAjaran] = useState("");
   const [activeSemester, setActiveSemester] = useState("");
 
@@ -45,44 +55,34 @@ const RekapNilai = ({ userData: initialUserData }) => {
     fetchCompleteUserData();
   }, [userData?.username]);
 
-  // Fetch tahun ajaran dan semester aktif
+  // ✅ FETCH SEMESTER OPTIONS
   useEffect(() => {
-    const fetchActiveAcademicYear = async () => {
+    const fetchActiveSemester = async () => {
       try {
-        const { data, error } = await supabase
-          .from("academic_years")
-          .select("*")
-          .eq("is_active", true)
-          .single();
+        const academicInfo = await getActiveAcademicInfo();
+        const allSemesters = await getAllSemestersInActiveYear();
 
-        if (error) {
-          // Jika tidak ada yang aktif, ambil yang terbaru
-          const { data: latestData, error: latestError } = await supabase
-            .from("academic_years")
-            .select("*")
-            .order("year", { ascending: false })
-            .limit(1)
-            .single();
+        console.log(
+          "✅ Active academic year:",
+          academicInfo.year,
+          academicInfo.activeSemester
+        );
 
-          if (latestError) throw latestError;
+        setAvailableSemesters(allSemesters);
+        setActiveTahunAjaran(academicInfo.year);
+        setActiveSemester(academicInfo.activeSemester);
 
-          if (latestData) {
-            setActiveTahunAjaran(latestData.year);
-            setActiveSemester(latestData.semester);
-          }
-        } else if (data) {
-          setActiveTahunAjaran(data.year);
-          setActiveSemester(data.semester);
+        // Auto-set semester aktif
+        if (academicInfo.activeSemesterId) {
+          setSelectedSemester(academicInfo.activeSemesterId);
         }
-      } catch (err) {
-        console.error("Error fetching active academic year:", err);
-        // Fallback ke default
-        setActiveTahunAjaran("2024/2025");
-        setActiveSemester("1");
+      } catch (error) {
+        console.error("Error fetching active semester:", error);
+        setError("Gagal memuat semester aktif");
       }
     };
 
-    fetchActiveAcademicYear();
+    fetchActiveSemester();
   }, []);
 
   // Fetch kelas yang tersedia berdasarkan role
@@ -151,10 +151,23 @@ const RekapNilai = ({ userData: initialUserData }) => {
       return;
     }
 
-    if (!activeTahunAjaran || !activeSemester) {
-      setError("Data tahun ajaran aktif belum tersedia");
+    if (!selectedSemester) {
+      setError("Pilih semester terlebih dahulu");
       return;
     }
+
+    // ✅ GET SEMESTER DATA
+    const semesterData = await getSemesterById(selectedSemester);
+    if (!semesterData) {
+      setError("Semester tidak ditemukan");
+      return;
+    }
+
+    console.log(
+      "📅 Loading rekap for semester:",
+      semesterData.semester,
+      semesterData.year
+    );
 
     setLoading(true);
     setError("");
@@ -164,8 +177,8 @@ const RekapNilai = ({ userData: initialUserData }) => {
         .from("nilai_katrol")
         .select("*")
         .eq("kelas", selectedKelas)
-        .eq("tahun_ajaran", activeTahunAjaran)
-        .eq("semester", activeSemester)
+        .eq("tahun_ajaran", semesterData.year)
+        .eq("semester", semesterData.semester)
         .order("nama_siswa");
 
       const { data: rawData, error } = await query;
@@ -250,11 +263,18 @@ const RekapNilai = ({ userData: initialUserData }) => {
 
   const handleExport = async () => {
     try {
+      // ✅ GET SEMESTER DATA
+      const semesterData = await getSemesterById(selectedSemester);
+      if (!semesterData) {
+        setError("Semester tidak ditemukan");
+        return;
+      }
+
       await exportLeger(
         selectedKelas,
         supabase,
-        activeTahunAjaran,
-        activeSemester,
+        semesterData.year,
+        semesterData.semester,
         "jumlah"
       );
     } catch (err) {
@@ -310,26 +330,38 @@ const RekapNilai = ({ userData: initialUserData }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-50 to-white dark:from-gray-900 dark:to-gray-800 p-3 sm:p-4 md:p-6">
-      {/* HEADER */}
-      <div className="mb-6 sm:mb-8 text-center">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-red-800 dark:text-red-300 mb-2">
-          SEKOLAH DASAR NEGERI 1 PASIRPOGOR
-        </h1>
-        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-red-700 dark:text-red-200 mb-2">
-          REKAPITULASI NILAI SISWA - KELAS {selectedKelas || "_"}
-        </h2>
-        {activeTahunAjaran && activeSemester && (
-          <p className="text-sm sm:text-base text-red-600 dark:text-red-400 mb-1">
-            TAHUN AJARAN {activeTahunAjaran} - SEMESTER{" "}
-            {activeSemester.toUpperCase()}
-          </p>
-        )}
-      </div>
-
-      {/* FILTER SECTION - SIMPLIFIED */}
       <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg border border-red-100 dark:border-gray-700 p-4 sm:p-6 mb-6">
         {/* FILTER GRID */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          {/* ✅ Semester Select */}
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+              <span className="flex items-center gap-1">📅 Semester</span>
+            </label>
+            <select
+              value={selectedSemester}
+              onChange={(e) => {
+                setSelectedSemester(e.target.value);
+                setData([]);
+              }}
+              className="w-full px-3 py-2 border border-red-300 dark:border-gray-600 rounded-lg 
+                bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-600
+                transition-all duration-200 text-sm
+                hover:border-red-400 dark:hover:border-red-500">
+              <option value="">Pilih Semester</option>
+              {availableSemesters.map((sem) => (
+                <option
+                  key={sem.id}
+                  value={sem.id}
+                  className="dark:bg-gray-700 py-2">
+                  Semester {sem.semester === 1 ? "Ganjil" : "Genap"}
+                  {sem.is_active ? " (Aktif)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Kelas Select */}
           <div className="flex-1">
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
@@ -363,7 +395,10 @@ const RekapNilai = ({ userData: initialUserData }) => {
             <button
               onClick={fetchData}
               disabled={
-                loading || !selectedKelas || !checkAccess(selectedKelas)
+                loading ||
+                !selectedSemester ||
+                !selectedKelas ||
+                !checkAccess(selectedKelas)
               }
               className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 
                 hover:from-red-700 hover:to-red-800 
@@ -448,7 +483,9 @@ const RekapNilai = ({ userData: initialUserData }) => {
                   </div>
                   <div className="text-sm text-red-600 dark:text-red-400">
                     • Tahun Ajaran {activeTahunAjaran} • Semester{" "}
-                    {activeSemester.toUpperCase()}
+                    {activeSemester === 1 || activeSemester === "1"
+                      ? "GANJIL"
+                      : "GENAP"}
                   </div>
                 </div>
               </div>
@@ -605,15 +642,8 @@ const RekapNilai = ({ userData: initialUserData }) => {
               Belum Ada Data Nilai Katrol
             </h3>
             <p className="text-red-600 dark:text-red-400 text-sm sm:text-base mb-6">
-              Data nilai katrol untuk kelas {selectedKelas} belum tersedia atau
-              sedang diproses
+              Data Niilai Katrol Kelas {selectedKelas} Belum Tersedia
             </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-              <span className="text-red-700 dark:text-red-300">💡</span>
-              <span className="text-sm text-red-600 dark:text-red-400">
-                Data akan muncul setelah proses katrol nilai selesai
-              </span>
-            </div>
           </div>
         </div>
       )}

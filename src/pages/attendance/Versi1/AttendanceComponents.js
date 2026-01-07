@@ -195,8 +195,8 @@ export const ExportModal = ({
               className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors duration-200 touch-manipulation min-h-[44px]"
               disabled={loading}>
               {Array.from({ length: 10 }, (_, i) => (
-                <option key={2020 + i} value={2020 + i}>
-                  {2020 + i}
+                <option key={2025 + i} value={2025 + i}>
+                  {2025 + i}
                 </option>
               ))}
             </select>
@@ -298,8 +298,8 @@ export const ExportSemesterModal = ({
               className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors duration-200 touch-manipulation min-h-[44px]"
               disabled={loading}>
               {Array.from({ length: 10 }, (_, i) => (
-                <option key={2020 + i} value={2020 + i}>
-                  {2020 + i}
+                <option key={2025 + i} value={2025 + i}>
+                  {2025 + i}
                 </option>
               ))}
             </select>

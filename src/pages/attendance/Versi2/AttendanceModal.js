@@ -173,15 +173,13 @@ const AttendanceModal = ({
   darkMode = false, // ✅ ADD
   isMobile = false,
   isTablet = false,
-  selectedSemesterData = null, // ✅ NEW: Data semester dari parent
-  availableSemesters = [], // ✅ NEW: List semester untuk generate year options
 }) => {
   // State untuk view mode
   const [viewMode, setViewMode] = useState("monthly");
 
   // State untuk periode bulanan
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(""); // ✅ Default kosong, user harus pilih
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // State untuk periode semester
   const [selectedSemester, setSelectedSemester] = useState(
@@ -208,23 +206,8 @@ const AttendanceModal = ({
     "Desember",
   ];
 
-  // ✅ Generate year options dinamis dari availableSemesters
-  const yearOptions = useMemo(() => {
-    if (!availableSemesters || availableSemesters.length === 0) {
-      // Fallback jika tidak ada data semester
-      return [2025, 2026, 2027];
-    }
-
-    const years = new Set();
-    availableSemesters.forEach((sem) => {
-      // Extract tahun dari format "2025/2026"
-      const [year1, year2] = sem.year.split("/").map((y) => parseInt(y));
-      years.add(year1);
-      years.add(year2);
-    });
-
-    return Array.from(years).sort();
-  }, [availableSemesters]);
+  // Generate year options (2025-2030)
+  const yearOptions = [2025, 2026, 2027, 2028, 2029, 2030];
 
   // Process data
   useEffect(() => {
@@ -265,32 +248,12 @@ const AttendanceModal = ({
     if (show) {
       const now = new Date();
       setSelectedMonth(now.getMonth() + 1);
-      setSelectedYear(""); // ✅ Reset ke kosong, user harus pilih tahun
+      setSelectedYear(now.getFullYear());
       setSemesterYear(now.getFullYear());
       setSelectedSemester(now.getMonth() >= 6 ? "ganjil" : "genap");
       setViewMode("monthly");
     }
   }, [show]);
-
-  // ✅ NEW: Sync semester filter dari parent semester dropdown
-  useEffect(() => {
-    if (selectedSemesterData) {
-      // selectedSemesterData.semester: 1 (Ganjil) atau 2 (Genap)
-      // selectedSemesterData.year: "2025/2026"
-      const semesterType =
-        selectedSemesterData.semester === 1 ? "ganjil" : "genap";
-      const yearNum = parseInt(selectedSemesterData.year.split("/")[0]);
-
-      setSelectedSemester(semesterType);
-      setSemesterYear(yearNum);
-
-      console.log("🔄 Synced semester from parent:", {
-        semesterType,
-        yearNum,
-        originalData: selectedSemesterData,
-      });
-    }
-  }, [selectedSemesterData]);
 
   // Effect untuk auto-fetch data saat viewMode berubah
   useEffect(() => {
@@ -307,9 +270,10 @@ const AttendanceModal = ({
         }
       } else if (viewMode === "semester") {
         const semesterType = selectedSemester === "ganjil" ? "Ganjil" : "Genap";
-        // Kedua semester (Ganjil & Genap) menggunakan tahun ajaran yang sama
-        // Contoh: Semester Ganjil 2025/2026 (Jul-Des 2025) dan Semester Genap 2025/2026 (Jan-Jun 2026)
-        const academicYear = `${semesterYear}/${semesterYear + 1}`;
+        const academicYear =
+          semesterType === "Ganjil"
+            ? `${semesterYear}/${semesterYear + 1}`
+            : `${semesterYear - 1}/${semesterYear}`;
 
         if (onRefreshData) {
           await onRefreshData({
@@ -327,13 +291,6 @@ const AttendanceModal = ({
 
   // Handle period change untuk bulanan
   const handleMonthlyChange = async (month, year) => {
-    // ✅ Skip fetch jika tahun masih kosong (belum dipilih)
-    if (!year || year === "") {
-      setSelectedMonth(month);
-      setSelectedYear("");
-      return;
-    }
-
     if (month !== selectedMonth || year !== selectedYear) {
       setSelectedMonth(month);
       setSelectedYear(year);
@@ -348,19 +305,22 @@ const AttendanceModal = ({
   };
 
   // Handle period change untuk semester
-  const handleSemesterChange = async (semester) => {
-    if (semester !== selectedSemester) {
+  const handleSemesterChange = async (semester, year) => {
+    if (semester !== selectedSemester || year !== semesterYear) {
       setSelectedSemester(semester);
+      setSemesterYear(year);
       if (onRefreshData) {
         const semesterType = semester === "ganjil" ? "Ganjil" : "Genap";
-        // Kedua semester menggunakan tahun ajaran yang sama
-        const academicYear = `${semesterYear}/${semesterYear + 1}`;
+        const academicYear =
+          semesterType === "Ganjil"
+            ? `${year}/${year + 1}`
+            : `${year - 1}/${year}`;
 
         await onRefreshData({
           mode: "semester",
           semester: semesterType,
           academicYear: academicYear,
-          year: semesterYear,
+          year: year,
         });
       }
     }
@@ -460,17 +420,11 @@ const AttendanceModal = ({
                 </label>
                 <select
                   value={selectedYear}
-                  onChange={(e) => {
-                    const year = e.target.value;
-                    if (year) {
-                      handleMonthlyChange(selectedMonth, parseInt(year));
-                    } else {
-                      setSelectedYear("");
-                    }
-                  }}
+                  onChange={(e) =>
+                    handleMonthlyChange(selectedMonth, parseInt(e.target.value))
+                  }
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
                   disabled={loading}>
-                  <option value="">Pilih Tahun</option>
                   {yearOptions.map((year) => (
                     <option key={year} value={year}>
                       {year}
@@ -481,18 +435,43 @@ const AttendanceModal = ({
             </>
           ) : (
             <>
-              {/* Semester Dropdown - Full Width */}
-              <div className="md:col-span-9">
+              {/* Semester Dropdown */}
+              <div className="md:col-span-6">
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Semester
                 </label>
                 <select
                   value={selectedSemester}
-                  onChange={(e) => handleSemesterChange(e.target.value)}
+                  onChange={(e) =>
+                    handleSemesterChange(e.target.value, semesterYear)
+                  }
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
                   disabled={loading}>
                   <option value="ganjil">Semester Ganjil</option>
                   <option value="genap">Semester Genap</option>
+                </select>
+              </div>
+
+              {/* Tahun Dropdown */}
+              <div className="md:col-span-3">
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Tahun
+                </label>
+                <select
+                  value={semesterYear}
+                  onChange={(e) =>
+                    handleSemesterChange(
+                      selectedSemester,
+                      parseInt(e.target.value)
+                    )
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+                  disabled={loading}>
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
                 </select>
               </div>
             </>
@@ -548,157 +527,139 @@ const AttendanceModal = ({
             {viewMode === "monthly" ? (
               // MONTHLY VIEW
               <>
-                {/* ✅ Placeholder jika tahun belum dipilih */}
-                {!selectedYear || selectedYear === "" ? (
-                  <div className="p-12 text-center">
-                    <div className="text-5xl mb-4 text-gray-300 dark:text-gray-600">
-                      📅
-                    </div>
-                    <h4 className="font-semibold text-lg mb-2 text-gray-700 dark:text-gray-300">
-                      Pilih Tahun Terlebih Dahulu
-                    </h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Silakan pilih tahun pada dropdown di atas untuk melihat
-                      data presensi
-                    </p>
+                {filteredDates.length > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/20 p-2 text-center text-xs text-red-700 dark:text-red-300 md:hidden border-b border-red-200 dark:border-red-800 flex items-center justify-center gap-2">
+                    <span>👉 Geser untuk lihat semua hari</span>
+                    <span className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded text-red-800 dark:text-red-200 font-bold">
+                      {filteredDates.length} hari
+                    </span>
                   </div>
-                ) : (
-                  <>
-                    {filteredDates.length > 0 && (
-                      <div className="bg-red-50 dark:bg-red-900/20 p-2 text-center text-xs text-red-700 dark:text-red-300 md:hidden border-b border-red-200 dark:border-red-800 flex items-center justify-center gap-2">
-                        <span>👉 Geser untuk lihat semua hari</span>
-                        <span className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded text-red-800 dark:text-red-200 font-bold">
-                          {filteredDates.length} hari
-                        </span>
-                      </div>
-                    )}
+                )}
 
-                    <div className="overflow-auto">
-                      <table className="w-full text-xs md:text-sm border-collapse">
-                        <thead className="bg-red-50 dark:bg-gray-800 sticky top-0 z-20">
-                          <tr className="border-b-2 border-red-300 dark:border-gray-600">
-                            <th className="p-2 text-center font-bold text-gray-900 dark:text-white border-r-2 border-red-300 dark:border-gray-700 sticky left-0 bg-red-50 dark:bg-gray-800 z-30 min-w-[40px]">
-                              No.
-                            </th>
-                            <th className="p-2 text-left font-bold text-gray-900 dark:text-white border-r-2 border-red-300 dark:border-gray-700 sticky left-[40px] bg-red-50 dark:bg-gray-800 z-30 min-w-[140px] sm:min-w-[200px]">
-                              Nama Siswa
-                            </th>
+                <div className="overflow-auto">
+                  <table className="w-full text-xs md:text-sm border-collapse">
+                    <thead className="bg-red-50 dark:bg-gray-800 sticky top-0 z-20">
+                      <tr className="border-b-2 border-red-300 dark:border-gray-600">
+                        <th className="p-2 text-center font-bold text-gray-900 dark:text-white border-r-2 border-red-300 dark:border-gray-700 sticky left-0 bg-red-50 dark:bg-gray-800 z-30 min-w-[40px]">
+                          No.
+                        </th>
+                        <th className="p-2 text-left font-bold text-gray-900 dark:text-white border-r-2 border-red-300 dark:border-gray-700 sticky left-[40px] bg-red-50 dark:bg-gray-800 z-30 min-w-[140px] sm:min-w-[200px]">
+                          Nama Siswa
+                        </th>
+
+                        {filteredDates.map((date, index) => (
+                          <th
+                            key={date}
+                            className={`p-1 text-center font-bold text-gray-900 dark:text-white min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
+                              index < filteredDates.length - 1
+                                ? "border-r border-red-200 dark:border-gray-700"
+                                : "border-r-2 border-red-300 dark:border-gray-600"
+                            }`}>
+                            {formatDateHeader(date)}
+                          </th>
+                        ))}
+
+                        <th className="p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] bg-green-50/50 dark:bg-green-900/20">
+                          H
+                        </th>
+                        <th className="p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] bg-blue-50/50 dark:bg-blue-900/20">
+                          I
+                        </th>
+                        <th className="p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] bg-yellow-50/50 dark:bg-yellow-900/20">
+                          S
+                        </th>
+                        <th className="p-2 text-center font-bold text-red-700 dark:text-red-400 border-r-2 border-red-300 dark:border-gray-600 min-w-[40px] bg-red-50/50 dark:bg-red-900/20">
+                          A
+                        </th>
+                        <th className="p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-200 dark:border-gray-700 min-w-[40px]">
+                          Total
+                        </th>
+                        <th className="p-2 text-center font-bold text-gray-900 dark:text-gray-300 min-w-[50px] sm:min-w-[60px]">
+                          %
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {processedData && processedData.length > 0 ? (
+                        processedData.map((student, index) => (
+                          <tr
+                            key={student.nisn || student.id || index}
+                            className="border-b border-red-100 dark:border-gray-700 hover:bg-red-50/50 dark:hover:bg-gray-800 transition-colors duration-150">
+                            <td className="p-2 text-center border-r-2 border-red-300 dark:border-gray-700 sticky left-0 bg-white dark:bg-gray-900 z-10 font-medium text-gray-900 dark:text-gray-300">
+                              {index + 1}
+                            </td>
+                            <td className="p-2 font-medium text-gray-900 dark:text-gray-200 border-r-2 border-red-300 dark:border-gray-700 sticky left-[40px] bg-white dark:bg-gray-900 z-10 whitespace-nowrap text-xs sm:text-sm">
+                              {student.name ||
+                                student.full_name ||
+                                student.nama_siswa}
+                            </td>
 
                             {filteredDates.map((date, index) => (
-                              <th
+                              <td
                                 key={date}
-                                className={`p-1 text-center font-bold text-gray-900 dark:text-white min-w-[40px] sm:min-w-[45px] whitespace-nowrap ${
+                                className={`p-1 text-center ${
                                   index < filteredDates.length - 1
-                                    ? "border-r border-red-200 dark:border-gray-700"
+                                    ? "border-r border-red-100 dark:border-gray-700"
                                     : "border-r-2 border-red-300 dark:border-gray-600"
                                 }`}>
-                                {formatDateHeader(date)}
-                              </th>
+                                <div className="flex justify-center">
+                                  {getStatusBadge(
+                                    getStudentStatusByDate(student, date),
+                                    true
+                                  )}
+                                </div>
+                              </td>
                             ))}
 
-                            <th className="p-2 text-center font-bold text-green-700 dark:text-green-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] bg-green-50/50 dark:bg-green-900/20">
-                              H
-                            </th>
-                            <th className="p-2 text-center font-bold text-blue-700 dark:text-blue-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] bg-blue-50/50 dark:bg-blue-900/20">
-                              I
-                            </th>
-                            <th className="p-2 text-center font-bold text-yellow-700 dark:text-yellow-400 border-r border-red-200 dark:border-gray-700 min-w-[40px] bg-yellow-50/50 dark:bg-yellow-900/20">
-                              S
-                            </th>
-                            <th className="p-2 text-center font-bold text-red-700 dark:text-red-400 border-r-2 border-red-300 dark:border-gray-600 min-w-[40px] bg-red-50/50 dark:bg-red-900/20">
-                              A
-                            </th>
-                            <th className="p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-200 dark:border-gray-700 min-w-[40px]">
-                              Total
-                            </th>
-                            <th className="p-2 text-center font-bold text-gray-900 dark:text-gray-300 min-w-[50px] sm:min-w-[60px]">
-                              %
-                            </th>
+                            <td className="p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-red-100 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10">
+                              {student.hadir || 0}
+                            </td>
+                            <td className="p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-red-100 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
+                              {student.izin || 0}
+                            </td>
+                            <td className="p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-red-100 dark:border-gray-700 bg-yellow-50/30 dark:bg-yellow-900/10">
+                              {student.sakit || 0}
+                            </td>
+                            <td className="p-2 text-center text-red-700 dark:text-red-400 font-bold border-r-2 border-red-300 dark:border-gray-600 bg-red-50/30 dark:bg-red-900/10">
+                              {student.alpa || 0}
+                            </td>
+                            <td className="p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-100 dark:border-gray-700">
+                              {student.total || 0}
+                            </td>
+                            <td className="p-2 text-center font-bold text-gray-900 dark:text-gray-300">
+                              <span
+                                className={`inline-flex items-center justify-center w-12 sm:w-14 px-2 py-1 rounded-full text-xs font-semibold ${
+                                  student.percentage >= 80
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    : student.percentage >= 60
+                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                }`}>
+                                {student.percentage || 0}%
+                              </span>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {processedData && processedData.length > 0 ? (
-                            processedData.map((student, index) => (
-                              <tr
-                                key={student.nisn || student.id || index}
-                                className="border-b border-red-100 dark:border-gray-700 hover:bg-red-50/50 dark:hover:bg-gray-800 transition-colors duration-150">
-                                <td className="p-2 text-center border-r-2 border-red-300 dark:border-gray-700 sticky left-0 bg-white dark:bg-gray-900 z-10 font-medium text-gray-900 dark:text-gray-300">
-                                  {index + 1}
-                                </td>
-                                <td className="p-2 font-medium text-gray-900 dark:text-gray-200 border-r-2 border-red-300 dark:border-gray-700 sticky left-[40px] bg-white dark:bg-gray-900 z-10 whitespace-nowrap text-xs sm:text-sm">
-                                  {student.name ||
-                                    student.full_name ||
-                                    student.nama_siswa}
-                                </td>
-
-                                {filteredDates.map((date, index) => (
-                                  <td
-                                    key={date}
-                                    className={`p-1 text-center ${
-                                      index < filteredDates.length - 1
-                                        ? "border-r border-red-100 dark:border-gray-700"
-                                        : "border-r-2 border-red-300 dark:border-gray-600"
-                                    }`}>
-                                    <div className="flex justify-center">
-                                      {getStatusBadge(
-                                        getStudentStatusByDate(student, date),
-                                        true
-                                      )}
-                                    </div>
-                                  </td>
-                                ))}
-
-                                <td className="p-2 text-center text-green-700 dark:text-green-400 font-bold border-r border-red-100 dark:border-gray-700 bg-green-50/30 dark:bg-green-900/10">
-                                  {student.hadir || 0}
-                                </td>
-                                <td className="p-2 text-center text-blue-700 dark:text-blue-400 font-bold border-r border-red-100 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
-                                  {student.izin || 0}
-                                </td>
-                                <td className="p-2 text-center text-yellow-700 dark:text-yellow-400 font-bold border-r border-red-100 dark:border-gray-700 bg-yellow-50/30 dark:bg-yellow-900/10">
-                                  {student.sakit || 0}
-                                </td>
-                                <td className="p-2 text-center text-red-700 dark:text-red-400 font-bold border-r-2 border-red-300 dark:border-gray-600 bg-red-50/30 dark:bg-red-900/10">
-                                  {student.alpa || 0}
-                                </td>
-                                <td className="p-2 text-center font-bold text-gray-900 dark:text-gray-300 border-r border-red-100 dark:border-gray-700">
-                                  {student.total || 0}
-                                </td>
-                                <td className="p-2 text-center font-bold text-gray-900 dark:text-gray-300">
-                                  <span
-                                    className={`inline-flex items-center justify-center w-12 sm:w-14 px-2 py-1 rounded-full text-xs font-semibold ${
-                                      student.percentage >= 80
-                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                        : student.percentage >= 60
-                                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                    }`}>
-                                    {student.percentage || 0}%
-                                  </span>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td
-                                colSpan={filteredDates.length + 8}
-                                className="p-8 text-center text-gray-600 dark:text-gray-400">
-                                <div className="text-4xl mb-3 dark:text-gray-600">
-                                  📅
-                                </div>
-                                <h4 className="font-semibold mb-2 text-base dark:text-gray-300">
-                                  Belum Ada Data
-                                </h4>
-                                <p className="text-sm dark:text-gray-400">
-                                  Belum ada data presensi untuk bulan ini
-                                </p>
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={filteredDates.length + 8}
+                            className="p-8 text-center text-gray-600 dark:text-gray-400">
+                            <div className="text-4xl mb-3 dark:text-gray-600">
+                              📅
+                            </div>
+                            <h4 className="font-semibold mb-2 text-base dark:text-gray-300">
+                              Belum Ada Data
+                            </h4>
+                            <p className="text-sm dark:text-gray-400">
+                              Belum ada data presensi untuk bulan ini
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </>
             ) : (
               // SEMESTER VIEW
@@ -836,15 +797,11 @@ const AttendanceModal = ({
             siswa
             {viewMode === "monthly" ? (
               <>
-                {selectedYear && selectedYear !== "" && (
-                  <>
-                    {" • "}
-                    <span className="font-semibold text-red-600 dark:text-red-400">
-                      {filteredDates.length}
-                    </span>{" "}
-                    hari • {monthNames[selectedMonth - 1]} {selectedYear}
-                  </>
-                )}
+                {" • "}
+                <span className="font-semibold text-red-600 dark:text-red-400">
+                  {filteredDates.length}
+                </span>{" "}
+                hari • {monthNames[selectedMonth - 1]} {selectedYear}
               </>
             ) : (
               <>

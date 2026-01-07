@@ -8,7 +8,7 @@ import ExcelJS from "exceljs";
 // HELPER: DETECT AVAILABLE NH COLUMNS
 // ========================================
 export const detectAvailableNH = (data) => {
-  if (!data || data.length === 0) return ["NH1", "NH2", "NH3", "NH4", "NH5"];
+  if (!data || data.length === 0) return ["NH1", "NH2", "NH3"];
 
   // Ambil item pertama untuk deteksi kolom
   const firstItem = data[0];
@@ -147,6 +147,15 @@ export const prosesKatrolSemua = (
   jenisNilaiArray.forEach((jenis) => {
     hasil = katrolNilaiPerJenis(hasil, jenis, kkm, maxNilai);
   });
+
+  // ✅ TAMBAH INI: Hitung nilai akhir setelah semua dikatrol
+  hasil = hitungNilaiAkhir(hasil, availableNH);
+
+  // ✅ TAMBAH STATUS
+  hasil = hasil.map((siswa) => ({
+    ...siswa,
+    status: siswa.nilai_akhir_katrol >= kkm ? "Lulus" : "Tidak Lulus",
+  }));
 
   return hasil;
 };

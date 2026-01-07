@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { TrendingUp, X, ChevronRight } from "lucide-react";
 
-const KatrolTable = ({
-  data,
-  kkm,
-  availableNH = ["NH1", "NH2", "NH3", "NH4", "NH5"],
-}) => {
+const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  // ✅ DEBUG: Cek availableNH yang diterima
+  console.log("🔍 KatrolTable received availableNH:", availableNH);
 
   if (!data || data.length === 0) {
     return (

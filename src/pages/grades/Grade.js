@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
-import { Link } from "react-router-dom";
 import {
   Save,
   Users,
   BookOpen,
   Calculator,
-  Eye,
-  BarChart3,
-  Calendar,
   GraduationCap,
   Download,
   Upload,
@@ -17,6 +13,7 @@ import {
   Loader,
   Search,
   WifiOff,
+  Calendar,
 } from "lucide-react";
 import { ImportModal, exportToExcel } from "./GradeExport";
 import {
@@ -27,6 +24,12 @@ import {
 import { useSyncStatus } from "../../hooks/useSyncStatus";
 import SyncStatusBadge from "../../components/SyncStatusBadge";
 import { useGradeAutoSave } from "../../hooks/useGradeAutoSave";
+// ✅ IMPORT ACADEMIC YEAR SERVICE
+import {
+  getActiveAcademicInfo,
+  getAllSemestersInActiveYear,
+  getSemesterById,
+} from "../../services/academicYearService";
 
 const Grade = ({ userData: initialUserData }) => {
   // ===== PWA: Sync Status Hook =====
@@ -49,6 +52,8 @@ const Grade = ({ userData: initialUserData }) => {
   const [userData, setUserData] = useState(initialUserData);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState(""); // ✅ SEMESTER STATE
+  const [availableSemesters, setAvailableSemesters] = useState([]); // ✅ SEMESTER OPTIONS
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,14 +68,12 @@ const Grade = ({ userData: initialUserData }) => {
 
   const [showDraftModal, setShowDraftModal] = useState(false);
 
-  // Assignment types untuk SD - SEMUA SEKALIGUS
-  const assignmentTypes = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
+  // Assignment types untuk SD - HANYA 3 NH
+  const assignmentTypes = ["NH1", "NH2", "NH3", "UTS", "UAS"];
   const assignmentLabels = {
     NH1: "NH1",
     NH2: "NH2",
     NH3: "NH3",
-    NH4: "NH4",
-    NH5: "NH5",
     UTS: "UTS",
     UAS: "UAS",
   };
@@ -91,6 +94,34 @@ const Grade = ({ userData: initialUserData }) => {
       yosefedi: ["PJOK"],
     },
   };
+
+  // ✅ FETCH ACTIVE SEMESTER ON MOUNT
+  useEffect(() => {
+    const fetchActiveSemester = async () => {
+      try {
+        const academicInfo = await getActiveAcademicInfo();
+        const allSemesters = await getAllSemestersInActiveYear();
+
+        console.log(
+          "✅ Active academic year:",
+          academicInfo.year,
+          academicInfo.activeSemester
+        );
+
+        setAvailableSemesters(allSemesters);
+
+        // Auto-set semester aktif
+        if (academicInfo.activeSemesterId) {
+          setSelectedSemester(academicInfo.activeSemesterId);
+        }
+      } catch (error) {
+        console.error("Error fetching active semester:", error);
+        showMessage("Gagal memuat semester aktif", "error");
+      }
+    };
+
+    fetchActiveSemester();
+  }, []);
 
   // Fetch user data lengkap
   useEffect(() => {
@@ -177,10 +208,13 @@ const Grade = ({ userData: initialUserData }) => {
     setTimeout(() => setMessage({ text: "", type: "" }), 5000);
   };
 
-  // ===== FUNGSI REVISI: Load SEMUA nilai sekaligus TANPA DRAFT SUPPORT =====
+  // ===== ✅ UPDATED: Load grades dengan semester filter =====
   const loadAllGrades = async () => {
-    if (!selectedClass || !selectedSubject) {
-      showMessage("Pilih kelas dan mata pelajaran terlebih dahulu!", "error");
+    if (!selectedClass || !selectedSubject || !selectedSemester) {
+      showMessage(
+        "Pilih semester, kelas, dan mata pelajaran terlebih dahulu!",
+        "error"
+      );
       return;
     }
 
@@ -194,7 +228,21 @@ const Grade = ({ userData: initialUserData }) => {
 
     setLoading(true);
     try {
-      // 1. Fetch students
+      // 1. Get semester info
+      const semesterData = await getSemesterById(selectedSemester);
+      if (!semesterData) {
+        showMessage("Semester tidak ditemukan!", "error");
+        setLoading(false);
+        return;
+      }
+
+      console.log(
+        "📅 Loading data for semester:",
+        semesterData.semester,
+        semesterData.year
+      );
+
+      // 2. Fetch students
       const { data: studentsData, error: studentsError } = await supabase
         .from("students")
         .select("nisn, nama_siswa, kelas")
@@ -210,17 +258,21 @@ const Grade = ({ userData: initialUserData }) => {
         return;
       }
 
-      // 2. Fetch SEMUA nilai untuk mapel ini
-      const allGrades = await getDataWithFallback("nilai", (query) =>
-        query
-          .eq("kelas", parseInt(selectedClass))
-          .eq("mata_pelajaran", selectedSubject)
-      );
+      // 3. Fetch nilai untuk semester yang dipilih
+      const { data: allGrades, error: gradesError } = await supabase
+        .from("nilai")
+        .select("*")
+        .eq("kelas", parseInt(selectedClass))
+        .eq("mata_pelajaran", selectedSubject)
+        .eq("semester", semesterData.semester)
+        .eq("tahun_ajaran", semesterData.year);
+
+      if (gradesError) throw gradesError;
 
       console.log("📊 Students loaded:", studentsData.length);
       console.log("📊 Nilai loaded:", allGrades?.length || 0);
 
-      // 3. Process data
+      // 4. Process data
       const processedStudents = studentsData.map((student, index) => {
         const grades = {};
         const nhGrades = [];
@@ -350,12 +402,30 @@ const Grade = ({ userData: initialUserData }) => {
     }
   };
 
-  // ===== FUNGSI BARU: Save ALL grades =====
+  // ===== ✅ UPDATED: Save grades dengan semester info =====
   const saveAllGrades = async () => {
     if (students.length === 0) {
       showMessage("Tidak ada data untuk disimpan!", "error");
       return;
     }
+
+    if (!selectedSemester) {
+      showMessage("Pilih semester terlebih dahulu!", "error");
+      return;
+    }
+
+    // Get semester info
+    const semesterData = await getSemesterById(selectedSemester);
+    if (!semesterData) {
+      showMessage("Semester tidak ditemukan!", "error");
+      return;
+    }
+
+    console.log(
+      "💾 Saving to semester:",
+      semesterData.semester,
+      semesterData.year
+    );
 
     // Collect semua data yang ada nilai
     const allDataToSave = [];
@@ -370,6 +440,8 @@ const Grade = ({ userData: initialUserData }) => {
             mata_pelajaran: selectedSubject,
             jenis_nilai: type,
             nilai: parseFloat(nilai),
+            semester: semesterData.semester, // ✅ DARI SEMESTER DATA
+            tahun_ajaran: semesterData.year, // ✅ DARI SEMESTER DATA
             guru_input: userData.name || userData.username,
             tanggal: new Date().toISOString().split("T")[0],
           });
@@ -384,10 +456,12 @@ const Grade = ({ userData: initialUserData }) => {
 
     // Confirmation
     if (isOnline) {
+      const semesterLabel = semesterData.semester === 1 ? "Ganjil" : "Genap";
       const isConfirmed = window.confirm(
         `Apakah Anda yakin ingin menyimpan ${allDataToSave.length} nilai siswa?\n\n` +
           `Kelas: ${selectedClass}\n` +
-          `Mata Pelajaran: ${selectedSubject}`
+          `Mata Pelajaran: ${selectedSubject}\n` +
+          `Semester: ${semesterLabel}`
       );
 
       if (!isConfirmed) return;
@@ -402,7 +476,7 @@ const Grade = ({ userData: initialUserData }) => {
       const { data, error } = await supabase
         .from("nilai")
         .upsert(allDataToSave, {
-          onConflict: "nisn,kelas,mata_pelajaran,jenis_nilai",
+          onConflict: "nisn,mata_pelajaran,jenis_nilai,semester,tahun_ajaran",
         })
         .select();
 
@@ -416,7 +490,6 @@ const Grade = ({ userData: initialUserData }) => {
             } nilai berhasil disimpan!`,
             "success"
           );
-          // ✅ HAPUS DRAFT SETELAH BERHASIL SYNC
           clearDraft();
         } else {
           showMessage("❌ Gagal menyimpan data!", "error");
@@ -424,7 +497,6 @@ const Grade = ({ userData: initialUserData }) => {
       } else {
         const successCount = data?.length || allDataToSave.length;
         showMessage(`✅ ${successCount} nilai berhasil disimpan!`, "success");
-        // ✅ HAPUS DRAFT SETELAH BERHASIL SAVE
         clearDraft();
       }
 
@@ -437,158 +509,103 @@ const Grade = ({ userData: initialUserData }) => {
     }
   };
 
-  const handleExportToExcel = async () => {
+  // Handle export
+  const handleExport = async () => {
     if (students.length === 0) {
-      showMessage("Tidak ada data siswa untuk diexport!", "error");
-      return;
-    }
-
-    const hasAnyGrade = students.some((student) =>
-      assignmentTypes.some(
-        (type) =>
-          student.grades[type] &&
-          student.grades[type] !== "" &&
-          student.grades[type] !== null
-      )
-    );
-
-    if (!hasAnyGrade) {
-      showMessage(
-        "Data nilai masih kosong, silakan input nilai terlebih dahulu!",
-        "error"
-      );
+      showMessage("Tidak ada data untuk diekspor!", "error");
       return;
     }
 
     setExporting(true);
     try {
-      await exportToExcel({
+      // âœ… TAMBAHIN nhColumns parameter
+      const nhColumns = ["NH1", "NH2", "NH3"]; // 3 NH untuk SD
+
+      await exportToExcel(
+        students,
         selectedClass,
         selectedSubject,
-        userData,
-        showMessage,
-        checkAccess,
-        students,
         assignmentTypes,
-      });
+        assignmentLabels,
+        nhColumns // âœ… TAMBAHIN INI
+      );
+      showMessage("Data berhasil diekspor ke Excel!", "success");
     } catch (error) {
-      console.error("Export error:", error);
-      showMessage("Error mengekspor data: " + error.message, "error");
+      console.error("Error exporting:", error);
+      showMessage("Gagal mengekspor data: " + error.message, "error");
     } finally {
       setExporting(false);
     }
   };
 
-  // ===== AUTO-SAVE setiap kali students berubah =====
-  useEffect(() => {
-    if (students.length > 0 && selectedClass && selectedSubject) {
-      const timeoutId = setTimeout(() => {
-        saveDraft(students);
-      }, 2000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [students, selectedClass, selectedSubject, saveDraft]);
-
-  // Auto load ketika filter berubah
-  useEffect(() => {
-    if (selectedClass && selectedSubject) {
-      loadAllGrades();
-    } else {
-      setStudents([]);
-    }
-  }, [selectedClass, selectedSubject]);
-
-  // Calculate stats
-  const getGradeStats = () => {
-    const total = students.length;
-    const completed = students.filter((s) => s.hasAnyGrade === true).length;
-
-    const naValues = students
-      .filter((s) => s.na && s.na !== "" && !isNaN(parseFloat(s.na)))
-      .map((s) => parseFloat(s.na));
-
-    const average =
-      naValues.length > 0
-        ? (naValues.reduce((a, b) => a + b, 0) / naValues.length).toFixed(2)
-        : "0.00";
-
-    const tuntas = students.filter(
-      (s) => s.na && !isNaN(parseFloat(s.na)) && parseFloat(s.na) >= 70
-    ).length;
-
-    const remedial = students.filter(
-      (s) => s.na && !isNaN(parseFloat(s.na)) && parseFloat(s.na) < 70
-    ).length;
-
-    return { total, completed, average, tuntas, remedial };
-  };
-
-  const stats = getGradeStats();
-  const filteredStudents = students.filter(
-    (student) =>
-      student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.nisn.includes(searchTerm)
+  // Filter students berdasarkan search
+  const filteredStudents = students.filter((student) =>
+    student.nama_siswa.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-3 sm:p-4 md:p-6 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto">
-        {/* Sync Status Badge */}
-        <SyncStatusBadge />
-
-        {/* Message */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Message Alert */}
         {message.text && (
           <div
-            className={`mb-3 sm:mb-4 p-3 rounded-lg text-sm sm:text-base ${
-              message.type === "error"
-                ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800"
-                : message.type === "warning" || message.type === "offline"
-                ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
-                : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-800"
+            className={`p-4 rounded-lg flex items-center space-x-2 ${
+              message.type === "success"
+                ? "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800"
+                : "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800"
             }`}>
-            <div className="flex items-center gap-2">
-              {message.type === "error" ? (
-                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              ) : message.type === "warning" || message.type === "offline" ? (
-                <WifiOff className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              ) : (
-                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              )}
-              <span>{message.text}</span>
-            </div>
+            {message.type === "success" ? (
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            )}
+            <span className="text-sm font-medium">{message.text}</span>
           </div>
         )}
 
-        {/* Header - RED THEME */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-3 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                <Calculator className="w-6 h-6 sm:w-7 sm:h-7 text-red-600 dark:text-red-400" />
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  Input Nilai Siswa SD
-                </h1>
-              </div>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                Kelola Nilai Siswa Untuk Mata Pelajaran
-              </p>
-            </div>
-          </div>
-
-          {/* Filters - 2 KOLOM SAJA */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
-            {/* Kelas */}
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Filter Data
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ✅ SEMESTER SELECTOR */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Users className="w-4 h-4 inline mr-2" />
-                {userData?.role === "guru_kelas" ? "Kelas Anda" : "Kelas"}
+                <Calendar className="w-4 h-4 inline mr-2" />
+                Semester
+              </label>
+              <select
+                value={selectedSemester}
+                onChange={(e) => {
+                  setSelectedSemester(e.target.value);
+                  setStudents([]); // Reset students saat ganti semester
+                }}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                <option value="">Pilih Semester</option>
+                {availableSemesters.map((sem) => (
+                  <option key={sem.id} value={sem.id}>
+                    Semester {sem.semester === 1 ? "Ganjil" : "Genap"}
+                    {sem.is_active ? " (Aktif)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Class Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <GraduationCap className="w-4 h-4 inline mr-2" />
+                Kelas
               </label>
               <select
                 value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full p-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors touch-manipulation min-h-[44px]"
-                disabled={userData?.role === "guru_kelas" || loading}>
+                onChange={(e) => {
+                  setSelectedClass(e.target.value);
+                  setStudents([]);
+                }}
+                disabled={userData.role === "guru_kelas"}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed">
                 <option value="">Pilih Kelas</option>
                 {getAvailableClasses().map((kelas) => (
                   <option key={kelas} value={kelas}>
@@ -598,7 +615,7 @@ const Grade = ({ userData: initialUserData }) => {
               </select>
             </div>
 
-            {/* Mata Pelajaran */}
+            {/* Subject Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <BookOpen className="w-4 h-4 inline mr-2" />
@@ -606,176 +623,125 @@ const Grade = ({ userData: initialUserData }) => {
               </label>
               <select
                 value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full p-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors touch-manipulation min-h-[44px]"
-                disabled={loading}>
+                onChange={(e) => {
+                  setSelectedSubject(e.target.value);
+                  setStudents([]);
+                }}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                 <option value="">Pilih Mata Pelajaran</option>
-                {getAvailableSubjects().map((subject) => (
-                  <option key={subject} value={subject}>
-                    {subject}
+                {getAvailableSubjects().map((mapel) => (
+                  <option key={mapel} value={mapel}>
+                    {mapel}
                   </option>
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Search Bar */}
-          {students.length > 0 && (
-            <div className="mt-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4 sm:w-5 sm:h-5" />
-                <input
-                  type="text"
-                  placeholder="Cari nama siswa atau NISN..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-colors touch-manipulation min-h-[44px]"
-                />
-              </div>
+            {/* Load Button */}
+            <div className="flex items-end">
+              <button
+                onClick={loadAllGrades}
+                disabled={
+                  !selectedClass ||
+                  !selectedSubject ||
+                  !selectedSemester ||
+                  loading
+                }
+                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="w-5 h-5" />
+                    <span>Muat Data</span>
+                  </>
+                )}
+              </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Stats Cards - RED THEME */}
+        {/* Data Table */}
         {students.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="bg-red-100 dark:bg-red-900/30 p-2.5 sm:p-3 rounded-lg">
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            {/* Table Header Actions */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1 w-full sm:w-auto">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Cari nama siswa..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {stats.total}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    Total Siswa
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="bg-green-100 dark:bg-green-900/30 p-2.5 sm:p-3 rounded-lg">
-                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {stats.completed}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    Sudah Dinilai
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="bg-purple-100 dark:bg-purple-900/30 p-2.5 sm:p-3 rounded-lg">
-                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {stats.average}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    Rata-rata NA
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tabel Nilai - RED THEME */}
-        {selectedClass && selectedSubject && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    Daftar Nilai - Kelas {selectedClass}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {selectedSubject} • NA = Rata-rata NH (40%) + UTS (30%) +
-                    UAS (30%)
-                  </p>
-                </div>
-
-                {/* Action Buttons - RESPONSIVE */}
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <button
-                    onClick={saveAllGrades}
-                    disabled={saving || isSyncing || students.length === 0}
-                    className="w-full sm:w-auto bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm sm:text-base touch-manipulation min-h-[44px] active:scale-[0.98]"
-                    style={{ minWidth: "120px" }}>
-                    {saving || isSyncing ? (
-                      <Loader className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    {saving || isSyncing ? "Menyimpan..." : "Simpan Nilai"}
-                  </button>
-
-                  <button
-                    onClick={handleExportToExcel}
-                    disabled={
-                      exporting ||
-                      students.length === 0 ||
-                      !students.some((student) =>
-                        assignmentTypes.some(
-                          (type) =>
-                            student.grades[type] &&
-                            student.grades[type] !== "" &&
-                            student.grades[type] !== null
-                        )
-                      )
-                    }
-                    className="w-full sm:w-auto bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm sm:text-base touch-manipulation min-h-[44px] active:scale-[0.98]"
-                    style={{ minWidth: "120px" }}>
-                    {exporting ? (
-                      <Loader className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                    {exporting ? "Mengekspor..." : "Export Excel"}
-                  </button>
-
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => setShowImportModal(true)}
-                    disabled={!selectedClass || !selectedSubject}
-                    className="w-full sm:w-auto bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm sm:text-base touch-manipulation min-h-[44px] active:scale-[0.98]"
-                    style={{ minWidth: "120px" }}>
+                    className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
                     <Upload className="w-4 h-4" />
-                    Import Excel
+                    <span>Import</span>
                   </button>
-
-                  {/* ❌ TOMBOL "KATROL NILAI" DIHAPUS dari sini */}
+                  <button
+                    onClick={handleExport}
+                    disabled={exporting}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
+                    {exporting ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        <span>Exporting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        <span>Export</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={saveAllGrades}
+                    disabled={saving || students.length === 0}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
+                    {saving ? (
+                      <>
+                        <Loader className="w-4 h-4 animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Simpan Semua</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
 
+            {/* Table Content */}
             {loading ? (
-              <div className="p-8 sm:p-12 text-center">
-                <Loader className="w-10 h-10 sm:w-12 sm:h-12 text-red-600 dark:text-red-400 mx-auto mb-4 animate-spin" />
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+              <div className="p-12 text-center">
+                <Loader className="w-12 h-12 text-red-600 dark:text-red-400 animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">
                   Memuat data nilai...
                 </p>
               </div>
             ) : (
               <>
-                {/* Desktop Table - 9 KOLOM */}
+                {/* Desktop Table */}
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700/50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           No
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          NISN
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Nama Siswa
@@ -787,7 +753,7 @@ const Grade = ({ userData: initialUserData }) => {
                             {assignmentLabels[type]}
                           </th>
                         ))}
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-red-50 dark:bg-red-900/30">
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           NA
                         </th>
                       </tr>
@@ -798,17 +764,19 @@ const Grade = ({ userData: initialUserData }) => {
                           <tr
                             key={student.nisn}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                               {student.no}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                              {student.nisn}
-                            </td>
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {student.nama_siswa}
+                            <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                              <div className="font-medium">
+                                {student.nama_siswa}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                NISN: {student.nisn}
+                              </div>
                             </td>
 
-                            {/* Input fields untuk setiap jenis nilai */}
+                            {/* Input Fields */}
                             {assignmentTypes.map((type) => (
                               <td key={type} className="px-4 py-3">
                                 <input
@@ -824,8 +792,8 @@ const Grade = ({ userData: initialUserData }) => {
                                       e.target.value
                                     )
                                   }
-                                  className="w-20 p-2 text-center text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors touch-manipulation min-h-[44px]"
-                                  placeholder="0-100"
+                                  className="w-20 p-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                  placeholder="0"
                                   disabled={saving}
                                 />
                               </td>
@@ -871,7 +839,7 @@ const Grade = ({ userData: initialUserData }) => {
                           </div>
                         </div>
 
-                        {/* Grid input untuk mobile - DIBUAT 2 KOLOM SEMUA */}
+                        {/* Grid input untuk mobile - 3 NH + UTS + UAS */}
                         <div className="grid grid-cols-2 gap-2">
                           {/* Row 1: NH1 & NH2 */}
                           {["NH1", "NH2"].map((type) => (
@@ -899,8 +867,8 @@ const Grade = ({ userData: initialUserData }) => {
                             </div>
                           ))}
 
-                          {/* Row 2: NH3 & NH4 */}
-                          {["NH3", "NH4"].map((type) => (
+                          {/* Row 2: NH3 & UTS */}
+                          {["NH3", "UTS"].map((type) => (
                             <div key={type} className="space-y-1">
                               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                                 {assignmentLabels[type]}
@@ -925,33 +893,7 @@ const Grade = ({ userData: initialUserData }) => {
                             </div>
                           ))}
 
-                          {/* Row 3: NH5 & UTS */}
-                          {["NH5", "UTS"].map((type) => (
-                            <div key={type} className="space-y-1">
-                              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                {assignmentLabels[type]}
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="0.1"
-                                value={student.grades[type] || ""}
-                                onChange={(e) =>
-                                  updateGrade(
-                                    student.nisn,
-                                    type,
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full p-2 text-sm text-center border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 touch-manipulation min-h-[44px]"
-                                placeholder="0"
-                                disabled={saving}
-                              />
-                            </div>
-                          ))}
-
-                          {/* Row 4: UAS & NA */}
+                          {/* Row 3: UAS & NA */}
                           <div className="space-y-1">
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                               UAS
@@ -998,14 +940,15 @@ const Grade = ({ userData: initialUserData }) => {
         )}
 
         {/* Empty State */}
-        {(!selectedClass || !selectedSubject) && (
+        {(!selectedClass || !selectedSubject || !selectedSemester) && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center">
             <Calculator className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">
               Pilih Filter
             </h3>
             <p className="text-gray-400 dark:text-gray-500">
-              Silakan pilih kelas dan mata pelajaran untuk mulai input nilai
+              Silakan pilih semester, kelas, dan mata pelajaran untuk mulai
+              input nilai
             </p>
           </div>
         )}

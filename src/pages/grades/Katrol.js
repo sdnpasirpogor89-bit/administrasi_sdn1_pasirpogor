@@ -7,9 +7,11 @@ import {
   CheckCircle,
   Loader,
   TrendingUp,
-  Eye,
   Settings,
   Save,
+  Calendar,
+  BookOpen,
+  GraduationCap,
 } from "lucide-react";
 import KatrolTable from "./KatrolTable";
 import {
@@ -17,12 +19,20 @@ import {
   prosesKatrolSemua,
   hitungNilaiAkhir,
   exportToExcelMultiSheet,
-} from "./Utils"; // 🔥 HAPUS exportLeger dari import
+} from "./Utils";
+// ✅ IMPORT ACADEMIC YEAR SERVICE
+import {
+  getActiveAcademicInfo,
+  getAllSemestersInActiveYear,
+  getSemesterById,
+} from "../../services/academicYearService";
 
 const Katrol = ({ userData: initialUserData }) => {
   const [userData, setUserData] = useState(initialUserData);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState(""); // ✅ SEMESTER STATE
+  const [availableSemesters, setAvailableSemesters] = useState([]); // ✅ SEMESTER OPTIONS
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -41,16 +51,9 @@ const Katrol = ({ userData: initialUserData }) => {
   const [availableClasses, setAvailableClasses] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeAcademicYear, setActiveAcademicYear] = useState(null);
 
-  // 🔥 BARU: State untuk deteksi kolom NH dinamis
-  const [availableNH, setAvailableNH] = useState([
-    "NH1",
-    "NH2",
-    "NH3",
-    "NH4",
-    "NH5",
-  ]);
+  // 🔥 BARU: State untuk deteksi kolom NH dinamis - DEFAULT 3 NH
+  const [availableNH, setAvailableNH] = useState(["NH1", "NH2", "NH3"]);
 
   // 🔥 BARU: State untuk fix bug input KKM (problem "075")
   const [kkmInput, setKkmInput] = useState("70");
@@ -67,6 +70,34 @@ const Katrol = ({ userData: initialUserData }) => {
     "Pendidikan Agama dan Budi Pekerti (PAIBP)",
     "Pendidikan Jasmani Olahraga Kesehatan",
   ];
+
+  // ✅ FETCH ACTIVE SEMESTER ON MOUNT
+  useEffect(() => {
+    const fetchActiveSemester = async () => {
+      try {
+        const academicInfo = await getActiveAcademicInfo();
+        const allSemesters = await getAllSemestersInActiveYear();
+
+        console.log(
+          "✅ Active academic year:",
+          academicInfo.year,
+          academicInfo.activeSemester
+        );
+
+        setAvailableSemesters(allSemesters);
+
+        // Auto-set semester aktif
+        if (academicInfo.activeSemesterId) {
+          setSelectedSemester(academicInfo.activeSemesterId);
+        }
+      } catch (error) {
+        console.error("Error fetching active semester:", error);
+        showMessage("Gagal memuat semester aktif", "error");
+      }
+    };
+
+    fetchActiveSemester();
+  }, []);
 
   useEffect(() => {
     const fetchCompleteUserData = async () => {
@@ -99,29 +130,6 @@ const Katrol = ({ userData: initialUserData }) => {
   }, [userData?.username]);
 
   useEffect(() => {
-    const fetchActiveYear = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("academic_years")
-          .select("*")
-          .eq("is_active", true)
-          .single();
-
-        if (error) throw error;
-        if (data) {
-          setActiveAcademicYear(data);
-          console.log("✅ Active academic year:", data.year, data.semester);
-        }
-      } catch (error) {
-        console.error("❌ Error fetching academic year:", error);
-        showMessage("Gagal memuat tahun ajaran aktif", "error");
-      }
-    };
-
-    fetchActiveYear();
-  }, []);
-
-  useEffect(() => {
     if (!userData?.role) return;
 
     if (userData.role === "guru_kelas") {
@@ -150,57 +158,45 @@ const Katrol = ({ userData: initialUserData }) => {
           .single();
 
         if (error) {
-          console.error("Error fetching settings:", error);
-          setKkm(70);
-          setNilaiMaksimal(90);
-          setOriginalKkm(70);
-          setOriginalNilaiMaksimal(90);
-
-          // 🔥 BARU: Reset string inputs
-          setKkmInput("70");
-          setNilaiMaksimalInput("90");
-          return;
-        }
-
-        if (data) {
+          if (error.code === "PGRST116") {
+            console.log("Settings belum ada, pakai default");
+            setKkm(70);
+            setNilaiMaksimal(90);
+            setKkmInput("70");
+            setNilaiMaksimalInput("90");
+            setOriginalKkm(70);
+            setOriginalNilaiMaksimal(90);
+          } else {
+            throw error;
+          }
+        } else if (data) {
           setKkm(data.kkm);
           setNilaiMaksimal(data.nilai_maksimal);
-          setOriginalKkm(data.kkm);
-          setOriginalNilaiMaksimal(data.nilai_maksimal);
-          setSettingsChanged(false);
-
-          // 🔥 BARU: Sync string inputs untuk fix bug "075"
           setKkmInput(String(data.kkm));
           setNilaiMaksimalInput(String(data.nilai_maksimal));
+          setOriginalKkm(data.kkm);
+          setOriginalNilaiMaksimal(data.nilai_maksimal);
+          console.log("✅ Settings loaded:", data);
         }
+        setSettingsChanged(false);
       } catch (error) {
-        console.error("Error:", error);
-        setKkm(70);
-        setNilaiMaksimal(90);
-        setOriginalKkm(70);
-        setOriginalNilaiMaksimal(90);
-
-        // 🔥 BARU: Reset string inputs
-        setKkmInput("70");
-        setNilaiMaksimalInput("90");
+        console.error("Error fetching settings:", error);
       } finally {
         setLoadingSettings(false);
       }
     };
 
     fetchNilaiSettings();
-  }, [selectedSubject, selectedClass]);
+  }, [selectedClass, selectedSubject]);
 
-  const showMessage = (text, type) => {
+  const showMessage = (text, type = "success") => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: "", type: "" }), 5000);
   };
 
   const handleKkmChange = (value) => {
-    // 🔥 PERBAIKAN: Simpan raw input sebagai string untuk fix bug "075"
     setKkmInput(value);
 
-    // Parse jadi number untuk logic
     const numValue = value === "" ? 0 : parseInt(value);
     if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
       setKkm(numValue);
@@ -211,10 +207,8 @@ const Katrol = ({ userData: initialUserData }) => {
   };
 
   const handleNilaiMaksimalChange = (value) => {
-    // 🔥 PERBAIKAN: Simpan raw input sebagai string untuk fix bug "075"
     setNilaiMaksimalInput(value);
 
-    // Parse jadi number untuk logic
     const numValue = value === "" ? 0 : parseInt(value);
     if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
       setNilaiMaksimal(numValue);
@@ -261,16 +255,28 @@ const Katrol = ({ userData: initialUserData }) => {
     }
   };
 
+  // ✅ UPDATED: fetchDataNilai dengan semester filter
   const fetchDataNilai = async () => {
-    if (!selectedClass || !selectedSubject) {
-      showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
+    if (!selectedClass || !selectedSubject || !selectedSemester) {
+      showMessage(
+        "Pilih semester, kelas dan mata pelajaran terlebih dahulu",
+        "error"
+      );
       return;
     }
 
-    if (!activeAcademicYear) {
-      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
+    // Get semester info
+    const semesterData = await getSemesterById(selectedSemester);
+    if (!semesterData) {
+      showMessage("Semester tidak ditemukan", "error");
       return;
     }
+
+    console.log(
+      "📅 Loading katrol for semester:",
+      semesterData.semester,
+      semesterData.year
+    );
 
     setLoading(true);
     try {
@@ -278,14 +284,14 @@ const Katrol = ({ userData: initialUserData }) => {
         `📄 Mengambil data untuk kelas ${selectedClass}, mapel ${selectedSubject}`
       );
 
-      // 1️⃣ CEK DULU: Ada data katrol atau ngga?
+      // 1️⃣ CEK DULU: Ada data katrol atau ngga? (FILTERED BY SEMESTER)
       const { data: katrolData, error: katrolError } = await supabase
         .from("nilai_katrol")
         .select("*")
         .eq("kelas", selectedClass)
         .eq("mata_pelajaran", selectedSubject)
-        .eq("semester", activeAcademicYear.semester)
-        .eq("tahun_ajaran", activeAcademicYear.year);
+        .eq("semester", semesterData.semester)
+        .eq("tahun_ajaran", semesterData.year);
 
       if (katrolError) {
         console.error("Error cek katrol:", katrolError);
@@ -297,12 +303,14 @@ const Katrol = ({ userData: initialUserData }) => {
           `✅ Ditemukan ${katrolData.length} data KATROL (sudah diproses)`
         );
 
-        // 🔥 PERBAIKAN: Ambil juga nilai ASLI untuk perbandingan
+        // 🔥 PERBAIKAN: Ambil juga nilai ASLI untuk perbandingan (FILTERED BY SEMESTER)
         const { data: nilaiAsliData, error: nilaiAsliError } = await supabase
           .from("nilai")
           .select("*")
           .eq("kelas", selectedClass)
-          .eq("mata_pelajaran", selectedSubject);
+          .eq("mata_pelajaran", selectedSubject)
+          .eq("semester", semesterData.semester)
+          .eq("tahun_ajaran", semesterData.year);
 
         if (nilaiAsliError) {
           console.error("Error mengambil nilai asli:", nilaiAsliError);
@@ -319,8 +327,7 @@ const Katrol = ({ userData: initialUserData }) => {
             NH1: null,
             NH2: null,
             NH3: null,
-            NH4: null,
-            NH5: null,
+            // ❌ NH4 & NH5 DIHAPUS
             UTS: null,
             UAS: null,
           };
@@ -333,10 +340,7 @@ const Katrol = ({ userData: initialUserData }) => {
               nilaiAsli.NH2 = nilaiItem.nilai;
             if (nilaiItem.jenis_nilai === "NH3")
               nilaiAsli.NH3 = nilaiItem.nilai;
-            if (nilaiItem.jenis_nilai === "NH4")
-              nilaiAsli.NH4 = nilaiItem.nilai;
-            if (nilaiItem.jenis_nilai === "NH5")
-              nilaiAsli.NH5 = nilaiItem.nilai;
+            // ❌ NH4 & NH5 DIHAPUS
             if (nilaiItem.jenis_nilai === "UTS")
               nilaiAsli.UTS = nilaiItem.nilai;
             if (nilaiItem.jenis_nilai === "UAS")
@@ -351,8 +355,7 @@ const Katrol = ({ userData: initialUserData }) => {
               NH1: item.nh1_katrol,
               NH2: item.nh2_katrol,
               NH3: item.nh3_katrol,
-              NH4: item.nh4_katrol,
-              NH5: item.nh5_katrol,
+              // ❌ NH4 & NH5 DIHAPUS
               UTS: item.uts_katrol,
               UAS: item.uas_katrol,
             },
@@ -402,11 +405,14 @@ const Katrol = ({ userData: initialUserData }) => {
 
       console.log(`✅ Ditemukan ${siswaData.length} siswa`);
 
+      // ✅ FILTER NILAI BY SEMESTER
       const { data: nilaiData, error: nilaiError } = await supabase
         .from("nilai")
         .select("*")
         .eq("kelas", selectedClass)
-        .eq("mata_pelajaran", selectedSubject);
+        .eq("mata_pelajaran", selectedSubject)
+        .eq("semester", semesterData.semester)
+        .eq("tahun_ajaran", semesterData.year);
 
       if (nilaiError) throw nilaiError;
 
@@ -499,721 +505,455 @@ const Katrol = ({ userData: initialUserData }) => {
 
       const nilaiCount = nilaiData?.length || 0;
       showMessage(
-        `✅ Berhasil memuat ${previewData.length} siswa (${nilaiCount} data nilai ORIGINAL - belum dikatrol)`,
+        `✅ Berhasil memuat ${siswaData.length} siswa dengan ${nilaiCount} data nilai ORIGINAL (belum dikatrol)`,
         "success"
       );
     } catch (error) {
-      console.error("❌ Error mengambil data:", error);
-      showMessage(`Gagal memuat data: ${error.message}`, "error");
+      console.error("Error fetching data:", error);
+      showMessage("Gagal memuat data: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
-  const prosesKatrol = async () => {
-    if (!selectedClass || !selectedSubject) {
-      showMessage("Pilih kelas dan mata pelajaran terlebih dahulu", "error");
-      return;
-    }
+  const prosesKatrol = () => {
+    // Cek apakah ada data untuk diproses
+    const dataToProse = dataGrouped.length > 0 ? dataGrouped : hasilKatrol;
 
-    if (kkm > nilaiMaksimal) {
-      showMessage("KKM tidak boleh lebih besar dari Nilai Maksimal!", "error");
+    if (dataToProse.length === 0) {
+      showMessage("Tidak ada data untuk diproses!", "error");
       return;
     }
 
     setProcessing(true);
     try {
-      console.log("📄 Memulai proses katrol...");
-
-      const { data: siswaData, error: siswaError } = await supabase
-        .from("students")
-        .select("nisn, nama_siswa")
-        .eq("kelas", selectedClass)
-        .eq("is_active", true)
-        .order("nama_siswa", { ascending: true });
-
-      if (siswaError) throw siswaError;
-
-      const { data: nilaiData, error: nilaiError } = await supabase
-        .from("nilai")
-        .select("*")
-        .eq("kelas", selectedClass)
-        .eq("mata_pelajaran", selectedSubject);
-
-      if (nilaiError) throw nilaiError;
-
-      // 🔥 BARU: Deteksi kolom NH untuk proses katrol juga
-      const nhColumns = new Set();
-      if (nilaiData && nilaiData.length > 0) {
-        nilaiData.forEach((item) => {
-          if (item.jenis_nilai?.startsWith("NH")) {
-            nhColumns.add(item.jenis_nilai);
-          }
-        });
-      }
-
-      const detectedNH = Array.from(nhColumns).sort();
-      setAvailableNH(
-        detectedNH.length > 0 ? detectedNH : ["NH1", "NH2", "NH3", "NH4", "NH5"]
+      const hasil = prosesKatrolSemua(
+        dataToProse,
+        kkm,
+        nilaiMaksimal,
+        availableNH
       );
-
-      const previewData = siswaData.map((siswa) => {
-        return {
-          nisn: siswa.nisn,
-          nama_siswa: siswa.nama_siswa,
-          kelas: selectedClass,
-          mata_pelajaran: selectedSubject,
-          nh1: null,
-          nh2: null,
-          nh3: null,
-          nh4: null,
-          nh5: null,
-          uts: null,
-          uas: null,
-        };
-      });
-
-      if (nilaiData && nilaiData.length > 0) {
-        nilaiData.forEach((item) => {
-          const siswaIndex = previewData.findIndex((s) => s.nisn === item.nisn);
-          if (siswaIndex !== -1) {
-            if (item.jenis_nilai === "NH1")
-              previewData[siswaIndex].nh1 = item.nilai;
-            if (item.jenis_nilai === "NH2")
-              previewData[siswaIndex].nh2 = item.nilai;
-            if (item.jenis_nilai === "NH3")
-              previewData[siswaIndex].nh3 = item.nilai;
-            if (item.jenis_nilai === "NH4")
-              previewData[siswaIndex].nh4 = item.nilai;
-            if (item.jenis_nilai === "NH5")
-              previewData[siswaIndex].nh5 = item.nilai;
-            if (item.jenis_nilai === "UTS")
-              previewData[siswaIndex].uts = item.nilai;
-            if (item.jenis_nilai === "UAS")
-              previewData[siswaIndex].uas = item.nilai;
-          }
-        });
-      }
-
-      const dataForGrouping = previewData.map((item) => ({
-        nisn: item.nisn,
-        nama_siswa: item.nama_siswa,
-        nilai: {
-          NH1: item.nh1,
-          NH2: item.nh2,
-          NH3: item.nh3,
-          NH4: item.nh4,
-          NH5: item.nh5,
-          UTS: item.uts,
-          UAS: item.uas,
-        },
-        nilai_katrol: {},
-      }));
-
-      const katrol = prosesKatrolSemua(dataForGrouping, kkm, nilaiMaksimal);
-      const hasil = hitungNilaiAkhir(katrol);
-
-      const hasilDenganStatus = hasil.map((item) => ({
-        ...item,
-        status: item.nilai_akhir_katrol >= kkm ? "Tuntas" : "Belum Tuntas",
-      }));
-
-      hasilDenganStatus.sort((a, b) =>
-        a.nama_siswa.localeCompare(b.nama_siswa)
-      );
-
-      setHasilKatrol(hasilDenganStatus);
+      console.log("🔍 Hasil katrol:", hasil); // ✅ DEBUG
+      setHasilKatrol(hasil);
       setShowPreview(false);
       showMessage(
-        `✅ Berhasil memproses katrol untuk ${hasilDenganStatus.length} siswa`,
+        `✅ Berhasil memproses ${hasil.length} data nilai! Silakan review hasil katrol.`,
         "success"
       );
     } catch (error) {
-      console.error("❌ Error processing katrol:", error);
-      showMessage("Gagal memproses katrol", "error");
+      console.error("Error processing katrol:", error);
+      showMessage("Gagal memproses katrol: " + error.message, "error");
     } finally {
       setProcessing(false);
     }
   };
 
-  const saveKatrolToDatabase = async () => {
-    if (!hasilKatrol || hasilKatrol.length === 0) {
-      showMessage("Tidak ada data katrol untuk disimpan", "error");
+  // ✅ UPDATED: saveHasilKatrol dengan semester info
+  const saveHasilKatrol = async () => {
+    if (hasilKatrol.length === 0) {
+      showMessage("Tidak ada hasil katrol untuk disimpan!", "error");
       return;
     }
 
-    if (!activeAcademicYear) {
-      showMessage("Tahun ajaran aktif tidak ditemukan", "error");
+    if (!selectedSemester) {
+      showMessage("Pilih semester terlebih dahulu!", "error");
       return;
     }
 
-    const confirmSave = window.confirm(
-      `💾 SIMPAN NILAI KATROL?\n\n` +
-        `Tahun Ajaran: ${activeAcademicYear.year}\n` +
-        `Semester: ${activeAcademicYear.semester}\n` +
+    // Get semester info
+    const semesterData = await getSemesterById(selectedSemester);
+    if (!semesterData) {
+      showMessage("Semester tidak ditemukan!", "error");
+      return;
+    }
+
+    const isConfirmed = window.confirm(
+      `Apakah Anda yakin ingin menyimpan ${hasilKatrol.length} hasil katrol?\n\n` +
         `Kelas: ${selectedClass}\n` +
         `Mata Pelajaran: ${selectedSubject}\n` +
-        `Total Siswa: ${hasilKatrol.length}\n\n` +
-        `Nilai akan disimpan ke database.\n` +
-        `Jika sudah ada, akan DITIMPA!\n\n` +
-        `Lanjutkan?`
+        `Semester: ${semesterData.semester === 1 ? "Ganjil" : "Genap"}\n\n` +
+        `Data yang sudah ada akan di-update.`
     );
 
-    if (!confirmSave) return;
+    if (!isConfirmed) return;
 
     setSaving(true);
     try {
-      const recordsToSave = hasilKatrol.map((item) => {
-        const nilaiArray = [
-          item.nilai.NH1,
-          item.nilai.NH2,
-          item.nilai.NH3,
-          item.nilai.NH4,
-          item.nilai.NH5,
-          item.nilai.UTS,
-          item.nilai.UAS,
-        ].filter((n) => n !== null && n !== undefined && !isNaN(n));
-
-        const min = nilaiArray.length > 0 ? Math.min(...nilaiArray) : null;
-        const max = nilaiArray.length > 0 ? Math.max(...nilaiArray) : null;
-
-        return {
-          nisn: item.nisn,
-          nama_siswa: item.nama_siswa,
-          kelas: selectedClass,
-          mata_pelajaran: selectedSubject,
-          semester: activeAcademicYear.semester,
-          tahun_ajaran: activeAcademicYear.year,
-
-          nh1_katrol: item.nilai_katrol?.NH1 || null,
-          nh2_katrol: item.nilai_katrol?.NH2 || null,
-          nh3_katrol: item.nilai_katrol?.NH3 || null,
-          nh4_katrol: item.nilai_katrol?.NH4 || null,
-          nh5_katrol: item.nilai_katrol?.NH5 || null,
-          uts_katrol: item.nilai_katrol?.UTS || null,
-          uas_katrol: item.nilai_katrol?.UAS || null,
-
-          rata_nh_katrol: item.rata_NH_katrol || null,
-          nilai_mentah: item.nilai_akhir_asli || null,
-          nilai_akhir: item.nilai_akhir_katrol,
-
-          status:
-            item.status ||
-            (item.nilai_akhir_katrol >= kkm ? "Tuntas" : "Belum Tuntas"),
-
-          kkm: kkm,
-          nilai_maksimal: nilaiMaksimal,
-
-          min_nilai: min,
-          max_nilai: max,
-
-          processed_by: userData.id,
-          processed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      });
-
-      console.log("💾 Menyimpan data katrol:", recordsToSave.length, "records");
+      const dataToSave = hasilKatrol.map((item) => ({
+        nisn: item.nisn,
+        nama_siswa: item.nama_siswa,
+        kelas: parseInt(selectedClass),
+        mata_pelajaran: selectedSubject,
+        semester: semesterData.semester,
+        tahun_ajaran: semesterData.year,
+        nh1_katrol: item.nilai_katrol.NH1 || null,
+        nh2_katrol: item.nilai_katrol.NH2 || null,
+        nh3_katrol: item.nilai_katrol.NH3 || null,
+        // ❌ NH4 & NH5 DIHAPUS - kolom udah ga ada di database
+        uts_katrol: item.nilai_katrol.UTS || null,
+        uas_katrol: item.nilai_katrol.UAS || null,
+        rata_nh_katrol: item.rata_NH_katrol || 0,
+        nilai_mentah: item.nilai_akhir_asli || 0,
+        nilai_akhir: item.nilai_akhir_katrol || 0,
+        status: item.status || "Belum Diproses",
+        kkm: kkm,
+        nilai_maksimal: nilaiMaksimal,
+        min_nilai:
+          Math.min(...Object.values(item.nilai).filter((v) => v !== null)) || 0,
+        max_nilai:
+          Math.max(...Object.values(item.nilai).filter((v) => v !== null)) || 0,
+        processed_by: userData.username || "system",
+        processed_at: new Date().toISOString(),
+      }));
 
       const { data, error } = await supabase
         .from("nilai_katrol")
-        .upsert(recordsToSave, {
-          onConflict: "nisn,mata_pelajaran,kelas,semester,tahun_ajaran",
-        });
+        .upsert(dataToSave, {
+          onConflict: "nisn,kelas,mata_pelajaran,semester,tahun_ajaran",
+        })
+        .select();
 
       if (error) throw error;
 
+      const successCount = data?.length || hasilKatrol.length;
+
+      // ✅ ALERT SUCCESS
+      alert(
+        `✅ BERHASIL!\n\n${successCount} hasil katrol berhasil disimpan ke database!`
+      );
+
       showMessage(
-        `✅ Berhasil menyimpan ${recordsToSave.length} nilai katrol ke database!`,
+        `✅ ${successCount} hasil katrol berhasil disimpan ke database!`,
         "success"
       );
+
+      // Refresh data setelah save
+      await fetchDataNilai();
     } catch (error) {
-      console.error("❌ Error saving katrol:", error);
-      showMessage(`Gagal menyimpan nilai katrol: ${error.message}`, "error");
+      console.error("Error saving katrol:", error);
+      showMessage("Gagal menyimpan hasil katrol: " + error.message, "error");
     } finally {
       setSaving(false);
     }
   };
 
   const handleExport = async () => {
-    if (!hasilKatrol || hasilKatrol.length === 0) {
-      showMessage("Tidak ada data untuk di-export", "error");
+    if (hasilKatrol.length === 0) {
+      showMessage("Tidak ada data untuk diekspor!", "error");
       return;
     }
 
     setExporting(true);
     try {
-      // ✅ PERBAIKAN: Urutan parameter yang BENAR sesuai Utils.js
       await exportToExcelMultiSheet(
-        hasilKatrol, // data
-        selectedSubject, // mapel
-        selectedClass, // kelas
-        availableNH, // ← availableNH di parameter ke-4 ✅
-        userData // ← userData di parameter ke-5 ✅
+        hasilKatrol,
+        selectedClass,
+        selectedSubject,
+        kkm,
+        nilaiMaksimal,
+        availableNH
       );
-      showMessage("✅ Berhasil export Nilai Katrol", "success");
+      showMessage("Data berhasil diekspor ke Excel!", "success");
     } catch (error) {
       console.error("Error exporting:", error);
-      showMessage("Gagal export data", "error");
+      showMessage("Gagal mengekspor data: " + error.message, "error");
     } finally {
       setExporting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-3 sm:p-4 md:p-6">
-      {/* Header dengan tema merah-putih */}
-      <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-        <div className="bg-gradient-to-r from-red-600 to-red-700 dark:from-red-950 dark:to-red-900 rounded-xl shadow-lg p-4 sm:p-6 text-white">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <Calculator className="w-6 h-6 sm:w-8 sm:h-8" />
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
-              Katrol Nilai
-            </h1>
-          </div>
-          <p className="text-sm sm:text-base text-red-100 dark:text-red-200">
-            {userData?.role === "guru_kelas"
-              ? `Guru Kelas ${selectedClass || userData?.kelas}`
-              : `Guru ${userData?.mata_pelajaran}`}
-          </p>
-        </div>
-      </div>
-
-      {/* Academic Year Info */}
-      {activeAcademicYear && (
-        <div className="max-w-7xl mx-auto mb-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm">
-            <span className="text-red-800 dark:text-red-300 font-medium">
-              📅 Tahun Ajaran Aktif: {activeAcademicYear.year} - Semester{" "}
-              {activeAcademicYear.semester}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Filter Section - Responsive dengan tema merah */}
-      <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 border border-gray-100 dark:border-gray-700">
-          <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 dark:text-gray-200">
-            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-500" />
-            Filter Data
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
-            {/* Kelas */}
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
-                Kelas
-              </label>
-              {userData?.role === "guru_kelas" ? (
-                <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
-                  <span className="font-semibold">Kelas {selectedClass}</span>
-                </div>
-              ) : (
-                <select
-                  value={selectedClass}
-                  onChange={(e) => {
-                    setSelectedClass(e.target.value);
-                    setHasilKatrol([]);
-                    setDataNilai([]);
-                    setDataGrouped([]);
-                    setShowPreview(false);
-                  }}
-                  className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 transition-colors">
-                  <option value="">Pilih Kelas</option>
-                  {availableClasses.map((kelas) => (
-                    <option key={kelas} value={kelas}>
-                      Kelas {kelas}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Mata Pelajaran */}
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
-                Mata Pelajaran
-              </label>
-              {userData?.role === "guru_mapel" ? (
-                <div className="bg-gray-50 dark:bg-gray-700 px-3 sm:px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 text-sm sm:text-base dark:text-gray-200">
-                  <span className="font-semibold">{selectedSubject}</span>
-                </div>
-              ) : (
-                <select
-                  value={selectedSubject}
-                  onChange={(e) => {
-                    setSelectedSubject(e.target.value);
-                    setHasilKatrol([]);
-                    setDataNilai([]);
-                    setDataGrouped([]);
-                    setShowPreview(false);
-                  }}
-                  className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 transition-colors">
-                  <option value="">Pilih Mata Pelajaran</option>
-                  {availableSubjects.map((mapel) => (
-                    <option key={mapel} value={mapel}>
-                      {mapel}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* KKM */}
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
-                KKM
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={kkmInput}
-                onChange={(e) => handleKkmChange(e.target.value)}
-                disabled={!selectedSubject || loadingSettings}
-                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500 transition-colors"
-                placeholder="KKM"
-              />
-            </div>
-
-            {/* Nilai Maksimal */}
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
-                Nilai Maksimal
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={nilaiMaksimalInput}
-                onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
-                disabled={!selectedSubject || loadingSettings}
-                className="w-full px-3 sm:px-4 py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 dark:text-gray-200 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-500 transition-colors"
-                placeholder="Nilai Max"
-              />
-            </div>
-          </div>
-
-          {/* Warning KKM > Nilai Maksimal */}
-          {kkm > nilaiMaksimal && selectedSubject && (
-            <div className="mb-4 flex items-start sm:items-center gap-2 text-red-600 dark:text-red-400 text-xs sm:text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
-              <span>KKM tidak boleh lebih besar dari Nilai Maksimal!</span>
-            </div>
-          )}
-
-          {/* Status Settings */}
-          {selectedClass && selectedSubject && (
-            <div className="mb-4">
-              {settingsChanged && (
-                <span className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Pengaturan KKM/Nilai Maksimal Belum Tersimpan
-                </span>
-              )}
-              {!settingsChanged && !loadingSettings && (
-                <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" />
-                  Pengaturan KKM: {originalKkm} & Nilai Maksimal:{" "}
-                  {originalNilaiMaksimal} Tersimpan
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Action Buttons - Mobile Responsive dengan touch target 44px */}
-          <div className="flex flex-col xs:flex-row flex-wrap gap-2 sm:gap-3">
-            {/* Simpan Settings */}
-            {selectedClass && selectedSubject && (
-              <button
-                onClick={saveSettings}
-                disabled={
-                  savingSettings || kkm > nilaiMaksimal || !settingsChanged
-                }
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
-                {savingSettings ? (
-                  <>
-                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span className="whitespace-nowrap">Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="whitespace-nowrap">
-                      Simpan Pengaturan KKM
-                    </span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Muat Data */}
-            <button
-              onClick={fetchDataNilai}
-              disabled={
-                !selectedClass ||
-                !selectedSubject ||
-                loading ||
-                kkm > nilaiMaksimal
-              }
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
-              {loading ? (
-                <>
-                  <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  <span className="whitespace-nowrap">Memuat Data...</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="whitespace-nowrap">Muat Data Nilai</span>
-                </>
-              )}
-            </button>
-
-            {/* Proses Katrol */}
-            <button
-              onClick={prosesKatrol}
-              disabled={
-                !selectedClass ||
-                !selectedSubject ||
-                processing ||
-                kkm > nilaiMaksimal
-              }
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
-              {processing ? (
-                <>
-                  <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                  <span className="whitespace-nowrap">Memproses...</span>
-                </>
-              ) : (
-                <>
-                  <Calculator className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="whitespace-nowrap">
-                    {hasilKatrol.length > 0
-                      ? "Proses Ulang Katrol"
-                      : "Proses Katrol"}
-                  </span>
-                </>
-              )}
-            </button>
-
-            {/* Simpan Nilai Katrol */}
-            {hasilKatrol.length > 0 && (
-              <button
-                onClick={saveKatrolToDatabase}
-                disabled={saving}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
-                {saving ? (
-                  <>
-                    <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-                    <span className="whitespace-nowrap">Menyimpan...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="whitespace-nowrap">
-                      Simpan Nilai Katrol
-                    </span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Export Button */}
-            {hasilKatrol.length > 0 && (
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 text-sm sm:text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white rounded-lg disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors active:scale-[0.98] min-h-[44px] flex-1">
-                <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="whitespace-nowrap">Export Nilai Katrol</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Message Alert */}
-      {message.text && (
-        <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Message Alert */}
+        {message.text && (
           <div
-            className={`flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg text-sm sm:text-base border ${
+            className={`p-4 rounded-lg flex items-center space-x-2 ${
               message.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
-                : "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
+                ? "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800"
+                : "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800"
             }`}>
             {message.type === "success" ? (
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
             )}
-            <span>{message.text}</span>
+            <span className="text-sm font-medium">{message.text}</span>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Filter Data
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ✅ SEMESTER SELECTOR */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Calendar className="w-4 h-4 inline mr-2" />
+                Semester
+              </label>
+              <select
+                value={selectedSemester}
+                onChange={(e) => {
+                  setSelectedSemester(e.target.value);
+                  setDataNilai([]);
+                  setDataGrouped([]);
+                  setHasilKatrol([]);
+                  setShowPreview(false);
+                }}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                <option value="">Pilih Semester</option>
+                {availableSemesters.map((sem) => (
+                  <option key={sem.id} value={sem.id}>
+                    Semester {sem.semester === 1 ? "Ganjil" : "Genap"}
+                    {sem.is_active ? " (Aktif)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Class Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <GraduationCap className="w-4 h-4 inline mr-2" />
+                Kelas
+              </label>
+              <select
+                value={selectedClass}
+                onChange={(e) => {
+                  setSelectedClass(e.target.value);
+                  setDataNilai([]);
+                  setDataGrouped([]);
+                  setHasilKatrol([]);
+                  setShowPreview(false);
+                }}
+                disabled={userData.role === "guru_kelas"}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed">
+                <option value="">Pilih Kelas</option>
+                {availableClasses.map((kelas) => (
+                  <option key={kelas} value={kelas}>
+                    Kelas {kelas}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subject Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <BookOpen className="w-4 h-4 inline mr-2" />
+                Mata Pelajaran
+              </label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => {
+                  setSelectedSubject(e.target.value);
+                  setDataNilai([]);
+                  setDataGrouped([]);
+                  setHasilKatrol([]);
+                  setShowPreview(false);
+                }}
+                disabled={userData.role === "guru_mapel"}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed">
+                <option value="">Pilih Mata Pelajaran</option>
+                {availableSubjects.map((mapel) => (
+                  <option key={mapel} value={mapel}>
+                    {mapel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Load Button */}
+            <div className="flex items-end">
+              <button
+                onClick={fetchDataNilai}
+                disabled={
+                  !selectedClass ||
+                  !selectedSubject ||
+                  !selectedSemester ||
+                  loading
+                }
+                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center justify-center space-x-2">
+                {loading ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="w-5 h-5" />
+                    <span>Muat Data</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Data Tables */}
-      <div className="max-w-7xl mx-auto">
-        {/* Preview Table */}
-        {showPreview && dataGrouped.length > 0 && (
-          <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 mb-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="text-lg font-semibold mb-4 dark:text-gray-200 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-red-600 dark:text-red-500" />
-                Preview Data Nilai ({dataGrouped.length} siswa)
-              </h3>
-              <div className="overflow-x-auto -mx-2 sm:mx-0">
-                <div className="min-w-full inline-block align-middle">
-                  <div className="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                            No
-                          </th>
-                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                            NISN
-                          </th>
-                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                            Nama Siswa
-                          </th>
-                          {availableNH.map((nh) => (
-                            <th
-                              key={nh}
-                              className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                              {nh}
-                            </th>
-                          ))}
-                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                            UTS
-                          </th>
-                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                            UAS
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {dataGrouped.slice(0, 10).map((item, index) => (
-                          <tr
-                            key={item.nisn}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                              {index + 1}
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
-                              {item.nisn}
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                              {item.nama_siswa}
-                            </td>
-                            {availableNH.map((nh) => (
-                              <td
-                                key={nh}
-                                className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                                {item.nilai?.[nh] || "-"}
-                              </td>
-                            ))}
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                              {item.nilai?.UTS || "-"}
-                            </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
-                              {item.nilai?.UAS || "-"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-              {dataGrouped.length > 10 && (
-                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400 px-2">
-                  Menampilkan 10 dari {dataGrouped.length} siswa. Gunakan tombol
-                  "Proses Katrol" untuk melihat hasil lengkap.
-                </div>
+        {/* Settings Card */}
+        {selectedClass && selectedSubject && selectedSemester && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              {settingsChanged && (
+                <button
+                  onClick={saveSettings}
+                  disabled={savingSettings}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center space-x-2">
+                  {savingSettings ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Simpan</span>
+                    </>
+                  )}
+                </button>
               )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  KKM
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={kkmInput}
+                  onChange={(e) => handleKkmChange(e.target.value)}
+                  disabled={loadingSettings}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  placeholder="70"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nilai Maksimal Katrol
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={nilaiMaksimalInput}
+                  onChange={(e) => handleNilaiMaksimalChange(e.target.value)}
+                  disabled={loadingSettings}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  placeholder="90"
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Results Table */}
-        {hasilKatrol.length > 0 && (
-          <div className="mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6 border border-gray-100 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-                <h3 className="text-lg font-semibold dark:text-gray-200 flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-green-600 dark:text-green-500" />
-                  Hasil Katrol Nilai ({hasilKatrol.length} siswa)
-                </h3>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-700 dark:text-gray-400">
-                      Tuntas (
-                      {hasilKatrol.filter((h) => h.status === "Tuntas").length})
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-gray-700 dark:text-gray-400">
-                      Belum Tuntas (
-                      {
-                        hasilKatrol.filter((h) => h.status === "Belum Tuntas")
-                          .length
-                      }
-                      )
-                    </span>
-                  </div>
-                </div>
-              </div>
+        {/* Action Buttons */}
+        {(showPreview || hasilKatrol.length > 0) && (
+          <div className="flex flex-wrap gap-3">
+            {showPreview && (
+              <button
+                onClick={prosesKatrol}
+                disabled={processing || dataGrouped.length === 0}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center space-x-2">
+                {processing ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="w-5 h-5" />
+                    <span>Proses Katrol</span>
+                  </>
+                )}
+              </button>
+            )}
 
-              <KatrolTable data={hasilKatrol} availableNH={availableNH} />
+            {hasilKatrol.length > 0 && (
+              <>
+                <button
+                  onClick={prosesKatrol}
+                  disabled={processing}
+                  className="px-6 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center space-x-2">
+                  {processing ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Calculator className="w-5 h-5" />
+                      <span>Proses Katrol Ulang</span>
+                    </>
+                  )}
+                </button>
 
-              <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                <p className="mb-1">
-                  • KKM: <span className="font-semibold">{kkm}</span> | Nilai
-                  Maksimal:{" "}
-                  <span className="font-semibold">{nilaiMaksimal}</span>
-                </p>
-                <p className="font-mono text-xs sm:text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">
-                  Nilai Akhir = KKM + ((Nilai Mentah - Min) / (Max - Min)) ×
-                  (Nilai Maksimal - KKM)
-                </p>
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                  💡 <strong>Nilai Asli</strong> ditampilkan untuk perbandingan
-                  dengan <strong>Nilai Katrol</strong>
-                </p>
-              </div>
-            </div>
+                <button
+                  onClick={saveHasilKatrol}
+                  disabled={saving}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center space-x-2">
+                  {saving ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      <span>Simpan ke Database</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed flex items-center space-x-2">
+                  {exporting ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      <span>Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5" />
+                      <span>Export Excel</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
+        )}
+
+        {/* Table */}
+        {(showPreview || hasilKatrol.length > 0) && (
+          <KatrolTable
+            data={showPreview ? dataGrouped : hasilKatrol}
+            isPreview={showPreview}
+            kkm={kkm}
+            nilaiMaksimal={nilaiMaksimal}
+            availableNH={availableNH}
+          />
         )}
 
         {/* Empty State */}
-        {!showPreview &&
-          hasilKatrol.length === 0 &&
-          dataGrouped.length === 0 &&
-          selectedClass &&
-          selectedSubject && (
-            <div className="text-center py-12 sm:py-16">
-              <div className="max-w-md mx-auto px-4">
-                <Calculator className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-2">
-                  Belum Ada Data
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Pilih kelas dan mata pelajaran, lalu klik "Muat Data" untuk
-                  memulai proses katrol.
-                </p>
-                <button
-                  onClick={fetchDataNilai}
-                  disabled={!selectedClass || !selectedSubject}
-                  className="px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  Muat Data Sekarang
-                </button>
-              </div>
-            </div>
-          )}
+        {!selectedClass || !selectedSubject || !selectedSemester ? (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center">
+            <Calculator className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400 mb-2">
+              Pilih Filter
+            </h3>
+            <p className="text-gray-400 dark:text-gray-500">
+              Silakan pilih semester, kelas, dan mata pelajaran untuk memulai
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

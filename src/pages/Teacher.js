@@ -1,16 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
-import {
-  Users,
-  UserCheck,
-  School,
-  BookOpen,
-  Search,
-  Filter,
-  MoreVertical,
-} from "lucide-react";
+import { Users, UserCheck, School, BookOpen, Search } from "lucide-react";
 
-// Compact Stats Card Component - DIPERBAIKI dengan tema merah
+// Compact Stats Card Component
 const StatsCard = ({ icon: Icon, number, label, color }) => {
   const colorClasses = {
     red: "border-l-red-950 bg-gradient-to-r from-red-50 to-white dark:from-red-950/40 dark:to-gray-800",
@@ -57,7 +49,7 @@ const StatsCard = ({ icon: Icon, number, label, color }) => {
   );
 };
 
-// Status Badge Component - DIPERBAIKI
+// Status Badge Component
 const StatusBadge = ({ isActive }) => {
   return (
     <span
@@ -71,7 +63,7 @@ const StatusBadge = ({ isActive }) => {
   );
 };
 
-// Teacher Card Component untuk Mobile - DIPERBAIKI
+// Teacher Card Component untuk Mobile
 const TeacherCard = ({ teacher, index }) => {
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
@@ -89,7 +81,7 @@ const TeacherCard = ({ teacher, index }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-all duration-300 dark:bg-gray-800 dark:border-gray-700 active:scale-[0.99] touch-manipulation">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-3">
@@ -97,6 +89,7 @@ const TeacherCard = ({ teacher, index }) => {
               <span className="text-red-950 font-bold text-sm sm:text-base dark:text-red-300">
                 {teacher.full_name
                   .split(" ")
+                  .slice(0, 2)
                   .map((n) => n[0])
                   .join("")
                   .toUpperCase()}
@@ -133,14 +126,6 @@ const TeacherCard = ({ teacher, index }) => {
 
           <div className="flex items-center justify-between gap-2">
             <StatusBadge isActive={teacher.is_active} />
-            <button
-              className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0 dark:hover:bg-gray-700"
-              aria-label={`Menu untuk ${teacher.full_name}`}>
-              <MoreVertical
-                size={18}
-                className="text-gray-500 dark:text-gray-400"
-              />
-            </button>
           </div>
         </div>
       </div>
@@ -148,7 +133,7 @@ const TeacherCard = ({ teacher, index }) => {
   );
 };
 
-// Main Teacher Component - DIPERBAIKI
+// Main Teacher Component
 const Teacher = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
@@ -291,6 +276,16 @@ const Teacher = () => {
     }
   };
 
+  // Handle Edit
+  const handleEdit = (teacher) => {
+    // REMOVED - Function tidak digunakan
+  };
+
+  // Handle Delete
+  const handleDelete = async (teacher) => {
+    // REMOVED - Function tidak digunakan
+  };
+
   // Format tampilan tugas/kelas
   const formatTeachingArea = (teacher) => {
     if (teacher.role === "admin" || teacher.role === "kepala_sekolah") {
@@ -354,7 +349,7 @@ const Teacher = () => {
         />
       </div>
 
-      {/* Filter Section - DIPERBAIKI */}
+      {/* Filter Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:gap-4">
           {/* Search Input */}
@@ -389,7 +384,7 @@ const Teacher = () => {
         </div>
       </div>
 
-      {/* Tabel Data Guru - DIPERBAIKI */}
+      {/* Tabel Data Guru */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div className="p-4 sm:p-5 lg:p-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -445,9 +440,6 @@ const Teacher = () => {
                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[120px]">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider dark:text-gray-300 min-w-[80px]">
-                  Aksi
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -465,6 +457,7 @@ const Teacher = () => {
                           <span className="text-red-950 font-bold text-sm dark:text-red-300">
                             {teacher.full_name
                               .split(" ")
+                              .slice(0, 2)
                               .map((n) => n[0])
                               .join("")
                               .toUpperCase()}
@@ -488,21 +481,11 @@ const Teacher = () => {
                     <td className="px-6 py-4">
                       <StatusBadge isActive={teacher.is_active} />
                     </td>
-                    <td className="px-6 py-4">
-                      <button
-                        className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-gray-700"
-                        aria-label={`Menu untuk ${teacher.full_name}`}>
-                        <MoreVertical
-                          size={18}
-                          className="text-gray-500 dark:text-gray-400"
-                        />
-                      </button>
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-16 text-center">
+                  <td colSpan="5" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <Users
                         size={56}

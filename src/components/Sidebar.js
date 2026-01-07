@@ -67,12 +67,7 @@ const Sidebar = ({
           {
             name: "Nilai Siswa",
             icon: BarChart3,
-            hasSubmenu: true,
-            submenu: [
-              { name: "Nilai Asli", path: "/grades" },
-              { name: "Nilai Katrol", path: "/grades/katrol" },
-              { name: "Rekap Nilai", path: "/grades/rekap" },
-            ],
+            // Submenu dihapus, langsung menuju GradeMain.js
           },
           {
             name: "E-Raport",
@@ -83,7 +78,7 @@ const Sidebar = ({
               { name: "Input Nilai", path: "/eraport/nilai" },
               { name: "Input Kehadiran", path: "/eraport/kehadiran" },
               { name: "Input Catatan", path: "/eraport/catatan" },
-              { name: "Cek Status Nilai", path: "/eraport/cek-status" }, // ← TAMBAHAN BARU
+              { name: "Cek Status Nilai", path: "/eraport/cek-status" },
               { name: "Cetak Raport", path: "/eraport/cetak" },
             ],
           },
@@ -125,12 +120,7 @@ const Sidebar = ({
           {
             name: "Nilai Siswa",
             icon: BarChart3,
-            hasSubmenu: true,
-            submenu: [
-              { name: "Nilai Asli", path: "/grades" },
-              { name: "Nilai Katrol", path: "/grades/katrol" },
-              { name: "Rekap Nilai", path: "/grades/rekap" },
-            ],
+            // Submenu dihapus, langsung menuju GradeMain.js
           },
           {
             name: "Mid E-Raport",
@@ -141,7 +131,7 @@ const Sidebar = ({
               { name: "Input Nilai", path: "/eraport/nilai" },
               { name: "Input Kehadiran", path: "/eraport/kehadiran" },
               { name: "Input Catatan", path: "/eraport/catatan" },
-              { name: "Cek Status Nilai", path: "/eraport/cek-status" }, // ← TAMBAHAN BARU
+              { name: "Cek Status Nilai", path: "/eraport/cek-status" },
               { name: "Cetak Raport", path: "/eraport/cetak" },
             ],
           },
@@ -175,12 +165,7 @@ const Sidebar = ({
           {
             name: "Nilai Siswa",
             icon: BarChart3,
-            hasSubmenu: true,
-            submenu: [
-              { name: "Nilai Asli", path: "/grades" },
-              { name: "Nilai Katrol", path: "/grades/katrol" },
-              { name: "Rekap Nilai", path: "/grades/rekap" },
-            ],
+            // Submenu dihapus, langsung menuju GradeMain.js
           },
           {
             name: "E-Raport",
@@ -386,7 +371,7 @@ const Sidebar = ({
                         )}
                       </button>
 
-                      {/* SUBMENU ITEMS */}
+                      {/* SUBMENU ITEMS - TIDAK DITAMPILKAN LAGI UNTUK NILAI SISWA */}
                       {hasSubmenu && isSubmenuOpen && !showCollapsed && (
                         <ul className="mt-1 space-y-0.5 pl-8">
                           {item.submenu.map((subItem) => {
