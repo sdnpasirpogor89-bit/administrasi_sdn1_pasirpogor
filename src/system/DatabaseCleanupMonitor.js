@@ -53,13 +53,38 @@ const DatabaseCleanupMonitor = () => {
         (sum, count) => sum + count,
         0
       );
-      const estimatedSizeMB = (totalRecords / 1000) * 0.1;
+
+      // Get REAL public schema size via RPC function
+      let actualSizeMB = null;
+      let actualSizeBytes = null;
+
+      try {
+        const { data: sizeData, error: sizeError } = await supabase.rpc(
+          "get_public_schema_size"
+        );
+
+        if (!sizeError && sizeData) {
+          actualSizeBytes = sizeData;
+          actualSizeMB = (sizeData / (1024 * 1024)).toFixed(2);
+        }
+      } catch (rpcError) {
+        console.warn(
+          "RPC get_public_schema_size not available, using estimation"
+        );
+      }
+
+      // Fallback to estimation if RPC not available
+      const estimatedSizeMB =
+        actualSizeMB || ((totalRecords / 1000) * 0.1).toFixed(2);
+      const isEstimated = !actualSizeMB;
 
       setStats({
         tables: tableStats,
         totalRecords,
-        estimatedSizeMB: estimatedSizeMB.toFixed(2),
+        estimatedSizeMB,
         percentUsed: ((estimatedSizeMB / 500) * 100).toFixed(1),
+        isEstimated,
+        actualSizeBytes,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);

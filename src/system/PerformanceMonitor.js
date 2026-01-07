@@ -160,10 +160,6 @@ const PerformanceMonitor = () => {
     }
   };
 
-  useEffect(() => {
-    testQueryPerformance();
-  }, []);
-
   const getStatusColor = (status) => {
     switch (status) {
       case "fast":
