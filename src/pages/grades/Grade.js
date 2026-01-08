@@ -518,17 +518,14 @@ const Grade = ({ userData: initialUserData }) => {
 
     setExporting(true);
     try {
-      // âœ… TAMBAHIN nhColumns parameter
-      const nhColumns = ["NH1", "NH2", "NH3"]; // 3 NH untuk SD
-
-      await exportToExcel(
+      await exportToExcel({
         students,
         selectedClass,
         selectedSubject,
-        assignmentTypes,
-        assignmentLabels,
-        nhColumns // âœ… TAMBAHIN INI
-      );
+        userData,
+        showMessage,
+        checkAccess,
+      });
       showMessage("Data berhasil diekspor ke Excel!", "success");
     } catch (error) {
       console.error("Error exporting:", error);
@@ -960,6 +957,7 @@ const Grade = ({ userData: initialUserData }) => {
         onClose={() => setShowImportModal(false)}
         selectedClass={selectedClass}
         selectedSubject={selectedSubject}
+        selectedSemester={selectedSemester}
         userData={userData}
         onImportSuccess={() => {
           loadAllGrades();

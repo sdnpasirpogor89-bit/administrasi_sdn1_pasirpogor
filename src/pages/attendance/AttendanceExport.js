@@ -807,9 +807,8 @@ export const exportSemesterRecapToExcel = async ({
   }
 };
 
-/**
- * Integration function for semester export - FIXED WITH PAGINATION
- */
+// GANTI fungsi exportSemesterRecapFromComponent dengan ini:
+
 export const exportSemesterRecapFromComponent = async (
   supabase,
   activeClass,
@@ -820,7 +819,7 @@ export const exportSemesterRecapFromComponent = async (
   semesterId = null
 ) => {
   try {
-    console.log("📋 exportSemesterRecapFromComponent called:", {
+    console.log("📋 exportSemesterRecapFromComponent FINAL FIX:", {
       activeClass,
       semester,
       year,
@@ -837,29 +836,42 @@ export const exportSemesterRecapFromComponent = async (
     }
 
     const yearNum = parseInt(year);
-    const semesterType = semester === 1 ? "Ganjil" : "Genap";
-    const academicYear =
-      semester === 1
-        ? `${yearNum}/${yearNum + 1}`
-        : `${yearNum - 1}/${yearNum}`;
+    const academicYear = `${yearNum}/${yearNum + 1}`;
 
-    const months = semester === 1 ? [7, 8, 9, 10, 11, 12] : [1, 2, 3, 4, 5, 6];
+    console.log("📊 Academic year:", academicYear);
 
-    // ✅ CALCULATE DATE RANGE for semester
+    // ✅ OPTION 1: Ambil date range dari tabel academic_years
     let startDate, endDate;
-    if (semester === 1) {
-      // Semester Ganjil: Juli-Desember tahun PERTAMA
-      startDate = `${yearNum}-07-01`;
-      endDate = `${yearNum}-12-31`;
+
+    const { data: semesterConfig, error: configError } = await supabase
+      .from("academic_years")
+      .select("start_date, end_date")
+      .eq("year", academicYear)
+      .eq("semester", semester)
+      .single();
+
+    if (!configError && semesterConfig) {
+      startDate = semesterConfig.start_date;
+      endDate = semesterConfig.end_date;
+      console.log(
+        "📅 Date range from academic_years table:",
+        startDate,
+        "to",
+        endDate
+      );
     } else {
-      // Semester Genap: Januari-Juni tahun KEDUA
-      startDate = `${yearNum + 1}-01-01`;
-      endDate = `${yearNum + 1}-06-30`;
+      // Fallback: hitung manual
+      if (semester === 1) {
+        startDate = `${yearNum}-07-01`;
+        endDate = `${yearNum}-12-31`;
+      } else {
+        startDate = `${yearNum + 1}-01-01`;
+        endDate = `${yearNum + 1}-06-30`;
+      }
+      console.log("📅 Date range (calculated):", startDate, "to", endDate);
     }
 
-    console.log("📅 Date range for semester:", startDate, "to", endDate);
-
-    // Fetch with pagination
+    // ✅ QUERY: Tanpa filter tahun_ajaran dulu, pakai date range
     let allRecords = [];
     let page = 0;
     const pageSize = 1000;
@@ -870,19 +882,18 @@ export const exportSemesterRecapFromComponent = async (
         .from("attendance")
         .select("*")
         .eq("kelas", activeClass)
+        .eq("semester", semester)
         .gte("tanggal", startDate)
         .lte("tanggal", endDate)
         .order("tanggal", { ascending: true })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      // ✅ ADD FILTER BY SEMESTER
-      if (semesterId) {
-        query = filterBySemester(query, semesterId);
-      }
-
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Supabase query error:", error);
+        throw error;
+      }
 
       if (data && data.length > 0) {
         allRecords = [...allRecords, ...data];
@@ -893,28 +904,39 @@ export const exportSemesterRecapFromComponent = async (
       }
     }
 
-    console.log("📦 Attendance records fetched:", allRecords.length);
+    console.log("📦 Records found with date range:", allRecords.length);
 
-    const attendanceData = allRecords;
+    // ✅ Jika tidak ada, coba tanpa date range (hanya semester)
+    if (allRecords.length === 0) {
+      console.log("🔄 Trying without date range...");
 
-    if (!attendanceData || attendanceData.length === 0) {
-      return {
-        success: false,
-        message: "Tidak ada data kehadiran untuk semester yang dipilih",
-      };
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("kelas", activeClass)
+        .eq("semester", semester)
+        .order("tanggal", { ascending: true });
+
+      if (error) throw error;
+
+      allRecords = data || [];
+      console.log("🔄 Records found (semester only):", allRecords.length);
+
+      // Debug: tampilkan sample
+      if (allRecords.length > 0) {
+        console.log("🔍 Sample records found:");
+        allRecords.slice(0, 5).forEach((r, i) => {
+          console.log(
+            `  ${i + 1}. ${r.tanggal} - ${r.tahun_ajaran} - ${r.status}`
+          );
+        });
+      }
     }
 
-    // Filter by month
-    const filteredData = attendanceData.filter((r) => {
-      const parts = r.tanggal.split("-");
-      const month = parseInt(parts[1], 10);
-      return months.includes(month);
-    });
-
-    if (filteredData.length === 0) {
+    if (allRecords.length === 0) {
       return {
         success: false,
-        message: "Tidak ada data kehadiran untuk semester yang dipilih",
+        message: `Tidak ada data kehadiran untuk Kelas ${activeClass} Semester ${semester} (${academicYear}). Pastikan sudah ada presensi untuk periode ini.`,
       };
     }
 
@@ -924,9 +946,11 @@ export const exportSemesterRecapFromComponent = async (
       namaGuru = currentUser.full_name;
     } else if (currentUser && currentUser.username) {
       namaGuru = currentUser.username;
-    } else if (attendanceData.length > 0) {
-      namaGuru = attendanceData[0].guru_input || "";
+    } else if (allRecords.length > 0) {
+      namaGuru = allRecords[0].guru_input || "";
     }
+
+    console.log("✅ Final records for export:", allRecords.length);
 
     // Export to Excel
     const result = await exportSemesterRecapToExcel({
@@ -934,14 +958,14 @@ export const exportSemesterRecapFromComponent = async (
       semester: semester,
       tahun: yearNum,
       studentsData: students,
-      attendanceRecords: filteredData,
+      attendanceRecords: allRecords,
       namaSekolah: "SD NEGERI 1 PASIRPOGOR",
       namaGuru: namaGuru,
     });
 
     return result;
   } catch (error) {
-    console.error("Error in exportSemesterRecapFromComponent:", error);
+    console.error("❌ Error in exportSemesterRecapFromComponent:", error);
     return { success: false, message: `Error: ${error.message}` };
   }
 };

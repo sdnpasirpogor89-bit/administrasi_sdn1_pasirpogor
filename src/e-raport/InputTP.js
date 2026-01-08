@@ -68,6 +68,12 @@ function InputTP() {
     setAcademicYear(data);
   };
 
+  const getSemesterNumber = (semester) => {
+    if (semester === 1 || semester === "1") return "Ganjil";
+    if (semester === 2 || semester === "2") return "Genap";
+    return semester; // Kalau udah "Ganjil" atau "Genap" langsung return
+  };
+
   const loadTP = async () => {
     console.log("=== LOAD TP DEBUG ===");
     console.log("Kelas:", kelas);
@@ -90,14 +96,17 @@ function InputTP() {
 
     console.log("Class ID:", classData.id);
 
+    // Tentukan semester dari periode
+    const semesterFromPeriode = periode.includes("ganjil") ? "Ganjil" : "Genap";
+
     const { data, error } = await supabase
       .from("tujuan_pembelajaran")
       .select("*")
       .eq("class_id", classData.id)
       .eq("mata_pelajaran", selectedMapel)
       .eq("tahun_ajaran", academicYear?.year)
-      .eq("semester", academicYear?.semester)
-      .eq("periode", periode) // TAMBAHAN: Filter berdasarkan periode
+      .eq("semester", semesterFromPeriode)
+      .eq("periode", periode)
       .order("urutan");
 
     console.log("Query Result:", data);
@@ -146,7 +155,9 @@ function InputTP() {
             class_id: classData.id,
             tingkat: row.getCell(2).value || tingkatDefault,
             fase: row.getCell(3).value || faseDefault,
-            semester: row.getCell(4).value || semesterDefault,
+            semester: getSemesterNumber(
+              row.getCell(4).value || semesterDefault
+            ),
             deskripsi_tp: row.getCell(5).value,
             urutan: Number(noCell),
             mata_pelajaran: selectedMapel,
@@ -338,7 +349,7 @@ function InputTP() {
       class_id: classData.id,
       tingkat: tingkatDefault,
       fase: faseDefault,
-      semester: academicYear?.semester,
+      semester: getSemesterNumber(academicYear?.semester),
       deskripsi_tp: "",
       urutan: tpList.length + 1,
       mata_pelajaran: selectedMapel,
@@ -372,7 +383,7 @@ function InputTP() {
       .update({
         tingkat: editData.tingkat,
         fase: editData.fase,
-        semester: editData.semester,
+        semester: getSemesterNumber(editData.semester),
         deskripsi_tp: editData.deskripsi_tp,
       })
       .eq("id", editingId);

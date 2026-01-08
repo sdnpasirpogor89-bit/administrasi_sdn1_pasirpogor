@@ -1,5 +1,5 @@
 //[file name]: TeacherSchedule.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import TeacherScheduleExcel from "./TeacherScheduleExcel";
 import {
@@ -13,6 +13,7 @@ import {
   X,
   LayoutGrid,
   List,
+  Save,
 } from "lucide-react";
 
 const JAM_SCHEDULE = {
@@ -94,6 +95,20 @@ const TeacherSchedule = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
+
+  // ✅ Drag & Drop States
+  const [draggedSchedule, setDraggedSchedule] = useState(null);
+  const [dragOverCell, setDragOverCell] = useState({ day: null, period: null });
+
+  // ✅ Inline Edit States
+  const [editingCell, setEditingCell] = useState({
+    day: null,
+    period: null,
+    subject: "",
+  });
+  const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
   const classId = currentUser?.kelas || "5";
   const [formData, setFormData] = useState({
     day: "Senin",
@@ -111,6 +126,20 @@ const TeacherSchedule = ({ user }) => {
       fetchSchedules();
     }
   }, [currentUser?.kelas]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowSubjectDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const fetchSchedules = async () => {
     if (!currentUser || !currentUser.kelas) {
@@ -215,8 +244,14 @@ const TeacherSchedule = ({ user }) => {
     };
   };
 
-  const handleOpenModal = (schedule = null) => {
+  // ✅ IMPROVED: Support auto-fill day & period dari cell click
+  const handleOpenModal = (
+    schedule = null,
+    clickedDay = null,
+    clickedPeriod = null
+  ) => {
     if (schedule) {
+      // Edit existing schedule
       setEditingId(schedule.id);
       const { startPeriod, endPeriod } = getPeriodFromTime(
         schedule.day,
@@ -231,11 +266,12 @@ const TeacherSchedule = ({ user }) => {
         class_id: schedule.class_id,
       });
     } else {
+      // New schedule - auto-fill from clicked cell
       setEditingId(null);
       setFormData({
-        day: "Senin",
-        start_period: "1",
-        end_period: "1",
+        day: clickedDay || "Senin", // ✅ Auto-fill hari
+        start_period: clickedPeriod || "1", // ✅ Auto-fill jam mulai
+        end_period: clickedPeriod || "1", // ✅ Auto-fill jam selesai
         subject: "",
         class_id: classId,
       });
@@ -325,6 +361,182 @@ const TeacherSchedule = ({ user }) => {
     }
   };
 
+  // ✅ INLINE EDIT: Start editing cell
+  const handleInlineEdit = (day, period, currentSubject = "") => {
+    const pagiActivity = getPagiActivity(day, period);
+    if (pagiActivity) return; // Jangan edit cell aktivitas pagi
+
+    setEditingCell({ day, period, subject: currentSubject });
+    setShowSubjectDropdown(true);
+  };
+
+  // ✅ INLINE EDIT: Save inline edit
+  const handleInlineSave = async () => {
+    if (!editingCell.subject.trim()) {
+      setError("Mata pelajaran tidak boleh kosong");
+      setEditingCell({ day: null, period: null, subject: "" });
+      setShowSubjectDropdown(false);
+      return;
+    }
+
+    if (!currentUser?.kelas || !currentUser?.id) {
+      setError("Data user tidak lengkap");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const daySchedule = JAM_SCHEDULE[editingCell.day];
+      const startTime = daySchedule[editingCell.period].start;
+      const endTime = daySchedule[editingCell.period].end;
+
+      // Cek apakah sudah ada jadwal di cell ini
+      const existingSchedule = schedules.find(
+        (s) =>
+          s.day === editingCell.day &&
+          findPeriodsByTimeRange(s.day, s.start_time, s.end_time).includes(
+            editingCell.period
+          )
+      );
+
+      let result;
+      if (existingSchedule) {
+        // Update existing
+        result = await supabase
+          .from("class_schedules")
+          .update({
+            subject: editingCell.subject,
+          })
+          .eq("id", existingSchedule.id)
+          .select();
+      } else {
+        // Insert new
+        result = await supabase
+          .from("class_schedules")
+          .insert([
+            {
+              day: editingCell.day,
+              start_time: startTime,
+              end_time: endTime,
+              subject: editingCell.subject,
+              class_id: currentUser.kelas,
+              teacher_id: currentUser.id,
+            },
+          ])
+          .select();
+      }
+
+      if (result.error) throw result.error;
+
+      setSuccess(
+        `Jadwal ${editingCell.subject} berhasil ${
+          existingSchedule ? "diupdate" : "ditambahkan"
+        }`
+      );
+      await fetchSchedules();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError("Gagal menyimpan: " + err.message);
+    } finally {
+      setLoading(false);
+      setEditingCell({ day: null, period: null, subject: "" });
+      setShowSubjectDropdown(false);
+    }
+  };
+
+  // ✅ Drag Start - When user starts dragging
+  const handleDragStart = (e, schedule) => {
+    setDraggedSchedule(schedule);
+    e.dataTransfer.effectAllowed = "move";
+    e.currentTarget.style.opacity = "0.5"; // Make semi-transparent
+  };
+
+  // ✅ Drag End - When drag finishes (success or cancel)
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = "1"; // Restore opacity
+    setDraggedSchedule(null);
+    setDragOverCell({ day: null, period: null });
+  };
+
+  // ✅ Drag Over - When dragging over a cell
+  const handleDragOver = (e, day, period) => {
+    e.preventDefault(); // Required to allow drop
+    e.dataTransfer.dropEffect = "move";
+    setDragOverCell({ day, period });
+  };
+
+  // ✅ Drag Leave - When leaving a cell
+  const handleDragLeave = () => {
+    setDragOverCell({ day: null, period: null });
+  };
+
+  // ✅ Drop - When releasing on target cell
+  const handleDrop = async (e, targetDay, targetPeriod) => {
+    e.preventDefault();
+
+    if (!draggedSchedule) return;
+
+    // Prevent drop on same cell
+    const sourceDay = draggedSchedule.day;
+    const sourcePeriods = findPeriodsByTimeRange(
+      sourceDay,
+      draggedSchedule.start_time,
+      draggedSchedule.end_time
+    );
+    const sourcePeriod = sourcePeriods[0];
+
+    if (sourceDay === targetDay && sourcePeriod === targetPeriod) {
+      // Same cell - cancel drag
+      setDraggedSchedule(null);
+      setDragOverCell({ day: null, period: null });
+      return;
+    }
+
+    // Prevent drop on activity cells (UPACARA, ISTIRAHAT, etc.)
+    const pagiActivity = getPagiActivity(targetDay, targetPeriod);
+    if (pagiActivity) {
+      setError(
+        `❌ Tidak bisa meletakkan jadwal di sel ${targetDay} jam ke-${targetPeriod} (${pagiActivity})`
+      );
+      setTimeout(() => setError(null), 3000);
+      setDraggedSchedule(null);
+      setDragOverCell({ day: null, period: null });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Calculate new time range for target cell
+      const daySchedule = JAM_SCHEDULE[targetDay];
+      const newStartTime = daySchedule[targetPeriod].start;
+      const newEndTime = daySchedule[targetPeriod].end;
+
+      // Update schedule in database
+      const { error } = await supabase
+        .from("class_schedules")
+        .update({
+          day: targetDay,
+          start_time: newStartTime,
+          end_time: newEndTime,
+        })
+        .eq("id", draggedSchedule.id);
+
+      if (error) throw error;
+
+      setSuccess(
+        `📦 ${draggedSchedule.subject} dipindah ke ${targetDay} JP ${targetPeriod}`
+      );
+      await fetchSchedules(); // Refresh grid
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError("❌ Gagal memindahkan jadwal: " + err.message);
+    } finally {
+      setLoading(false);
+      setDraggedSchedule(null);
+      setDragOverCell({ day: null, period: null });
+    }
+  };
+
   const getAvailablePeriods = () => {
     return Object.keys(JAM_SCHEDULE[formData.day] || {});
   };
@@ -369,109 +581,186 @@ const TeacherSchedule = ({ user }) => {
     const periods = Object.keys(JAM_SCHEDULE.Senin || {});
 
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-red-50 dark:bg-red-900/20">
-              <th className="p-3 sm:p-4 border border-red-200 dark:border-red-800 text-center font-semibold text-red-800 dark:text-red-300">
-                JAM KE
-              </th>
-              <th className="p-3 sm:p-4 border border-red-200 dark:border-red-800 text-center font-semibold text-red-800 dark:text-red-300">
-                WAKTU
-              </th>
-              {days.map((day) => (
-                <th
-                  key={day}
-                  className="p-3 sm:p-4 border border-red-200 dark:border-red-800 text-center font-semibold text-red-800 dark:text-red-300">
-                  {day.toUpperCase()}
+      <>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-red-50 dark:bg-red-900/20">
+                <th className="p-3 sm:p-4 border border-red-200 dark:border-red-800 text-center font-semibold text-red-800 dark:text-red-300">
+                  JAM KE
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {periods.map((period) => {
-              const time = JAM_SCHEDULE.Senin[period];
-              const showIstirahat = period === "5";
+                <th className="p-3 sm:p-4 border border-red-200 dark:border-red-800 text-center font-semibold text-red-800 dark:text-red-300">
+                  WAKTU
+                </th>
+                {days.map((day) => (
+                  <th
+                    key={day}
+                    className="p-3 sm:p-4 border border-red-200 dark:border-red-800 text-center font-semibold text-red-800 dark:text-red-300">
+                    {day.toUpperCase()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {periods.map((period) => {
+                const time = JAM_SCHEDULE.Senin[period];
+                const showIstirahat = period === "5";
 
-              return (
-                <React.Fragment key={period}>
-                  {/* BARIS JAM NORMAL */}
-                  <tr className="hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
-                    <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center font-semibold text-red-900 dark:text-red-200">
-                      {period}
-                    </td>
-                    <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center text-sm text-red-800 dark:text-red-300">
-                      {time.start} - {time.end}
-                    </td>
-                    {days.map((day) => {
-                      const cellData = scheduleGrid[day]?.[period];
-                      const pagiActivity = getPagiActivity(day, period);
+                return (
+                  <React.Fragment key={period}>
+                    {/* BARIS JAM NORMAL */}
+                    <tr className="hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+                      <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center font-semibold text-red-900 dark:text-red-200">
+                        {period}
+                      </td>
+                      <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center text-sm text-red-800 dark:text-red-300">
+                        {time.start} - {time.end}
+                      </td>
+                      {days.map((day) => {
+                        const cellData = scheduleGrid[day]?.[period];
+                        const pagiActivity = getPagiActivity(day, period);
+                        const isEditing =
+                          editingCell.day === day &&
+                          editingCell.period === period;
 
-                      if (cellData?.skip) {
-                        return null;
-                      }
+                        if (cellData?.skip) {
+                          return null;
+                        }
 
-                      return (
-                        <td
-                          key={`${day}-${period}`}
-                          colSpan={cellData?.colspan || 1}
-                          className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center">
-                          {cellData && !cellData.skip ? (
-                            <div className="relative group">
-                              <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-                                {cellData.subject}
-                              </span>
-                              <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                                {/* PERBAIKAN TOUCH TARGET: tombol lebih besar untuk mobile */}
-                                <button
-                                  onClick={() => handleOpenModal(cellData)}
-                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-2 bg-white dark:bg-gray-800 rounded shadow-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                  aria-label="Edit jadwal">
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(cellData.id)}
-                                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2 bg-white dark:bg-gray-800 rounded shadow-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
-                                  aria-label="Hapus jadwal">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                        return (
+                          <td
+                            key={`${day}-${period}`}
+                            colSpan={cellData?.colspan || 1}
+                            onDragOver={(e) => handleDragOver(e, day, period)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, day, period)}
+                            className={`p-0 border border-red-100 dark:border-red-800/50 text-center relative ${
+                              dragOverCell.day === day &&
+                              dragOverCell.period === period
+                                ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-dashed border-blue-500"
+                                : ""
+                            }`}
+                            style={{ minHeight: "60px" }}>
+                            {isEditing ? (
+                              // ✅ INLINE EDIT MODE
+                              <div className="p-2" ref={dropdownRef}>
+                                <div className="mb-2">
+                                  <select
+                                    value={editingCell.subject}
+                                    onChange={(e) =>
+                                      setEditingCell((prev) => ({
+                                        ...prev,
+                                        subject: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white text-sm"
+                                    autoFocus>
+                                    <option value="">
+                                      Pilih Mata Pelajaran
+                                    </option>
+                                    {SUBJECTS.map((subject) => (
+                                      <option key={subject} value={subject}>
+                                        {subject}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="flex gap-1 justify-center">
+                                  <button
+                                    onClick={handleInlineSave}
+                                    className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded flex items-center gap-1"
+                                    disabled={loading}>
+                                    <Save className="w-3 h-3" />
+                                    Simpan
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingCell({
+                                        day: null,
+                                        period: null,
+                                        subject: "",
+                                      });
+                                      setShowSubjectDropdown(false);
+                                    }}
+                                    className="px-2 py-1 bg-slate-300 hover:bg-slate-400 text-slate-800 text-xs rounded">
+                                    Batal
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ) : pagiActivity ? (
-                            <span className="font-bold text-red-700 dark:text-red-400 text-xs">
-                              {pagiActivity}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 dark:text-slate-600">
-                              -
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-
-                  {/* BARIS ISTIRAHAT SETELAH JAM KE-5 */}
-                  {showIstirahat && (
-                    <tr className="bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
-                      <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center font-semibold text-amber-800 dark:text-amber-300">
-                        -
-                      </td>
-                      <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center text-sm text-amber-800 dark:text-amber-300">
-                        09:20 - 09:50
-                      </td>
-                      <td
-                        colSpan={5}
-                        className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center font-bold text-amber-700 dark:text-amber-400">
-                        ISTIRAHAT
-                      </td>
+                            ) : cellData && !cellData.skip ? (
+                              // ✅ FILLED CELL
+                              <div
+                                className="h-full p-3 sm:p-4 relative group"
+                                draggable={true}
+                                onDragStart={(e) =>
+                                  handleDragStart(e, cellData)
+                                }
+                                onDragEnd={handleDragEnd}
+                                style={{ cursor: "grab" }}
+                                onDoubleClick={() =>
+                                  handleInlineEdit(
+                                    day,
+                                    period,
+                                    cellData.subject
+                                  )
+                                }
+                                title="Double click to edit">
+                                <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                                  {cellData.subject}
+                                </span>
+                              </div>
+                            ) : pagiActivity ? (
+                              // ✅ ACTIVITY CELL (UPACARA, dll)
+                              <div className="h-full p-3 sm:p-4">
+                                <span className="font-bold text-red-700 dark:text-red-400 text-xs">
+                                  {pagiActivity}
+                                </span>
+                              </div>
+                            ) : (
+                              // ✅ EMPTY CELL - CLICK TO ADD
+                              <div
+                                className="h-full p-3 sm:p-4 flex items-center justify-center cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group"
+                                onClick={() =>
+                                  handleInlineEdit(day, period, "")
+                                }
+                                title="Klik untuk tambah jadwal">
+                                <span className="text-slate-400 dark:text-slate-600 group-hover:hidden">
+                                  -
+                                </span>
+                                <div className="hidden group-hover:flex items-center justify-center gap-1 text-red-400 dark:text-red-500 font-medium text-sm">
+                                  <Plus className="w-4 h-4" />
+                                  <span>Tambah</span>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+
+                    {/* BARIS ISTIRAHAT SETELAH JAM KE-5 */}
+                    {showIstirahat && (
+                      <tr className="bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+                        <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center font-semibold text-amber-800 dark:text-amber-300">
+                          -
+                        </td>
+                        <td className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center text-sm text-amber-800 dark:text-amber-300">
+                          09:20 - 09:50
+                        </td>
+                        <td
+                          colSpan={5}
+                          className="p-3 sm:p-4 border border-red-100 dark:border-red-800/50 text-center font-bold text-amber-700 dark:text-amber-400">
+                          ISTIRAHAT
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800">
           <p className="text-sm md:text-base text-red-800 dark:text-red-300 text-center font-bold">
             NB: Jadwal ini sebagai contoh perhitungan jumlah JP setiap mata
@@ -479,7 +768,7 @@ const TeacherSchedule = ({ user }) => {
             masing-masing.
           </p>
         </div>
-      </div>
+      </>
     );
   };
 
@@ -564,7 +853,6 @@ const TeacherSchedule = ({ user }) => {
                       {schedule.subject}
                     </td>
                     <td className="px-4 sm:px-6 py-4">
-                      {/* PERBAIKAN TOUCH TARGET: padding dan spacing lebih besar */}
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleOpenModal(schedule)}

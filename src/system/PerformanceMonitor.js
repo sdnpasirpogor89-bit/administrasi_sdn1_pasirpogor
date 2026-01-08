@@ -64,11 +64,11 @@ const PerformanceMonitor = () => {
     const testStartTime = performance.now();
     const tables = [
       { name: "students", description: "Data Siswa" },
-      { name: "attendances", description: "Data Presensi" },
-      { name: "grades", description: "Data Nilai" },
-      { name: "teachers", description: "Data Guru" },
+      { name: "attendance", description: "Data Presensi" },
+      { name: "teacher_attendance", description: "Data Presensi Guru" },
+      { name: "nilai", description: "Data Nilai" },
+      { name: "catatan_siswa", description: "Data Catatan" },
       { name: "system_health_logs", description: "Health Logs" },
-      { name: "konseling", description: "Data Konseling" },
       { name: "siswa_baru", description: "Pendaftaran Siswa Baru" },
     ];
 
@@ -77,11 +77,22 @@ const PerformanceMonitor = () => {
         const startTime = performance.now();
 
         // 🔧 OPTIMIZED: Skip count untuk performance test
+        // ✅ Minimal columns untuk performance test
+        const minimalSelect = {
+          students: "id, nisn, nama_siswa, kelas",
+          attendance: "id, nisn, tanggal",
+          teacher_attendance: "id, teacher_id, tanggal",
+          nilai: "id, nisn, nilai",
+          catatan_siswa: "id, student_id",
+          siswa_baru: "id, nama",
+          system_health_logs: "id, created_at",
+        };
+
         const { data, error } = await supabase
           .from(table.name)
-          .select("*")
-          .limit(20) // ✅ Kurangi dari 100 ke 20
-          .range(0, 19); // ✅ Pagination
+          .select(minimalSelect[table.name] || "id") // ✅ Hanya 3-4 columns!
+          .limit(20)
+          .range(0, 19);
 
         const endTime = performance.now();
         const duration = endTime - startTime;
@@ -159,6 +170,11 @@ const PerformanceMonitor = () => {
       setIsRunning(false);
     }
   };
+
+  // 🔧 REMOVED: Auto-test on mount - manual only now
+  // useEffect(() => {
+  //   testQueryPerformance();
+  // }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -301,7 +317,8 @@ const PerformanceMonitor = () => {
         <div className="flex gap-2">
           <button
             onClick={exportReport}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+            disabled={metrics.summary.totalQueries === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
             <Download className="w-5 h-5" />
             Export
           </button>
@@ -319,454 +336,485 @@ const PerformanceMonitor = () => {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-lg shadow-md border-2 border-yellow-300">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-white p-4 rounded-full shadow-lg">
-              <Award className="w-10 h-10 text-yellow-500" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 font-medium">
-                Performance Score
-              </p>
-              <p
-                className={`text-5xl font-bold ${getScoreColor(
-                  metrics.summary.performanceScore
-                )}`}>
-                {metrics.summary.performanceScore}
-                <span className="text-2xl text-gray-500">/100</span>
-              </p>
+      {metrics.summary.totalQueries === 0 ? (
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-12 rounded-lg shadow-md border-2 border-dashed border-gray-300 text-center">
+          <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            Belum Ada Test Performance
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Klik tombol "Run Test" untuk mulai menganalisis performa database
+          </p>
+          <button
+            onClick={testQueryPerformance}
+            disabled={isRunning}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-lg font-semibold">
+            {isRunning ? (
+              <RefreshCw className="w-6 h-6 animate-spin" />
+            ) : (
+              <Activity className="w-6 h-6" />
+            )}
+            {isRunning ? "Testing..." : "Run Performance Test"}
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-lg shadow-md border-2 border-yellow-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-white p-4 rounded-full shadow-lg">
+                  <Award className="w-10 h-10 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    Performance Score
+                  </p>
+                  <p
+                    className={`text-5xl font-bold ${getScoreColor(
+                      metrics.summary.performanceScore
+                    )}`}>
+                    {metrics.summary.performanceScore}
+                    <span className="text-2xl text-gray-500">/100</span>
+                  </p>
+                </div>
+              </div>
+
+              {trend && (
+                <div className="text-right">
+                  <div className="flex items-center gap-2 justify-end mb-1">
+                    {trend.icon}
+                    <span className={`font-semibold ${trend.color}`}>
+                      {trend.text}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {trend.change}% dari test sebelumnya
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
-          {trend && (
-            <div className="text-right">
-              <div className="flex items-center gap-2 justify-end mb-1">
-                {trend.icon}
-                <span className={`font-semibold ${trend.color}`}>
-                  {trend.text}
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Avg Query Time</p>
+                  <p className="text-3xl font-bold text-gray-800 mt-1">
+                    {metrics.summary.avgQueryTime}
+                    <span className="text-lg text-gray-500">ms</span>
+                  </p>
+                  {trend && (
+                    <p className={`text-xs mt-1 ${trend.color} font-medium`}>
+                      {trend.change}% {trend.text.toLowerCase()}
+                    </p>
+                  )}
+                </div>
+                <TrendingUp className="w-10 h-10 text-blue-500" />
               </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Total Tables</p>
+                  <p className="text-3xl font-bold text-gray-800 mt-1">
+                    {metrics.summary.totalQueries}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {
+                      metrics.queries.filter(
+                        (q) => q.status === "fast" || q.status === "medium"
+                      ).length
+                    }{" "}
+                    optimal
+                  </p>
+                </div>
+                <Database className="w-10 h-10 text-purple-500" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Slowest Query</p>
+                  <p className="text-3xl font-bold text-red-600 mt-1">
+                    {metrics.summary.slowestQuery?.duration || 0}
+                    <span className="text-lg text-gray-500">ms</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 truncate">
+                    {metrics.summary.slowestQuery?.table || "-"}
+                  </p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-red-500" />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm">Fastest Query</p>
+                  <p className="text-3xl font-bold text-green-600 mt-1">
+                    {metrics.summary.fastestQuery?.duration || 0}
+                    <span className="text-lg text-gray-500">ms</span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 truncate">
+                    {metrics.summary.fastestQuery?.table || "-"}
+                  </p>
+                </div>
+                <CheckCircle className="w-10 h-10 text-green-500" />
+              </div>
+            </div>
+          </div>
+
+          {metrics.history.length >= 3 && (
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Performance Trend
+              </h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={metrics.history}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="timestamp" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="avgQueryTime"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Avg Time (ms)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Query Duration Comparison
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="duration" fill="#fbbf24" name="Duration (ms)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Detailed Query Analysis
+            </h3>
+
+            <div className="space-y-3">
+              {metrics.queries
+                .sort((a, b) => parseFloat(b.duration) - parseFloat(a.duration))
+                .map((query, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-lg border-2 ${getStatusColor(
+                      query.status
+                    )} transition-all hover:shadow-md`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(query.status)}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-gray-800">
+                              {query.table}
+                            </h4>
+                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+                              #{idx + 1}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {query.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-800">
+                          {query.duration}
+                          <span className="text-sm text-gray-600">ms</span>
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {query.recordCount.toLocaleString()} records
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {query.timestamp}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="relative w-full bg-gray-200 rounded-full h-3 mb-2">
+                      <div
+                        className={`h-3 rounded-full transition-all ${
+                          query.status === "fast"
+                            ? "bg-green-500"
+                            : query.status === "medium"
+                            ? "bg-blue-500"
+                            : query.status === "warning"
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            (parseFloat(query.duration) / 200) * 100,
+                            100
+                          )}%`,
+                        }}></div>
+                    </div>
+
+                    <div className="flex items-start gap-2 mt-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        {getRecommendation(query)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-500 p-4 rounded">
+            <div className="flex items-start gap-3">
+              <Activity className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-2">
+                  Performance Thresholds:
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-blue-700">
+                      <strong>Excellent:</strong> &lt; 80ms
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-600" />
+                    <span className="text-blue-700">
+                      <strong>Good:</strong> 80-100ms
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-yellow-600" />
+                    <span className="text-blue-700">
+                      <strong>Warning:</strong> 100-150ms
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                    <span className="text-blue-700">
+                      <strong>Critical:</strong> &gt; 150ms
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {metrics.queries.filter((q) => q.status === "critical").length >
+            0 && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded animate-pulse">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-red-800 mb-2">
+                    🚨 CRITICAL: Immediate Action Required!
+                  </h4>
+                  <p className="text-sm text-red-700 mb-3">
+                    Ditemukan{" "}
+                    <strong>
+                      {
+                        metrics.queries.filter((q) => q.status === "critical")
+                          .length
+                      }{" "}
+                      table
+                    </strong>{" "}
+                    dengan performance kritis yang dapat mempengaruhi user
+                    experience!
+                  </p>
+                  <div className="space-y-1">
+                    {metrics.queries
+                      .filter((q) => q.status === "critical")
+                      .map((q, idx) => (
+                        <p key={idx} className="text-sm text-red-700">
+                          • <strong>{q.table}</strong>: {q.duration}ms (
+                          {q.recordCount} records)
+                        </p>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {metrics.queries.filter((q) => q.status === "warning").length > 0 && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-yellow-800 mb-2">
+                    ⚠️ Performance Warning
+                  </h4>
+                  <p className="text-sm text-yellow-700">
+                    Ada{" "}
+                    <strong>
+                      {
+                        metrics.queries.filter((q) => q.status === "warning")
+                          .length
+                      }{" "}
+                      table
+                    </strong>{" "}
+                    yang perlu dioptimasi untuk mencegah degradasi performance.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              Smart Optimization Recommendations
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Database Level
+                </h4>
+                <ul className="space-y-2 text-sm text-green-700">
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Tambahkan <strong>composite index</strong> untuk queries
+                      dengan multiple conditions
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Gunakan <strong>EXPLAIN ANALYZE</strong> untuk identify
+                      bottlenecks
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Setup <strong>vacuuming schedule</strong> untuk maintain
+                      performance
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                  <Database className="w-4 h-4" />
+                  Query Optimization
+                </h4>
+                <ul className="space-y-2 text-sm text-blue-700">
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Implement <strong>pagination</strong> dengan limit 50-100
+                      records per page
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Gunakan <strong>select()</strong> hanya untuk columns yang
+                      diperlukan
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Tambahkan <strong>date filters</strong> untuk batasi data
+                      fetch
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Application Level
+                </h4>
+                <ul className="space-y-2 text-sm text-purple-700">
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Implement <strong>React Query</strong> atau SWR untuk
+                      caching & auto-refresh
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Gunakan <strong>debouncing</strong> untuk search/filter
+                      operations
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Add <strong>loading states</strong> untuk improve
+                      perceived performance
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h4 className="font-semibold text-orange-800 mb-2 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Data Management
+                </h4>
+                <ul className="space-y-2 text-sm text-orange-700">
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Archive data lama via <strong>Database Cleanup</strong>{" "}
+                      tab
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>
+                      Setup <strong>retention policies</strong> untuk
+                      auto-cleanup
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>Monitor table sizes & growth trends regularly</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          {metrics.summary.totalTestTime && (
+            <div className="bg-gray-50 border border-gray-200 p-3 rounded text-center">
               <p className="text-sm text-gray-600">
-                {trend.change}% dari test sebelumnya
+                Test completed in{" "}
+                <strong>{metrics.summary.totalTestTime}ms</strong> • Last run:{" "}
+                <strong>{new Date().toLocaleString("id-ID")}</strong>
               </p>
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Avg Query Time</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">
-                {metrics.summary.avgQueryTime}
-                <span className="text-lg text-gray-500">ms</span>
-              </p>
-              {trend && (
-                <p className={`text-xs mt-1 ${trend.color} font-medium`}>
-                  {trend.change}% {trend.text.toLowerCase()}
-                </p>
-              )}
-            </div>
-            <TrendingUp className="w-10 h-10 text-blue-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total Tables</p>
-              <p className="text-3xl font-bold text-gray-800 mt-1">
-                {metrics.summary.totalQueries}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {
-                  metrics.queries.filter(
-                    (q) => q.status === "fast" || q.status === "medium"
-                  ).length
-                }{" "}
-                optimal
-              </p>
-            </div>
-            <Database className="w-10 h-10 text-purple-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Slowest Query</p>
-              <p className="text-3xl font-bold text-red-600 mt-1">
-                {metrics.summary.slowestQuery?.duration || 0}
-                <span className="text-lg text-gray-500">ms</span>
-              </p>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                {metrics.summary.slowestQuery?.table || "-"}
-              </p>
-            </div>
-            <AlertTriangle className="w-10 h-10 text-red-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Fastest Query</p>
-              <p className="text-3xl font-bold text-green-600 mt-1">
-                {metrics.summary.fastestQuery?.duration || 0}
-                <span className="text-lg text-gray-500">ms</span>
-              </p>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                {metrics.summary.fastestQuery?.table || "-"}
-              </p>
-            </div>
-            <CheckCircle className="w-10 h-10 text-green-500" />
-          </div>
-        </div>
-      </div>
-
-      {metrics.history.length >= 3 && (
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Performance Trend
-          </h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={metrics.history}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="timestamp" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="avgQueryTime"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                name="Avg Time (ms)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          Query Duration Comparison
-        </h3>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="duration" fill="#fbbf24" name="Duration (ms)" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <Target className="w-5 h-5" />
-          Detailed Query Analysis
-        </h3>
-
-        <div className="space-y-3">
-          {metrics.queries
-            .sort((a, b) => parseFloat(b.duration) - parseFloat(a.duration))
-            .map((query, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-lg border-2 ${getStatusColor(
-                  query.status
-                )} transition-all hover:shadow-md`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(query.status)}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-gray-800">
-                          {query.table}
-                        </h4>
-                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
-                          #{idx + 1}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {query.description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-800">
-                      {query.duration}
-                      <span className="text-sm text-gray-600">ms</span>
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {query.recordCount.toLocaleString()} records
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {query.timestamp}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative w-full bg-gray-200 rounded-full h-3 mb-2">
-                  <div
-                    className={`h-3 rounded-full transition-all ${
-                      query.status === "fast"
-                        ? "bg-green-500"
-                        : query.status === "medium"
-                        ? "bg-blue-500"
-                        : query.status === "warning"
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
-                    style={{
-                      width: `${Math.min(
-                        (parseFloat(query.duration) / 200) * 100,
-                        100
-                      )}%`,
-                    }}></div>
-                </div>
-
-                <div className="flex items-start gap-2 mt-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    {getRecommendation(query)}
-                  </span>
-                </div>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-500 p-4 rounded">
-        <div className="flex items-start gap-3">
-          <Activity className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-semibold text-blue-800 mb-2">
-              Performance Thresholds:
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span className="text-blue-700">
-                  <strong>Excellent:</strong> &lt; 80ms
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-600" />
-                <span className="text-blue-700">
-                  <strong>Good:</strong> 80-100ms
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-yellow-600" />
-                <span className="text-blue-700">
-                  <strong>Warning:</strong> 100-150ms
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <span className="text-blue-700">
-                  <strong>Critical:</strong> &gt; 150ms
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {metrics.queries.filter((q) => q.status === "critical").length > 0 && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded animate-pulse">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-red-800 mb-2">
-                🚨 CRITICAL: Immediate Action Required!
-              </h4>
-              <p className="text-sm text-red-700 mb-3">
-                Ditemukan{" "}
-                <strong>
-                  {
-                    metrics.queries.filter((q) => q.status === "critical")
-                      .length
-                  }{" "}
-                  table
-                </strong>{" "}
-                dengan performance kritis yang dapat mempengaruhi user
-                experience!
-              </p>
-              <div className="space-y-1">
-                {metrics.queries
-                  .filter((q) => q.status === "critical")
-                  .map((q, idx) => (
-                    <p key={idx} className="text-sm text-red-700">
-                      • <strong>{q.table}</strong>: {q.duration}ms (
-                      {q.recordCount} records)
-                    </p>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {metrics.queries.filter((q) => q.status === "warning").length > 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-          <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-yellow-600 mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-yellow-800 mb-2">
-                ⚠️ Performance Warning
-              </h4>
-              <p className="text-sm text-yellow-700">
-                Ada{" "}
-                <strong>
-                  {metrics.queries.filter((q) => q.status === "warning").length}{" "}
-                  table
-                </strong>{" "}
-                yang perlu dioptimasi untuk mencegah degradasi performance.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-yellow-500" />
-          Smart Optimization Recommendations
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              Database Level
-            </h4>
-            <ul className="space-y-2 text-sm text-green-700">
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Tambahkan <strong>composite index</strong> untuk queries
-                  dengan multiple conditions
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Gunakan <strong>EXPLAIN ANALYZE</strong> untuk identify
-                  bottlenecks
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Setup <strong>vacuuming schedule</strong> untuk maintain
-                  performance
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              Query Optimization
-            </h4>
-            <ul className="space-y-2 text-sm text-blue-700">
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Implement <strong>pagination</strong> dengan limit 50-100
-                  records per page
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Gunakan <strong>select()</strong> hanya untuk columns yang
-                  diperlukan
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Tambahkan <strong>date filters</strong> untuk batasi data
-                  fetch
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              Application Level
-            </h4>
-            <ul className="space-y-2 text-sm text-purple-700">
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Implement <strong>React Query</strong> atau SWR untuk caching
-                  & auto-refresh
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Gunakan <strong>debouncing</strong> untuk search/filter
-                  operations
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Add <strong>loading states</strong> untuk improve perceived
-                  performance
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <h4 className="font-semibold text-orange-800 mb-2 flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              Data Management
-            </h4>
-            <ul className="space-y-2 text-sm text-orange-700">
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Archive data lama via <strong>Database Cleanup</strong> tab
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>
-                  Setup <strong>retention policies</strong> untuk auto-cleanup
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span>•</span>
-                <span>Monitor table sizes & growth trends regularly</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {metrics.summary.totalTestTime && (
-        <div className="bg-gray-50 border border-gray-200 p-3 rounded text-center">
-          <p className="text-sm text-gray-600">
-            Test completed in <strong>{metrics.summary.totalTestTime}ms</strong>{" "}
-            • Last run: <strong>{new Date().toLocaleString("id-ID")}</strong>
-          </p>
-        </div>
+        </>
       )}
     </div>
   );

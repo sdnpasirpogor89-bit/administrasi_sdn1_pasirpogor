@@ -109,7 +109,8 @@ const checkOrphanedRecords = async () => {
     const { data: attendances } = await supabase
       .from("attendance")
       .select("nisn")
-      .not("nisn", "is", null);
+      .not("nisn", "is", null)
+      .limit(1000); // ✅ Limit untuk sampling
 
     if (attendances && attendances.length > 0) {
       const nisnList = [...new Set(attendances.map((a) => a.nisn))];
@@ -139,7 +140,8 @@ const checkOrphanedRecords = async () => {
     const { data: nilai } = await supabase
       .from("nilai")
       .select("nisn")
-      .not("nisn", "is", null);
+      .not("nisn", "is", null)
+      .limit(1000); // ✅ Limit
 
     if (nilai && nilai.length > 0) {
       const nisnList = [...new Set(nilai.map((n) => n.nisn))];
@@ -167,7 +169,8 @@ const checkOrphanedRecords = async () => {
     const { data: siswaBaru } = await supabase
       .from("siswa_baru")
       .select("user_id")
-      .not("user_id", "is", null);
+      .not("user_id", "is", null)
+      .limit(500); // ✅ Limit
 
     if (siswaBaru && siswaBaru.length > 0) {
       const userIds = [...new Set(siswaBaru.map((s) => s.user_id))];
@@ -196,7 +199,8 @@ const checkOrphanedRecords = async () => {
     // Check catatan_siswa orphans
     const { data: catatan } = await supabase
       .from("catatan_siswa")
-      .select("student_id, teacher_id");
+      .select("student_id, teacher_id")
+      .limit(500); // ✅ Limit
 
     if (catatan && catatan.length > 0) {
       const studentIds = [
@@ -445,7 +449,8 @@ const checkDuplicates = async () => {
       .from("students")
       .select("nisn")
       .not("nisn", "is", null)
-      .neq("nisn", "");
+      .neq("nisn", "")
+      .limit(2000); // ✅ Limit - students biasanya banyak
 
     if (students) {
       const nisnCount = {};
@@ -477,7 +482,8 @@ const checkDuplicates = async () => {
       .from("users")
       .select("username")
       .not("username", "is", null)
-      .neq("username", "");
+      .neq("username", "")
+      .limit(500); // ✅ Limit
 
     if (users) {
       const usernameCount = {};
@@ -506,17 +512,28 @@ const checkDuplicates = async () => {
       }
     }
 
-    // Duplicate attendance
+    // Duplicate attendance - FIXED
+    const thirtyDaysAgoAttendance = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000
+    )
+      .toISOString()
+      .split("T")[0];
+
     const { data: attendance } = await supabase
       .from("attendance")
-      .select("nisn, tanggal, jenis_presensi")
+      .select("nisn, tanggal, jenis_presensi, kelas, tahun_ajaran, semester")
       .not("nisn", "is", null)
-      .not("tanggal", "is", null);
+      .not("tanggal", "is", null)
+      .gte("tanggal", thirtyDaysAgoAttendance) // ✅ Ganti nama
+      .limit(2000);
 
     if (attendance) {
       const keys = {};
       attendance.forEach((a) => {
-        const key = `${a.nisn}|${a.tanggal}|${a.jenis_presensi || "default"}`;
+        // ✅ Key HARUS SAMA dengan UNIQUE CONSTRAINT!
+        const key = `${a.nisn}|${a.tanggal}|${a.jenis_presensi || "default"}|${
+          a.kelas
+        }|${a.tahun_ajaran}|${a.semester}`;
         keys[key] = (keys[key] || 0) + 1;
       });
 
@@ -526,7 +543,7 @@ const checkDuplicates = async () => {
           category: "database",
           severity: "warning",
           message: "Duplicate attendance entries",
-          details: `${duplicates.length} duplicate attendance (same student/date/type)`,
+          details: `${duplicates.length} duplicate attendance (same student/date/type/class)`,
           table: "attendance",
           count: duplicates.length,
         });

@@ -19,6 +19,7 @@ export const ImportModal = ({
   onClose,
   selectedClass,
   selectedSubject,
+  selectedSemester,
   userData,
   onImportSuccess,
 }) => {
@@ -111,8 +112,6 @@ export const ImportModal = ({
         "NH-1",
         "NH-2",
         "NH-3",
-        "NH-4",
-        "NH-5",
         "UTS",
         "UAS",
         "Nilai Akhir",
@@ -222,7 +221,15 @@ export const ImportModal = ({
         nisnMap[s.nisn] = s.nama_siswa;
       });
 
-      const gradeTypes = ["NH-1", "NH-2", "NH-3", "NH-4", "NH-5", "UTS", "UAS"];
+      // ✅ UNTUK SD: HANYA 3 NH + UTS + UAS
+      const gradeTypes = [
+        { key: "NH-1", col: 4 },
+        { key: "NH-2", col: 5 },
+        { key: "NH-3", col: 6 },
+        { key: "UTS", col: 7 },
+        { key: "UAS", col: 8 },
+      ];
+
       const parsedData = [];
       const errorList = [];
       const validList = [];
@@ -252,8 +259,9 @@ export const ImportModal = ({
         let hasValidGrade = false;
         let hasError = false;
 
-        gradeTypes.forEach((type, index) => {
-          const cellValue = row.getCell(4 + index).value;
+        // ✅ LOOP DENGAN INDEX KOLOM YANG BENAR
+        gradeTypes.forEach(({ key, col }) => {
+          const cellValue = row.getCell(col).value;
 
           if (
             cellValue !== null &&
@@ -266,18 +274,18 @@ export const ImportModal = ({
               errorList.push({
                 row: rowNumber,
                 nisn: nisn,
-                error: `${type}: Nilai tidak valid (${cellValue})`,
+                error: `${key}: Nilai tidak valid (${cellValue})`,
               });
               hasError = true;
             } else if (nilai < 0 || nilai > 100) {
               errorList.push({
                 row: rowNumber,
                 nisn: nisn,
-                error: `${type}: Nilai harus 0-100 (${nilai})`,
+                error: `${key}: Nilai harus 0-100 (${nilai})`,
               });
               hasError = true;
             } else {
-              rowData.grades[type] = nilai;
+              rowData.grades[key] = nilai;
               hasValidGrade = true;
             }
           }
@@ -310,6 +318,12 @@ export const ImportModal = ({
       return;
     }
 
+    // ✅ GET SEMESTER INFO dari selectedSemester
+    if (!selectedSemester) {
+      alert("Pilih semester terlebih dahulu!");
+      return;
+    }
+
     const confirmed = window.confirm(
       `Import ${validData.length} data nilai?\n\n` +
         `Kelas: ${selectedClass}\n` +
@@ -322,6 +336,18 @@ export const ImportModal = ({
     setImporting(true);
 
     try {
+      // ✅ IMPORT SERVICE
+      const { getSemesterById } = await import(
+        "../../services/academicYearService"
+      );
+      const semesterData = await getSemesterById(selectedSemester);
+
+      if (!semesterData) {
+        alert("Semester tidak ditemukan!");
+        setImporting(false);
+        return;
+      }
+
       const dataToImport = [];
       const gradeTypeMap = {
         "NH-1": "NH1",
@@ -342,6 +368,8 @@ export const ImportModal = ({
             mata_pelajaran: selectedSubject,
             jenis_nilai: gradeTypeMap[type],
             nilai: parseFloat(nilai),
+            semester: semesterData.semester, // ✅ TAMBAHIN INI
+            tahun_ajaran: semesterData.year, // ✅ TAMBAHIN INI
             guru_input: userData.name || userData.username,
             tanggal: new Date().toISOString().split("T")[0],
           });
@@ -349,7 +377,7 @@ export const ImportModal = ({
       });
 
       const { error } = await supabase.from("nilai").upsert(dataToImport, {
-        onConflict: "nisn,mata_pelajaran,jenis_nilai",
+        onConflict: "nisn,mata_pelajaran,jenis_nilai,semester,tahun_ajaran", // ✅ PERBAIKI INI
       });
 
       if (error) throw error;
@@ -636,6 +664,7 @@ export const ImportModal = ({
 
 // Export to Excel Function
 export const exportToExcel = async ({
+  students,
   selectedClass,
   selectedSubject,
   userData,
@@ -656,73 +685,18 @@ export const exportToExcel = async ({
   }
 
   try {
-    const { data: studentsData, error: studentsError } = await supabase
-      .from("students")
-      .select("nisn, nama_siswa, kelas")
-      .eq("kelas", parseInt(selectedClass))
-      .eq("is_active", true)
-      .order("nama_siswa");
-
-    if (studentsError) throw studentsError;
-
-    if (!studentsData || studentsData.length === 0) {
-      showMessage("Tidak ada siswa di kelas ini", "error");
-      return;
-    }
-
-    const { data: allGrades, error: gradesError } = await supabase
-      .from("nilai")
-      .select("*")
-      .eq("kelas", parseInt(selectedClass))
-      .eq("mata_pelajaran", selectedSubject);
-
-    if (gradesError) throw gradesError;
-
-    const gradeTypes = ["NH1", "NH2", "NH3", "NH4", "NH5", "UTS", "UAS"];
-
-    const excelData = studentsData.map((student, index) => {
-      const studentGrades = {};
-      const nhGrades = [];
-
-      gradeTypes.forEach((type) => {
-        const grade = allGrades?.find(
-          (g) => g.nisn === student.nisn && g.jenis_nilai === type
-        );
-        studentGrades[type] = grade ? grade.nilai : "";
-
-        if (type.startsWith("NH") && grade && grade.nilai) {
-          nhGrades.push(parseFloat(grade.nilai));
-        }
-      });
-
-      let nilaiAkhir = "";
-      const utsGrade = studentGrades["UTS"]
-        ? parseFloat(studentGrades["UTS"])
-        : 0;
-      const uasGrade = studentGrades["UAS"]
-        ? parseFloat(studentGrades["UAS"])
-        : 0;
-
-      if (nhGrades.length > 0 || utsGrade > 0 || uasGrade > 0) {
-        const avgNH =
-          nhGrades.length > 0
-            ? nhGrades.reduce((a, b) => a + b, 0) / nhGrades.length
-            : 0;
-        nilaiAkhir = (avgNH * 0.4 + utsGrade * 0.3 + uasGrade * 0.3).toFixed(1);
-      }
-
+    // Langsung pakai data students yang sudah ada
+    const excelData = students.map((student) => {
       return {
-        No: index + 1,
+        No: student.no,
         NISN: student.nisn,
         "Nama Siswa": student.nama_siswa,
-        "NH-1": studentGrades["NH1"],
-        "NH-2": studentGrades["NH2"],
-        "NH-3": studentGrades["NH3"],
-        "NH-4": studentGrades["NH4"],
-        "NH-5": studentGrades["NH5"],
-        UTS: studentGrades["UTS"],
-        UAS: studentGrades["UAS"],
-        "Nilai Akhir": nilaiAkhir,
+        "NH-1": student.grades["NH1"] || "",
+        "NH-2": student.grades["NH2"] || "",
+        "NH-3": student.grades["NH3"] || "",
+        UTS: student.grades["UTS"] || "",
+        UAS: student.grades["UAS"] || "",
+        "Nilai Akhir": student.na || "",
       };
     });
 
@@ -733,7 +707,7 @@ export const exportToExcel = async ({
     workbook.modified = new Date();
 
     const worksheet = workbook.addWorksheet("Nilai Siswa");
-    const numColumns = 11;
+    const numColumns = 9;
 
     worksheet.columns = [
       { key: "No", width: 5 },
@@ -742,8 +716,6 @@ export const exportToExcel = async ({
       { key: "NH-1", width: 8 },
       { key: "NH-2", width: 8 },
       { key: "NH-3", width: 8 },
-      { key: "NH-4", width: 8 },
-      { key: "NH-5", width: 8 },
       { key: "UTS", width: 8 },
       { key: "UAS", width: 8 },
       { key: "Nilai Akhir", width: 12 },
@@ -786,8 +758,6 @@ export const exportToExcel = async ({
       "NH-1",
       "NH-2",
       "NH-3",
-      "NH-4",
-      "NH-5",
       "UTS",
       "UAS",
       "Nilai Akhir",

@@ -327,7 +327,6 @@ const Katrol = ({ userData: initialUserData }) => {
             NH1: null,
             NH2: null,
             NH3: null,
-            // ❌ NH4 & NH5 DIHAPUS
             UTS: null,
             UAS: null,
           };
@@ -340,25 +339,39 @@ const Katrol = ({ userData: initialUserData }) => {
               nilaiAsli.NH2 = nilaiItem.nilai;
             if (nilaiItem.jenis_nilai === "NH3")
               nilaiAsli.NH3 = nilaiItem.nilai;
-            // ❌ NH4 & NH5 DIHAPUS
             if (nilaiItem.jenis_nilai === "UTS")
               nilaiAsli.UTS = nilaiItem.nilai;
             if (nilaiItem.jenis_nilai === "UAS")
               nilaiAsli.UAS = nilaiItem.nilai;
           });
 
+          // 🔥 HITUNG RATA NH ASLI
+          const nhAsliValues = [
+            nilaiAsli.NH1,
+            nilaiAsli.NH2,
+            nilaiAsli.NH3,
+          ].filter((v) => v !== null && v !== undefined);
+
+          const rataRhAsli =
+            nhAsliValues.length > 0
+              ? Math.round(
+                  nhAsliValues.reduce((sum, v) => sum + v, 0) /
+                    nhAsliValues.length
+                )
+              : null;
+
           return {
             nisn: item.nisn,
             nama_siswa: item.nama_siswa,
-            nilai: nilaiAsli, // ✅ NILAI ASLI DIPERTAHANKAN
+            nilai: nilaiAsli,
             nilai_katrol: {
               NH1: item.nh1_katrol,
               NH2: item.nh2_katrol,
               NH3: item.nh3_katrol,
-              // ❌ NH4 & NH5 DIHAPUS
               UTS: item.uts_katrol,
               UAS: item.uas_katrol,
             },
+            rata_NH_asli: rataRhAsli, // 🔥 TAMBAHKAN INI
             rata_NH_katrol: item.rata_nh_katrol,
             nilai_akhir_asli: item.nilai_mentah,
             nilai_akhir_katrol: item.nilai_akhir,
@@ -647,11 +660,10 @@ const Katrol = ({ userData: initialUserData }) => {
     try {
       await exportToExcelMultiSheet(
         hasilKatrol,
-        selectedClass,
-        selectedSubject,
-        kkm,
-        nilaiMaksimal,
-        availableNH
+        selectedSubject, // 🔥 MAPEL di posisi ke-2
+        selectedClass, // 🔥 KELAS di posisi ke-3
+        availableNH, // 🔥 availableNH di posisi ke-4
+        userData // 🔥 userData di posisi ke-5 (optional)
       );
       showMessage("Data berhasil diekspor ke Excel!", "success");
     } catch (error) {

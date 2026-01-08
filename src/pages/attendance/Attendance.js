@@ -148,8 +148,14 @@ const Attendance = ({
     showToast("✅ Semua siswa ditandai HADIR", "success");
   };
 
-  // ✅ SAVE ATTENDANCE - DENGAN NOTIFIKASI LENGKAP
+  // ✅ SAVE ATTENDANCE - FIXED DUPLICATE PREVENTION
   const saveAttendance = async () => {
+    // ✅ PREVENT DOUBLE CLICK
+    if (saving) {
+      console.log("⚠️ Save already in progress, ignoring click");
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -169,12 +175,12 @@ const Attendance = ({
       // ✅ CEK APAKAH SUDAH ADA DATA SEBELUMNYA
       const { data: existingData, error: checkError } = await supabase
         .from("attendance")
-        .select("nisn")
+        .select("id, nisn")
         .eq("tanggal", selectedDate)
         .eq("kelas", parseInt(selectedClass))
         .eq("semester", semesterData.semester)
         .eq("tahun_ajaran", semesterData.year)
-        .limit(1);
+        .eq("jenis_presensi", "kelas"); // ✅ TAMBAH INI!
 
       if (checkError) throw checkError;
 
@@ -183,17 +189,31 @@ const Attendance = ({
       // ✅ KONFIRMASI JIKA DATA SUDAH ADA
       if (isUpdate) {
         const confirmUpdate = window.confirm(
-          `⚠️ Presensi untuk tanggal ${selectedDate} sudah ada!\n\nApakah Anda yakin ingin MEMPERBARUI data presensi?`
+          `⚠️ Presensi untuk tanggal ${selectedDate} sudah ada!\n\n` +
+            `Ditemukan ${existingData.length} data presensi.\n\n` +
+            `Apakah Anda yakin ingin MEMPERBARUI data presensi?`
         );
 
         if (!confirmUpdate) {
           showToast("❌ Penyimpanan dibatalkan", "info");
-          setSaving(false);
           return;
         }
+
+        // ✅ DELETE OLD DATA FIRST (prevent duplicates)
+        const { error: deleteError } = await supabase
+          .from("attendance")
+          .delete()
+          .eq("tanggal", selectedDate)
+          .eq("kelas", parseInt(selectedClass))
+          .eq("semester", semesterData.semester)
+          .eq("tahun_ajaran", semesterData.year)
+          .eq("jenis_presensi", "kelas");
+
+        if (deleteError) throw deleteError;
+        console.log("🗑️ Old attendance data deleted");
       }
 
-      // Prepare data
+      // ✅ Prepare data
       const dataToSave = students.map((student) => ({
         tanggal: selectedDate,
         nisn: student.nisn,
@@ -205,14 +225,15 @@ const Attendance = ({
         jenis_presensi: "kelas",
         tahun_ajaran: semesterData.year,
         semester: semesterData.semester,
+        created_at: new Date().toISOString(),
       }));
 
-      // Upsert attendance (insert or update)
-      const { error } = await supabase.from("attendance").upsert(dataToSave, {
-        onConflict: "tanggal,nisn,kelas,semester",
-      });
+      // ✅ INSERT NEW DATA (not upsert!)
+      const { error: insertError } = await supabase
+        .from("attendance")
+        .insert(dataToSave);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       // ✅ NOTIFIKASI BERBEDA UNTUK INSERT vs UPDATE
       if (isUpdate) {

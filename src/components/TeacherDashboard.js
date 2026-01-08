@@ -1093,7 +1093,7 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop */}
+        {/* Aksi Cepat Desktop - REVISI: GURU KELAS */}
         {!isMobile && (
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-6 leading-tight">
@@ -1101,13 +1101,13 @@ const TeacherDashboard = ({ userData }) => {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <button
-                onClick={() => handleNavigation("/students")}
+                onClick={() => handleNavigation("/teacher-attendance")}
                 className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <Users
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
                 />
-                <span className="font-semibold text-center">Data Siswa</span>
+                <span className="font-semibold text-center">Presensi Guru</span>
               </button>
               <button
                 onClick={() => handleNavigation("/attendance")}
@@ -1130,13 +1130,15 @@ const TeacherDashboard = ({ userData }) => {
                 <span className="font-semibold text-center">Nilai Siswa</span>
               </button>
               <button
-                onClick={() => handleNavigation("/reports")}
+                onClick={() => handleNavigation("/schedule")}
                 className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <FileText
+                <Calendar
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
                 />
-                <span className="font-semibold text-center">Laporan</span>
+                <span className="font-semibold text-center">
+                  Jadwal Pelajaran
+                </span>
               </button>
             </div>
           </div>
@@ -1239,7 +1241,7 @@ const TeacherDashboard = ({ userData }) => {
           />
         </div>
 
-        {/* Aksi Cepat Desktop */}
+        {/* Aksi Cepat Desktop - REVISI: GURU MAPEL */}
         {!isMobile && (
           <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 dark:border-gray-700">
             <h3 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-6 leading-tight">
@@ -1247,13 +1249,13 @@ const TeacherDashboard = ({ userData }) => {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <button
-                onClick={() => handleNavigation("/students")}
+                onClick={() => handleNavigation("/teacher-attendance")}
                 className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
                 <Users
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
                 />
-                <span className="font-semibold text-center">Data Siswa</span>
+                <span className="font-semibold text-center">Presensi Guru</span>
               </button>
               <button
                 onClick={() => handleNavigation("/attendance")}
@@ -1276,13 +1278,15 @@ const TeacherDashboard = ({ userData }) => {
                 <span className="font-semibold text-center">Nilai Siswa</span>
               </button>
               <button
-                onClick={() => handleNavigation("/reports")}
+                onClick={() => handleNavigation("/schedule")}
                 className="group flex flex-col items-center gap-2 p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gradient-to-br hover:from-red-950 hover:to-red-800 hover:text-white hover:border-red-950 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 text-xs sm:text-sm min-h-[80px] touch-manipulation">
-                <FileText
+                <Calendar
                   size={isMobile ? 18 : 20}
                   className="group-hover:scale-110 transition-transform"
                 />
-                <span className="font-semibold text-center">Laporan</span>
+                <span className="font-semibold text-center">
+                  Jadwal Pelajaran
+                </span>
               </button>
             </div>
           </div>

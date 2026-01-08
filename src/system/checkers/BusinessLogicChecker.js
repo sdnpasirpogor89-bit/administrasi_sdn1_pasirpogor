@@ -53,7 +53,7 @@ const checkAttendanceLogic = async () => {
       .from("attendance")
       .select("nisn")
       .not("nisn", "is", null)
-      .limit(1000);
+      .limit(200);
 
     if (attendance && attendance.length > 0) {
       const nisnList = [...new Set(attendance.map((a) => a.nisn))];
@@ -75,7 +75,7 @@ const checkAttendanceLogic = async () => {
         if (count > 0) {
           issues.push({
             category: "business_logic",
-            severity: "info", 
+            severity: "info",
             message: "Attendance for inactive students",
             details: `${count} attendance records for inactive students`,
             table: "attendance",
@@ -224,6 +224,7 @@ const checkGradeLogic = async () => {
     }
 
     // Grades without attendance
+    // Grades without attendance - OPTIMIZED!
     const { data: recentGrades } = await supabase
       .from("nilai")
       .select("nisn, tanggal, mata_pelajaran")
@@ -235,28 +236,32 @@ const checkGradeLogic = async () => {
       )
       .not("nisn", "is", null)
       .not("tanggal", "is", null)
-      .limit(500);
+      .limit(100); // Kurangi dari 500 ke 100
 
     if (recentGrades && recentGrades.length > 0) {
-      const gradeKeys = recentGrades.map((g) => ({
-        nisn: g.nisn,
-        tanggal: g.tanggal,
-      }));
+      // ✅ OPTIMIZED: Fetch semua attendance sekaligus dengan IN query
+      const gradeKeys = recentGrades.map((g) => `${g.nisn}|${g.tanggal}`);
 
-      let noAttendanceCount = 0;
+      const { data: matchingAttendance } = await supabase
+        .from("attendance")
+        .select("nisn, tanggal")
+        .in("nisn", [...new Set(recentGrades.map((g) => g.nisn))])
+        .gte(
+          "tanggal",
+          new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0]
+        );
 
-      for (const { nisn, tanggal } of gradeKeys.slice(0, 100)) {
-        const { data: att } = await supabase
-          .from("attendance")
-          .select("id")
-          .eq("nisn", nisn)
-          .eq("tanggal", tanggal)
-          .limit(1);
+      // Build set of existing attendance
+      const attendanceSet = new Set(
+        (matchingAttendance || []).map((a) => `${a.nisn}|${a.tanggal}`)
+      );
 
-        if (!att || att.length === 0) {
-          noAttendanceCount++;
-        }
-      }
+      // Count grades without matching attendance
+      const noAttendanceCount = recentGrades.filter(
+        (g) => !attendanceSet.has(`${g.nisn}|${g.tanggal}`)
+      ).length;
 
       if (noAttendanceCount > 10) {
         issues.push({
