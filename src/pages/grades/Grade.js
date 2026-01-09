@@ -88,6 +88,8 @@ const Grade = ({ userData: initialUserData }) => {
       "IPAS",
       "Pendidikan Pancasila",
       "Seni Budaya",
+      "Pendidikan Agama dan Budi Pekerti (PAIBP)",
+      "Pendidikan Jasmani Olahraga Kesehatan",
     ],
     guru_mapel: {
       acengmudrikah: ["PABP"],

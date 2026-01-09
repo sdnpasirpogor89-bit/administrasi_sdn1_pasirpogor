@@ -263,19 +263,19 @@ const RekapNilai = ({ userData: initialUserData }) => {
 
   const handleExport = async () => {
     try {
-      // ✅ GET SEMESTER DATA
       const semesterData = await getSemesterById(selectedSemester);
       if (!semesterData) {
         setError("Semester tidak ditemukan");
         return;
       }
 
+      // ✅ KIRIM userData SEBAGAI PARAMETER KE-5
       await exportLeger(
         selectedKelas,
         supabase,
         semesterData.year,
         semesterData.semester,
-        "jumlah"
+        userData // ✅ INI NAMBAHINNYA
       );
     } catch (err) {
       setError("Gagal export: " + err.message);

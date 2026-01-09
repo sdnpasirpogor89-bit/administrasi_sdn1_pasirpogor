@@ -16,7 +16,7 @@ import {
 import KatrolTable from "./KatrolTable";
 import {
   groupDataByNISN,
-  katrolNilaiAkhirSaja, // ✅ DIUBAH: prosesKatrolSemua → katrolNilaiAkhirSaja
+  prosesKatrolSemua,
   hitungNilaiAkhir,
   exportToExcelMultiSheet,
 } from "./Utils";
@@ -540,8 +540,7 @@ const Katrol = ({ userData: initialUserData }) => {
 
     setProcessing(true);
     try {
-      const hasil = katrolNilaiAkhirSaja(
-        // ✅ DIUBAH: prosesKatrolSemua → katrolNilaiAkhirSaja
+      const hasil = prosesKatrolSemua(
         dataToProse,
         kkm,
         nilaiMaksimal,

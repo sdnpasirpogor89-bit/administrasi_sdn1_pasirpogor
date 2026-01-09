@@ -4,7 +4,7 @@ import { TrendingUp, X, ChevronRight } from "lucide-react";
 const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-
+  // ✅ DEBUG: Cek availableNH yang diterima
   console.log("🔍 KatrolTable received availableNH:", availableNH);
 
   if (!data || data.length === 0) {
@@ -45,7 +45,7 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
     setSelectedStudent(null);
   };
 
-  // Data untuk modal (TETAP SAMA karena di modal masih perlu lihat semua)
+  // Data untuk modal
   const getDetailData = (siswa) => {
     const detailItems = availableNH.map((nh) => ({
       label: nh,
@@ -72,7 +72,7 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
 
   return (
     <div className="w-full">
-      {/* Modal untuk Lihat Semua Nilai (TETAP SAMA) */}
+      {/* Modal untuk Lihat Semua Nilai */}
       {showModal && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 xs:p-4 bg-black/60 dark:bg-black/70 backdrop-blur-sm touch-none">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border border-red-200 dark:border-gray-700">
@@ -184,12 +184,12 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
         </div>
       )}
 
-      {/* Desktop/Large Table - REVISI: HAPUS KOLOM DUPLIKAT */}
+      {/* Desktop/Large Table - dengan tema merah */}
       <div className="hidden lg:block overflow-x-auto rounded-xl border border-red-200 dark:border-gray-700">
         <div className="bg-gradient-to-r from-red-50 to-white dark:from-gray-800 dark:to-gray-900 p-3 border-b border-red-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
-              Tabel Hasil Katrol Nilai
+              Tabel Nilai Katrol
             </h3>
             <div className="text-sm text-gray-700 dark:text-gray-300">
               Total{" "}
@@ -199,9 +199,6 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
               siswa
             </div>
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-            *Hanya Nilai Akhir yang dikatrol. Nilai NH/UTS/UAS tetap asli.
-          </p>
         </div>
         <table className="min-w-full divide-y divide-red-200 dark:divide-gray-700">
           <thead className="bg-red-50 dark:bg-gray-800 sticky top-0 z-10">
@@ -216,29 +213,41 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
                 Nama Siswa
               </th>
 
-              {/* 🔥 REVISI: Hanya tampilkan NH asli, tidak ada NH-K */}
+              {/* 🔥 BARU: Render header NH secara dinamis */}
               {availableNH.map((nh) => (
-                <th
-                  key={nh}
-                  className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
-                  {nh}
-                </th>
+                <React.Fragment key={nh}>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
+                    {nh}
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                    {nh}-K
+                  </th>
+                </React.Fragment>
               ))}
 
               <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
                 UTS
               </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                UTS-K
+              </th>
               <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
                 UAS
+              </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                UAS-K
               </th>
               <th className="px-3 py-3 text-center text-xs font-bold text-gray-800 dark:text-gray-300 uppercase tracking-wider border-r border-red-200 dark:border-gray-700">
                 Rata NH
               </th>
+              <th className="px-3 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-green-50/50 dark:bg-green-900/20">
+                Rata NH-K
+              </th>
               <th className="px-4 py-3 text-center text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider border-r border-red-200 dark:border-gray-700 bg-blue-50/50 dark:bg-blue-900/20">
                 Nilai Akhir
               </th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider bg-green-50/50 dark:bg-green-900/20">
-                NA-Katrol
+              <th className="px-4 py-3 text-center text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider bg-blue-50/50 dark:bg-blue-900/20">
+                Nilai Akhir-K
               </th>
             </tr>
           </thead>
@@ -262,64 +271,95 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
                   {siswa.nama_siswa}
                 </td>
 
-                {/* 🔥 REVISI: Hanya nilai NH asli */}
+                {/* 🔥 BARU: Render nilai NH secara dinamis */}
                 {availableNH.map((nh) => (
-                  <td
-                    key={nh}
-                    className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
-                    {formatNilai(siswa.nilai[nh])}
-                  </td>
+                  <React.Fragment key={nh}>
+                    {/* Nilai Asli */}
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
+                      {formatNilai(siswa.nilai[nh])}
+                    </td>
+
+                    {/* Nilai Katrol */}
+                    <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-semibold text-green-700 dark:text-green-400">
+                          {formatNilai(siswa.nilai_katrol?.[nh])}
+                        </span>
+                        {isNaikSignificant(
+                          siswa.nilai[nh],
+                          siswa.nilai_katrol?.[nh]
+                        ) && (
+                          <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        )}
+                      </div>
+                    </td>
+                  </React.Fragment>
                 ))}
 
                 {/* UTS */}
                 <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
                   {formatNilai(siswa.nilai.UTS)}
                 </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.UTS)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.UTS,
+                      siswa.nilai_katrol?.UTS
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                </td>
 
                 {/* UAS */}
                 <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
                   {formatNilai(siswa.nilai.UAS)}
+                </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.UAS)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.UAS,
+                      siswa.nilai_katrol?.UAS
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
                 </td>
 
                 {/* Rata NH */}
                 <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-300 border-r border-red-100 dark:border-gray-700 text-center">
                   {formatNilai(siswa.rata_NH_asli)}
                 </td>
+                <td className="px-3 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-green-50/30 dark:bg-green-900/10">
+                  <span className="font-semibold text-green-700 dark:text-green-400">
+                    {formatNilai(siswa.rata_NH_katrol)}
+                  </span>
+                </td>
 
-                {/* Nilai Akhir Asli */}
+                {/* Nilai Akhir */}
                 <td className="px-4 py-3 whitespace-nowrap text-sm border-r border-red-100 dark:border-gray-700 text-center bg-blue-50/30 dark:bg-blue-900/10">
                   <span className="font-semibold text-gray-800 dark:text-gray-300">
                     {formatNilai(siswa.nilai_akhir_asli)}
                   </span>
                 </td>
-
-                {/* Nilai Akhir Katrol */}
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-green-50/30 dark:bg-green-900/10">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-center bg-blue-50/30 dark:bg-blue-900/10">
                   <div className="flex items-center justify-center gap-1">
-                    <span className="font-bold text-green-700 dark:text-green-400 text-sm">
+                    <span className="font-bold text-blue-700 dark:text-blue-400 text-sm">
                       {formatNilai(siswa.nilai_akhir_katrol)}
                     </span>
                     {isNaikSignificant(
                       siswa.nilai_akhir_asli,
                       siswa.nilai_akhir_katrol
                     ) && (
-                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <TrendingUp className="w-3 h-3 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                     )}
                   </div>
-                  {/* Tampilkan selisih */}
-                  {siswa.nilai_akhir_asli && siswa.nilai_akhir_katrol && (
-                    <div className="text-xs mt-1 text-green-600 dark:text-green-400">
-                      {siswa.nilai_akhir_katrol > siswa.nilai_akhir_asli
-                        ? `(+${
-                            siswa.nilai_akhir_katrol - siswa.nilai_akhir_asli
-                          })`
-                        : siswa.nilai_akhir_katrol < siswa.nilai_akhir_asli
-                        ? `(${
-                            siswa.nilai_akhir_katrol - siswa.nilai_akhir_asli
-                          })`
-                        : ""}
-                    </div>
-                  )}
                 </td>
               </tr>
             ))}
@@ -327,7 +367,7 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
         </table>
       </div>
 
-      {/* Mobile/Tablet View - REVISI: LEBIH SEDERHANA */}
+      {/* Mobile/Tablet View - Enhanced */}
       <div className="block lg:hidden space-y-3">
         {data.map((siswa, index) => (
           <div
@@ -371,46 +411,107 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
               </div>
             </div>
 
-            {/* Content Grid - REVISI: SEDERHANAKAN */}
+            {/* Content Grid */}
             <div className="p-3 sm:p-4">
-              {/* Ringkasan Nilai */}
-              <div className="mb-4">
-                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  Ringkasan Nilai
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {availableNH.slice(0, 3).map((nh) => (
-                    <div key={nh} className="text-center">
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {nh}
-                      </div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-300">
-                        {formatNilai(siswa.nilai[nh]) || "-"}
-                      </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                {/* 🔥 BARU: Render NH dinamis untuk mobile (hanya tampilkan 2 pertama) */}
+                {availableNH.slice(0, 2).map((nh) => (
+                  <div key={nh} className="space-y-1">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {nh}
                     </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      UTS
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-300">
-                      {formatNilai(siswa.nilai.UTS) || "-"}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-900 dark:text-gray-300">
+                        {formatNilai(siswa.nilai[nh])}
+                      </span>
+                      <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                      <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                        {formatNilai(siswa.nilai_katrol?.[nh])}
+                      </span>
+                      {isNaikSignificant(
+                        siswa.nilai[nh],
+                        siswa.nilai_katrol?.[nh]
+                      ) && (
+                        <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
+                      )}
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      UAS
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-300">
-                      {formatNilai(siswa.nilai.UAS) || "-"}
-                    </div>
+                ))}
+
+                {/* UTS */}
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                    UTS
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-900 dark:text-gray-300">
+                      {formatNilai(siswa.nilai.UTS)}
+                    </span>
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                      {formatNilai(siswa.nilai_katrol?.UTS)}
+                    </span>
+                    {isNaikSignificant(
+                      siswa.nilai.UTS,
+                      siswa.nilai_katrol?.UTS
+                    ) && (
+                      <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Nilai Akhir Section - REVISI: FOKUS PADA PERUBAHAN */}
+              {/* Tampilkan NH lain jika ada lebih dari 2 */}
+              {availableNH.length > 2 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                  {availableNH.slice(2, 5).map((nh) => (
+                    <div key={nh} className="space-y-1">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        {nh}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-900 dark:text-gray-300">
+                          {formatNilai(siswa.nilai[nh])}
+                        </span>
+                        <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                        <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                          {formatNilai(siswa.nilai_katrol?.[nh])}
+                        </span>
+                        {isNaikSignificant(
+                          siswa.nilai[nh],
+                          siswa.nilai_katrol?.[nh]
+                        ) && (
+                          <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* UAS */}
+              <div className="mb-4">
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  UAS
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-900 dark:text-gray-300">
+                    {formatNilai(siswa.nilai.UAS)}
+                  </span>
+                  <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                    {formatNilai(siswa.nilai_katrol?.UAS)}
+                  </span>
+                  {isNaikSignificant(
+                    siswa.nilai.UAS,
+                    siswa.nilai_katrol?.UAS
+                  ) && (
+                    <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
+                  )}
+                </div>
+              </div>
+
+              {/* Nilai Akhir Section */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
@@ -419,13 +520,10 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
                   <div className="text-lg font-bold text-gray-900 dark:text-gray-300">
                     {formatNilai(siswa.nilai_akhir_asli)}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Rata NH: {formatNilai(siswa.rata_NH_asli)}
-                  </div>
                 </div>
                 <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800 relative">
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    Hasil Katrol
+                    Nilai Akhir-K
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-bold text-green-700 dark:text-green-400">
@@ -438,19 +536,12 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
                       <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
                     )}
                   </div>
-                  {siswa.nilai_akhir_asli && siswa.nilai_akhir_katrol && (
-                    <div className="text-sm font-semibold mt-1">
-                      {siswa.nilai_akhir_katrol > siswa.nilai_akhir_asli ? (
-                        <span className="text-green-600 dark:text-green-400">
-                          ↑ +{siswa.nilai_akhir_katrol - siswa.nilai_akhir_asli}
-                        </span>
-                      ) : siswa.nilai_akhir_katrol < siswa.nilai_akhir_asli ? (
-                        <span className="text-red-600 dark:text-red-400">
-                          ↓ {siswa.nilai_akhir_katrol - siswa.nilai_akhir_asli}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">=</span>
-                      )}
+                  {isNaikSignificant(
+                    siswa.nilai_akhir_asli,
+                    siswa.nilai_akhir_katrol
+                  ) && (
+                    <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      ↑
                     </div>
                   )}
                 </div>
@@ -468,19 +559,15 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
         ))}
       </div>
 
-      {/* Legend dengan tema merah - REVISI */}
+      {/* Legend dengan tema merah */}
       <div className="mt-6 flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm p-3 sm:p-4 bg-red-50 dark:bg-gray-800 rounded-xl border border-red-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-green-50 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded"></div>
-          <span className="text-gray-700 dark:text-gray-300">
-            NA Katrol (Hasil)
-          </span>
+          <span className="text-gray-700 dark:text-gray-300">Nilai Katrol</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded"></div>
-          <span className="text-gray-700 dark:text-gray-300">
-            NA Asli (Sebelum)
-          </span>
+          <span className="text-gray-700 dark:text-gray-300">Nilai Akhir</span>
         </div>
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -497,6 +584,20 @@ const KatrolTable = ({ data, kkm, availableNH = ["NH1", "NH2", "NH3"] }) => {
             </span>
           </span>
         </div>
+      </div>
+
+      {/* Info Responsive */}
+      <div className="mt-4 text-xs text-gray-600 dark:text-gray-400 text-center p-2">
+        <p className="lg:hidden">
+          <span className="inline-block bg-red-100 dark:bg-gray-700 px-2 py-1 rounded text-red-700 dark:text-gray-300">
+            ↔️ Geser ke kanan/kiri untuk melihat lebih banyak kolom
+          </span>
+        </p>
+        <p className="hidden lg:block">
+          <span className="inline-block bg-red-100 dark:bg-gray-700 px-2 py-1 rounded text-red-700 dark:text-gray-300">
+            Tabel ditampilkan lengkap untuk desktop
+          </span>
+        </p>
       </div>
     </div>
   );

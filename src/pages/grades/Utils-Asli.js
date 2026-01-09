@@ -19,12 +19,7 @@ export const detectAvailableNH = (data) => {
     .filter((key) => key.toUpperCase().startsWith("NH"))
     .sort(); // Urutkan: NH1, NH2, NH3, etc.
 
-  // Filter hanya NH1, NH2, NH3 (untuk SD)
-  const filteredNH = nhColumns.filter((nh) =>
-    ["NH1", "NH2", "NH3"].includes(nh)
-  );
-
-  return filteredNH.length > 0 ? filteredNH : ["NH1", "NH2", "NH3"];
+  return nhColumns.length > 0 ? nhColumns : ["NH1", "NH2", "NH3", "NH4", "NH5"];
 };
 
 // ========================================
@@ -217,130 +212,7 @@ export const hitungNilaiAkhir = (dataSiswa, availableNH = null) => {
 };
 
 // ========================================
-// KATROL NILAI AKHIR SAJA (METODE SIMPEL)
-// ========================================
-export const katrolNilaiAkhirSaja = (
-  dataSiswa,
-  kkm,
-  maxNilai = 90,
-  availableNH = null
-) => {
-  // Tentukan kolom NH yang akan diproses
-  const nhColumns = availableNH || detectAvailableNH(dataSiswa);
-
-  console.log("🔍 Proses Katrol Nilai Akhir Saja - START");
-  console.log("📊 Jumlah siswa:", dataSiswa.length);
-  console.log("📋 Kolom NH:", nhColumns);
-
-  // ==================== STEP 1: HITUNG NILAI AKHIR ASLI ====================
-  const dataWithNA = dataSiswa.map((siswa) => {
-    // Ambil nilai NH asli
-    const nilaiNH_asli = nhColumns
-      .map((jenis) => siswa.nilai[jenis])
-      .filter((n) => n !== undefined && n !== null && !isNaN(n));
-
-    // Hitung rata-rata NH asli
-    const rataNH_asli =
-      nilaiNH_asli.length > 0
-        ? nilaiNH_asli.reduce((sum, n) => sum + n, 0) / nilaiNH_asli.length
-        : 0;
-
-    const uts_asli = siswa.nilai.UTS || 0;
-    const uas_asli = siswa.nilai.UAS || 0;
-
-    // Hitung Nilai Akhir ASLI dengan bobot: 40% NH + 30% UTS + 30% UAS
-    const nilaiAkhirAsli = 0.4 * rataNH_asli + 0.3 * uts_asli + 0.3 * uas_asli;
-
-    return {
-      ...siswa,
-      rata_NH_asli: Math.round(rataNH_asli),
-      nilai_akhir_asli: Math.round(nilaiAkhirAsli),
-    };
-  });
-
-  // ==================== STEP 2: CARI MIN & MAX NILAI AKHIR ====================
-  const nilaiAkhirArray = dataWithNA
-    .map((s) => s.nilai_akhir_asli)
-    .filter((n) => n !== undefined && n !== null && !isNaN(n));
-
-  // Jika tidak ada data nilai akhir, return data asli
-  if (nilaiAkhirArray.length === 0) {
-    console.warn("⚠️ Tidak ada nilai akhir untuk dikatrol");
-    return dataWithNA.map((s) => ({
-      ...s,
-      nilai_katrol: { ...s.nilai }, // Copy nilai asli
-      rata_NH_katrol: s.rata_NH_asli,
-      nilai_akhir_katrol: s.nilai_akhir_asli,
-      status: s.nilai_akhir_asli >= kkm ? "Lulus" : "Tidak Lulus",
-    }));
-  }
-
-  const nilaiAkhirMin = Math.min(...nilaiAkhirArray);
-  const nilaiAkhirMax = Math.max(...nilaiAkhirArray);
-  const range = nilaiAkhirMax - nilaiAkhirMin;
-  const gap = maxNilai - kkm;
-
-  console.log("🔍 Distribusi Nilai Akhir:", {
-    nilaiAkhirMin,
-    nilaiAkhirMax,
-    range,
-    kkm,
-    maxNilai,
-    gap,
-  });
-
-  // ==================== STEP 3: KATROL NILAI AKHIR ====================
-  const hasil = dataWithNA.map((siswa) => {
-    const naAsli = siswa.nilai_akhir_asli;
-    let naKatrol;
-
-    // Jika range = 0 (semua siswa nilai sama)
-    if (range === 0) {
-      naKatrol = naAsli >= kkm ? maxNilai : kkm;
-      console.log(`⚠️ Range = 0, semua siswa dapat nilai: ${naKatrol}`);
-    } else {
-      // Rumus katrol standar
-      if (naAsli >= nilaiAkhirMax) {
-        // Nilai tertinggi → Max katrol
-        naKatrol = maxNilai;
-      } else if (naAsli <= nilaiAkhirMin) {
-        // Nilai terendah → KKM
-        naKatrol = kkm;
-      } else {
-        // Nilai di tengah → proporsional
-        const posisi = (naAsli - nilaiAkhirMin) / range;
-        naKatrol = kkm + posisi * gap;
-      }
-    }
-
-    // Bulatkan hasil katrol
-    naKatrol = Math.round(naKatrol);
-
-    // ==================== NILAI KATROL = NILAI ASLI (TIDAK DIUBAH) ====================
-    const nilaiKatrol = {};
-    nhColumns.forEach((nh) => {
-      nilaiKatrol[nh] = siswa.nilai[nh]; // Nilai asli, tidak dikatrol
-    });
-    nilaiKatrol.UTS = siswa.nilai.UTS; // Nilai asli, tidak dikatrol
-    nilaiKatrol.UAS = siswa.nilai.UAS; // Nilai asli, tidak dikatrol
-
-    return {
-      ...siswa,
-      nilai_katrol: nilaiKatrol, // Semua nilai = asli
-      rata_NH_katrol: siswa.rata_NH_asli, // Rata NH = asli
-      nilai_akhir_katrol: naKatrol, // HANYA INI yang dikatrol
-      status: naKatrol >= kkm ? "Lulus" : "Tidak Lulus",
-    };
-  });
-
-  console.log("✅ Proses Katrol Nilai Akhir Selesai");
-  console.log("📊 Sample hasil:", hasil[0]);
-
-  return hasil;
-};
-
-// ========================================
-// 6. EXPORT TO EXCEL - SATU SHEET SAJA (CLEAN)
+// 6. EXPORT TO EXCEL - MULTI SHEET (DINAMIS)
 // ========================================
 export const exportToExcelMultiSheet = async (
   data,
@@ -351,7 +223,7 @@ export const exportToExcelMultiSheet = async (
 ) => {
   const workbook = new ExcelJS.Workbook();
 
-  // Deteksi kolom NH yang tersedia (hanya NH1-NH3 untuk SD)
+  // Deteksi kolom NH yang tersedia
   const nhColumns = availableNH || detectAvailableNH(data);
 
   // 🛡️ PROTEKSI: Validasi bahwa nhColumns adalah array
@@ -361,231 +233,282 @@ export const exportToExcelMultiSheet = async (
     throw new Error("Parameter nhColumns harus berupa array!");
   }
 
-  console.log("📊 Menggunakan kolom NH untuk export:", nhColumns);
+  if (nhColumns.length === 0) {
+    console.warn("⚠️ nhColumns kosong, menggunakan default");
+    nhColumns = ["NH1", "NH2", "NH3", "NH4", "NH5"];
+  }
 
-  // ==================== SHEET TUNGGAL: DATA NILAI KATROL ====================
-  const worksheet = workbook.addWorksheet("Data Nilai Katrol");
+  console.log("📊 Menggunakan kolom NH:", nhColumns);
 
-  // Header Sheet
-  const headerData = [
-    ["SEKOLAH DASAR NEGERI 1 PASIRPOGOR"],
-    [`REKAPITULASI NILAI HASIL KATROL - ${mapel.toUpperCase()}`],
+  // ==================== SHEET 1: DATA LENGKAP ====================
+  const ws1 = workbook.addWorksheet("Data Lengkap");
+
+  // Header tetap sama
+  const headerData1 = [
+    ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
+    [`REKAPITULASI NILAI KATROL - ${mapel.toUpperCase()}`],
     [`KELAS ${kelas}`],
     ["Tahun Ajaran: 2025/2026"],
     [""],
   ];
 
-  // Hitung jumlah kolom: No(1) + NISN(1) + Nama(1) + NH(3) + UTS(1) + UAS(1) + RataNH(1) + NA(1) + NA-Katrol(1)
-  const totalColumns = 3 + nhColumns.length + 2 + 1 + 2; // No+NISN+Nama + NH + UTS+UAS + RataNH + NA + NA-Katrol
-  const endColumn = String.fromCharCode(64 + totalColumns);
-
-  let currentRow = 1;
-  headerData.forEach((rowData) => {
-    const row = worksheet.getRow(currentRow++);
-    row.getCell(1).value = rowData[0];
-
-    // Merge cells untuk header
-    worksheet.mergeCells(`A${currentRow - 1}:${endColumn}${currentRow - 1}`);
-
-    row.getCell(1).font = {
+  let row1 = 1;
+  headerData1.forEach((rowData) => {
+    const r = ws1.getRow(row1++);
+    r.getCell(1).value = rowData[0];
+    // Merge cells dinamis berdasarkan jumlah kolom
+    const totalColumns = 3 + nhColumns.length * 2 + 4 + 4; // No+NISN+Nama + (NH*2) + (UTS*2) + (UAS*2) + RataNH*2 + NilaiAkhir*2
+    const endColumn = String.fromCharCode(64 + totalColumns);
+    ws1.mergeCells(`A${row1 - 1}:${endColumn}${row1 - 1}`);
+    r.getCell(1).font = {
       bold: true,
-      size: currentRow <= 4 ? 14 : 11,
+      size: row1 <= 3 ? 14 : 11,
       name: "Calibri",
     };
-
-    // Baris ke-5 (catatan) font lebih kecil dan warna abu-abu
-    if (currentRow === 6) {
-      row.getCell(1).font = {
-        italic: true,
-        size: 10,
-        color: { argb: "FF666666" },
-      };
-    }
-
-    row.getCell(1).alignment = {
-      vertical: "middle",
-      horizontal: "center",
-    };
+    r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
   });
 
-  // Buat headers untuk tabel
-  const headers = ["No", "NISN", "Nama Siswa"];
+  // Buat headers dinamis
+  const headers1 = ["No", "NISN", "Nama Siswa"];
 
-  // Tambahkan kolom NH
+  // Tambahkan kolom NH dinamis
   nhColumns.forEach((nh) => {
-    headers.push(nh);
+    headers1.push(nh);
+    headers1.push(`${nh}-K`);
   });
 
-  // Tambahkan kolom UTS, UAS, Rata NH, Nilai Akhir, Nilai Akhir-K
-  headers.push("UTS", "UAS", "Rata NH", "Nilai Akhir", "Nilai Akhir-K");
+  // Tambahkan kolom tetap
+  headers1.push(
+    "UTS",
+    "UTS-K",
+    "UAS",
+    "UAS-K",
+    "Rata NH",
+    "Rata NH-K",
+    "Nilai Akhir",
+    "Nilai Akhir-K"
+  );
 
-  const headerRow = worksheet.getRow(currentRow);
-  headerRow.values = headers;
-  headerRow.height = 30;
+  const headerRow1 = ws1.getRow(row1);
+  headerRow1.values = headers1;
+  headerRow1.height = 30;
 
-  headerRow.eachCell((cell) => {
+  headerRow1.eachCell((cell) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFD9E1F2" }, // Biru muda
+      fgColor: { argb: "FFD9E1F2" },
     };
-    cell.font = {
-      bold: true,
-      size: 10,
-      name: "Calibri",
-    };
+    cell.font = { bold: true, size: 10 };
     cell.alignment = {
       vertical: "middle",
       horizontal: "center",
       wrapText: true,
     };
     cell.border = {
-      top: { style: "thin", color: { argb: "FF000000" } },
-      left: { style: "thin", color: { argb: "FF000000" } },
-      bottom: { style: "thin", color: { argb: "FF000000" } },
-      right: { style: "thin", color: { argb: "FF000000" } },
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
     };
   });
 
-  // Set column widths
+  // Set column widths dinamis
   const columnWidths = [
     { width: 5 }, // No
     { width: 12 }, // NISN
-    { width: 30 }, // Nama Siswa
+    { width: 40 }, // Nama
   ];
 
-  // Lebar untuk kolom NH
+  // Lebar untuk kolom NH (asli dan katrol)
   nhColumns.forEach(() => {
-    columnWidths.push({ width: 8 });
+    columnWidths.push({ width: 8 }); // NH asli
+    columnWidths.push({ width: 8 }); // NH-K
   });
 
-  // Lebar untuk kolom lainnya
+  // Lebar untuk kolom tetap
   columnWidths.push(
     { width: 8 }, // UTS
+    { width: 8 }, // UTS-K
     { width: 8 }, // UAS
+    { width: 8 }, // UAS-K
     { width: 10 }, // Rata NH
+    { width: 10 }, // Rata NH-K
     { width: 12 }, // Nilai Akhir
     { width: 12 } // Nilai Akhir-K
   );
 
-  worksheet.columns = columnWidths;
+  ws1.columns = columnWidths;
 
-  currentRow++;
+  row1++;
 
-  // Isi data siswa
+  // Isi data
   data.forEach((siswa, index) => {
     const rowData = [index + 1, siswa.nisn, siswa.nama_siswa];
 
-    // Data NH
+    // Data NH dinamis
     nhColumns.forEach((nh) => {
       rowData.push(siswa.nilai[nh] || "");
+      rowData.push(siswa.nilai_katrol?.[nh] || "");
     });
 
-    // Data UTS, UAS, Rata NH, Nilai Akhir, Nilai Akhir-K
+    // Data tetap
     rowData.push(
       siswa.nilai.UTS || "",
+      siswa.nilai_katrol?.UTS || "",
       siswa.nilai.UAS || "",
+      siswa.nilai_katrol?.UAS || "",
       siswa.rata_NH_asli || "",
+      siswa.rata_NH_katrol || "",
       siswa.nilai_akhir_asli || "",
       siswa.nilai_akhir_katrol || ""
     );
 
-    const row = worksheet.addRow(rowData);
+    const r = ws1.addRow(rowData);
 
-    row.eachCell((cell, colNumber) => {
-      // Border untuk semua sel
+    r.eachCell((cell, colNumber) => {
       cell.border = {
-        top: { style: "thin", color: { argb: "FF000000" } },
-        left: { style: "thin", color: { argb: "FF000000" } },
-        bottom: { style: "thin", color: { argb: "FF000000" } },
-        right: { style: "thin", color: { argb: "FF000000" } },
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
       };
 
-      // Alignment berdasarkan kolom
-      if (colNumber === 1) {
-        // Kolom No: center
+      if (colNumber >= 4) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
-      } else if (colNumber === 2) {
-        // Kolom NISN: center, format text
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        cell.numFmt = "@"; // Format text
-      } else if (colNumber === 3) {
-        // Kolom Nama: left
-        cell.alignment = { vertical: "middle", horizontal: "left" };
-      } else if (colNumber >= 4 && colNumber <= totalColumns - 2) {
-        // Kolom NH, UTS, UAS, Rata NH: center, format angka
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        if (
-          cell.value !== "" &&
-          cell.value !== null &&
-          cell.value !== undefined
-        ) {
-          cell.numFmt = "0"; // Format integer
-        }
-      } else if (colNumber === totalColumns - 1) {
-        // Kolom Nilai Akhir: center, format angka, bold
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        if (
-          cell.value !== "" &&
-          cell.value !== null &&
-          cell.value !== undefined
-        ) {
-          cell.numFmt = "0";
-        }
-        cell.font = { bold: true };
-      } else if (colNumber === totalColumns) {
-        // Kolom Nilai Akhir-K: center, format angka, bold, warna hijau
-        cell.alignment = { vertical: "middle", horizontal: "center" };
-        if (
-          cell.value !== "" &&
-          cell.value !== null &&
-          cell.value !== undefined
-        ) {
-          cell.numFmt = "0";
-        }
-        cell.font = { bold: true, color: { argb: "FF007000" } }; // Hijau
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FFE7F4E7" }, // Hijau muda
+        cell.numFmt = "0"; // Format integer
+        if (colNumber === headers1.length) cell.font = { bold: true };
+      } else {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: colNumber === 1 ? "center" : "left",
         };
       }
 
-      // Striped rows (zebra stripe)
       if (index % 2 !== 0) {
-        if (colNumber !== totalColumns) {
-          // Jangan warnai kolom NA-Katrol
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "FFF5F5F5" }, // Abu-abu sangat muda
-          };
-        }
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF2F2F2" },
+        };
       }
     });
-
-    currentRow++;
   });
 
-  // Tambahkan footer dengan informasi guru
-  currentRow += 2;
+  // ==================== SHEET 2: KATROL AKHIR ====================
+  const ws2 = workbook.addWorksheet("Katrol Akhir");
 
-  const footerRow1 = worksheet.getRow(currentRow);
-  footerRow1.getCell(totalColumns - 3).value = "Mengetahui,";
-  footerRow1.getCell(totalColumns - 3).font = { bold: true };
-  footerRow1.getCell(totalColumns - 3).alignment = { horizontal: "center" };
+  const headerData2 = [
+    ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
+    [`NILAI KATROL AKHIR - ${mapel.toUpperCase()}`],
+    [`KELAS ${kelas}`],
+    ["Tahun Ajaran: 2025/2026"],
+    [""],
+  ];
 
-  const footerRow2 = worksheet.getRow(currentRow + 1);
-  footerRow2.getCell(totalColumns - 3).value =
-    userData.role === "guru_kelas" ? "Wali Kelas" : "Guru Mata Pelajaran";
-  footerRow2.getCell(totalColumns - 3).font = { bold: true };
-  footerRow2.getCell(totalColumns - 3).alignment = { horizontal: "center" };
+  let row2 = 1;
+  headerData2.forEach((rowData) => {
+    const r = ws2.getRow(row2++);
+    r.getCell(1).value = rowData[0];
+    const totalColumns2 = 3 + nhColumns.length + 3; // No+NISN+Nama + NH + UTS+UAS+NilaiAkhir
+    const endColumn2 = String.fromCharCode(64 + totalColumns2);
+    ws2.mergeCells(`A${row2 - 1}:${endColumn2}${row2 - 1}`);
+    r.getCell(1).font = {
+      bold: true,
+      size: row2 <= 3 ? 14 : 11,
+      name: "Calibri",
+    };
+    r.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+  });
 
-  const footerRow3 = worksheet.getRow(currentRow + 4);
-  footerRow3.getCell(totalColumns - 3).value =
-    userData.name || userData.full_name || "Guru";
-  footerRow3.getCell(totalColumns - 3).font = { bold: true, underline: true };
-  footerRow3.getCell(totalColumns - 3).alignment = { horizontal: "center" };
+  // Headers untuk sheet 2
+  const headers2 = ["No", "NISN", "Nama Siswa"];
+  nhColumns.forEach((nh) => {
+    headers2.push(`${nh}-K`);
+  });
+  headers2.push("UTS-K", "UAS-K", "Nilai Akhir-K");
+
+  const headerRow2 = ws2.getRow(row2);
+  headerRow2.values = headers2;
+  headerRow2.height = 30;
+
+  headerRow2.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFD9E1F2" },
+    };
+    cell.font = { bold: true, size: 10 };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
+    cell.border = {
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
+    };
+  });
+
+  // Column widths untuk sheet 2
+  const columnWidths2 = [{ width: 5 }, { width: 12 }, { width: 40 }];
+
+  nhColumns.forEach(() => {
+    columnWidths2.push({ width: 8 });
+  });
+
+  columnWidths2.push({ width: 8 }, { width: 8 }, { width: 12 });
+
+  ws2.columns = columnWidths2;
+
+  row2++;
+
+  // Data untuk sheet 2
+  data.forEach((siswa, index) => {
+    const rowData2 = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+    nhColumns.forEach((nh) => {
+      rowData2.push(siswa.nilai_katrol?.[nh] || "");
+    });
+
+    rowData2.push(
+      siswa.nilai_katrol?.UTS || "",
+      siswa.nilai_katrol?.UAS || "",
+      siswa.nilai_akhir_katrol || ""
+    );
+
+    const r = ws2.addRow(rowData2);
+
+    r.eachCell((cell, colNumber) => {
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+
+      if (colNumber >= 4) {
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.numFmt = "0";
+        if (colNumber === headers2.length) cell.font = { bold: true };
+      } else {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: colNumber === 1 ? "center" : "left",
+        };
+      }
+
+      if (index % 2 !== 0) {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF2F2F2" },
+        };
+      }
+    });
+  });
 
   // ==================== DOWNLOAD ====================
   const buffer = await workbook.xlsx.writeBuffer();
@@ -603,14 +526,284 @@ export const exportToExcelMultiSheet = async (
 };
 
 // ========================================
+// 7. EXPORT TO EXCEL - SINGLE SHEET (DINAMIS)
+// ========================================
+export const exportToExcel = async (
+  data,
+  mapel,
+  kelas,
+  type = "lengkap",
+  availableNH = null,
+  userData = {}
+) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Nilai Katrol");
+
+  const nhColumns = availableNH || detectAvailableNH(data);
+
+  // Hitung jumlah kolom dinamis
+  const numColumns =
+    type === "lengkap"
+      ? 3 + nhColumns.length * 2 + 4 + 4 // No+NISN+Nama + (NH*2) + UTS*2 + UAS*2 + RataNH*2 + NilaiAkhir*2
+      : 3 + nhColumns.length + 3; // No+NISN+Nama + NH-K + UTS-K + UAS-K + NilaiAkhir-K
+
+  const headerData = [
+    ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
+    [`REKAPITULASI NILAI KATROL - ${mapel.toUpperCase()}`],
+    [`KELAS ${kelas}`],
+    ["Tahun Ajaran: 2025/2026"],
+    [""],
+  ];
+
+  let currentRow = 1;
+  headerData.forEach((row) => {
+    const newRow = worksheet.getRow(currentRow++);
+    newRow.getCell(1).value = row[0];
+    worksheet.mergeCells(
+      `A${currentRow - 1}:${String.fromCharCode(65 + numColumns - 1)}${
+        currentRow - 1
+      }`
+    );
+    newRow.getCell(1).font = {
+      bold: true,
+      size: currentRow <= 3 ? 14 : 11,
+      name: "Calibri",
+    };
+    newRow.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+  });
+
+  if (type === "lengkap") {
+    // Buat headers dinamis untuk tipe lengkap
+    const tableHeaders = ["No", "NISN", "Nama Siswa"];
+
+    nhColumns.forEach((nh) => {
+      tableHeaders.push(nh);
+      tableHeaders.push(`${nh}-K`);
+    });
+
+    tableHeaders.push(
+      "UTS",
+      "UTS-K",
+      "UAS",
+      "UAS-K",
+      "Rata NH",
+      "Rata NH-K",
+      "Nilai Akhir",
+      "Nilai Akhir-K"
+    );
+
+    const headerRow = worksheet.getRow(currentRow);
+    headerRow.values = tableHeaders;
+    headerRow.height = 30;
+
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9E1F2" },
+      };
+      cell.font = { bold: true, size: 10 };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+        wrapText: true,
+      };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    // Set column widths dinamis
+    const widths = [{ width: 5 }, { width: 12 }, { width: 40 }];
+    nhColumns.forEach(() => {
+      widths.push({ width: 8 }, { width: 8 });
+    });
+    widths.push(
+      { width: 8 },
+      { width: 8 },
+      { width: 8 },
+      { width: 8 },
+      { width: 10 },
+      { width: 10 },
+      { width: 12 },
+      { width: 12 }
+    );
+
+    worksheet.columns = widths;
+
+    currentRow++;
+
+    // Isi data
+    data.forEach((siswa, index) => {
+      const rowData = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+      nhColumns.forEach((nh) => {
+        rowData.push(siswa.nilai[nh] || "");
+        rowData.push(siswa.nilai_katrol?.[nh] || "");
+      });
+
+      rowData.push(
+        siswa.nilai.UTS || "",
+        siswa.nilai_katrol?.UTS || "",
+        siswa.nilai.UAS || "",
+        siswa.nilai_katrol?.UAS || "",
+        siswa.rata_NH_asli || "",
+        siswa.rata_NH_katrol || "",
+        siswa.nilai_akhir_asli || "",
+        siswa.nilai_akhir_katrol || ""
+      );
+
+      const row = worksheet.addRow(rowData);
+
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+
+        if (colNumber >= 4) {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.numFmt = "0";
+          if (colNumber === numColumns) cell.font = { bold: true };
+        } else {
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: colNumber === 1 ? "center" : "left",
+          };
+        }
+
+        if (index % 2 !== 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF2F2F2" },
+          };
+        }
+      });
+
+      currentRow++;
+    });
+  } else {
+    // Tipe singkat/katrol akhir
+    const tableHeaders = ["No", "NISN", "Nama Siswa"];
+    nhColumns.forEach((nh) => {
+      tableHeaders.push(`${nh}-K`);
+    });
+    tableHeaders.push("UTS-K", "UAS-K", "Nilai Akhir-K");
+
+    const headerRow = worksheet.getRow(currentRow);
+    headerRow.values = tableHeaders;
+    headerRow.height = 30;
+
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9E1F2" },
+      };
+      cell.font = { bold: true, size: 10 };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+        wrapText: true,
+      };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    // Column widths
+    const widths = [{ width: 5 }, { width: 12 }, { width: 40 }];
+    nhColumns.forEach(() => {
+      widths.push({ width: 8 });
+    });
+    widths.push({ width: 8 }, { width: 8 }, { width: 12 });
+
+    worksheet.columns = widths;
+
+    currentRow++;
+
+    // Isi data
+    data.forEach((siswa, index) => {
+      const rowData = [index + 1, siswa.nisn, siswa.nama_siswa];
+
+      nhColumns.forEach((nh) => {
+        rowData.push(siswa.nilai_katrol?.[nh] || "");
+      });
+
+      rowData.push(
+        siswa.nilai_katrol?.UTS || "",
+        siswa.nilai_katrol?.UAS || "",
+        siswa.nilai_akhir_katrol || ""
+      );
+
+      const row = worksheet.addRow(rowData);
+
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+
+        if (colNumber >= 4) {
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.numFmt = "0";
+          if (colNumber === numColumns) cell.font = { bold: true };
+        } else {
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: colNumber === 1 ? "center" : "left",
+          };
+        }
+
+        if (index % 2 !== 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF2F2F2" },
+          };
+        }
+      });
+
+      currentRow++;
+    });
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Nilai_Katrol_${mapel.replace(
+    /\s+/g,
+    "_"
+  )}_Kelas_${kelas}_${type}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+};
+
+// ========================================
 // 8. EXPORT LEGER (TETAP SAMA - tidak berhubungan dengan NH)
 // ========================================
 export const exportLeger = async (
   kelas,
   supabase,
   tahunAjaran = null,
-  semester = null,
-  userData = {} // ✅ TAMBAH PARAMETER USER DATA DI SINI
+  semester = null
 ) => {
   try {
     let query = supabase
@@ -726,15 +919,15 @@ export const exportLeger = async (
       });
     });
 
-    // Buat Workbook Excel
+    // Buat Workbook Excel dengan 2 sheet
     const workbook = new ExcelJS.Workbook();
 
     // ==================== SHEET 1: LEGER NILAI ====================
-    const wsNilai = workbook.addWorksheet("Data Nilai Katrol Semua Mapel");
+    const wsNilai = workbook.addWorksheet("Leger Nilai");
 
     // Header Sheet 1
     const headerNilai = [
-      ["SEKOLAH DASAR NEGERI 1 PASIRPOGOR"],
+      ["SEKOLAH DASAR NEGER 1 PASIRPOGOR"],
       [`REKAPITULASI NILAI HASIL KATROL - KELAS ${kelas}`],
       [
         `Tahun Ajaran: ${tahunAjaran || "2025/2026"}${
