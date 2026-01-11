@@ -1,5 +1,5 @@
-// Attendance.js - COMPONENT INPUT PRESENSI SD (MOBILE RESPONSIVE)
-import React, { useState, useEffect } from "react";
+// Attendance.js - OPTIMIZED VERSION (FIXED)
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../../supabaseClient";
 import { getSemesterById } from "../../services/academicYearService";
 
@@ -19,76 +19,37 @@ const Attendance = ({
   const [students, setStudents] = useState([]);
   const [attendanceData, setAttendanceData] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [semesterCache, setSemesterCache] = useState(null);
 
-  // ✅ FILTER STUDENTS BY SEARCH
-  const filteredStudents = students.filter((student) => {
-    if (!searchTerm) return true;
+  // ✅ FILTER STUDENTS (MEMOIZED)
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) return students;
     const search = searchTerm.toLowerCase();
-    return (
-      student.nama_siswa?.toLowerCase().includes(search) ||
-      student.nisn?.toString().includes(search)
+    return students.filter(
+      (student) =>
+        student.nama_siswa?.toLowerCase().includes(search) ||
+        student.nisn?.toString().includes(search)
     );
-  });
+  }, [students, searchTerm]);
 
-  // ✅ AUTO-SELECT CLASS FOR GURU KELAS
-  useEffect(() => {
-    if (currentUser?.role === "guru_kelas" && currentUser?.kelas) {
-      setSelectedClass(currentUser.kelas.toString());
-    }
-  }, [currentUser]);
+  // ✅ LOAD EXISTING ATTENDANCE (DIPINDAHKAN KE ATAS)
+  const loadExistingAttendance = useCallback(async () => {
+    if (!semesterCache || students.length === 0) return;
 
-  // ✅ LOAD STUDENTS WHEN CLASS SELECTED
-  useEffect(() => {
-    if (selectedClass && selectedSemester) {
-      loadStudents();
-    }
-  }, [selectedClass, selectedSemester, selectedDate]);
-
-  // ✅ LOAD STUDENTS
-  const loadStudents = async () => {
     try {
-      setLoading(true);
-      console.log("🔍 Loading students for class:", selectedClass);
-
-      const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .eq("kelas", parseInt(selectedClass))
-        .eq("is_active", true)
-        .order("nama_siswa", { ascending: true });
-
-      if (error) throw error;
-
-      console.log("✅ Students loaded:", data?.length || 0);
-      setStudents(data || []);
-
-      // Load existing attendance for selected date
-      await loadExistingAttendance(data || []);
-    } catch (error) {
-      console.error("❌ Error loading students:", error);
-      showToast("Gagal memuat data siswa: " + error.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ LOAD EXISTING ATTENDANCE - DENGAN SEMESTER
-  const loadExistingAttendance = async (studentsList) => {
-    try {
-      const semesterData = await getSemesterById(selectedSemester);
-      if (!semesterData) return;
+      console.log("📋 Loading attendance for:", selectedDate);
 
       const { data, error } = await supabase
         .from("attendance")
-        .select("*")
+        .select("nisn, status, keterangan")
         .eq("kelas", parseInt(selectedClass))
         .eq("tanggal", selectedDate)
-        .eq("tahun_ajaran", semesterData.year)
-        .eq("semester", semesterData.semester);
+        .eq("tahun_ajaran", semesterCache.year)
+        .eq("semester", semesterCache.semester);
 
       if (error) throw error;
 
-      // Map existing attendance to state
+      // Map existing attendance
       const attendanceMap = {};
       data?.forEach((record) => {
         attendanceMap[record.nisn] = {
@@ -97,9 +58,9 @@ const Attendance = ({
         };
       });
 
-      // Initialize attendance data for all students
+      // Initialize for all students
       const initialData = {};
-      studentsList.forEach((student) => {
+      students.forEach((student) => {
         initialData[student.nisn] = attendanceMap[student.nisn] || {
           status: "Hadir",
           keterangan: "",
@@ -107,14 +68,74 @@ const Attendance = ({
       });
 
       setAttendanceData(initialData);
-      console.log("✅ Existing attendance loaded");
+      console.log("✅ Attendance loaded:", data?.length || 0, "records");
     } catch (error) {
-      console.error("❌ Error loading existing attendance:", error);
+      console.error("❌ Error loading attendance:", error);
+      showToast("Gagal memuat data presensi: " + error.message, "error");
+    }
+  }, [semesterCache, students, selectedClass, selectedDate]);
+
+  // ✅ AUTO-SELECT CLASS FOR GURU KELAS
+  useEffect(() => {
+    if (currentUser?.role === "guru_kelas" && currentUser?.kelas) {
+      setSelectedClass(currentUser.kelas.toString());
+    }
+  }, [currentUser]);
+
+  // ✅ CACHE SEMESTER DATA
+  useEffect(() => {
+    if (selectedSemester) {
+      getSemesterById(selectedSemester).then((data) => {
+        setSemesterCache(data);
+      });
+    }
+  }, [selectedSemester]);
+
+  // ✅ LOAD STUDENTS (CUMA PAS CLASS BERUBAH)
+  useEffect(() => {
+    if (selectedClass && selectedSemester) {
+      loadStudents();
+    } else {
+      setStudents([]);
+      setAttendanceData({});
+    }
+  }, [selectedClass, selectedSemester]);
+
+  // ✅ LOAD ATTENDANCE (PAS DATE BERUBAH)
+  useEffect(() => {
+    if (students.length > 0 && selectedDate) {
+      loadExistingAttendance();
+    }
+  }, [selectedDate, students.length, loadExistingAttendance]);
+
+  // ✅ LOAD STUDENTS (OPTIMIZED)
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      console.log("📚 Loading students for class:", selectedClass);
+
+      const { data, error } = await supabase
+        .from("students")
+        .select("nisn, nama_siswa, kelas")
+        .eq("kelas", parseInt(selectedClass))
+        .eq("is_active", true)
+        .order("nama_siswa", { ascending: true });
+
+      if (error) throw error;
+
+      console.log("✅ Students loaded:", data?.length || 0);
+      setStudents(data || []);
+    } catch (error) {
+      console.error("❌ Error loading students:", error);
+      showToast("Gagal memuat data siswa: " + error.message, "error");
+      setStudents([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   // ✅ UPDATE STATUS
-  const updateStatus = (nisn, status) => {
+  const updateStatus = useCallback((nisn, status) => {
     setAttendanceData((prev) => ({
       ...prev,
       [nisn]: {
@@ -122,10 +143,10 @@ const Attendance = ({
         status,
       },
     }));
-  };
+  }, []);
 
   // ✅ UPDATE KETERANGAN
-  const updateKeterangan = (nisn, keterangan) => {
+  const updateKeterangan = useCallback((nisn, keterangan) => {
     setAttendanceData((prev) => ({
       ...prev,
       [nisn]: {
@@ -133,7 +154,7 @@ const Attendance = ({
         keterangan,
       },
     }));
-  };
+  }, []);
 
   // ✅ MARK ALL PRESENT
   const markAllPresent = () => {
@@ -148,11 +169,15 @@ const Attendance = ({
     showToast("✅ Semua siswa ditandai HADIR", "success");
   };
 
-  // ✅ SAVE ATTENDANCE - FIXED DUPLICATE PREVENTION
+  // ✅ SAVE ATTENDANCE (OPTIMIZED)
   const saveAttendance = async () => {
-    // ✅ PREVENT DOUBLE CLICK
     if (saving) {
-      console.log("⚠️ Save already in progress, ignoring click");
+      console.log("⚠️ Save already in progress");
+      return;
+    }
+
+    if (!semesterCache) {
+      showToast("⚠️ Data semester belum dimuat", "error");
       return;
     }
 
@@ -164,29 +189,23 @@ const Attendance = ({
         return;
       }
 
-      const semesterData = await getSemesterById(selectedSemester);
-      if (!semesterData) {
-        showToast("⚠️ Semester tidak ditemukan", "error");
-        return;
-      }
-
       console.log("💾 Saving attendance...");
 
-      // ✅ CEK APAKAH SUDAH ADA DATA SEBELUMNYA
+      // ✅ CHECK EXISTING DATA
       const { data: existingData, error: checkError } = await supabase
         .from("attendance")
-        .select("id, nisn")
+        .select("id")
         .eq("tanggal", selectedDate)
         .eq("kelas", parseInt(selectedClass))
-        .eq("semester", semesterData.semester)
-        .eq("tahun_ajaran", semesterData.year)
-        .eq("jenis_presensi", "kelas"); // ✅ TAMBAH INI!
+        .eq("semester", semesterCache.semester)
+        .eq("tahun_ajaran", semesterCache.year)
+        .eq("jenis_presensi", "kelas");
 
       if (checkError) throw checkError;
 
       const isUpdate = existingData && existingData.length > 0;
 
-      // ✅ KONFIRMASI JIKA DATA SUDAH ADA
+      // ✅ CONFIRM UPDATE
       if (isUpdate) {
         const confirmUpdate = window.confirm(
           `⚠️ Presensi untuk tanggal ${selectedDate} sudah ada!\n\n` +
@@ -199,21 +218,21 @@ const Attendance = ({
           return;
         }
 
-        // ✅ DELETE OLD DATA FIRST (prevent duplicates)
+        // ✅ DELETE OLD DATA
         const { error: deleteError } = await supabase
           .from("attendance")
           .delete()
           .eq("tanggal", selectedDate)
           .eq("kelas", parseInt(selectedClass))
-          .eq("semester", semesterData.semester)
-          .eq("tahun_ajaran", semesterData.year)
+          .eq("semester", semesterCache.semester)
+          .eq("tahun_ajaran", semesterCache.year)
           .eq("jenis_presensi", "kelas");
 
         if (deleteError) throw deleteError;
-        console.log("🗑️ Old attendance data deleted");
+        console.log("🗑️ Old data deleted");
       }
 
-      // ✅ Prepare data
+      // ✅ PREPARE DATA
       const dataToSave = students.map((student) => ({
         tanggal: selectedDate,
         nisn: student.nisn,
@@ -223,44 +242,35 @@ const Attendance = ({
         keterangan: attendanceData[student.nisn]?.keterangan || "",
         guru_input: currentUser?.username || "system",
         jenis_presensi: "kelas",
-        tahun_ajaran: semesterData.year,
-        semester: semesterData.semester,
+        tahun_ajaran: semesterCache.year,
+        semester: semesterCache.semester,
         created_at: new Date().toISOString(),
       }));
 
-      // ✅ INSERT NEW DATA (not upsert!)
+      // ✅ INSERT NEW DATA
       const { error: insertError } = await supabase
         .from("attendance")
         .insert(dataToSave);
 
       if (insertError) throw insertError;
 
-      // ✅ NOTIFIKASI BERBEDA UNTUK INSERT vs UPDATE
-      if (isUpdate) {
-        showToast(
-          `✅ Presensi ${students.length} siswa berhasil DIPERBARUI untuk tanggal ${selectedDate}!`,
-          "success"
-        );
-        console.log("✅ Attendance UPDATED successfully");
-      } else {
-        showToast(
-          `✅ Presensi ${students.length} siswa berhasil DISIMPAN untuk tanggal ${selectedDate}!`,
-          "success"
-        );
-        console.log("✅ Attendance SAVED successfully");
-      }
+      showToast(
+        `✅ Presensi ${students.length} siswa berhasil ${
+          isUpdate ? "DIPERBARUI" : "DISIMPAN"
+        }!`,
+        "success"
+      );
 
-      // ✅ RELOAD DATA SETELAH SIMPAN
-      await loadExistingAttendance(students);
+      console.log(`✅ Attendance ${isUpdate ? "UPDATED" : "SAVED"}`);
     } catch (error) {
-      console.error("❌ Error saving attendance:", error);
-      showToast("❌ Gagal menyimpan presensi: " + error.message, "error");
+      console.error("❌ Error saving:", error);
+      showToast("❌ Gagal menyimpan: " + error.message, "error");
     } finally {
       setSaving(false);
     }
   };
 
-  // ✅ HELPER: Show toast
+  // ✅ HELPER
   const showToast = (message, type = "info") => {
     if (onShowToast) {
       onShowToast(message, type);
@@ -269,7 +279,6 @@ const Attendance = ({
     }
   };
 
-  // ✅ STATUS OPTIONS
   const statusOptions = [
     { value: "Hadir", label: "Hadir", color: "green" },
     { value: "Sakit", label: "Sakit", color: "yellow" },
@@ -277,11 +286,24 @@ const Attendance = ({
     { value: "Alpa", label: "Alpa", color: "red" },
   ];
 
+  // ✅ STATS (MEMOIZED)
+  const stats = useMemo(() => {
+    return {
+      hadir: Object.values(attendanceData).filter((a) => a?.status === "Hadir")
+        .length,
+      sakit: Object.values(attendanceData).filter((a) => a?.status === "Sakit")
+        .length,
+      izin: Object.values(attendanceData).filter((a) => a?.status === "Izin")
+        .length,
+      alpa: Object.values(attendanceData).filter((a) => a?.status === "Alpa")
+        .length,
+    };
+  }, [attendanceData]);
+
   return (
     <div className="space-y-4">
       {/* FILTER SECTION */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Semester */}
         <div>
           <label
             className={`block text-sm font-medium mb-2 ${
@@ -305,7 +327,6 @@ const Attendance = ({
           </select>
         </div>
 
-        {/* Kelas */}
         <div>
           <label
             className={`block text-sm font-medium mb-2 ${
@@ -335,7 +356,6 @@ const Attendance = ({
           </select>
         </div>
 
-        {/* Tanggal */}
         <div>
           <label
             className={`block text-sm font-medium mb-2 ${
@@ -377,11 +397,7 @@ const Attendance = ({
                   className={`text-2xl font-bold ${
                     darkMode ? "text-green-400" : "text-green-700"
                   }`}>
-                  {
-                    Object.values(attendanceData).filter(
-                      (a) => a?.status === "Hadir"
-                    ).length
-                  }
+                  {stats.hadir}
                 </p>
               </div>
               <div className="text-3xl">✅</div>
@@ -406,11 +422,7 @@ const Attendance = ({
                   className={`text-2xl font-bold ${
                     darkMode ? "text-yellow-400" : "text-yellow-700"
                   }`}>
-                  {
-                    Object.values(attendanceData).filter(
-                      (a) => a?.status === "Sakit"
-                    ).length
-                  }
+                  {stats.sakit}
                 </p>
               </div>
               <div className="text-3xl">🤒</div>
@@ -435,11 +447,7 @@ const Attendance = ({
                   className={`text-2xl font-bold ${
                     darkMode ? "text-blue-400" : "text-blue-700"
                   }`}>
-                  {
-                    Object.values(attendanceData).filter(
-                      (a) => a?.status === "Izin"
-                    ).length
-                  }
+                  {stats.izin}
                 </p>
               </div>
               <div className="text-3xl">📝</div>
@@ -464,11 +472,7 @@ const Attendance = ({
                   className={`text-2xl font-bold ${
                     darkMode ? "text-red-400" : "text-red-700"
                   }`}>
-                  {
-                    Object.values(attendanceData).filter(
-                      (a) => a?.status === "Alpa"
-                    ).length
-                  }
+                  {stats.alpa}
                 </p>
               </div>
               <div className="text-3xl">❌</div>
@@ -477,10 +481,9 @@ const Attendance = ({
         </div>
       )}
 
-      {/* SEARCH & ACTION BUTTONS */}
+      {/* SEARCH & ACTIONS */}
       {students.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search Input */}
           <div className="flex-1">
             <input
               type="text"
@@ -495,7 +498,6 @@ const Attendance = ({
             />
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <button
               onClick={markAllPresent}
@@ -521,7 +523,7 @@ const Attendance = ({
         </div>
       )}
 
-      {/* STUDENTS LIST */}
+      {/* LOADING STATE */}
       {loading ? (
         <div className="text-center py-12">
           <div
@@ -551,7 +553,7 @@ const Attendance = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Desktop Table View - Hidden on Mobile */}
+          {/* DESKTOP TABLE */}
           <div className="hidden md:block overflow-x-auto rounded-lg border">
             <table
               className={`min-w-full ${
@@ -561,19 +563,19 @@ const Attendance = ({
               }`}>
               <thead className={darkMode ? "bg-gray-700" : "bg-gray-50"}>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase">
                     No
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase">
                     NISN
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                    Nama Siswa
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase">
+                    Nama
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-bold uppercase">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase">
                     Keterangan
                   </th>
                 </tr>
@@ -588,36 +590,33 @@ const Attendance = ({
                     className={
                       darkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"
                     }>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-mono">
+                    <td className="px-4 py-3 text-sm">{index + 1}</td>
+                    <td className="px-4 py-3 text-sm font-mono">
                       {student.nisn}
                     </td>
                     <td className="px-4 py-3 text-sm">{student.nama_siswa}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3">
                       <div className="flex gap-2 justify-center flex-wrap">
-                        {statusOptions.map((option) => (
+                        {statusOptions.map((opt) => (
                           <button
-                            key={option.value}
+                            key={opt.value}
                             onClick={() =>
-                              updateStatus(student.nisn, option.value)
+                              updateStatus(student.nisn, opt.value)
                             }
                             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                              attendanceData[student.nisn]?.status ===
-                              option.value
-                                ? option.color === "green"
+                              attendanceData[student.nisn]?.status === opt.value
+                                ? opt.color === "green"
                                   ? "bg-green-500 text-white"
-                                  : option.color === "yellow"
+                                  : opt.color === "yellow"
                                   ? "bg-yellow-500 text-white"
-                                  : option.color === "blue"
+                                  : opt.color === "blue"
                                   ? "bg-blue-500 text-white"
                                   : "bg-red-500 text-white"
                                 : darkMode
                                 ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
                                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                             }`}>
-                            {option.label}
+                            {opt.label}
                           </button>
                         ))}
                       </div>
@@ -629,11 +628,11 @@ const Attendance = ({
                         onChange={(e) =>
                           updateKeterangan(student.nisn, e.target.value)
                         }
-                        placeholder="Keterangan (opsional)"
+                        placeholder="Keterangan"
                         className={`w-full px-3 py-2 rounded-lg border text-sm ${
                           darkMode
-                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                            ? "bg-gray-700 border-gray-600 text-white"
+                            : "bg-white border-gray-300 text-gray-900"
                         }`}
                       />
                     </td>
@@ -643,7 +642,7 @@ const Attendance = ({
             </table>
           </div>
 
-          {/* Mobile Card View - Only on Mobile */}
+          {/* MOBILE CARDS */}
           <div className="md:hidden space-y-3">
             {filteredStudents.map((student, index) => (
               <div
@@ -653,7 +652,6 @@ const Attendance = ({
                     ? "bg-gray-800 border-gray-700"
                     : "bg-white border-gray-200"
                 }`}>
-                {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -681,33 +679,32 @@ const Attendance = ({
                   </div>
                 </div>
 
-                {/* Status Buttons - 2x2 Grid */}
                 <div className="mb-3">
                   <label
                     className={`block text-xs font-medium mb-2 ${
                       darkMode ? "text-gray-400" : "text-gray-600"
                     }`}>
-                    Status Kehadiran
+                    Status
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    {statusOptions.map((option) => (
+                    {statusOptions.map((opt) => (
                       <button
-                        key={option.value}
-                        onClick={() => updateStatus(student.nisn, option.value)}
+                        key={opt.value}
+                        onClick={() => updateStatus(student.nisn, opt.value)}
                         className={`px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
-                          attendanceData[student.nisn]?.status === option.value
-                            ? option.color === "green"
+                          attendanceData[student.nisn]?.status === opt.value
+                            ? opt.color === "green"
                               ? "bg-green-500 text-white shadow-lg"
-                              : option.color === "yellow"
+                              : opt.color === "yellow"
                               ? "bg-yellow-500 text-white shadow-lg"
-                              : option.color === "blue"
+                              : opt.color === "blue"
                               ? "bg-blue-500 text-white shadow-lg"
                               : "bg-red-500 text-white shadow-lg"
                             : darkMode
-                            ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            ? "bg-gray-700 text-gray-300"
+                            : "bg-gray-100 text-gray-700"
                         }`}>
-                        {option.label}
+                        {opt.label}
                       </button>
                     ))}
                   </div>

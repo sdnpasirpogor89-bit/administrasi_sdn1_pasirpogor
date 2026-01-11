@@ -292,13 +292,14 @@ const AttendanceModal = ({
     }
   }, [selectedSemesterData]);
 
-  // Effect untuk auto-fetch data saat viewMode berubah
+  // Effect untuk initial fetch HANYA saat modal pertama dibuka
   useEffect(() => {
     if (!show) return;
 
-    const fetchDataForCurrentView = async () => {
+    const fetchInitialData = async () => {
       if (viewMode === "monthly") {
-        if (onRefreshData) {
+        // Hanya fetch jika tahun sudah dipilih
+        if (selectedYear && selectedYear !== "" && onRefreshData) {
           await onRefreshData({
             mode: "monthly",
             month: selectedMonth,
@@ -307,8 +308,6 @@ const AttendanceModal = ({
         }
       } else if (viewMode === "semester") {
         const semesterType = selectedSemester === "ganjil" ? "Ganjil" : "Genap";
-        // Kedua semester (Ganjil & Genap) menggunakan tahun ajaran yang sama
-        // Contoh: Semester Ganjil 2025/2026 (Jul-Des 2025) dan Semester Genap 2025/2026 (Jan-Jun 2026)
         const academicYear = `${semesterYear}/${semesterYear + 1}`;
 
         if (onRefreshData) {
@@ -322,8 +321,8 @@ const AttendanceModal = ({
       }
     };
 
-    fetchDataForCurrentView();
-  }, [viewMode, show]);
+    fetchInitialData();
+  }, [show]);
 
   // Handle period change untuk bulanan
   const handleMonthlyChange = async (month, year) => {
