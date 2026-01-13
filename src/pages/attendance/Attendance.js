@@ -1,7 +1,177 @@
-// Attendance.js - OPTIMIZED VERSION (FIXED)
+// Attendance.js - WITH CUSTOM CONFIRM DIALOG
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../../supabaseClient";
 import { getSemesterById } from "../../services/academicYearService";
+
+// ✅ CUSTOM CONFIRM DIALOG COMPONENT
+const ConfirmDialog = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  date,
+  count,
+  darkMode,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div
+        className={`${
+          darkMode ? "bg-gray-800" : "bg-white"
+        } rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-in zoom-in duration-200`}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 rounded-t-2xl relative">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
+              <svg
+                className="w-7 h-7 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">
+                Perbarui Presensi?
+              </h3>
+              <p className="text-white/90 text-sm mt-1">
+                Data sudah ada untuk tanggal ini
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <div
+            className={`${
+              darkMode ? "bg-gray-700/50" : "bg-gray-50"
+            } rounded-xl p-4 space-y-3`}>
+            <div className="flex items-center gap-3">
+              <div
+                className={`${
+                  darkMode ? "bg-blue-900/50" : "bg-blue-100"
+                } p-2 rounded-lg`}>
+                <svg
+                  className={`w-5 h-5 ${
+                    darkMode ? "text-blue-400" : "text-blue-600"
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p
+                  className={`text-xs font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}>
+                  Tanggal
+                </p>
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-700"
+                  }`}>
+                  {date}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div
+                className={`${
+                  darkMode ? "bg-purple-900/50" : "bg-purple-100"
+                } p-2 rounded-lg`}>
+                <svg
+                  className={`w-5 h-5 ${
+                    darkMode ? "text-purple-400" : "text-purple-600"
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p
+                  className={`text-xs font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}>
+                  Data Ditemukan
+                </p>
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-700"
+                  }`}>
+                  {count} presensi
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p
+            className={`text-sm leading-relaxed ${
+              darkMode ? "text-gray-300" : "text-gray-600"
+            }`}>
+            Memperbarui akan mengganti semua data presensi yang sudah tersimpan
+            dengan data baru.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="p-6 pt-0 flex gap-3">
+          <button
+            onClick={onClose}
+            className={`flex-1 px-4 py-3 ${
+              darkMode
+                ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+            } font-semibold rounded-xl transition-colors`}>
+            Batal
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-orange-500/30">
+            Perbarui Data
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Attendance = ({
   currentUser,
@@ -21,6 +191,10 @@ const Attendance = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [semesterCache, setSemesterCache] = useState(null);
 
+  // ✅ STATE UNTUK CONFIRM DIALOG
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState(null);
+
   // ✅ FILTER STUDENTS (MEMOIZED)
   const filteredStudents = useMemo(() => {
     if (!searchTerm) return students;
@@ -32,7 +206,7 @@ const Attendance = ({
     );
   }, [students, searchTerm]);
 
-  // ✅ LOAD EXISTING ATTENDANCE (DIPINDAHKAN KE ATAS)
+  // ✅ LOAD EXISTING ATTENDANCE
   const loadExistingAttendance = useCallback(async () => {
     if (!semesterCache || students.length === 0) return;
 
@@ -49,7 +223,6 @@ const Attendance = ({
 
       if (error) throw error;
 
-      // Map existing attendance
       const attendanceMap = {};
       data?.forEach((record) => {
         attendanceMap[record.nisn] = {
@@ -58,7 +231,6 @@ const Attendance = ({
         };
       });
 
-      // Initialize for all students
       const initialData = {};
       students.forEach((student) => {
         initialData[student.nisn] = attendanceMap[student.nisn] || {
@@ -91,7 +263,7 @@ const Attendance = ({
     }
   }, [selectedSemester]);
 
-  // ✅ LOAD STUDENTS (CUMA PAS CLASS BERUBAH)
+  // ✅ LOAD STUDENTS
   useEffect(() => {
     if (selectedClass && selectedSemester) {
       loadStudents();
@@ -101,14 +273,14 @@ const Attendance = ({
     }
   }, [selectedClass, selectedSemester]);
 
-  // ✅ LOAD ATTENDANCE (PAS DATE BERUBAH)
+  // ✅ LOAD ATTENDANCE
   useEffect(() => {
     if (students.length > 0 && selectedDate) {
       loadExistingAttendance();
     }
   }, [selectedDate, students.length, loadExistingAttendance]);
 
-  // ✅ LOAD STUDENTS (OPTIMIZED)
+  // ✅ LOAD STUDENTS
   const loadStudents = async () => {
     try {
       setLoading(true);
@@ -169,7 +341,79 @@ const Attendance = ({
     showToast("✅ Semua siswa ditandai HADIR", "success");
   };
 
-  // ✅ SAVE ATTENDANCE (OPTIMIZED)
+  // ✅ HANDLE CONFIRM UPDATE (DARI DIALOG)
+  const handleConfirmUpdate = async () => {
+    setShowConfirmDialog(false);
+    if (pendingUpdate) {
+      await performSave(pendingUpdate);
+      setPendingUpdate(null);
+    }
+  };
+
+  // ✅ HANDLE CANCEL UPDATE
+  const handleCancelUpdate = () => {
+    setShowConfirmDialog(false);
+    setPendingUpdate(null);
+    showToast("Penyimpanan dibatalkan", "info");
+  };
+
+  // ✅ PERFORM ACTUAL SAVE
+  const performSave = async (updateInfo) => {
+    try {
+      const { isUpdate, existingData } = updateInfo;
+
+      // DELETE OLD DATA IF UPDATE
+      if (isUpdate) {
+        const { error: deleteError } = await supabase
+          .from("attendance")
+          .delete()
+          .eq("tanggal", selectedDate)
+          .eq("kelas", parseInt(selectedClass))
+          .eq("semester", semesterCache.semester)
+          .eq("tahun_ajaran", semesterCache.year)
+          .eq("jenis_presensi", "kelas");
+
+        if (deleteError) throw deleteError;
+        console.log("🗑️ Old data deleted");
+      }
+
+      // PREPARE DATA
+      const dataToSave = students.map((student) => ({
+        tanggal: selectedDate,
+        nisn: student.nisn,
+        nama_siswa: student.nama_siswa,
+        kelas: parseInt(selectedClass),
+        status: attendanceData[student.nisn]?.status || "Hadir",
+        keterangan: attendanceData[student.nisn]?.keterangan || "",
+        guru_input: currentUser?.username || "system",
+        jenis_presensi: "kelas",
+        tahun_ajaran: semesterCache.year,
+        semester: semesterCache.semester,
+        created_at: new Date().toISOString(),
+      }));
+
+      // INSERT NEW DATA
+      const { error: insertError } = await supabase
+        .from("attendance")
+        .insert(dataToSave);
+
+      if (insertError) throw insertError;
+
+      showToast(
+        `✅ Presensi ${students.length} siswa berhasil ${
+          isUpdate ? "DIPERBARUI" : "DISIMPAN"
+        }!`,
+        "success"
+      );
+
+      console.log(`✅ Attendance ${isUpdate ? "UPDATED" : "SAVED"}`);
+    } catch (error) {
+      console.error("❌ Error saving:", error);
+      showToast("❌ Gagal menyimpan: " + error.message, "error");
+    }
+  };
+
+  // ✅ SAVE ATTENDANCE (DENGAN CUSTOM DIALOG)
   const saveAttendance = async () => {
     if (saving) {
       console.log("⚠️ Save already in progress");
@@ -191,7 +435,7 @@ const Attendance = ({
 
       console.log("💾 Saving attendance...");
 
-      // ✅ CHECK EXISTING DATA
+      // CHECK EXISTING DATA
       const { data: existingData, error: checkError } = await supabase
         .from("attendance")
         .select("id")
@@ -205,63 +449,15 @@ const Attendance = ({
 
       const isUpdate = existingData && existingData.length > 0;
 
-      // ✅ CONFIRM UPDATE
+      // ✅ TAMPILKAN CUSTOM DIALOG KALAU UPDATE
       if (isUpdate) {
-        const confirmUpdate = window.confirm(
-          `⚠️ Presensi untuk tanggal ${selectedDate} sudah ada!\n\n` +
-            `Ditemukan ${existingData.length} data presensi.\n\n` +
-            `Apakah Anda yakin ingin MEMPERBARUI data presensi?`
-        );
-
-        if (!confirmUpdate) {
-          showToast("❌ Penyimpanan dibatalkan", "info");
-          return;
-        }
-
-        // ✅ DELETE OLD DATA
-        const { error: deleteError } = await supabase
-          .from("attendance")
-          .delete()
-          .eq("tanggal", selectedDate)
-          .eq("kelas", parseInt(selectedClass))
-          .eq("semester", semesterCache.semester)
-          .eq("tahun_ajaran", semesterCache.year)
-          .eq("jenis_presensi", "kelas");
-
-        if (deleteError) throw deleteError;
-        console.log("🗑️ Old data deleted");
+        setPendingUpdate({ isUpdate, existingData });
+        setShowConfirmDialog(true);
+        return; // Stop di sini, tunggu user action
       }
 
-      // ✅ PREPARE DATA
-      const dataToSave = students.map((student) => ({
-        tanggal: selectedDate,
-        nisn: student.nisn,
-        nama_siswa: student.nama_siswa,
-        kelas: parseInt(selectedClass),
-        status: attendanceData[student.nisn]?.status || "Hadir",
-        keterangan: attendanceData[student.nisn]?.keterangan || "",
-        guru_input: currentUser?.username || "system",
-        jenis_presensi: "kelas",
-        tahun_ajaran: semesterCache.year,
-        semester: semesterCache.semester,
-        created_at: new Date().toISOString(),
-      }));
-
-      // ✅ INSERT NEW DATA
-      const { error: insertError } = await supabase
-        .from("attendance")
-        .insert(dataToSave);
-
-      if (insertError) throw insertError;
-
-      showToast(
-        `✅ Presensi ${students.length} siswa berhasil ${
-          isUpdate ? "DIPERBARUI" : "DISIMPAN"
-        }!`,
-        "success"
-      );
-
-      console.log(`✅ Attendance ${isUpdate ? "UPDATED" : "SAVED"}`);
+      // KALAU BUKAN UPDATE, LANGSUNG SIMPAN
+      await performSave({ isUpdate: false, existingData: null });
     } catch (error) {
       console.error("❌ Error saving:", error);
       showToast("❌ Gagal menyimpan: " + error.message, "error");
@@ -302,6 +498,16 @@ const Attendance = ({
 
   return (
     <div className="space-y-4">
+      {/* ✅ CUSTOM CONFIRM DIALOG */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={handleCancelUpdate}
+        onConfirm={handleConfirmUpdate}
+        date={selectedDate}
+        count={pendingUpdate?.existingData?.length || 0}
+        darkMode={darkMode}
+      />
+
       {/* FILTER SECTION */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -710,7 +916,6 @@ const Attendance = ({
                   </div>
                 </div>
 
-                {/* Keterangan */}
                 <div>
                   <label
                     className={`block text-xs font-medium mb-2 ${
